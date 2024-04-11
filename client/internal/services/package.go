@@ -11,21 +11,26 @@ import (
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
+// PackageService 提供对包相关操作的服务接口
 type PackageService struct {
 	*Service
 }
 
+// PackageSvc 创建并返回一个PackageService的实例
 func (svc *Service) PackageSvc() *PackageService {
 	return &PackageService{Service: svc}
 }
 
+// Get 获取指定用户的指定包信息
 func (svc *PackageService) Get(userID cdssdk.UserID, packageID cdssdk.PackageID) (*model.Package, error) {
+	// 从协调器MQ池中获取客户端
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
+	// 向协调器请求获取包信息
 	getResp, err := coorCli.GetPackage(coormq.NewGetPackage(userID, packageID))
 	if err != nil {
 		return nil, fmt.Errorf("requsting to coodinator: %w", err)
@@ -34,13 +39,16 @@ func (svc *PackageService) Get(userID cdssdk.UserID, packageID cdssdk.PackageID)
 	return &getResp.Package, nil
 }
 
+// Create 创建一个新的包
 func (svc *PackageService) Create(userID cdssdk.UserID, bucketID cdssdk.BucketID, name string) (cdssdk.PackageID, error) {
+	// 从协调器MQ池中获取客户端
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return 0, fmt.Errorf("new coordinator client: %w", err)
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
+	// 向协调器发送创建包的请求
 	resp, err := coorCli.CreatePackage(coormq.NewCreatePackage(userID, bucketID, name))
 	if err != nil {
 		return 0, fmt.Errorf("creating package: %w", err)
@@ -49,18 +57,22 @@ func (svc *PackageService) Create(userID cdssdk.UserID, bucketID cdssdk.BucketID
 	return resp.PackageID, nil
 }
 
+// DownloadPackage 下载指定包的内容
 func (svc *PackageService) DownloadPackage(userID cdssdk.UserID, packageID cdssdk.PackageID) (iterator.DownloadingObjectIterator, error) {
+	// 从协调器MQ池中获取客户端
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
+	// 向协调器请求获取包内对象的详情
 	getObjsResp, err := coorCli.GetPackageObjectDetails(coormq.NewGetPackageObjectDetails(packageID))
 	if err != nil {
 		return nil, fmt.Errorf("getting package object details: %w", err)
 	}
 
+	// 创建下载对象的迭代器
 	iter := iterator.NewDownloadObjectIterator(getObjsResp.Objects, &iterator.DownloadContext{
 		Distlock: svc.DistLock,
 	})
@@ -68,13 +80,16 @@ func (svc *PackageService) DownloadPackage(userID cdssdk.UserID, packageID cdssd
 	return iter, nil
 }
 
+// DeletePackage 删除指定的包
 func (svc *PackageService) DeletePackage(userID cdssdk.UserID, packageID cdssdk.PackageID) error {
+	// 从协调器MQ池中获取客户端
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return fmt.Errorf("new coordinator client: %w", err)
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
+	// 向协调器发送删除包的请求
 	_, err = coorCli.DeletePackage(coormq.NewDeletePackage(userID, packageID))
 	if err != nil {
 		return fmt.Errorf("deleting package: %w", err)
@@ -83,18 +98,22 @@ func (svc *PackageService) DeletePackage(userID cdssdk.UserID, packageID cdssdk.
 	return nil
 }
 
+// GetCachedNodes 获取指定包的缓存节点信息
 func (svc *PackageService) GetCachedNodes(userID cdssdk.UserID, packageID cdssdk.PackageID) (cdssdk.PackageCachingInfo, error) {
+	// 从协调器MQ池中获取客户端
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return cdssdk.PackageCachingInfo{}, fmt.Errorf("new coordinator client: %w", err)
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
+	// 向协调器请求获取包的缓存节点信息
 	resp, err := coorCli.GetPackageCachedNodes(coormq.NewGetPackageCachedNodes(userID, packageID))
 	if err != nil {
 		return cdssdk.PackageCachingInfo{}, fmt.Errorf("get package cached nodes: %w", err)
 	}
 
+	// 构造并返回缓存信息
 	tmp := cdssdk.PackageCachingInfo{
 		NodeInfos:   resp.NodeInfos,
 		PackageSize: resp.PackageSize,
@@ -102,13 +121,16 @@ func (svc *PackageService) GetCachedNodes(userID cdssdk.UserID, packageID cdssdk
 	return tmp, nil
 }
 
+// GetLoadedNodes 获取指定包加载的节点列表
 func (svc *PackageService) GetLoadedNodes(userID cdssdk.UserID, packageID cdssdk.PackageID) ([]cdssdk.NodeID, error) {
+	// 从协调器MQ池中获取客户端
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
+	// 向协调器请求获取加载指定包的节点ID列表
 	resp, err := coorCli.GetPackageLoadedNodes(coormq.NewGetPackageLoadedNodes(userID, packageID))
 	if err != nil {
 		return nil, fmt.Errorf("get package loaded nodes: %w", err)

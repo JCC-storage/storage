@@ -23,6 +23,8 @@ type Config struct {
 
 var cfg Config
 
+// Init 初始化client
+// TODO 这里的modeulName参数弄成可配置的更好
 func Init() error {
 	return config.DefaultLoad("client", &cfg)
 }

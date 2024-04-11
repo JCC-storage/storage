@@ -12,6 +12,16 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/iterator"
 )
 
+// PackageListBucketPackages 列出指定存储桶中的所有包裹。
+//
+// 参数:
+//
+//	ctx - 命令上下文。
+//	bucketID - 存储桶ID。
+//
+// 返回值:
+//
+//	error - 操作过程中发生的任何错误。
 func PackageListBucketPackages(ctx CommandContext, bucketID cdssdk.BucketID) error {
 	userID := cdssdk.UserID(1)
 
@@ -33,6 +43,17 @@ func PackageListBucketPackages(ctx CommandContext, bucketID cdssdk.BucketID) err
 	return nil
 }
 
+// PackageDownloadPackage 下载指定包裹的所有文件到本地目录。
+//
+// 参数:
+//
+//	ctx - 命令上下文。
+//	packageID - 包裹ID。
+//	outputDir - 输出目录路径。
+//
+// 返回值:
+//
+//	error - 操作过程中发生的任何错误。
 func PackageDownloadPackage(ctx CommandContext, packageID cdssdk.PackageID, outputDir string) error {
 	startTime := time.Now()
 	defer func() {
@@ -46,7 +67,7 @@ func PackageDownloadPackage(ctx CommandContext, packageID cdssdk.PackageID, outp
 		return fmt.Errorf("create output directory %s failed, err: %w", outputDir, err)
 	}
 
-	// 下载文件
+	// 初始化文件下载迭代器
 	objIter, err := ctx.Cmdline.Svc.PackageSvc().DownloadPackage(userID, packageID)
 	if err != nil {
 		return fmt.Errorf("download object failed, err: %w", err)
@@ -98,6 +119,17 @@ func PackageDownloadPackage(ctx CommandContext, packageID cdssdk.PackageID, outp
 	return nil
 }
 
+// PackageCreatePackage 在指定存储桶中创建新包裹。
+//
+// 参数:
+//
+//	ctx - 命令上下文。
+//	bucketID - 存储桶ID。
+//	name - 包裹名称。
+//
+// 返回值:
+//
+//	error - 操作过程中发生的任何错误。
 func PackageCreatePackage(ctx CommandContext, bucketID cdssdk.BucketID, name string) error {
 	userID := cdssdk.UserID(1)
 
@@ -110,6 +142,16 @@ func PackageCreatePackage(ctx CommandContext, bucketID cdssdk.BucketID, name str
 	return nil
 }
 
+// PackageDeletePackage 删除指定的包裹。
+//
+// 参数:
+//
+//	ctx - 命令上下文。
+//	packageID - 包裹ID。
+//
+// 返回值:
+//
+//	error - 操作过程中发生的任何错误。
 func PackageDeletePackage(ctx CommandContext, packageID cdssdk.PackageID) error {
 	userID := cdssdk.UserID(1)
 	err := ctx.Cmdline.Svc.PackageSvc().DeletePackage(userID, packageID)
@@ -119,6 +161,16 @@ func PackageDeletePackage(ctx CommandContext, packageID cdssdk.PackageID) error 
 	return nil
 }
 
+// PackageGetCachedNodes 获取指定包裹的缓存节点信息。
+//
+// 参数:
+//
+//	ctx - 命令上下文。
+//	packageID - 包裹ID。
+//
+// 返回值:
+//
+//	error - 操作过程中发生的任何错误。
 func PackageGetCachedNodes(ctx CommandContext, packageID cdssdk.PackageID) error {
 	userID := cdssdk.UserID(1)
 	resp, err := ctx.Cmdline.Svc.PackageSvc().GetCachedNodes(userID, packageID)
@@ -129,6 +181,16 @@ func PackageGetCachedNodes(ctx CommandContext, packageID cdssdk.PackageID) error
 	return nil
 }
 
+// PackageGetLoadedNodes 获取指定包裹的已加载节点信息。
+//
+// 参数:
+//
+//	ctx - 命令上下文。
+//	packageID - 包裹ID。
+//
+// 返回值:
+//
+//	error - 操作过程中发生的任何错误。
 func PackageGetLoadedNodes(ctx CommandContext, packageID cdssdk.PackageID) error {
 	userID := cdssdk.UserID(1)
 	nodeIDs, err := ctx.Cmdline.Svc.PackageSvc().GetLoadedNodes(userID, packageID)
@@ -139,6 +201,7 @@ func PackageGetLoadedNodes(ctx CommandContext, packageID cdssdk.PackageID) error
 	return nil
 }
 
+// 初始化命令行工具的包相关命令。
 func init() {
 	commands.MustAdd(PackageListBucketPackages, "pkg", "ls")
 

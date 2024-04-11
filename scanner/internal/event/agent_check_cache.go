@@ -15,16 +15,20 @@ import (
 	scevt "gitlink.org.cn/cloudream/storage/common/pkgs/mq/scanner/event"
 )
 
+// AgentCheckCache 代表一个用于处理代理缓存检查事件的结构体
 type AgentCheckCache struct {
 	*scevt.AgentCheckCache
 }
 
+// NewAgentCheckCache 创建一个新的 AgentCheckCache 实例
 func NewAgentCheckCache(evt *scevt.AgentCheckCache) *AgentCheckCache {
 	return &AgentCheckCache{
 		AgentCheckCache: evt,
 	}
 }
 
+// TryMerge 尝试合并当前事件与另一个事件
+// 如果另一个事件类型不匹配或节点ID不同，则不进行合并
 func (t *AgentCheckCache) TryMerge(other Event) bool {
 	event, ok := other.(*AgentCheckCache)
 	if !ok {
@@ -38,6 +42,7 @@ func (t *AgentCheckCache) TryMerge(other Event) bool {
 	return true
 }
 
+// Execute 执行缓存检查操作，对比本地缓存与代理返回的缓存信息，更新数据库中的缓存记录
 func (t *AgentCheckCache) Execute(execCtx ExecuteContext) {
 	log := logger.WithType[AgentCheckCache]("Event")
 	startTime := time.Now()
@@ -45,7 +50,6 @@ func (t *AgentCheckCache) Execute(execCtx ExecuteContext) {
 	defer func() {
 		log.Debugf("end, time: %v", time.Since(startTime))
 	}()
-	// TODO unavailable的节点需不需要发送任务？
 
 	agtCli, err := stgglb.AgentMQPool.Acquire(t.NodeID)
 	if err != nil {
@@ -62,7 +66,7 @@ func (t *AgentCheckCache) Execute(execCtx ExecuteContext) {
 
 	realFileHashes := lo.SliceToMap(checkResp.FileHashes, func(hash string) (string, bool) { return hash, true })
 
-	// 根据IPFS中实际文件情况修改元数据。修改过程中的失败均忽略。（但关联修改需要原子性）
+	// 在事务中执行缓存更新操作
 	execCtx.Args.DB.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
 		t.checkCache(execCtx, tx, realFileHashes)
 
@@ -73,7 +77,7 @@ func (t *AgentCheckCache) Execute(execCtx ExecuteContext) {
 	})
 }
 
-// 对比Cache表中的记录，多了增加，少了删除
+// checkCache 对比Cache表中的记录，根据实际存在的文件哈希值，进行增加或删除操作
 func (t *AgentCheckCache) checkCache(execCtx ExecuteContext, tx *sqlx.Tx, realFileHashes map[string]bool) {
 	log := logger.WithType[AgentCheckCache]("Event")
 
@@ -91,8 +95,6 @@ func (t *AgentCheckCache) checkCache(execCtx ExecuteContext, tx *sqlx.Tx, realFi
 	var rms []string
 	for _, c := range caches {
 		if realFileHashesCp[c.FileHash] {
-			// Cache表使用FileHash和NodeID作为主键，
-			// 所以通过同一个NodeID查询的结果不会存在两条相同FileHash的情况
 			delete(realFileHashesCp, c.FileHash)
 			continue
 		}
@@ -115,7 +117,7 @@ func (t *AgentCheckCache) checkCache(execCtx ExecuteContext, tx *sqlx.Tx, realFi
 	}
 }
 
-// 对比PinnedObject表，多了不变，少了删除
+// checkPinnedObject 对比PinnedObject表，若实际文件不存在，则进行删除操作
 func (t *AgentCheckCache) checkPinnedObject(execCtx ExecuteContext, tx *sqlx.Tx, realFileHashes map[string]bool) {
 	log := logger.WithType[AgentCheckCache]("Event")
 
@@ -141,7 +143,7 @@ func (t *AgentCheckCache) checkPinnedObject(execCtx ExecuteContext, tx *sqlx.Tx,
 	}
 }
 
-// 对比ObjectBlock表，多了不变，少了删除
+// checkObjectBlock 对比ObjectBlock表，若实际文件不存在，则进行删除操作
 func (t *AgentCheckCache) checkObjectBlock(execCtx ExecuteContext, tx *sqlx.Tx, realFileHashes map[string]bool) {
 	log := logger.WithType[AgentCheckCache]("Event")
 
@@ -167,6 +169,7 @@ func (t *AgentCheckCache) checkObjectBlock(execCtx ExecuteContext, tx *sqlx.Tx, 
 	}
 }
 
+// init 注册AgentCheckCache消息转换器
 func init() {
 	RegisterMessageConvertor(NewAgentCheckCache)
 }

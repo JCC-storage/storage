@@ -10,26 +10,31 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 )
 
+// StorageService 用于提供存储服务的相关操作
 type StorageService struct {
 	*Server
 }
 
+// Storage 返回StorageService的实例
 func (s *Server) Storage() *StorageService {
 	return &StorageService{
 		Server: s,
 	}
 }
 
+// StorageLoadPackageReq 定义加载存储包的请求参数
 type StorageLoadPackageReq struct {
 	UserID    *cdssdk.UserID    `json:"userID" binding:"required"`
 	PackageID *cdssdk.PackageID `json:"packageID" binding:"required"`
 	StorageID *cdssdk.StorageID `json:"storageID" binding:"required"`
 }
 
+// StorageLoadPackageResp 定义加载存储包的响应参数
 type StorageLoadPackageResp struct {
 	cdssdk.StorageLoadPackageResp
 }
 
+// LoadPackage 加载存储包
 func (s *StorageService) LoadPackage(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Storage.LoadPackage")
 
@@ -72,6 +77,7 @@ func (s *StorageService) LoadPackage(ctx *gin.Context) {
 	}
 }
 
+// StorageCreatePackageReq 定义创建存储包的请求参数
 type StorageCreatePackageReq struct {
 	UserID       *cdssdk.UserID    `json:"userID" binding:"required"`
 	StorageID    *cdssdk.StorageID `json:"storageID" binding:"required"`
@@ -81,10 +87,12 @@ type StorageCreatePackageReq struct {
 	NodeAffinity *cdssdk.NodeID    `json:"nodeAffinity"`
 }
 
+// StorageCreatePackageResp 定义创建存储包的响应参数
 type StorageCreatePackageResp struct {
 	PackageID cdssdk.PackageID `json:"packageID"`
 }
 
+// CreatePackage 创建存储包
 func (s *StorageService) CreatePackage(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Storage.CreatePackage")
 
@@ -126,15 +134,18 @@ func (s *StorageService) CreatePackage(ctx *gin.Context) {
 	}
 }
 
+// StorageGetInfoReq 定义获取存储信息的请求参数
 type StorageGetInfoReq struct {
 	UserID    *cdssdk.UserID    `form:"userID" binding:"required"`
 	StorageID *cdssdk.StorageID `form:"storageID" binding:"required"`
 }
 
+// StorageGetInfoResp 定义获取存储信息的响应参数
 type StorageGetInfoResp struct {
 	cdssdk.StorageGetInfoResp
 }
 
+// GetInfo 获取存储信息
 func (s *StorageService) GetInfo(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Storage.GetInfo")
 

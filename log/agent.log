@@ -1,0 +1,870 @@
+2024-04-10 12:36:23 [DEBU] [:Collector] do testing
+2024-04-10 12:36:23 [INFO] [:Collector] start connectivity reporter
+2024-04-10 12:36:25 [WARN] [:Collector] [NodeID:1] pre ping: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing: dial tcp [::1]:5010: connectex: No connection could be made because the target machine actively refused it."
+2024-04-10 12:36:25 [INFO] start serving distlock
+2024-04-10 12:36:25 [INFO] start serving command server
+2024-04-10 12:36:25 [INFO] start serving grpc
+2024-04-10 12:37:08 [DEBU] [:Collector] do testing
+2024-04-10 12:42:11 [DEBU] [:Collector] do testing
+2024-04-10 12:47:11 [DEBU] [:Collector] do testing
+2024-04-10 13:04:14 [DEBU] [:Collector] do testing
+2024-04-10 13:04:14 [WARN] agent server err: deserialize error: channel is closed
+2024-04-10 13:04:14 [ERRO] command server stopped with error: receive message error: channel is closed
+2024-04-10 13:04:14 [INFO] command server stopped
+2024-04-10 13:07:11 [DEBU] [:Collector] do testing
+2024-04-10 13:12:11 [DEBU] [:Collector] do testing
+2024-04-10 13:17:11 [DEBU] [:Collector] do testing
+2024-04-10 13:22:11 [DEBU] [:Collector] do testing
+2024-04-10 13:27:11 [DEBU] [:Collector] do testing
+2024-04-10 13:32:11 [DEBU] [:Collector] do testing
+2024-04-10 14:01:30 [DEBU] [:Collector] do testing
+2024-04-10 14:02:11 [DEBU] [:Collector] do testing
+2024-04-10 14:07:11 [DEBU] [:Collector] do testing
+2024-04-10 14:12:11 [DEBU] [:Collector] do testing
+2024-04-10 14:17:11 [DEBU] [:Collector] do testing
+2024-04-10 14:22:11 [DEBU] [:Collector] do testing
+2024-04-10 14:27:11 [DEBU] [:Collector] do testing
+2024-04-10 14:32:11 [DEBU] [:Collector] do testing
+2024-04-10 14:37:11 [DEBU] [:Collector] do testing
+2024-04-10 14:40:52 [DEBU] [:Collector] do testing
+2024-04-10 14:40:52 [INFO] [:Collector] start connectivity reporter
+2024-04-10 14:41:13 [DEBU] [:Collector] do testing
+2024-04-10 14:41:37 [INFO] start serving command server
+2024-04-10 14:41:37 [INFO] start serving distlock
+2024-04-10 14:41:37 [INFO] start serving grpc
+2024-04-10 14:41:58 [DEBU] [:Collector] do testing
+2024-04-10 14:46:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 14:46:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 14:46:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 14:46:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 14:46:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 14:46:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 14:46:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 14:46:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 14:46:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 14:46:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 14:46:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 14:46:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 14:46:58 [DEBU] [:Collector] do testing
+2024-04-10 14:51:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 14:51:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 14:51:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 14:51:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 14:51:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 14:51:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 14:51:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 14:51:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 14:51:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 14:51:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 14:51:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 14:51:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 14:51:58 [DEBU] [:Collector] do testing
+2024-04-10 14:56:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 14:56:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 14:56:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 14:56:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 14:56:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 14:56:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 14:56:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 14:56:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 14:56:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 14:56:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 14:56:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 14:56:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 14:56:58 [DEBU] [:Collector] do testing
+2024-04-10 15:01:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 15:01:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 15:01:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 15:01:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 15:01:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 15:01:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 15:01:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 15:01:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 15:01:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 15:01:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 15:01:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 15:01:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 15:01:58 [DEBU] [:Collector] do testing
+2024-04-10 15:06:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 15:06:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 15:06:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 15:06:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 15:06:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 15:06:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 15:06:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 15:06:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 15:06:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 15:06:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 15:06:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 15:06:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 15:06:58 [DEBU] [:Collector] do testing
+2024-04-10 15:11:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 15:11:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 15:11:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 15:11:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 15:11:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 15:11:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 15:11:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 15:11:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 15:11:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 15:11:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 15:11:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 15:11:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 15:11:58 [DEBU] [:Collector] do testing
+2024-04-10 15:16:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 15:16:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 15:16:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 15:16:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 15:16:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 15:16:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 15:16:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 15:16:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 15:16:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 15:16:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 15:16:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 15:16:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 15:16:58 [DEBU] [:Collector] do testing
+2024-04-10 15:21:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 15:21:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 15:21:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 15:21:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 15:21:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 15:21:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 15:21:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 15:21:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 15:21:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 15:21:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 15:21:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 15:21:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 15:21:58 [DEBU] [:Collector] do testing
+2024-04-10 15:26:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 15:26:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 15:26:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 15:26:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 15:26:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 15:26:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 15:26:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 15:26:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 15:26:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 15:26:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 15:26:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 15:26:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 15:26:58 [DEBU] [:Collector] do testing
+2024-04-10 15:31:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 15:31:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 15:31:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 15:31:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 15:31:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 15:31:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 15:31:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 15:31:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 15:31:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 15:31:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 15:31:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 15:31:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 15:31:58 [DEBU] [:Collector] do testing
+2024-04-10 15:36:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 15:36:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 15:36:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 15:36:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 15:36:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 15:36:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 15:36:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 15:36:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 15:36:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 15:36:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 15:36:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 15:36:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 15:36:58 [DEBU] [:Collector] do testing
+2024-04-10 15:41:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 15:41:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 15:41:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 15:41:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 15:41:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 15:41:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 15:41:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 15:41:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 15:41:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 15:41:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 15:41:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 15:41:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 15:41:58 [DEBU] [:Collector] do testing
+2024-04-10 15:46:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 15:46:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 15:46:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 15:46:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 15:46:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 15:46:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 15:46:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 15:46:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 15:46:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 15:46:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 15:46:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 15:46:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 15:46:58 [DEBU] [:Collector] do testing
+2024-04-10 15:51:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 15:51:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 15:51:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 15:51:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 15:51:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 15:51:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 15:51:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 15:51:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 15:51:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 15:51:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 15:51:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 15:51:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 15:51:58 [DEBU] [:Collector] do testing
+2024-04-10 15:56:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 15:56:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 15:56:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 15:56:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 15:56:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 15:56:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 15:56:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 15:56:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 15:56:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 15:56:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 15:56:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 15:56:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 15:56:58 [DEBU] [:Collector] do testing
+2024-04-10 16:01:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 16:01:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 16:01:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 16:01:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 16:01:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 16:01:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 16:01:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 16:01:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 16:01:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 16:01:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 16:01:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 16:01:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 16:01:58 [DEBU] [:Collector] do testing
+2024-04-10 16:06:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 16:06:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 16:06:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 16:06:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 16:06:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 16:06:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 16:06:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 16:06:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 16:06:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 16:06:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 16:06:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 16:06:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 16:06:58 [DEBU] [:Collector] do testing
+2024-04-10 16:11:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 16:11:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 16:11:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 16:11:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 16:11:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 16:11:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 16:11:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 16:11:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 16:11:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 16:11:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 16:11:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 16:11:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 16:11:58 [DEBU] [:Collector] do testing
+2024-04-10 16:15:38 [DEBU] [:Collector] do testing
+2024-04-10 16:15:38 [INFO] [:Collector] start connectivity reporter
+2024-04-10 16:15:40 [WARN] [:Collector] [NodeID:1] pre ping: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing: dial tcp [::1]:5010: connectex: No connection could be made because the target machine actively refused it."
+2024-04-10 16:15:40 [INFO] start serving command server
+2024-04-10 16:15:40 [INFO] start serving distlock
+2024-04-10 16:15:40 [INFO] start serving grpc
+2024-04-10 16:16:26 [DEBU] [:Collector] do testing
+2024-04-10 16:16:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 16:16:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 16:16:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 16:16:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 16:16:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 16:16:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 16:16:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 16:16:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 16:16:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 16:16:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 16:16:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 16:16:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 16:21:29 [DEBU] [:Collector] do testing
+2024-04-10 16:21:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 16:21:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 16:21:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 16:21:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 16:21:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 16:21:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 16:21:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 16:21:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 16:21:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 16:21:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 16:21:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 16:21:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 16:26:29 [DEBU] [:Collector] do testing
+2024-04-10 16:26:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 16:26:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 16:26:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 16:26:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 16:26:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 16:26:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 16:26:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 16:26:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 16:26:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 16:26:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 16:26:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 16:26:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 16:31:29 [DEBU] [:Collector] do testing
+2024-04-10 16:31:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 16:31:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 16:31:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 16:31:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 16:31:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 16:31:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 16:31:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 16:31:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 16:31:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 16:31:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 16:31:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 16:31:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 16:36:29 [DEBU] [:Collector] do testing
+2024-04-10 16:36:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 16:36:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 16:36:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 16:36:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 16:36:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 16:36:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 16:36:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 16:36:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 16:36:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 16:36:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 16:36:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 16:36:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 16:41:29 [DEBU] [:Collector] do testing
+2024-04-10 16:41:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 16:41:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 16:41:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 16:41:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 16:41:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 16:41:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 16:41:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 16:41:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 16:41:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 16:41:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 16:41:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 16:41:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 16:46:29 [DEBU] [:Collector] do testing
+2024-04-10 16:46:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 16:46:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 16:46:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 16:46:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 16:46:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 16:46:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 16:46:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 16:46:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 16:46:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 16:46:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 16:46:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 16:46:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 16:51:29 [DEBU] [:Collector] do testing
+2024-04-10 16:51:31 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-10 16:51:31 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-10 16:51:31 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-10 16:51:31 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-10 16:51:31 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-10 16:51:31 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-10 16:51:31 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-10 16:51:31 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-10 16:51:31 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-10 16:51:31 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-10 16:51:31 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-10 16:51:31 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-10 16:59:00 [WARN] agent server err: deserialize error: channel is closed
+2024-04-10 16:59:00 [ERRO] command server stopped with error: receive message error: channel is closed
+2024-04-10 16:59:00 [INFO] command server stopped
+2024-04-10 16:59:00 [DEBU] [:Collector] do testing
+2024-04-10 17:01:29 [DEBU] [:Collector] do testing
+2024-04-10 17:06:29 [DEBU] [:Collector] do testing
+2024-04-10 17:11:29 [DEBU] [:Collector] do testing
+2024-04-10 17:16:29 [DEBU] [:Collector] do testing
+2024-04-10 17:21:29 [DEBU] [:Collector] do testing
+2024-04-10 17:26:29 [DEBU] [:Collector] do testing
+2024-04-10 20:05:49 [DEBU] [:Collector] do testing
+2024-04-10 20:06:29 [DEBU] [:Collector] do testing
+2024-04-10 20:11:29 [DEBU] [:Collector] do testing
+2024-04-10 20:16:29 [DEBU] [:Collector] do testing
+2024-04-10 20:25:54 [DEBU] [:Collector] do testing
+2024-04-10 20:26:29 [DEBU] [:Collector] do testing
+2024-04-10 20:32:03 [DEBU] [:Collector] do testing
+2024-04-10 20:36:29 [DEBU] [:Collector] do testing
+2024-04-10 20:41:29 [DEBU] [:Collector] do testing
+2024-04-10 20:46:29 [DEBU] [:Collector] do testing
+2024-04-10 20:51:29 [DEBU] [:Collector] do testing
+2024-04-10 20:56:29 [DEBU] [:Collector] do testing
+2024-04-10 21:01:29 [DEBU] [:Collector] do testing
+2024-04-10 21:06:29 [DEBU] [:Collector] do testing
+2024-04-10 21:11:29 [DEBU] [:Collector] do testing
+2024-04-10 21:16:29 [DEBU] [:Collector] do testing
+2024-04-10 21:21:29 [DEBU] [:Collector] do testing
+2024-04-10 21:26:29 [DEBU] [:Collector] do testing
+2024-04-10 21:50:58 [DEBU] [:Collector] do testing
+2024-04-10 21:51:29 [DEBU] [:Collector] do testing
+2024-04-11 00:53:07 [DEBU] [:Collector] do testing
+2024-04-11 08:52:58 [DEBU] [:Collector] do testing
+2024-04-11 08:56:29 [DEBU] [:Collector] do testing
+2024-04-11 09:01:29 [DEBU] [:Collector] do testing
+2024-04-11 09:06:29 [DEBU] [:Collector] do testing
+2024-04-11 09:11:29 [DEBU] [:Collector] do testing
+2024-04-11 09:16:29 [DEBU] [:Collector] do testing
+2024-04-11 09:22:59 [DEBU] [:Collector] do testing
+2024-04-11 09:22:59 [INFO] [:Collector] start connectivity reporter
+2024-04-11 09:23:01 [WARN] [:Collector] [NodeID:1] pre ping: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing: dial tcp [::1]:5010: connectex: No connection could be made because the target machine actively refused it."
+2024-04-11 09:23:02 [INFO] start serving command server
+2024-04-11 09:23:02 [INFO] start serving distlock
+2024-04-11 09:23:02 [INFO] start serving grpc
+2024-04-11 09:27:56 [DEBU] [:Collector] do testing
+2024-04-11 09:28:04 [DEBU] client upload file
+2024-04-11 09:28:04 [DEBU] 106 bytes received 
+2024-04-11 09:28:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 09:28:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 09:28:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 09:28:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 09:28:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 09:28:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 09:28:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 09:28:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 09:28:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 09:28:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 09:28:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 09:28:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 09:32:59 [DEBU] [:Collector] do testing
+2024-04-11 09:33:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 09:33:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 09:33:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 09:33:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 09:33:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 09:33:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 09:33:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 09:33:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 09:33:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 09:33:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 09:33:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 09:33:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 09:37:59 [DEBU] [:Collector] do testing
+2024-04-11 09:38:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 09:38:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 09:38:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 09:38:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 09:38:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 09:38:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 09:38:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 09:38:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 09:38:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 09:38:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 09:38:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 09:38:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 09:42:59 [DEBU] [:Collector] do testing
+2024-04-11 09:43:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 09:43:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 09:43:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 09:43:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 09:43:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 09:43:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 09:43:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 09:43:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 09:43:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 09:43:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 09:43:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 09:43:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 09:47:59 [DEBU] [:Collector] do testing
+2024-04-11 09:48:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 09:48:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 09:48:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 09:48:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 09:48:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 09:48:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 09:48:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 09:48:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 09:48:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 09:48:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 09:48:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 09:48:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 09:52:59 [DEBU] [:Collector] do testing
+2024-04-11 09:53:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 09:53:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 09:53:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 09:53:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 09:53:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 09:53:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 09:53:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 09:53:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 09:53:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 09:53:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 09:53:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 09:53:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 09:57:59 [DEBU] [:Collector] do testing
+2024-04-11 09:58:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 09:58:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 09:58:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 09:58:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 09:58:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 09:58:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 09:58:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 09:58:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 09:58:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 09:58:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 09:58:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 09:58:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 10:02:59 [DEBU] [:Collector] do testing
+2024-04-11 10:03:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 10:03:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 10:03:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 10:03:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 10:03:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 10:03:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 10:03:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 10:03:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 10:03:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 10:03:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 10:03:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 10:03:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 10:07:59 [DEBU] [:Collector] do testing
+2024-04-11 10:08:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 10:08:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 10:08:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 10:08:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 10:08:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 10:08:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 10:08:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 10:08:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 10:08:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 10:08:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 10:08:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 10:08:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 10:12:59 [DEBU] [:Collector] do testing
+2024-04-11 10:13:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 10:13:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 10:13:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 10:13:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 10:13:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 10:13:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 10:13:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 10:13:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 10:13:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 10:13:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 10:13:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 10:13:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 10:17:59 [DEBU] [:Collector] do testing
+2024-04-11 10:18:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 10:18:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 10:18:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 10:18:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 10:18:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 10:18:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 10:18:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 10:18:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 10:18:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 10:18:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 10:18:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 10:18:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 10:22:59 [DEBU] [:Collector] do testing
+2024-04-11 10:23:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 10:23:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 10:23:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 10:23:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 10:23:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 10:23:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 10:23:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 10:23:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 10:23:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 10:23:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 10:23:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 10:23:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 10:27:59 [DEBU] [:Collector] do testing
+2024-04-11 10:28:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 10:28:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 10:28:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 10:28:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 10:28:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 10:28:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 10:28:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 10:28:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 10:28:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 10:28:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 10:28:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 10:28:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 10:32:59 [DEBU] [:Collector] do testing
+2024-04-11 10:33:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 10:33:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 10:33:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 10:33:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 10:33:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 10:33:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 10:33:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 10:33:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 10:33:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 10:33:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 10:33:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 10:33:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 10:37:59 [DEBU] [:Collector] do testing
+2024-04-11 10:38:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 10:38:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 10:38:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 10:38:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 10:38:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 10:38:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 10:38:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 10:38:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 10:38:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 10:38:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 10:38:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 10:38:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 10:42:59 [DEBU] [:Collector] do testing
+2024-04-11 10:43:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 10:43:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 10:43:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 10:43:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 10:43:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 10:43:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 10:43:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 10:43:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 10:43:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 10:43:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 10:43:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 10:43:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 10:47:59 [DEBU] [:Collector] do testing
+2024-04-11 10:48:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 10:48:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 10:48:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 10:48:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 10:48:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 10:48:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 10:48:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 10:48:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 10:48:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 10:48:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 10:48:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 10:48:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 10:52:59 [DEBU] [:Collector] do testing
+2024-04-11 10:53:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 10:53:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 10:53:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 10:53:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 10:53:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 10:53:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 10:53:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 10:53:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 10:53:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 10:53:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 10:53:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 10:53:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 10:57:59 [DEBU] [:Collector] do testing
+2024-04-11 10:58:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 10:58:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 10:58:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 10:58:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 10:58:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 10:58:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 10:58:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 10:58:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 10:58:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 10:58:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 10:58:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 10:58:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 11:02:59 [DEBU] [:Collector] do testing
+2024-04-11 11:03:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 11:03:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 11:03:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 11:03:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 11:03:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 11:03:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 11:03:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 11:03:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 11:03:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 11:03:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 11:03:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 11:03:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 11:07:59 [DEBU] [:Collector] do testing
+2024-04-11 11:08:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 11:08:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 11:08:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 11:08:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 11:08:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 11:08:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 11:08:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 11:08:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 11:08:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 11:08:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 11:08:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 11:08:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 11:12:59 [DEBU] [:Collector] do testing
+2024-04-11 11:13:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 11:13:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 11:13:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 11:13:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 11:13:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 11:13:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 11:13:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 11:13:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 11:13:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 11:13:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 11:13:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 11:13:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 11:17:59 [DEBU] [:Collector] do testing
+2024-04-11 11:18:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 11:18:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 11:18:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 11:18:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 11:18:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 11:18:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 11:18:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 11:18:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 11:18:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 11:18:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 11:18:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 11:18:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 11:22:59 [DEBU] [:Collector] do testing
+2024-04-11 11:23:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 11:23:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 11:23:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 11:23:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 11:23:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 11:23:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 11:23:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 11:23:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 11:23:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 11:23:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 11:23:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 11:23:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 11:27:59 [DEBU] [:Collector] do testing
+2024-04-11 11:28:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 11:28:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 11:28:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 11:28:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 11:28:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 11:28:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 11:28:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 11:28:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 11:28:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 11:28:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 11:28:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 11:28:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 11:32:59 [DEBU] [:Collector] do testing
+2024-04-11 11:33:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 11:33:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 11:33:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 11:33:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 11:33:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 11:33:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 11:33:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 11:33:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 11:33:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 11:33:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 11:33:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 11:33:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 11:37:59 [DEBU] [:Collector] do testing
+2024-04-11 11:38:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 11:38:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 11:38:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 11:38:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 11:38:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 11:38:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 11:38:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 11:38:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 11:38:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 11:38:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 11:38:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 11:38:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 11:42:59 [DEBU] [:Collector] do testing
+2024-04-11 11:43:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 11:43:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 11:43:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 11:43:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 11:43:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 11:43:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 11:43:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 11:43:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 11:43:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 11:43:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 11:43:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 11:43:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 11:47:59 [DEBU] [:Collector] do testing
+2024-04-11 11:48:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 11:48:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 11:48:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 11:48:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 11:48:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 11:48:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 11:48:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 11:48:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 11:48:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 11:48:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 11:48:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 11:48:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 11:52:59 [DEBU] [:Collector] do testing
+2024-04-11 11:53:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 11:53:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 11:53:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 11:53:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 11:53:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 11:53:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 11:53:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 11:53:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 11:53:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 11:53:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 11:53:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 11:53:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 11:57:59 [DEBU] [:Collector] do testing
+2024-04-11 11:58:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 11:58:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 11:58:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 11:58:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 11:58:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 11:58:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 11:58:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 11:58:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 11:58:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 11:58:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 11:58:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 11:58:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 12:02:59 [DEBU] [:Collector] do testing
+2024-04-11 12:03:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 12:03:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 12:03:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 12:03:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 12:03:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 12:03:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 12:03:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 12:03:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 12:03:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 12:03:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 12:03:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 12:03:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 12:07:59 [DEBU] [:Collector] do testing
+2024-04-11 12:08:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 12:08:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 12:08:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 12:08:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 12:08:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 12:08:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 12:08:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 12:08:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 12:08:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 12:08:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 12:08:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 12:08:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 12:12:59 [DEBU] [:Collector] do testing
+2024-04-11 12:13:12 [WARN] parsing user id $RECYCLE.BIN: strconv.ParseInt: parsing "$RECYCLE.BIN": invalid syntax
+2024-04-11 12:13:12 [WARN] parsing user id AppGallery: strconv.ParseInt: parsing "AppGallery": invalid syntax
+2024-04-11 12:13:12 [WARN] parsing user id BrowerDownload: strconv.ParseInt: parsing "BrowerDownload": invalid syntax
+2024-04-11 12:13:12 [WARN] parsing user id Config.Msi: strconv.ParseInt: parsing "Config.Msi": invalid syntax
+2024-04-11 12:13:12 [WARN] parsing user id Huawei Share: strconv.ParseInt: parsing "Huawei Share": invalid syntax
+2024-04-11 12:13:12 [WARN] parsing user id Others: strconv.ParseInt: parsing "Others": invalid syntax
+2024-04-11 12:13:12 [WARN] parsing user id Soft: strconv.ParseInt: parsing "Soft": invalid syntax
+2024-04-11 12:13:12 [WARN] parsing user id SoftPackage: strconv.ParseInt: parsing "SoftPackage": invalid syntax
+2024-04-11 12:13:12 [WARN] parsing user id System Volume Information: strconv.ParseInt: parsing "System Volume Information": invalid syntax
+2024-04-11 12:13:12 [WARN] parsing user id Work: strconv.ParseInt: parsing "Work": invalid syntax
+2024-04-11 12:13:12 [WARN] parsing user id draw-graph: strconv.ParseInt: parsing "draw-graph": invalid syntax
+2024-04-11 12:13:12 [WARN] parsing user id tmp: strconv.ParseInt: parsing "tmp": invalid syntax
+2024-04-11 12:19:52 [DEBU] [:Collector] do testing
+2024-04-11 12:19:52 [WARN] agent server err: deserialize error: channel is closed
+2024-04-11 12:19:52 [ERRO] command server stopped with error: receive message error: channel is closed
+2024-04-11 12:19:52 [INFO] command server stopped

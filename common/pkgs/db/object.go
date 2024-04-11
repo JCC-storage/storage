@@ -84,38 +84,46 @@ func (*ObjectDB) GetPackageObjects(ctx SQLContext, packageID cdssdk.PackageID) (
 	return lo.Map(ret, func(o model.TempObject, idx int) model.Object { return o.ToObject() }), err
 }
 
+// GetPackageObjectDetails 获取指定包ID的对象详情列表。
+//
+// ctx: SQL执行上下文。
+// packageID: 指定的包ID。
+//
+// 返回值为Object详情列表和可能出现的错误。
 func (db *ObjectDB) GetPackageObjectDetails(ctx SQLContext, packageID cdssdk.PackageID) ([]stgmod.ObjectDetail, error) {
+	// 从Object表中查询所有属于指定包ID的对象，按ObjectID升序排序
 	var objs []model.TempObject
 	err := sqlx.Select(ctx, &objs, "select * from Object where PackageID = ? order by ObjectID asc", packageID)
 	if err != nil {
 		return nil, fmt.Errorf("getting objects: %w", err)
 	}
 
+	// 初始化返回的Object详情列表
 	rets := make([]stgmod.ObjectDetail, 0, len(objs))
 
+	// 从ObjectBlock表中查询所有属于指定包ID的对象块，按ObjectID和Index升序排序
 	var allBlocks []stgmod.ObjectBlock
 	err = sqlx.Select(ctx, &allBlocks, "select ObjectBlock.* from ObjectBlock, Object where PackageID = ? and ObjectBlock.ObjectID = Object.ObjectID order by ObjectBlock.ObjectID, `Index` asc", packageID)
 	if err != nil {
 		return nil, fmt.Errorf("getting all object blocks: %w", err)
 	}
 
+	// 从PinnedObject表中查询所有属于指定包ID的被固定的对象，按ObjectID排序
 	var allPinnedObjs []cdssdk.PinnedObject
 	err = sqlx.Select(ctx, &allPinnedObjs, "select PinnedObject.* from PinnedObject, Object where PackageID = ? and PinnedObject.ObjectID = Object.ObjectID order by PinnedObject.ObjectID", packageID)
 	if err != nil {
 		return nil, fmt.Errorf("getting all pinned objects: %w", err)
 	}
 
-	blksCur := 0
-	pinnedsCur := 0
+	// 遍历查询得到的对象，为每个对象构建详细的Object信息
+	blksCur := 0    // 当前遍历到的对象块索引
+	pinnedsCur := 0 // 当前遍历到的被固定对象索引
 	for _, temp := range objs {
 		detail := stgmod.ObjectDetail{
 			Object: temp.ToObject(),
 		}
 
-		// 1. 查询Object和ObjectBlock时均按照ObjectID升序排序
-		// 2. ObjectBlock结果集中的不同ObjectID数只会比Object结果集的少
-		// 因此在两个结果集上同时从头开始遍历时，如果两边的ObjectID字段不同，那么一定是ObjectBlock这边的ObjectID > Object的ObjectID，
-		// 此时让Object的遍历游标前进，直到两边的ObjectID再次相等
+		// 同时遍历对象和对象块的结果集，将属于同一对象的对象块附加到Object详情中
 		for ; blksCur < len(allBlocks); blksCur++ {
 			if allBlocks[blksCur].ObjectID != temp.ObjectID {
 				break
@@ -123,6 +131,7 @@ func (db *ObjectDB) GetPackageObjectDetails(ctx SQLContext, packageID cdssdk.Pac
 			detail.Blocks = append(detail.Blocks, allBlocks[blksCur])
 		}
 
+		// 遍历被固定对象的结果集，将被固定的信息附加到Object详情中
 		for ; pinnedsCur < len(allPinnedObjs); pinnedsCur++ {
 			if allPinnedObjs[pinnedsCur].ObjectID != temp.ObjectID {
 				break
@@ -130,6 +139,7 @@ func (db *ObjectDB) GetPackageObjectDetails(ctx SQLContext, packageID cdssdk.Pac
 			detail.PinnedAt = append(detail.PinnedAt, allPinnedObjs[pinnedsCur].NodeID)
 		}
 
+		// 将构建好的Object详情添加到返回列表中
 		rets = append(rets, detail)
 	}
 

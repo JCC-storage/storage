@@ -15,16 +15,22 @@ import (
 	scevt "gitlink.org.cn/cloudream/storage/common/pkgs/mq/scanner/event"
 )
 
+// AgentCacheGC 类封装了扫描器事件中的AgentCacheGC结构。
 type AgentCacheGC struct {
 	*scevt.AgentCacheGC
 }
 
+// NewAgentCacheGC 创建一个新的AgentCacheGC实例。
+// evt: 传入的扫描器事件中的AgentCacheGC实例。
 func NewAgentCacheGC(evt *scevt.AgentCacheGC) *AgentCacheGC {
 	return &AgentCacheGC{
 		AgentCacheGC: evt,
 	}
 }
 
+// TryMerge 尝试合并当前事件与另一个事件。
+// other: 待合并的另一个事件。
+// 返回值表示是否成功合并。
 func (t *AgentCacheGC) TryMerge(other Event) bool {
 	event, ok := other.(*AgentCacheGC)
 	if !ok {
@@ -38,6 +44,8 @@ func (t *AgentCacheGC) TryMerge(other Event) bool {
 	return true
 }
 
+// Execute 执行垃圾回收操作。
+// execCtx: 执行上下文，包含执行所需的各种参数和环境。
 func (t *AgentCacheGC) Execute(execCtx ExecuteContext) {
 	log := logger.WithType[AgentCacheGC]("Event")
 	startTime := time.Now()
@@ -46,10 +54,9 @@ func (t *AgentCacheGC) Execute(execCtx ExecuteContext) {
 		log.Debugf("end, time: %v", time.Since(startTime))
 	}()
 
-	// TODO unavailable的节点需不需要发送任务？
-
+	// 使用分布式锁进行资源锁定
 	mutex, err := reqbuilder.NewBuilder().
-		// 进行GC
+		// 执行IPFS垃圾回收
 		IPFS().GC(t.NodeID).
 		MutexLock(execCtx.Args.DistLock)
 	if err != nil {
@@ -58,6 +65,7 @@ func (t *AgentCacheGC) Execute(execCtx ExecuteContext) {
 	}
 	defer mutex.Unlock()
 
+	// 收集需要进行垃圾回收的文件哈希值
 	var allFileHashes []string
 	err = execCtx.Args.DB.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
 		blocks, err := execCtx.Args.DB.ObjectBlock().GetByNodeID(tx, t.NodeID)
@@ -83,6 +91,7 @@ func (t *AgentCacheGC) Execute(execCtx ExecuteContext) {
 		return
 	}
 
+	// 获取与节点通信的代理客户端
 	agtCli, err := stgglb.AgentMQPool.Acquire(t.NodeID)
 	if err != nil {
 		log.WithField("NodeID", t.NodeID).Warnf("create agent client failed, err: %s", err.Error())
@@ -90,6 +99,7 @@ func (t *AgentCacheGC) Execute(execCtx ExecuteContext) {
 	}
 	defer stgglb.AgentMQPool.Release(agtCli)
 
+	// 向代理发送垃圾回收请求
 	_, err = agtCli.CacheGC(agtmq.ReqCacheGC(allFileHashes), mq.RequestOption{Timeout: time.Minute})
 	if err != nil {
 		log.WithField("NodeID", t.NodeID).Warnf("ipfs gc: %s", err.Error())
@@ -97,6 +107,7 @@ func (t *AgentCacheGC) Execute(execCtx ExecuteContext) {
 	}
 }
 
+// 注册消息转换器，使系统能够处理AgentCacheGC消息。
 func init() {
 	RegisterMessageConvertor(NewAgentCacheGC)
 }

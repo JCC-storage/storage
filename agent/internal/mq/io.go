@@ -11,6 +11,9 @@ import (
 	agtmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/agent"
 )
 
+// SetupIOPlan 设置I/O计划。
+// msg: 包含I/O计划信息的消息体。
+// 返回值: 成功时返回响应消息和成功标志，失败时返回错误代码和消息。
 func (svc *Service) SetupIOPlan(msg *agtmq.SetupIOPlan) (*agtmq.SetupIOPlanResp, *mq.CodeMessage) {
 	err := svc.sw.SetupPlan(msg.Plan)
 	if err != nil {
@@ -21,11 +24,17 @@ func (svc *Service) SetupIOPlan(msg *agtmq.SetupIOPlan) (*agtmq.SetupIOPlanResp,
 	return mq.ReplyOK(agtmq.NewSetupIOPlanResp())
 }
 
+// StartIOPlan 启动I/O计划。
+// msg: 包含I/O计划ID的消息体。
+// 返回值: 成功时返回任务ID和成功标志，失败时返回错误代码和消息。
 func (svc *Service) StartIOPlan(msg *agtmq.StartIOPlan) (*agtmq.StartIOPlanResp, *mq.CodeMessage) {
 	tsk := svc.taskManager.StartNew(mytask.NewExecuteIOPlan(msg.PlanID))
 	return mq.ReplyOK(agtmq.NewStartIOPlanResp(tsk.ID()))
 }
 
+// WaitIOPlan 等待I/O计划完成。
+// msg: 包含任务ID和等待超时时间的消息体。
+// 返回值: 成功时返回任务完成状态、错误消息和结果，失败时返回错误代码和消息。
 func (svc *Service) WaitIOPlan(msg *agtmq.WaitIOPlan) (*agtmq.WaitIOPlanResp, *mq.CodeMessage) {
 	tsk := svc.taskManager.FindByID(msg.TaskID)
 	if tsk == nil {
@@ -59,6 +68,9 @@ func (svc *Service) WaitIOPlan(msg *agtmq.WaitIOPlan) (*agtmq.WaitIOPlanResp, *m
 	}
 }
 
+// CancelIOPlan 取消I/O计划。
+// msg: 包含要取消的I/O计划ID的消息体。
+// 返回值: 成功时返回响应消息和成功标志，失败时返回错误代码和消息。
 func (svc *Service) CancelIOPlan(msg *agtmq.CancelIOPlan) (*agtmq.CancelIOPlanResp, *mq.CodeMessage) {
 	svc.sw.CancelPlan(msg.PlanID)
 	return mq.ReplyOK(agtmq.NewCancelIOPlanResp())

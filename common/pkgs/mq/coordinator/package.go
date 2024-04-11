@@ -47,6 +47,7 @@ func NewGetPackageResp(pkg model.Package) *GetPackageResp {
 		Package: pkg,
 	}
 }
+
 func (client *Client) GetPackage(msg *GetPackage) (*GetPackageResp, error) {
 	return mq.Request(Service.GetPackage, client.rabbitCli, msg)
 }
@@ -77,6 +78,7 @@ func NewCreatePackageResp(packageID cdssdk.PackageID) *CreatePackageResp {
 		PackageID: packageID,
 	}
 }
+
 func (client *Client) CreatePackage(msg *CreatePackage) (*CreatePackageResp, error) {
 	return mq.Request(Service.CreatePackage, client.rabbitCli, msg)
 }

@@ -14,24 +14,30 @@ import (
 	stgiter "gitlink.org.cn/cloudream/storage/common/pkgs/iterator"
 )
 
+// PackageService 包服务，负责处理包相关的HTTP请求。
 type PackageService struct {
 	*Server
 }
 
+// Package 返回PackageService的实例。
 func (s *Server) Package() *PackageService {
 	return &PackageService{
 		Server: s,
 	}
 }
 
+// PackageGetReq 包含获取包信息请求所需的参数。
 type PackageGetReq struct {
 	UserID    *cdssdk.UserID    `form:"userID" binding:"required"`
 	PackageID *cdssdk.PackageID `form:"packageID" binding:"required"`
 }
+
+// PackageGetResp 包含获取包信息响应的结果。
 type PackageGetResp struct {
 	model.Package
 }
 
+// Get 处理获取包信息的HTTP请求。
 func (s *PackageService) Get(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Package.Get")
 
@@ -52,6 +58,7 @@ func (s *PackageService) Get(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, OK(PackageGetResp{Package: *pkg}))
 }
 
+// Create 处理创建新包的HTTP请求。
 func (s *PackageService) Create(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Package.Create")
 	var req cdssdk.PackageCreateReq
@@ -73,11 +80,13 @@ func (s *PackageService) Create(ctx *gin.Context) {
 	}))
 }
 
+// PackageDeleteReq 包含删除包请求所需的参数。
 type PackageDeleteReq struct {
 	UserID    *cdssdk.UserID    `json:"userID" binding:"required"`
 	PackageID *cdssdk.PackageID `json:"packageID" binding:"required"`
 }
 
+// Delete 处理删除包的HTTP请求。
 func (s *PackageService) Delete(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Package.Delete")
 
@@ -98,14 +107,18 @@ func (s *PackageService) Delete(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, OK(nil))
 }
 
+// GetCachedNodesReq 包含获取缓存节点请求所需的参数。
 type GetCachedNodesReq struct {
 	UserID    *cdssdk.UserID    `json:"userID" binding:"required"`
 	PackageID *cdssdk.PackageID `json:"packageID" binding:"required"`
 }
+
+// GetCachedNodesResp 包含获取缓存节点响应的结果。
 type GetCachedNodesResp struct {
 	cdssdk.PackageCachingInfo
 }
 
+// GetCachedNodes 处理获取包的缓存节点的HTTP请求。
 func (s *PackageService) GetCachedNodes(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Package.GetCachedNodes")
 
@@ -126,15 +139,18 @@ func (s *PackageService) GetCachedNodes(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, OK(GetCachedNodesResp{resp}))
 }
 
+// GetLoadedNodesReq 包含获取加载节点请求所需的参数。
 type GetLoadedNodesReq struct {
 	UserID    *cdssdk.UserID    `json:"userID" binding:"required"`
 	PackageID *cdssdk.PackageID `json:"packageID" binding:"required"`
 }
 
+// GetLoadedNodesResp 包含获取加载节点响应的结果。
 type GetLoadedNodesResp struct {
 	NodeIDs []cdssdk.NodeID `json:"nodeIDs"`
 }
 
+// GetLoadedNodes 处理获取包的加载节点的HTTP请求。
 func (s *PackageService) GetLoadedNodes(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Package.GetLoadedNodes")
 
@@ -157,6 +173,7 @@ func (s *PackageService) GetLoadedNodes(ctx *gin.Context) {
 	}))
 }
 
+// mapMultiPartFileToUploadingObject 将multipart文件转换为上传对象的迭代器。
 func mapMultiPartFileToUploadingObject(files []*multipart.FileHeader) stgiter.UploadingObjectIterator {
 	return iterator.Map[*multipart.FileHeader](
 		iterator.Array(files...),

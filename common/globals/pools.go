@@ -15,6 +15,10 @@ var CoordinatorMQPool coormq.Pool
 
 var ScannerMQPool scmq.Pool
 
+// InitMQPool
+//
+//	@Description: 初始化MQ连接池
+//	@param cfg
 func InitMQPool(cfg *stgmq.Config) {
 	AgentMQPool = agtmq.NewPool(cfg)
 
@@ -25,6 +29,10 @@ func InitMQPool(cfg *stgmq.Config) {
 
 var AgentRPCPool *agtrpc.Pool
 
+// InitAgentRPCPool
+//
+//	@Description: 初始化AgentRPC连接池
+//	@param cfg
 func InitAgentRPCPool(cfg *agtrpc.PoolConfig) {
 	AgentRPCPool = agtrpc.NewPool(cfg)
 }
