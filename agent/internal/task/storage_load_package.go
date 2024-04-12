@@ -13,7 +13,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/ipfs"
 	"gitlink.org.cn/cloudream/common/pkgs/task"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	myio "gitlink.org.cn/cloudream/common/utils/io"
+	"gitlink.org.cn/cloudream/common/utils/io2"
 	myref "gitlink.org.cn/cloudream/common/utils/reflect"
 	"gitlink.org.cn/cloudream/common/utils/sort2"
 	"gitlink.org.cn/cloudream/storage/common/consts"
@@ -93,8 +93,7 @@ func (t *StorageLoadPackage) do(task *task.Task[TaskContext], ctx TaskContext) e
 	}
 	t.FullOutputPath = outputDirPath
 
-	// 获取包对象详情
-	getObjectDetails, err := coorCli.GetPackageObjectDetails(coormq.NewGetPackageObjectDetails(t.packageID))
+	getObjectDetails, err := coorCli.GetPackageObjectDetails(coormq.ReqGetPackageObjectDetails(t.packageID))
 	if err != nil {
 		return fmt.Errorf("getting package object details: %w", err)
 	}
@@ -255,8 +254,7 @@ func (t *StorageLoadPackage) downloadECObject(coorCli *coormq.Client, ipfsCli *i
 	if bsc < osc {
 		var fileStrs []io.ReadCloser
 
-		// 初始化RS编码器
-		rs, err := ec.NewRs(ecRed.K, ecRed.N, ecRed.ChunkSize)
+		rs, err := ec.NewStreamRs(ecRed.K, ecRed.N, ecRed.ChunkSize)
 		if err != nil {
 			return nil, nil, fmt.Errorf("new rs: %w", err)
 		}
@@ -276,8 +274,7 @@ func (t *StorageLoadPackage) downloadECObject(coorCli *coormq.Client, ipfsCli *i
 			fileStrs = append(fileStrs, str)
 		}
 
-		// 将多个文件流转换为统一的ReadCloser接口
-		fileReaders, filesCloser := myio.ToReaders(fileStrs)
+		fileReaders, filesCloser := io2.ToReaders(fileStrs)
 
 		// 准备恢复数据所需的信息和变量
 		var indexes []int
@@ -292,9 +289,8 @@ func (t *StorageLoadPackage) downloadECObject(coorCli *coormq.Client, ipfsCli *i
 			})
 		}
 
-		// 执行数据恢复，并将恢复后的数据转换为ReadCloser
-		outputs, outputsCloser := myio.ToReaders(rs.ReconstructData(fileReaders, indexes))
-		return myio.AfterReadClosed(myio.Length(myio.ChunkedJoin(outputs, int(ecRed.ChunkSize)), obj.Object.Size), func(c io.ReadCloser) {
+		outputs, outputsCloser := io2.ToReaders(rs.ReconstructData(fileReaders, indexes))
+		return io2.AfterReadClosed(io2.Length(io2.ChunkedJoin(outputs, int(ecRed.ChunkSize)), obj.Object.Size), func(c io.ReadCloser) {
 			filesCloser()
 			outputsCloser()
 		}), pinnedBlocks, nil

@@ -4948,3 +4948,76 @@
 2024-04-12 08:51:18 [DEBU] [Event:CheckPackage] end
 2024-04-12 08:53:04 [DEBU] [TickEvent:BatchCleanPinned] begin
 2024-04-12 08:53:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-12 08:54:40 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-12 08:54:40 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-12 08:54:51 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-12 08:54:51 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-12 08:54:51 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-12 08:54:51 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-12 08:54:51 [DEBU] [Event:AgentCheckStorage] end
+2024-04-12 08:54:56 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-12 08:54:56 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-12 08:54:56 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-12 08:54:56 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-12 08:54:56 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-12 08:54:56 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-12 08:55:26 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-12 08:55:26 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-12 08:55:26 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-12 08:55:26 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-12 08:55:26 [DEBU] [Event:AgentCheckState] end
+2024-04-12 08:55:35 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-12 08:55:35 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-12 08:55:35 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-12 08:55:35 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-12 08:55:35 [DEBU] [Event:CheckPackage] end
+2024-04-12 08:58:06 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-12 08:58:06 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-12 08:59:40 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-12 08:59:40 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-12 08:59:51 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-12 08:59:51 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-12 08:59:51 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-12 08:59:51 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-12 08:59:51 [DEBU] [Event:AgentCheckStorage] end
+2024-04-12 08:59:56 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-12 08:59:56 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-12 08:59:56 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-12 08:59:56 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-12 08:59:56 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-12 08:59:56 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-12 09:00:26 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-12 09:00:26 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-12 09:00:26 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-12 09:00:26 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-12 09:00:26 [DEBU] [Event:AgentCheckState] end
+2024-04-12 09:00:35 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-12 09:00:35 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-12 09:00:35 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-12 09:00:35 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-12 09:00:35 [DEBU] [Event:CheckPackage] end
+2024-04-12 09:03:06 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-12 09:03:06 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-12 09:04:40 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-12 09:04:40 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-12 09:04:51 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-12 09:04:51 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-12 09:04:51 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-12 09:04:51 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-12 09:04:51 [DEBU] [Event:AgentCheckStorage] end
+2024-04-12 09:04:56 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-12 09:04:56 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-12 09:04:56 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-12 09:04:56 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-12 09:04:56 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-12 09:04:56 [DEBU] [Event:AgentCheckCache] end, time: 293.5µs
+2024-04-12 09:05:26 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-12 09:05:26 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-12 09:05:26 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-12 09:05:26 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-12 09:05:26 [DEBU] [Event:AgentCheckState] end
+2024-04-12 09:05:35 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-12 09:05:35 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-12 09:05:35 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-12 09:05:35 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-12 09:05:35 [DEBU] [Event:CheckPackage] end

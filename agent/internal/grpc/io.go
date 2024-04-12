@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
-	myio "gitlink.org.cn/cloudream/common/utils/io"
+	"gitlink.org.cn/cloudream/common/utils/io2"
 	agentserver "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch"
 )
@@ -48,8 +48,7 @@ func (s *Service) SendStream(server agentserver.Agent_SendStreamServer) error {
 			return fmt.Errorf("recv message failed, err: %w", err)
 		}
 
-		// 将接收到的数据写入管道
-		err = myio.WriteAll(pw, msg.Data)
+		err = io2.WriteAll(pw, msg.Data)
 		if err != nil {
 			pw.CloseWithError(io.ErrClosedPipe)
 			logger.Warnf("write data to file failed, err: %s", err.Error())

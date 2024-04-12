@@ -7,8 +7,8 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	mytask "gitlink.org.cn/cloudream/storage/client/internal/task"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
-	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/iterator"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
@@ -77,39 +77,15 @@ func (svc *ObjectService) Move(userID cdssdk.UserID, movings []cdssdk.MovingObje
 	return resp.Successes, nil
 }
 
-// Download 用于下载指定的对象。
-// userID: 表示用户的唯一标识。
-// objectID: 表示要下载的对象的唯一标识。
-// 返回值: 返回一个正在下载的对象的迭代器和可能遇到的错误。
-func (svc *ObjectService) Download(userID cdssdk.UserID, objectID cdssdk.ObjectID) (*iterator.IterDownloadingObject, error) {
-	// 从协调器MQ池中获取客户端
-	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
-	if err != nil {
-		return nil, fmt.Errorf("new coordinator client: %w", err)
-	}
-	// 确保在函数结束时释放客户端
-	defer stgglb.CoordinatorMQPool.Release(coorCli)
-
-	// 向协调器请求对象详情
-	resp, err := coorCli.GetObjectDetails(coormq.ReqGetObjectDetails([]cdssdk.ObjectID{objectID}))
-	if err != nil {
-		return nil, fmt.Errorf("requesting to coordinator")
-	}
-
-	// 检查对象是否存在
-	if resp.Objects[0] == nil {
-		return nil, fmt.Errorf("object not found")
-	}
-
-	// 创建下载对象的迭代器
-	iter := iterator.NewDownloadObjectIterator([]stgmod.ObjectDetail{*resp.Objects[0]}, &iterator.DownloadContext{
-		Distlock: svc.DistLock,
-	})
-	// 确保在函数结束时关闭迭代器
-	defer iter.Close()
+func (svc *ObjectService) Download(userID cdssdk.UserID, req downloader.DownloadReqeust) (*downloader.Downloading, error) {
+	// TODO 检查用户ID
+	iter := svc.Downloader.DownloadObjects([]downloader.DownloadReqeust{req})
 
 	// 初始化下载过程
 	downloading, err := iter.MoveNext()
+	if downloading.Object == nil {
+		return nil, fmt.Errorf("object not found")
+	}
 	if err != nil {
 		return nil, err
 	}

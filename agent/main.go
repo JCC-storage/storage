@@ -13,6 +13,7 @@ import (
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 	agtrpc "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch"
 
@@ -104,11 +105,13 @@ func main() {
 	// 初始化数据切换开关
 	sw := ioswitch.NewSwitch()
 
-	// 启动任务管理器和相关服务
+	dlder := downloader.NewDownloader(config.Cfg().Downloader)
+
+	//处置协调端、客户端命令（可多建几个）
 	wg := sync.WaitGroup{}
 	wg.Add(4)
 
-	taskMgr := task.NewManager(distlock, &sw, &conCol)
+	taskMgr := task.NewManager(distlock, &sw, &conCol, &dlder)
 
 	// 启动命令服务器
 	agtSvr, err := agtmq.NewServer(cmdsvc.NewService(&taskMgr, &sw), config.Cfg().ID, &config.Cfg().RabbitMQ)

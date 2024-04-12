@@ -14,6 +14,7 @@ import (
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 )
 
 /*
@@ -76,8 +77,14 @@ func main() {
 	// 创建任务管理器
 	taskMgr := task.NewManager(distlockSvc, &conCol)
 
+<<<<<<< HEAD
 	// 创建服务实例
 	svc, err := services.NewService(distlockSvc, &taskMgr)
+=======
+	dlder := downloader.NewDownloader(config.Cfg().Downloader)
+
+	svc, err := services.NewService(distlockSvc, &taskMgr, &dlder)
+>>>>>>> 770feaf2da11a3de00fa3ec57b16dc54ff31b288
 	if err != nil {
 		logger.Warnf("new services failed, err: %s", err.Error())
 		os.Exit(1)

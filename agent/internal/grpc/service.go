@@ -5,7 +5,7 @@ import (
 	"io"
 
 	log "gitlink.org.cn/cloudream/common/pkgs/logger"
-	myio "gitlink.org.cn/cloudream/common/utils/io"
+	"gitlink.org.cn/cloudream/common/utils/io2"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	agentserver "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch"
@@ -52,7 +52,7 @@ func (s *Service) SendIPFSFile(server agentserver.Agent_SendIPFSFileServer) erro
 			return fmt.Errorf("recv message failed, err: %w", err)
 		}
 
-		err = myio.WriteAll(writer, msg.Data) // 将数据写入IPFS文件流
+		err = io2.WriteAll(writer, msg.Data)
 		if err != nil {
 			writer.Abort(io.ErrClosedPipe) // 写入出错时关闭文件写入
 			log.Warnf("write data to file failed, err: %s", err.Error())

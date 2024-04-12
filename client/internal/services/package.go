@@ -6,7 +6,7 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/iterator"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
@@ -82,27 +82,9 @@ func (svc *PackageService) Create(userID cdssdk.UserID, bucketID cdssdk.BucketID
 	return resp.Package, nil
 }
 
-// DownloadPackage 下载指定包的内容
-func (svc *PackageService) DownloadPackage(userID cdssdk.UserID, packageID cdssdk.PackageID) (iterator.DownloadingObjectIterator, error) {
-	// 从协调器MQ池中获取客户端
-	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
-	if err != nil {
-		return nil, fmt.Errorf("new coordinator client: %w", err)
-	}
-	defer stgglb.CoordinatorMQPool.Release(coorCli)
-
-	// 向协调器请求获取包内对象的详情
-	getObjsResp, err := coorCli.GetPackageObjectDetails(coormq.NewGetPackageObjectDetails(packageID))
-	if err != nil {
-		return nil, fmt.Errorf("getting package object details: %w", err)
-	}
-
-	// 创建下载对象的迭代器
-	iter := iterator.NewDownloadObjectIterator(getObjsResp.Objects, &iterator.DownloadContext{
-		Distlock: svc.DistLock,
-	})
-
-	return iter, nil
+func (svc *PackageService) DownloadPackage(userID cdssdk.UserID, packageID cdssdk.PackageID) (downloader.DownloadIterator, error) {
+	// TODO 检查用户ID
+	return svc.Downloader.DownloadPackage(packageID), nil
 }
 
 // DeletePackage 删除指定的包
