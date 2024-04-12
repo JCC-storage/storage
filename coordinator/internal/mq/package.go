@@ -35,15 +35,22 @@ func (svc *Service) GetPackage(msg *coormq.GetPackage) (*coormq.GetPackageResp, 
 	return mq.ReplyOK(coormq.NewGetPackageResp(pkg))
 }
 
-// CreatePackage 创建一个新的包
-// 参数:
-// - msg: 包含创建包所需信息的请求消息
-// 返回值:
-// - *coormq.CreatePackageResp: 创建包成功的响应
-// - *mq.CodeMessage: 错误时返回的错误信息
+func (svc *Service) GetPackageByName(msg *coormq.GetPackageByName) (*coormq.GetPackageByNameResp, *mq.CodeMessage) {
+	pkg, err := svc.db.Package().GetUserPackageByName(svc.db.SQLCtx(), msg.UserID, msg.BucketName, msg.PackageName)
+	if err != nil {
+		logger.WithField("UserID", msg.UserID).
+			WithField("BucketName", msg.BucketName).
+			WithField("PackageName", msg.PackageName).
+			Warnf("get package by name: %s", err.Error())
+
+		return nil, mq.Failed(errorcode.OperationFailed, "get package by name failed")
+	}
+
+	return mq.ReplyOK(coormq.NewGetPackageByNameResp(pkg))
+}
+
 func (svc *Service) CreatePackage(msg *coormq.CreatePackage) (*coormq.CreatePackageResp, *mq.CodeMessage) {
-	var pkgID cdssdk.PackageID
-	// 在事务中执行创建包的操作
+	var pkg cdssdk.Package
 	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
 		var err error
 
@@ -53,10 +60,14 @@ func (svc *Service) CreatePackage(msg *coormq.CreatePackage) (*coormq.CreatePack
 			return fmt.Errorf("bucket is not avaiable to the user")
 		}
 
-		// 创建包
-		pkgID, err = svc.db.Package().Create(tx, msg.BucketID, msg.Name)
+		pkgID, err := svc.db.Package().Create(tx, msg.BucketID, msg.Name)
 		if err != nil {
 			return fmt.Errorf("creating package: %w", err)
+		}
+
+		pkg, err = svc.db.Package().GetByID(tx, pkgID)
+		if err != nil {
+			return fmt.Errorf("getting package by id: %w", err)
 		}
 
 		return nil
@@ -69,8 +80,7 @@ func (svc *Service) CreatePackage(msg *coormq.CreatePackage) (*coormq.CreatePack
 		return nil, mq.Failed(errorcode.OperationFailed, "creating package failed")
 	}
 
-	// 返回成功响应
-	return mq.ReplyOK(coormq.NewCreatePackageResp(pkgID))
+	return mq.ReplyOK(coormq.NewCreatePackageResp(pkg))
 }
 
 // UpdatePackage 更新包的信息
@@ -80,7 +90,8 @@ func (svc *Service) CreatePackage(msg *coormq.CreatePackage) (*coormq.CreatePack
 // - *coormq.UpdatePackageResp: 更新包成功的响应
 // - *mq.CodeMessage: 错误时返回的错误信息
 func (svc *Service) UpdatePackage(msg *coormq.UpdatePackage) (*coormq.UpdatePackageResp, *mq.CodeMessage) {
-	// 在事务中执行更新包的操作
+
+	var added []cdssdk.Object
 	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
 		// 验证包是否存在
 		_, err := svc.db.Package().GetByID(tx, msg.PackageID)
@@ -97,9 +108,11 @@ func (svc *Service) UpdatePackage(msg *coormq.UpdatePackage) (*coormq.UpdatePack
 
 		// 添加对象
 		if len(msg.Adds) > 0 {
-			if _, err := svc.db.Object().BatchAdd(tx, msg.PackageID, msg.Adds); err != nil {
+			ad, err := svc.db.Object().BatchAdd(tx, msg.PackageID, msg.Adds)
+			if err != nil {
 				return fmt.Errorf("adding objects: %w", err)
 			}
+			added = ad
 		}
 
 		return nil
@@ -110,8 +123,7 @@ func (svc *Service) UpdatePackage(msg *coormq.UpdatePackage) (*coormq.UpdatePack
 		return nil, mq.Failed(errorcode.OperationFailed, "update package failed")
 	}
 
-	// 返回成功响应
-	return mq.ReplyOK(coormq.NewUpdatePackageResp())
+	return mq.ReplyOK(coormq.NewUpdatePackageResp(added))
 }
 
 // DeletePackage 删除一个包

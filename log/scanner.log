@@ -2657,3 +2657,2294 @@
 2024-04-11 12:19:52 [DEBU] [TickEvent:CheckAgentState] end
 2024-04-11 12:19:52 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
 2024-04-11 12:19:52 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 12:20:52 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 12:20:52 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0021513s
+2024-04-11 12:20:52 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 12:21:22 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 12:21:22 [DEBU] [Event:AgentCheckState] end
+2024-04-11 12:21:22 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 12:21:22 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 12:22:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 12:22:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 12:22:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 12:23:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 12:23:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 12:23:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 12:23:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 12:23:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 12:23:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 12:23:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 12:23:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 12:23:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 12:23:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 12:23:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 12:23:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 12:23:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 12:23:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 12:23:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 12:23:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 12:24:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 12:24:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.008521s
+2024-04-11 12:24:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 12:24:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 12:24:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 12:24:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 12:27:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 12:27:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 12:27:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 12:28:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 12:28:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 12:28:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 12:28:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 12:28:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 12:28:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 12:28:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 12:28:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 12:28:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 12:28:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 12:28:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 12:28:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 12:28:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 12:28:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 12:28:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 12:28:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 12:29:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 12:29:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0000922s
+2024-04-11 12:29:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 12:29:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 12:29:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 12:29:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 12:32:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 12:32:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 12:32:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 12:33:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 12:33:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 12:33:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 12:33:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 12:33:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 12:33:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 12:33:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 12:33:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 12:33:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 12:33:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 12:33:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 12:33:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 12:33:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 12:33:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 12:33:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 12:33:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 12:34:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 12:34:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0090444s
+2024-04-11 12:34:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 12:34:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 12:34:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 12:34:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 12:37:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 12:37:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 12:37:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 12:38:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 12:38:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 12:38:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 12:38:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 12:38:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 12:38:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 12:38:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 12:38:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 12:38:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 12:38:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 12:38:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 12:38:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 12:38:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 12:38:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 12:38:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 12:38:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 12:39:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 12:39:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0107338s
+2024-04-11 12:39:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 12:39:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 12:39:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 12:39:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 12:42:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 12:42:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 12:42:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 12:43:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 12:43:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 12:43:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 12:43:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 12:43:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 12:43:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 12:43:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 12:43:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 12:43:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 12:43:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 12:43:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 12:43:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 12:43:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 12:43:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 12:43:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 12:43:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 12:44:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 12:44:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0030314s
+2024-04-11 12:44:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 12:44:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 12:44:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 12:44:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 12:47:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 12:47:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 12:47:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 12:48:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 12:48:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 12:48:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 12:48:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 12:48:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 12:48:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 12:48:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 12:48:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 12:48:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 12:48:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 12:48:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 12:48:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 12:48:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 12:48:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 12:48:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 12:48:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 12:49:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 12:49:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0077204s
+2024-04-11 12:49:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 12:49:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 12:49:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 12:49:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 12:52:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 12:52:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 12:52:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 12:53:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 12:53:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 12:53:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 12:53:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 12:53:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 12:53:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 12:53:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 12:53:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 12:53:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 12:53:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 12:53:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 12:53:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 12:53:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 12:53:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 12:53:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 12:53:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 12:54:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 12:54:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0035985s
+2024-04-11 12:54:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 12:54:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 12:54:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 12:54:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 12:57:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 12:57:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 12:57:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 12:58:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 12:58:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 12:58:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 12:58:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 12:58:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 12:58:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 12:58:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 12:58:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 12:58:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 12:58:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 12:58:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 12:58:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 12:58:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 12:58:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 12:58:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 12:58:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 12:59:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 12:59:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0017675s
+2024-04-11 12:59:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 12:59:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 12:59:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 12:59:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 13:02:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 13:02:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 13:02:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 13:03:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 13:03:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 13:03:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 13:03:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 13:03:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 13:03:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 13:03:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 13:03:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 13:03:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 13:03:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 13:03:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 13:03:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 13:03:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 13:03:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 13:03:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 13:03:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 13:04:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 13:04:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0055112s
+2024-04-11 13:04:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 13:04:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 13:04:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 13:04:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 13:07:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 13:07:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 13:07:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 13:08:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 13:08:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 13:08:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 13:08:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 13:08:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 13:08:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 13:08:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 13:08:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 13:08:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 13:08:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 13:08:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 13:08:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 13:08:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 13:08:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 13:08:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 13:08:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 13:09:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 13:09:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0025319s
+2024-04-11 13:09:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 13:09:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 13:09:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 13:09:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 13:12:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 13:12:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 13:12:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 13:13:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 13:13:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 13:13:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 13:13:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 13:13:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 13:13:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 13:13:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 13:13:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 13:13:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 13:13:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 13:13:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 13:13:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 13:13:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 13:13:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 13:13:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 13:13:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 13:14:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 13:14:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0061503s
+2024-04-11 13:14:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 13:14:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 13:14:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 13:14:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 13:17:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 13:17:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 13:17:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 13:18:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 13:18:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 13:18:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 13:18:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 13:18:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 13:18:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 13:18:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 13:18:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 13:18:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 13:18:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 13:18:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 13:18:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 13:18:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 13:18:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 13:18:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 13:18:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 13:19:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 13:19:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0113396s
+2024-04-11 13:19:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 13:19:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 13:19:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 13:19:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 13:22:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 13:22:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 13:22:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 13:23:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 13:23:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 13:23:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 13:23:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 13:23:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 13:23:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 13:23:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 13:23:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 13:23:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 13:23:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 13:23:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 13:23:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 13:23:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 13:23:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 13:23:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 13:23:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 13:24:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 13:24:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0123068s
+2024-04-11 13:24:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 13:24:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 13:24:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 13:24:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 13:27:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 13:27:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 13:27:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 13:28:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 13:28:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 13:28:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 13:28:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 13:28:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 13:28:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 13:28:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 13:28:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 13:28:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 13:28:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 13:28:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 13:28:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 13:28:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 13:28:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 13:28:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 13:28:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 13:29:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 13:29:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0017388s
+2024-04-11 13:29:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 13:29:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 13:29:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 13:29:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 13:32:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 13:32:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 13:32:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 13:33:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 13:33:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 13:33:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 13:33:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 13:33:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 13:33:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 13:33:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 13:33:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 13:33:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 13:33:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 13:33:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 13:33:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 13:33:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 13:33:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 13:33:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 13:33:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 13:34:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 13:34:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0145655s
+2024-04-11 13:34:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 13:34:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 13:34:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 13:34:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 13:37:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 13:37:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 13:37:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 13:38:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 13:38:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 13:38:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 13:38:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 13:38:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 13:38:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 13:38:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 13:38:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 13:38:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 13:38:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 13:38:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 13:38:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 13:38:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 13:38:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 13:38:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 13:38:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 13:39:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 13:39:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0017399s
+2024-04-11 13:39:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 13:39:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 13:39:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 13:39:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 13:42:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 13:42:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 13:42:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 13:43:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 13:43:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 13:43:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 13:43:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 13:43:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 13:43:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 13:43:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 13:43:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 13:43:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 13:43:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 13:43:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 13:43:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 13:43:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 13:43:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 13:43:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 13:43:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 13:44:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 13:44:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0029821s
+2024-04-11 13:44:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 13:44:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 13:44:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 13:44:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 13:47:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 13:47:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 13:47:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 13:48:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 13:48:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 13:48:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 13:48:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 13:48:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 13:48:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 13:48:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 13:48:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 13:48:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 13:48:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 13:48:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 13:48:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 13:48:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 13:48:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 13:48:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 13:48:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 13:49:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 13:49:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0020247s
+2024-04-11 13:49:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 13:49:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 13:49:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 13:49:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 13:52:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 13:52:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 13:52:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 13:53:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 13:53:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 13:53:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 13:53:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 13:53:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 13:53:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 13:53:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 13:53:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 13:53:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 13:53:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 13:53:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 13:53:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 13:53:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 13:53:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 13:53:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 13:53:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 13:54:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 13:54:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0043593s
+2024-04-11 13:54:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 13:54:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 13:54:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 13:54:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 13:57:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 13:57:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 13:57:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 13:58:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 13:58:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 13:58:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 13:58:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 13:58:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 13:58:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 13:58:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 13:58:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 13:58:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 13:58:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 13:58:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 13:58:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 13:58:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 13:58:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 13:58:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 13:58:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 13:59:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 13:59:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0012044s
+2024-04-11 13:59:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 13:59:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 13:59:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 13:59:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 14:02:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 14:02:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 14:02:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 14:03:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 14:03:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 14:03:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 14:03:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 14:03:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 14:03:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 14:03:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 14:03:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 14:03:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 14:03:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 14:03:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 14:03:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 14:03:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 14:03:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 14:03:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 14:03:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 14:04:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 14:04:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0068146s
+2024-04-11 14:04:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 14:04:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 14:04:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 14:04:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 14:07:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 14:07:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 14:07:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 14:08:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 14:08:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 14:08:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 14:08:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 14:08:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 14:08:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 14:08:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 14:08:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 14:08:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 14:08:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 14:08:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 14:08:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 14:08:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 14:08:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 14:08:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 14:08:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 14:09:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 14:09:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0060701s
+2024-04-11 14:09:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 14:09:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 14:09:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 14:09:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 14:12:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 14:12:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 14:12:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 14:13:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 14:13:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 14:13:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 14:13:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 14:13:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 14:13:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 14:13:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 14:13:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 14:13:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 14:13:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 14:13:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 14:13:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 14:13:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 14:13:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 14:13:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 14:13:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 14:14:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 14:14:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0085041s
+2024-04-11 14:14:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 14:14:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 14:14:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 14:14:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 14:17:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 14:17:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 14:17:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 14:18:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 14:18:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 14:18:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 14:18:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 14:18:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 14:18:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 14:18:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 14:18:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 14:18:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 14:18:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 14:18:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 14:18:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 14:18:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 14:18:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 14:18:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 14:18:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 14:19:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 14:19:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0160564s
+2024-04-11 14:19:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 14:19:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 14:19:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 14:19:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 14:22:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 14:22:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 14:22:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 14:23:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 14:23:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 14:23:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 14:23:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 14:23:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 14:23:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 14:23:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 14:23:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 14:23:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 14:23:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 14:23:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 14:23:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 14:23:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 14:23:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 14:23:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 14:23:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 14:24:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 14:24:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0093986s
+2024-04-11 14:24:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 14:24:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 14:24:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 14:24:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 14:27:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 14:27:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 14:27:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 14:28:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 14:28:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 14:28:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 14:28:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 14:28:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 14:28:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 14:28:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 14:28:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 14:28:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 14:28:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 14:28:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 14:28:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 14:28:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 14:28:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 14:28:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 14:28:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 14:29:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 14:29:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0031569s
+2024-04-11 14:29:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 14:29:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 14:29:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 14:29:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 14:32:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 14:32:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 14:32:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 14:33:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 14:33:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 14:33:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 14:33:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 14:33:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 14:33:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 14:33:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 14:33:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 14:33:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 14:33:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 14:33:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 14:33:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 14:33:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 14:33:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 14:33:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 14:33:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 14:34:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 14:34:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0061828s
+2024-04-11 14:34:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 14:34:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 14:34:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 14:34:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 14:37:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 14:37:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 14:37:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 14:38:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 14:38:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 14:38:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 14:38:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 14:38:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 14:38:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 14:38:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 14:38:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 14:38:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 14:38:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 14:38:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 14:38:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 14:38:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 14:38:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 14:38:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 14:38:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 14:39:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 14:39:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.00296s
+2024-04-11 14:39:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 14:39:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 14:39:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 14:39:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 14:42:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 14:42:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 14:42:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 14:43:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 14:43:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 14:43:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 14:43:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 14:43:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 14:43:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 14:43:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 14:43:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 14:43:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 14:43:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 14:43:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 14:43:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 14:43:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 14:43:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 14:43:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 14:43:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 14:44:23 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: wait response timeout
+2024-04-11 14:44:23 [DEBU] [Event:AgentCheckCache] end, time: 1m0.0049694s
+2024-04-11 14:44:23 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 14:44:23 [DEBU] [Event:CheckPackage] end
+2024-04-11 14:44:23 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 14:44:23 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 14:47:53 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 14:47:53 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 14:47:53 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 14:48:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 14:48:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 14:48:00 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 14:48:05 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 14:48:05 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 14:48:05 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 14:48:12 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 14:48:12 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 14:48:12 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 14:48:17 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 14:48:17 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 14:48:23 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: wait response timeout
+2024-04-11 14:48:23 [DEBU] [Event:AgentCheckState] end
+2024-04-11 14:48:23 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 14:48:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 14:48:37 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 14:49:35 [INFO] start serving distlock
+2024-04-11 14:49:35 [INFO] start serving event executor
+2024-04-11 14:49:35 [INFO] start serving scanner server
+2024-04-11 14:54:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 14:54:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 14:54:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 14:54:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 14:54:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 14:54:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 14:54:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 14:54:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 14:54:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 14:54:54 [DEBU] [Event:AgentCheckCache] end, time: 8.73ms
+2024-04-11 14:55:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 14:55:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 14:55:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 14:55:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 14:55:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 14:55:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 14:55:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 14:55:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 14:55:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 14:59:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 14:59:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 14:59:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 14:59:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 14:59:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 14:59:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 14:59:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 14:59:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 14:59:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 14:59:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 14:59:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 14:59:54 [DEBU] [Event:AgentCheckCache] end, time: 6.6049ms
+2024-04-11 15:00:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 15:00:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 15:00:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 15:00:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 15:00:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 15:00:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 15:00:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 15:00:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 15:00:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 15:04:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 15:04:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 15:04:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 15:04:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 15:04:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 15:04:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 15:04:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 15:04:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 15:04:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 15:04:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 15:04:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 15:04:54 [DEBU] [Event:AgentCheckCache] end, time: 8.4215ms
+2024-04-11 15:05:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 15:05:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 15:05:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 15:05:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 15:05:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 15:05:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 15:05:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 15:05:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 15:05:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 15:09:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 15:09:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 15:09:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 15:09:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 15:09:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 15:09:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 15:09:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 15:09:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 15:09:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 15:09:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 15:09:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 15:09:54 [DEBU] [Event:AgentCheckCache] end, time: 5.3639ms
+2024-04-11 15:10:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 15:10:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 15:10:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 15:10:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 15:10:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 15:10:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 15:10:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 15:10:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 15:10:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 15:13:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 15:13:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 15:14:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 15:14:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 15:14:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 15:14:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 15:14:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 15:14:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 15:14:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 15:14:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 15:14:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 15:14:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 15:14:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 15:14:54 [DEBU] [Event:AgentCheckCache] end, time: 8.9816ms
+2024-04-11 15:15:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 15:15:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 15:15:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 15:15:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 15:15:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 15:15:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 15:15:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 15:15:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 15:15:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 15:18:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 15:18:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 15:19:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 15:19:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 15:19:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 15:19:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 15:19:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 15:19:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 15:19:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 15:19:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 15:19:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 15:19:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 15:19:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 15:19:54 [DEBU] [Event:AgentCheckCache] end, time: 10.9935ms
+2024-04-11 15:20:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 15:20:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 15:20:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 15:20:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 15:20:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 15:20:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 15:20:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 15:20:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 15:20:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 15:23:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 15:23:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 15:24:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 15:24:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 15:24:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 15:24:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 15:24:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 15:24:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 15:24:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 15:24:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 15:24:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 15:24:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 15:24:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 15:24:54 [DEBU] [Event:AgentCheckCache] end, time: 6.6584ms
+2024-04-11 15:25:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 15:25:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 15:25:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 15:25:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 15:25:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 15:25:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 15:25:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 15:25:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 15:25:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 15:28:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 15:28:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 15:29:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 15:29:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 15:29:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 15:29:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 15:29:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 15:29:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 15:29:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 15:29:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 15:29:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 15:29:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 15:29:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 15:29:54 [DEBU] [Event:AgentCheckCache] end, time: 16.5686ms
+2024-04-11 15:30:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 15:30:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 15:30:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 15:30:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 15:30:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 15:30:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 15:30:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 15:30:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 15:30:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 15:33:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 15:33:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 15:34:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 15:34:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 15:34:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 15:34:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 15:34:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 15:34:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 15:34:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 15:34:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 15:34:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 15:34:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 15:34:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 15:34:54 [DEBU] [Event:AgentCheckCache] end, time: 14.8359ms
+2024-04-11 15:35:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 15:35:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 15:35:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 15:35:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 15:35:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 15:35:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 15:35:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 15:35:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 15:35:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 15:38:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 15:38:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 15:39:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 15:39:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 15:39:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 15:39:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 15:39:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 15:39:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 15:39:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 15:39:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 15:39:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 15:39:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 15:39:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 15:39:54 [DEBU] [Event:AgentCheckCache] end, time: 9.5614ms
+2024-04-11 15:40:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 15:40:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 15:40:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 15:40:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 15:40:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 15:40:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 15:40:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 15:40:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 15:40:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 15:43:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 15:43:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 15:44:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 15:44:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 15:44:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 15:44:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 15:44:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 15:44:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 15:44:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 15:44:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 15:44:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 15:44:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 15:44:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 15:44:54 [DEBU] [Event:AgentCheckCache] end, time: 12.8867ms
+2024-04-11 15:45:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 15:45:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 15:45:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 15:45:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 15:45:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 15:45:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 15:45:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 15:45:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 15:45:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 15:48:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 15:48:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 15:49:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 15:49:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 15:49:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 15:49:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 15:49:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 15:49:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 15:49:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 15:49:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 15:49:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 15:49:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 15:49:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 15:49:54 [DEBU] [Event:AgentCheckCache] end, time: 15.6208ms
+2024-04-11 15:50:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 15:50:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 15:50:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 15:50:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 15:50:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 15:50:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 15:50:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 15:50:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 15:50:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 15:53:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 15:53:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 15:54:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 15:54:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 15:54:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 15:54:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 15:54:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 15:54:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 15:54:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 15:54:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 15:54:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 15:54:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 15:54:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 15:54:54 [DEBU] [Event:AgentCheckCache] end, time: 13.4324ms
+2024-04-11 15:55:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 15:55:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 15:55:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 15:55:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 15:55:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 15:55:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 15:55:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 15:55:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 15:55:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 15:58:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 15:58:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 15:59:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 15:59:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 15:59:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 15:59:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 15:59:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 15:59:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 15:59:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 15:59:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 15:59:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 15:59:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 15:59:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 15:59:54 [DEBU] [Event:AgentCheckCache] end, time: 15.6953ms
+2024-04-11 16:00:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 16:00:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 16:00:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 16:00:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 16:00:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 16:00:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 16:00:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 16:00:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 16:00:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 16:03:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 16:03:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 16:04:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 16:04:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 16:04:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 16:04:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 16:04:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 16:04:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 16:04:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 16:04:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 16:04:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 16:04:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 16:04:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 16:04:54 [DEBU] [Event:AgentCheckCache] end, time: 13.1137ms
+2024-04-11 16:05:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 16:05:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 16:05:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 16:05:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 16:05:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 16:05:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 16:05:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 16:05:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 16:05:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 16:08:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 16:08:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 16:09:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 16:09:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 16:09:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 16:09:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 16:09:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 16:09:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 16:09:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 16:09:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 16:09:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 16:09:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 16:09:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 16:09:54 [DEBU] [Event:AgentCheckCache] end, time: 18.5026ms
+2024-04-11 16:10:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 16:10:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 16:10:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 16:10:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 16:10:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 16:10:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 16:10:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 16:10:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 16:10:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 16:13:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 16:13:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 16:14:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 16:14:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 16:14:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 16:14:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 16:14:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 16:14:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 16:14:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 16:14:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 16:14:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 16:14:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 16:14:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 16:14:54 [DEBU] [Event:AgentCheckCache] end, time: 9.6416ms
+2024-04-11 16:15:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 16:15:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 16:15:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 16:15:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 16:15:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 16:15:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 16:15:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 16:15:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 16:15:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 16:18:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 16:18:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 16:19:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 16:19:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 16:19:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 16:19:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 16:19:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 16:19:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 16:19:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 16:19:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 16:19:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 16:19:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 16:19:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 16:19:54 [DEBU] [Event:AgentCheckCache] end, time: 15.8067ms
+2024-04-11 16:20:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 16:20:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 16:20:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 16:20:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 16:20:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 16:20:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 16:20:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 16:20:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 16:20:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 16:23:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 16:23:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 16:24:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 16:24:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 16:24:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 16:24:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 16:24:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 16:24:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 16:24:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 16:24:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 16:24:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 16:24:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 16:24:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 16:24:54 [DEBU] [Event:AgentCheckCache] end, time: 17.26ms
+2024-04-11 16:25:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 16:25:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 16:25:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 16:25:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 16:25:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 16:25:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 16:25:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 16:25:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 16:25:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 16:28:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 16:28:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 16:29:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 16:29:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 16:29:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 16:29:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 16:29:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 16:29:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 16:29:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 16:29:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 16:29:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 16:29:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 16:29:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 16:29:54 [DEBU] [Event:AgentCheckCache] end, time: 3.4751ms
+2024-04-11 16:30:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 16:30:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 16:30:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 16:30:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 16:30:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 16:30:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 16:30:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 16:30:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 16:30:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 16:33:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 16:33:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 16:34:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 16:34:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 16:34:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 16:34:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 16:34:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 16:34:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 16:34:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 16:34:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 16:34:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 16:34:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 16:34:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 16:34:54 [DEBU] [Event:AgentCheckCache] end, time: 7.3786ms
+2024-04-11 16:35:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 16:35:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 16:35:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 16:35:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 16:35:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 16:35:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 16:35:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 16:35:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 16:35:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 16:38:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 16:38:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 16:39:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 16:39:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 16:39:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 16:39:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 16:39:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 16:39:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 16:39:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 16:39:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 16:39:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 16:39:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 16:39:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 16:39:54 [DEBU] [Event:AgentCheckCache] end, time: 6.4503ms
+2024-04-11 16:40:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 16:40:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 16:40:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 16:40:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 16:40:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 16:40:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 16:40:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 16:40:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 16:40:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 16:43:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 16:43:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 16:44:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 16:44:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 16:44:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 16:44:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 16:44:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 16:44:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 16:44:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 16:44:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 16:44:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 16:44:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 16:44:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 16:44:54 [DEBU] [Event:AgentCheckCache] end, time: 6.222ms
+2024-04-11 16:45:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 16:45:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 16:45:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 16:45:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 16:45:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 16:45:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 16:45:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 16:45:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 16:45:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 16:48:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 16:48:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 16:49:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 16:49:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 16:49:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 16:49:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 16:49:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 16:49:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 16:49:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 16:49:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 16:49:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 16:49:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 16:49:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 16:49:54 [DEBU] [Event:AgentCheckCache] end, time: 8.9205ms
+2024-04-11 16:50:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 16:50:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 16:50:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 16:50:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 16:50:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 16:50:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 16:50:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 16:50:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 16:50:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 16:53:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 16:53:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 16:54:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 16:54:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 16:54:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 16:54:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 16:54:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 16:54:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 16:54:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 16:54:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 16:54:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 16:54:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 16:54:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 16:54:54 [DEBU] [Event:AgentCheckCache] end, time: 9.4424ms
+2024-04-11 16:55:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 16:55:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 16:55:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 16:55:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 16:55:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 16:55:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 16:55:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 16:55:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 16:55:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 16:58:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 16:58:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 16:59:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 16:59:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 16:59:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 16:59:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 16:59:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 16:59:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 16:59:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 16:59:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 16:59:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 16:59:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 16:59:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 16:59:54 [DEBU] [Event:AgentCheckCache] end, time: 6.6444ms
+2024-04-11 17:00:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 17:00:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 17:00:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 17:00:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 17:00:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 17:00:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 17:00:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 17:00:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 17:00:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 17:03:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 17:03:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 17:04:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 17:04:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 17:04:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 17:04:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 17:04:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 17:04:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 17:04:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 17:04:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 17:04:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 17:04:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 17:04:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 17:04:54 [DEBU] [Event:AgentCheckCache] end, time: 8.9795ms
+2024-04-11 17:05:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 17:05:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 17:05:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 17:05:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 17:05:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 17:05:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 17:05:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 17:05:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 17:05:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 17:08:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 17:08:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 17:09:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 17:09:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 17:09:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 17:09:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 17:09:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 17:09:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 17:09:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 17:09:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 17:09:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 17:09:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 17:09:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 17:09:54 [DEBU] [Event:AgentCheckCache] end, time: 7.1107ms
+2024-04-11 17:10:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 17:10:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 17:10:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 17:10:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 17:10:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 17:10:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 17:10:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 17:10:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 17:10:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 17:13:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 17:13:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 17:14:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 17:14:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 17:14:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 17:14:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 17:14:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 17:14:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 17:14:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 17:14:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 17:14:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 17:14:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 17:14:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 17:14:54 [DEBU] [Event:AgentCheckCache] end, time: 3.3331ms
+2024-04-11 17:15:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 17:15:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 17:15:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 17:15:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 17:15:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 17:15:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 17:15:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 17:15:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 17:15:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 17:18:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 17:18:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 17:19:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 17:19:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 17:19:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 17:19:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 17:19:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 17:19:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 17:19:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 17:19:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 17:19:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 17:19:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 17:19:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 17:19:54 [DEBU] [Event:AgentCheckCache] end, time: 6.5945ms
+2024-04-11 17:20:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 17:20:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 17:20:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 17:20:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 17:20:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 17:20:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 17:20:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 17:20:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 17:20:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 17:23:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 17:23:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 17:24:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 17:24:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 17:24:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 17:24:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 17:24:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 17:24:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 17:24:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 17:24:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 17:24:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 17:24:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 17:24:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 17:24:54 [DEBU] [Event:AgentCheckCache] end, time: 17.2561ms
+2024-04-11 17:25:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 17:25:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 17:25:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 17:25:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 17:25:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 17:25:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 17:25:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 17:25:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 17:25:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 17:28:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 17:28:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 17:29:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 17:29:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 17:29:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 17:29:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 17:29:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 17:29:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 17:29:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 17:29:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 17:29:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 17:29:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 17:29:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 17:29:54 [DEBU] [Event:AgentCheckCache] end, time: 12.751ms
+2024-04-11 19:49:56 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 19:49:56 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 19:49:56 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 19:49:56 [WARN] agent server err: deserialize error: channel is closed
+2024-04-11 19:49:56 [ERRO] scanner server stopped with error: receive message error: channel is closed
+2024-04-11 19:49:56 [INFO] scanner server stopped
+2024-04-11 19:49:56 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 19:49:56 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 19:49:56 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 19:49:56 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 19:49:56 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 19:49:56 [DEBU] [Event:CheckPackage] end
+2024-04-11 19:49:56 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 19:49:56 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 19:49:56 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 19:49:56 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 19:49:56 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 19:49:56 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 19:49:56 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 19:49:56 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 19:49:56 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 19:49:56 [WARN] [Event:AgentCheckStorage] [NodeID:1] checking storage: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 19:49:56 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 19:49:56 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 19:49:56 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 19:49:56 [DEBU] [Event:AgentCheckState] end
+2024-04-11 19:49:56 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 19:49:56 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 19:49:56 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-11 20:24:34 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 20:24:34 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 20:24:34 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 20:24:34 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 20:24:34 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 20:24:34 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 20:24:34 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 20:24:34 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 20:24:34 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 20:24:34 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 20:24:34 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 20:24:34 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 20:24:34 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 20:24:34 [DEBU] [Event:AgentCheckState] end
+2024-04-11 20:24:34 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 20:24:34 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 20:24:34 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 20:24:34 [DEBU] [Event:CheckPackage] end
+2024-04-11 20:24:34 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 20:24:34 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 20:24:34 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-11 20:24:34 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 20:24:34 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 20:24:34 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 20:24:34 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 20:24:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 20:24:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 20:24:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 20:24:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 20:24:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 20:24:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 20:24:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 20:24:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 20:24:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 20:24:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 20:24:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 20:24:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 20:24:54 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-11 20:25:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 20:25:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 20:25:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 20:25:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 20:25:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 20:25:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 20:25:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 20:25:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 20:25:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 20:25:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 20:28:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 20:28:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 20:29:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 20:29:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 20:29:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 20:29:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 20:29:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 20:29:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 20:29:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 20:29:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 20:29:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 20:29:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 20:29:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 20:29:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 20:29:54 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-11 20:30:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 20:30:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 20:30:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 20:30:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 20:30:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 20:30:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 20:30:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 20:30:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 20:30:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 20:30:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 20:33:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 20:33:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 20:34:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 20:34:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 20:34:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 20:34:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 20:34:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 20:34:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 20:34:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 20:34:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 20:34:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 20:34:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 20:34:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 20:34:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 20:34:54 [DEBU] [Event:AgentCheckCache] end, time: 1.0252ms
+2024-04-11 20:35:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 20:35:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 20:35:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 20:35:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 20:35:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 20:35:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 20:35:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 20:35:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 20:35:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 20:35:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 20:38:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 20:38:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 20:39:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 20:39:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 20:39:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 20:39:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 20:39:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 20:39:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 20:39:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 20:39:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 20:39:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 20:39:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 20:39:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 20:39:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 20:39:54 [DEBU] [Event:AgentCheckCache] end, time: 431.9µs
+2024-04-11 20:40:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 20:40:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 20:40:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 20:40:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 20:40:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 20:40:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 20:40:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 20:40:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 20:40:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 20:40:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 20:43:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 20:43:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 20:44:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 20:44:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 20:44:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 20:44:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 20:44:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 20:44:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 20:44:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 20:44:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 20:44:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 20:44:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 20:44:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 20:44:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 20:44:54 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-11 20:45:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 20:45:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 20:45:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 20:45:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 20:45:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 20:45:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 20:45:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 20:45:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 20:45:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 20:45:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 20:48:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 20:48:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 20:49:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 20:49:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 20:49:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 20:49:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 20:49:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 20:49:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 20:49:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 20:49:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 20:49:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 20:49:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 20:49:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 20:49:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 20:49:54 [DEBU] [Event:AgentCheckCache] end, time: 369.4µs
+2024-04-11 20:50:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 20:50:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 20:50:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 20:50:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 20:50:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 20:50:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 20:50:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 20:50:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 20:50:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 20:50:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 20:53:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 20:53:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 20:54:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 20:54:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 20:54:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 20:54:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 20:54:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 20:54:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 20:54:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 20:54:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 20:54:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 20:54:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 20:54:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 20:54:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 20:54:54 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-11 20:55:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 20:55:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 20:55:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 20:55:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 20:55:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 20:55:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 20:55:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 20:55:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 20:55:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 20:55:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 20:58:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 20:58:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 20:59:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 20:59:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 20:59:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 20:59:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 20:59:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 20:59:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 20:59:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 20:59:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 20:59:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 20:59:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 20:59:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 20:59:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 20:59:54 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-11 21:00:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 21:00:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 21:00:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 21:00:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:00:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 21:00:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 21:00:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 21:00:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 21:00:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 21:00:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 21:03:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 21:03:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 21:04:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 21:04:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 21:04:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 21:04:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 21:04:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 21:04:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 21:04:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 21:04:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 21:04:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 21:04:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 21:04:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 21:04:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:04:54 [DEBU] [Event:AgentCheckCache] end, time: 865.9µs
+2024-04-11 21:05:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 21:05:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 21:05:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 21:05:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:05:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 21:05:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 21:05:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 21:05:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 21:05:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 21:05:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 21:08:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 21:08:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 21:09:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 21:09:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 21:09:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 21:09:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 21:09:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 21:09:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 21:09:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 21:09:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 21:09:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 21:09:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 21:09:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 21:09:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:09:54 [DEBU] [Event:AgentCheckCache] end, time: 507.4µs
+2024-04-11 21:10:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 21:10:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 21:10:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 21:10:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:10:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 21:10:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 21:10:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 21:10:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 21:10:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 21:10:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 21:13:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 21:13:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 21:14:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 21:14:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 21:14:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 21:14:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 21:14:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 21:14:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 21:14:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 21:14:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 21:14:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 21:14:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 21:14:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 21:14:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:14:54 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-11 21:15:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 21:15:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 21:15:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 21:15:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:15:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 21:15:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 21:15:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 21:15:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 21:15:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 21:15:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 21:29:30 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 21:29:30 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 21:29:30 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 21:29:30 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 21:29:30 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 21:29:30 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 21:29:30 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 21:29:30 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 21:29:30 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 21:29:30 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 21:29:30 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 21:29:30 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 21:29:30 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 21:29:30 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 21:29:30 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 21:29:30 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 21:29:30 [DEBU] [Event:CheckPackage] end
+2024-04-11 21:29:30 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 21:29:30 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:29:30 [DEBU] [Event:AgentCheckState] end
+2024-04-11 21:29:30 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 21:29:30 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:29:30 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-11 21:29:30 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 21:29:30 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 21:29:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 21:29:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 21:29:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 21:29:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 21:29:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 21:29:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 21:29:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 21:29:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 21:29:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 21:29:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 21:29:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 21:29:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:29:54 [DEBU] [Event:AgentCheckCache] end, time: 505µs
+2024-04-11 21:30:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 21:30:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 21:30:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 21:30:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:30:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 21:30:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 21:30:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 21:30:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 21:30:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 21:30:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 21:33:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 21:33:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 21:34:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 21:34:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 21:34:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 21:34:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 21:34:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 21:34:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 21:34:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 21:34:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 21:34:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 21:34:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 21:34:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 21:34:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:34:54 [DEBU] [Event:AgentCheckCache] end, time: 716.3µs
+2024-04-11 21:35:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 21:35:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 21:35:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 21:35:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:35:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 21:35:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 21:35:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 21:35:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 21:35:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 21:35:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 21:38:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 21:38:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 21:39:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 21:39:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 21:39:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 21:39:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 21:39:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 21:39:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 21:39:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 21:39:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 21:39:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 21:39:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 21:39:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 21:39:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:39:54 [DEBU] [Event:AgentCheckCache] end, time: 907.6µs
+2024-04-11 21:40:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 21:40:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 21:40:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 21:40:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:40:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 21:40:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 21:40:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 21:40:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 21:40:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 21:40:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 21:43:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 21:43:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 21:44:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 21:44:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 21:44:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 21:44:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 21:44:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 21:44:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 21:44:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 21:44:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 21:44:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 21:44:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 21:44:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 21:44:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:44:54 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-11 21:45:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 21:45:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 21:45:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 21:45:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:45:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 21:45:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 21:45:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 21:45:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 21:45:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 21:45:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 21:48:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 21:48:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 21:49:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 21:49:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 21:49:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 21:49:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 21:49:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 21:49:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 21:49:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 21:49:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 21:49:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 21:49:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 21:49:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 21:49:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:49:54 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-11 21:50:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 21:50:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 21:50:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 21:50:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:50:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 21:50:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 21:50:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 21:50:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 21:50:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 21:50:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 21:53:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 21:53:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 21:54:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 21:54:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 21:54:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 21:54:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 21:54:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 21:54:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 21:54:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 21:54:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 21:54:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 21:54:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 21:54:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 21:54:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:54:54 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-11 21:55:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 21:55:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 21:55:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 21:55:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:55:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 21:55:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 21:55:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 21:55:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 21:55:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 21:55:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 21:58:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 21:58:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 21:59:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 21:59:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 21:59:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 21:59:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 21:59:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 21:59:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 21:59:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 21:59:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 21:59:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 21:59:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 21:59:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 21:59:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 21:59:54 [DEBU] [Event:AgentCheckCache] end, time: 1.0137ms
+2024-04-11 22:00:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 22:00:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 22:00:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 22:00:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 22:00:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 22:00:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 22:00:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 22:00:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 22:00:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 22:00:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 22:03:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 22:03:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 22:04:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 22:04:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 22:04:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 22:04:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 22:04:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 22:04:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 22:04:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 22:04:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 22:04:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 22:04:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 22:04:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 22:04:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 22:04:54 [DEBU] [Event:AgentCheckCache] end, time: 1.0343ms
+2024-04-11 22:05:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 22:05:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 22:05:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 22:05:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 22:05:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 22:05:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 22:05:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 22:05:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 22:05:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 22:05:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 22:08:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 22:08:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 22:09:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 22:09:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 22:09:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 22:09:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 22:09:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 22:09:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 22:09:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 22:09:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 22:09:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 22:09:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 22:09:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 22:09:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 22:09:54 [DEBU] [Event:AgentCheckCache] end, time: 999.2µs
+2024-04-11 22:10:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 22:10:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 22:10:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 22:10:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 22:10:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 22:10:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 22:10:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 22:10:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 22:10:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 22:10:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 22:13:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 22:13:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 22:14:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 22:14:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 22:14:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 22:14:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 22:14:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 22:14:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 22:14:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 22:14:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 22:14:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 22:14:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 22:14:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 22:14:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 22:14:54 [DEBU] [Event:AgentCheckCache] end, time: 1.0097ms
+2024-04-11 22:15:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 22:15:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 22:15:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 22:15:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 22:15:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 22:15:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 22:15:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 22:15:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 22:15:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 22:15:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 22:18:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 22:18:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 22:19:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 22:19:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 22:19:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 22:19:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 22:19:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 22:19:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 22:19:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 22:19:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 22:19:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 22:19:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 22:19:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 22:19:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 22:19:54 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-11 22:20:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 22:20:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 22:20:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 22:20:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 22:20:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 22:20:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 22:20:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 22:20:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 22:20:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 22:20:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 22:23:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 22:23:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 22:24:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 22:24:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 22:24:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 22:24:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 22:24:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 22:24:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 22:24:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 22:24:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 22:24:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 22:24:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 22:24:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 22:24:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 22:24:54 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-11 22:25:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 22:25:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 22:25:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 22:25:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 22:25:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 22:25:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 22:25:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 22:25:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 22:25:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 22:25:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 22:28:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 22:28:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 22:29:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 22:29:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 22:29:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 22:29:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 22:29:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 22:29:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 22:29:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 22:29:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 22:29:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 22:29:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 22:29:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 22:29:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 22:29:54 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-11 22:30:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 22:30:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 22:30:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 22:30:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 22:30:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 22:30:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 22:30:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 22:30:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 22:30:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 22:30:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 22:33:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 22:33:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 22:34:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 22:34:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 22:34:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 22:34:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 22:34:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 22:34:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 22:34:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 22:34:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 22:34:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 22:34:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 22:34:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 22:34:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 22:34:54 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-11 22:35:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 22:35:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 22:35:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 22:35:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 22:35:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 22:35:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 22:35:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 22:35:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 22:35:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 22:35:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 22:38:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 22:38:04 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 22:39:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 22:39:38 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 22:39:49 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 22:39:49 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 22:39:49 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 22:39:49 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 22:39:49 [DEBU] [Event:AgentCheckStorage] end
+2024-04-11 22:39:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 22:39:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 22:39:54 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 22:39:54 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 22:39:54 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 22:39:54 [DEBU] [Event:AgentCheckCache] end, time: 429.6µs
+2024-04-11 22:40:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 22:40:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 22:40:24 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 22:40:24 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 22:40:24 [DEBU] [Event:AgentCheckState] end
+2024-04-11 22:40:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 22:40:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 22:40:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 22:40:33 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 22:40:33 [DEBU] [Event:CheckPackage] end
+2024-04-11 22:53:19 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-11 22:53:19 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-11 22:53:19 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-11 22:53:19 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-11 22:53:19 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-11 22:53:19 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-11 22:53:19 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-11 22:53:19 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-11 22:53:19 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-11 22:53:19 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-11 22:53:19 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-11 22:53:19 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-11 22:53:19 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 22:53:19 [DEBU] [Event:AgentCheckCache] end, time: 85.9157ms
+2024-04-11 22:53:19 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-11 22:53:19 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-11 22:53:19 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-11 22:53:19 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-11 22:53:19 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-11 22:53:19 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-11 22:53:19 [DEBU] [Event:AgentCheckState] end
+2024-04-11 22:53:19 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-11 22:53:19 [DEBU] [Event:CheckPackage] end
+2024-04-11 22:53:19 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-11 22:53:19 [DEBU] [Event:AgentCheckStorage] end
+2024-04-12 01:42:33 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-12 01:42:33 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-12 01:42:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-12 01:42:33 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-12 01:42:33 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-12 01:42:33 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-12 01:42:33 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-12 01:42:33 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-12 01:42:33 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-12 01:42:33 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-12 01:42:33 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-12 01:42:33 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-12 01:42:33 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-12 01:42:33 [DEBU] [TickEvent:BatchCheckPackageRedundancy] all package checked, next time will start check at offset 0
+2024-04-12 01:42:33 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-12 01:42:33 [DEBU] [TickEvent:BatchCleanPinned] all package clean pinned, next time will start check at offset 0
+2024-04-12 01:42:33 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-12 01:42:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-12 01:42:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-12 01:42:33 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-12 01:42:33 [DEBU] [Event:AgentCheckState] end
+2024-04-12 01:42:33 [DEBU] [Event:CheckPackageRedundancy] begin with , PackageID: 1
+2024-04-12 01:42:33 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-12 01:42:33 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-12 08:50:14 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-12 08:50:14 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-12 08:50:14 [DEBU] [TickEvent:BatchCleanPinned] end
+2024-04-12 08:50:14 [DEBU] [TickEvent:BatchCheckAllStorage] begin
+2024-04-12 08:50:14 [DEBU] [TickEvent:BatchAllAgentCheckCache] begin
+2024-04-12 08:50:14 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-12 08:50:14 [DEBU] [TickEvent:BatchCheckAllStorage] all storage checked, next time will start check at 0
+2024-04-12 08:50:14 [DEBU] [TickEvent:BatchCheckAllStorage] end
+2024-04-12 08:50:14 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-12 08:50:14 [DEBU] [TickEvent:BatchCheckPackageRedundancy] begin
+2024-04-12 08:50:14 [DEBU] [TickEvent:BatchCheckPackageRedundancy] end
+2024-04-12 08:50:14 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-12 08:50:14 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-12 08:50:14 [DEBU] [TickEvent:BatchAllAgentCheckCache] new check start, get all nodes
+2024-04-12 08:50:14 [DEBU] [TickEvent:BatchAllAgentCheckCache] end
+2024-04-12 08:50:24 [DEBU] [TickEvent:CheckAgentState] begin
+2024-04-12 08:50:24 [DEBU] [TickEvent:CheckAgentState] end
+2024-04-12 08:50:33 [WARN] [Event:CheckPackageRedundancy] getting package objects: requesting: wait response timeout
+2024-04-12 08:50:33 [DEBU] [Event:CheckPackageRedundancy] end, time: 7h8m0.0729965s
+2024-04-12 08:50:33 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-12 08:50:33 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-12 08:50:33 [DEBU] [Event:AgentCheckState] end
+2024-04-12 08:50:33 [DEBU] [Event:AgentCheckState] begin with , NodeID: 1
+2024-04-12 08:50:33 [WARN] [Event:AgentCheckState] [NodeID:1] getting state: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-12 08:50:33 [DEBU] [Event:AgentCheckState] end
+2024-04-12 08:50:33 [DEBU] [Event:CleanPinned] begin with , PackageID: 1
+2024-04-12 08:50:33 [DEBU] [TickEvent:BatchCheckAllPackage] begin
+2024-04-12 08:50:33 [DEBU] [TickEvent:BatchCheckAllPackage] all package checked, next time will start check at 0
+2024-04-12 08:50:33 [DEBU] [TickEvent:BatchCheckAllPackage] end
+2024-04-12 08:51:18 [WARN] [Event:CleanPinned] getting package objects: requesting: wait response timeout
+2024-04-12 08:51:18 [DEBU] [Event:CleanPinned] end, time: 45.0061297s
+2024-04-12 08:51:18 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-12 08:51:18 [DEBU] [Event:CheckPackage] end
+2024-04-12 08:51:18 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-12 08:51:18 [DEBU] [Event:AgentCheckStorage] end
+2024-04-12 08:51:18 [DEBU] [Event:AgentCheckStorage] begin with , StorageID: 1
+2024-04-12 08:51:18 [DEBU] [Event:AgentCheckStorage] end
+2024-04-12 08:51:18 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-12 08:51:18 [DEBU] [Event:CheckPackage] end
+2024-04-12 08:51:18 [DEBU] [Event:AgentCheckCache] begin with , NodeID: 1
+2024-04-12 08:51:18 [WARN] [Event:AgentCheckCache] [NodeID:1] checking ipfs: requesting: sending message: publishing data: Exception (504) Reason: "channel/connection is not open"
+2024-04-12 08:51:18 [DEBU] [Event:AgentCheckCache] end, time: 0s
+2024-04-12 08:51:18 [DEBU] [Event:CheckPackage] begin with , len(PackageIDs): 1
+2024-04-12 08:51:18 [DEBU] [Event:CheckPackage] end
+2024-04-12 08:53:04 [DEBU] [TickEvent:BatchCleanPinned] begin
+2024-04-12 08:53:04 [DEBU] [TickEvent:BatchCleanPinned] end

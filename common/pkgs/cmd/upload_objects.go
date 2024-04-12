@@ -37,10 +37,9 @@ type UploadObjectsResult struct {
 
 // ObjectUploadResult 单个对象上传结果的结构体，包含上传信息、错误和对象ID。
 type ObjectUploadResult struct {
-	Info  *iterator.IterUploadingObject
-	Error error
-	// TODO 这个字段没有被赋值
-	ObjectID cdssdk.ObjectID
+	Info   *iterator.IterUploadingObject
+	Error  error
+	Object cdssdk.Object
 }
 
 // UploadNodeInfo 上传节点信息的结构体，包含节点信息、延迟、是否与客户端在同一位置。
@@ -215,10 +214,24 @@ func uploadAndUpdatePackage(packageID cdssdk.PackageID, objectIter iterator.Uplo
 		}
 	}
 
-	// 更新包信息
-	_, err = coorCli.UpdatePackage(coormq.NewUpdatePackage(packageID, adds, nil))
+	updateResp, err := coorCli.UpdatePackage(coormq.NewUpdatePackage(packageID, adds, nil))
 	if err != nil {
 		return nil, fmt.Errorf("updating package: %w", err)
+	}
+
+	updatedObjs := make(map[string]*cdssdk.Object)
+	for _, obj := range updateResp.Added {
+		o := obj
+		updatedObjs[obj.Path] = &o
+	}
+
+	for i := range uploadRets {
+		obj := updatedObjs[uploadRets[i].Info.Path]
+		if obj == nil {
+			uploadRets[i].Error = fmt.Errorf("object %s not found in package", uploadRets[i].Info.Path)
+			continue
+		}
+		uploadRets[i].Object = *obj
 	}
 
 	return uploadRets, nil

@@ -211,7 +211,9 @@ func init() {
 
 	commands.MustAdd(PackageDeletePackage, "pkg", "delete")
 
+	// 查询package缓存到哪些节点
 	commands.MustAdd(PackageGetCachedNodes, "pkg", "cached")
 
+	// 查询package调度到哪些节点
 	commands.MustAdd(PackageGetLoadedNodes, "pkg", "loaded")
 }

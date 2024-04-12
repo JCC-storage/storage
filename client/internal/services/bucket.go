@@ -28,9 +28,21 @@ func (svc *BucketService) GetBucket(userID cdssdk.UserID, bucketID cdssdk.Bucket
 	panic("not implement yet")
 }
 
-// GetUserBuckets 获取指定用户的所有桶信息
-// userID: 用户的唯一标识
-// 返回值: 用户的所有桶信息列表和可能发生的错误
+func (svc *BucketService) GetBucketByName(userID cdssdk.UserID, bucketName string) (model.Bucket, error) {
+	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
+	if err != nil {
+		return model.Bucket{}, fmt.Errorf("new coordinator client: %w", err)
+	}
+	defer stgglb.CoordinatorMQPool.Release(coorCli)
+
+	resp, err := coorCli.GetBucketByName(coormq.ReqGetBucketByName(userID, bucketName))
+	if err != nil {
+		return model.Bucket{}, fmt.Errorf("get bucket by name failed, err: %w", err)
+	}
+
+	return resp.Bucket, nil
+}
+
 func (svc *BucketService) GetUserBuckets(userID cdssdk.UserID) ([]model.Bucket, error) {
 	// 从CoordinatorMQPool中获取Coordinator客户端
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
@@ -69,25 +81,20 @@ func (svc *BucketService) GetBucketPackages(userID cdssdk.UserID, bucketID cdssd
 	return resp.Packages, nil
 }
 
-// CreateBucket 创建一个新的桶
-// userID: 用户的唯一标识
-// bucketName: 桶的名称
-// 返回值: 新创建的桶的ID和可能发生的错误
-func (svc *BucketService) CreateBucket(userID cdssdk.UserID, bucketName string) (cdssdk.BucketID, error) {
-	// 获取Coordinator客户端
+func (svc *BucketService) CreateBucket(userID cdssdk.UserID, bucketName string) (cdssdk.Bucket, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
-		return 0, fmt.Errorf("new coordinator client: %w", err)
+		return cdssdk.Bucket{}, fmt.Errorf("new coordinator client: %w", err)
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli) // 确保客户端被释放
 
 	// 请求Coordinator创建新桶
 	resp, err := coorCli.CreateBucket(coormq.NewCreateBucket(userID, bucketName))
 	if err != nil {
-		return 0, fmt.Errorf("creating bucket: %w", err)
+		return cdssdk.Bucket{}, fmt.Errorf("creating bucket: %w", err)
 	}
 
-	return resp.BucketID, nil
+	return resp.Bucket, nil
 }
 
 // DeleteBucket 删除指定的桶
@@ -101,8 +108,6 @@ func (svc *BucketService) DeleteBucket(userID cdssdk.UserID, bucketID cdssdk.Buc
 		return fmt.Errorf("new coordinator client: %w", err)
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli) // 确保客户端被释放
-
-	// TODO: 检查用户是否有删除这个Bucket的权限。检查的时候可以只上UserBucket的Read锁
 
 	_, err = coorCli.DeleteBucket(coormq.NewDeleteBucket(userID, bucketID))
 	if err != nil {

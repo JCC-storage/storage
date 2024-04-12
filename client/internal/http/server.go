@@ -50,17 +50,20 @@ func (s *Server) Serve() error {
 // 它主要用于配置和初始化与HTTP请求相关的所有路由，
 // 包括对象存储、包管理、存储管理、缓存管理和存储桶管理等。
 func (s *Server) initRouters() {
-	// 对象存储相关路由配置
-	s.engine.GET(cdssdk.ObjectDownloadPath, s.Object().Download)                   // 处理对象下载请求
-	s.engine.POST(cdssdk.ObjectUploadPath, s.Object().Upload)                      // 处理对象上传请求
-	s.engine.GET(cdssdk.ObjectGetPackageObjectsPath, s.Object().GetPackageObjects) // 处理获取包内对象请求
+	s.engine.GET(cdssdk.ObjectDownloadPath, s.Object().Download)
+	s.engine.POST(cdssdk.ObjectUploadPath, s.Object().Upload)
+	s.engine.GET(cdssdk.ObjectGetPackageObjectsPath, s.Object().GetPackageObjects)
+	s.engine.POST(cdssdk.ObjectUpdateInfoPath, s.Object().UpdateInfo)
+	s.engine.POST(cdssdk.ObjectMovePath, s.Object().Move)
+	s.engine.POST(cdssdk.ObjectDeletePath, s.Object().Delete)
 
-	// 包管理相关路由配置
-	s.engine.GET(cdssdk.PackageGetPath, s.Package().Get)                // 处理获取包信息请求
-	s.engine.POST(cdssdk.PackageCreatePath, s.Package().Create)         // 处理创建包请求
-	s.engine.POST("/package/delete", s.Package().Delete)                // 处理删除包请求
-	s.engine.GET("/package/getCachedNodes", s.Package().GetCachedNodes) // 处理获取缓存节点请求
-	s.engine.GET("/package/getLoadedNodes", s.Package().GetLoadedNodes) // 处理获取已加载节点请求
+	s.engine.GET(cdssdk.PackageGetPath, s.Package().Get)
+	s.engine.GET(cdssdk.PackageGetByNamePath, s.Package().GetByName)
+	s.engine.POST(cdssdk.PackageCreatePath, s.Package().Create)
+	s.engine.POST(cdssdk.PackageDeletePath, s.Package().Delete)
+	s.engine.GET(cdssdk.PackageListBucketPackagesPath, s.Package().ListBucketPackages)
+	s.engine.GET(cdssdk.PackageGetCachedNodesPath, s.Package().GetCachedNodes)
+	s.engine.GET(cdssdk.PackageGetLoadedNodesPath, s.Package().GetLoadedNodes)
 
 	// 存储管理相关路由配置
 	s.engine.POST("/storage/loadPackage", s.Storage().LoadPackage)     // 处理加载包请求
@@ -70,7 +73,8 @@ func (s *Server) initRouters() {
 	// 缓存管理相关路由配置
 	s.engine.POST(cdssdk.CacheMovePackagePath, s.Cache().MovePackage) // 处理移动包到缓存请求
 
-	// 存储桶管理相关路由配置
-	s.engine.POST(cdssdk.BucketCreatePath, s.Bucket().Create) // 处理创建存储桶请求
-	s.engine.POST(cdssdk.BucketDeletePath, s.Bucket().Delete) // 处理删除存储桶请求
+	s.engine.GET(cdssdk.BucketGetByNamePath, s.Bucket().GetByName)
+	s.engine.POST(cdssdk.BucketCreatePath, s.Bucket().Create)
+	s.engine.POST(cdssdk.BucketDeletePath, s.Bucket().Delete)
+	s.engine.GET(cdssdk.BucketListUserBucketsPath, s.Bucket().ListUserBuckets)
 }

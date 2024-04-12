@@ -6,7 +6,6 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/iterator"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
@@ -21,9 +20,7 @@ func (svc *Service) PackageSvc() *PackageService {
 	return &PackageService{Service: svc}
 }
 
-// Get 获取指定用户的指定包信息
-func (svc *PackageService) Get(userID cdssdk.UserID, packageID cdssdk.PackageID) (*model.Package, error) {
-	// 从协调器MQ池中获取客户端
+func (svc *PackageService) Get(userID cdssdk.UserID, packageID cdssdk.PackageID) (*cdssdk.Package, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
@@ -39,22 +36,50 @@ func (svc *PackageService) Get(userID cdssdk.UserID, packageID cdssdk.PackageID)
 	return &getResp.Package, nil
 }
 
-// Create 创建一个新的包
-func (svc *PackageService) Create(userID cdssdk.UserID, bucketID cdssdk.BucketID, name string) (cdssdk.PackageID, error) {
-	// 从协调器MQ池中获取客户端
+func (svc *PackageService) GetByName(userID cdssdk.UserID, bucketName string, packageName string) (*cdssdk.Package, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
-		return 0, fmt.Errorf("new coordinator client: %w", err)
+		return nil, fmt.Errorf("new coordinator client: %w", err)
+	}
+	defer stgglb.CoordinatorMQPool.Release(coorCli)
+
+	getResp, err := coorCli.GetPackageByName(coormq.ReqGetPackageByName(userID, bucketName, packageName))
+	if err != nil {
+		return nil, fmt.Errorf("requsting to coodinator: %w", err)
+	}
+
+	return &getResp.Package, nil
+}
+
+func (svc *PackageService) GetBucketPackages(userID cdssdk.UserID, bucketID cdssdk.BucketID) ([]cdssdk.Package, error) {
+	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
+	if err != nil {
+		return nil, fmt.Errorf("new coordinator client: %w", err)
+	}
+	defer stgglb.CoordinatorMQPool.Release(coorCli)
+
+	getResp, err := coorCli.GetBucketPackages(coormq.NewGetBucketPackages(userID, bucketID))
+	if err != nil {
+		return nil, fmt.Errorf("requsting to coodinator: %w", err)
+	}
+
+	return getResp.Packages, nil
+}
+
+func (svc *PackageService) Create(userID cdssdk.UserID, bucketID cdssdk.BucketID, name string) (cdssdk.Package, error) {
+	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
+	if err != nil {
+		return cdssdk.Package{}, fmt.Errorf("new coordinator client: %w", err)
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
 	// 向协调器发送创建包的请求
 	resp, err := coorCli.CreatePackage(coormq.NewCreatePackage(userID, bucketID, name))
 	if err != nil {
-		return 0, fmt.Errorf("creating package: %w", err)
+		return cdssdk.Package{}, fmt.Errorf("creating package: %w", err)
 	}
 
-	return resp.PackageID, nil
+	return resp.Package, nil
 }
 
 // DownloadPackage 下载指定包的内容
