@@ -10,7 +10,6 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/utils/io2"
 	"gitlink.org.cn/cloudream/common/utils/math2"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
 )
 
 func init() {
@@ -76,24 +75,35 @@ func (o *Range) String() string {
 	return fmt.Sprintf("Range(%v+%v) %v -> %v", o.Offset, o.Length, o.Input.ID, o.Output.ID)
 }
 
-type RangeType struct {
+type RangeNode struct {
+	dag.NodeBase
 	Range exec.Range
 }
 
-func (t *RangeType) InitNode(node *dag.Node) {
-	dag.NodeDeclareInputStream(node, 1)
-	dag.NodeNewOutputStream(node, &ioswitch2.VarProps{})
+func (b *GraphNodeBuilder) NewRange() *RangeNode {
+	node := &RangeNode{}
+	b.AddNode(node)
+	return node
 }
 
-func (t *RangeType) GenerateOp(n *dag.Node) (exec.Op, error) {
+func (t *RangeNode) RangeStream(input *dag.StreamVar, rng exec.Range) *dag.StreamVar {
+	t.InputStreams().EnsureSize(1)
+	input.Connect(t, 0)
+	t.Range = rng
+	output := t.Graph().NewStreamVar()
+	t.OutputStreams().Setup(t, output, 0)
+	return output
+}
+
+func (t *RangeNode) GenerateOp() (exec.Op, error) {
 	return &Range{
-		Input:  n.InputStreams[0].Var,
-		Output: n.OutputStreams[0].Var,
+		Input:  t.InputStreams().Get(0).Var,
+		Output: t.OutputStreams().Get(0).Var,
 		Offset: t.Range.Offset,
 		Length: t.Range.Length,
 	}, nil
 }
 
-func (t *RangeType) String(node *dag.Node) string {
-	return fmt.Sprintf("Range[%v+%v]%v%v", t.Range.Offset, t.Range.Length, formatStreamIO(node), formatValueIO(node))
-}
+// func (t *RangeType) String() string {
+// 	return fmt.Sprintf("Range[%v+%v]%v%v", t.Range.Offset, t.Range.Length, formatStreamIO(node), formatValueIO(node))
+// }

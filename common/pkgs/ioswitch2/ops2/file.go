@@ -11,7 +11,6 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/dag"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/utils/io2"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
 )
 
 func init() {
@@ -80,36 +79,66 @@ func (o *FileRead) String() string {
 	return fmt.Sprintf("FileRead %s -> %v", o.FilePath, o.Output.ID)
 }
 
-type FileReadType struct {
+type FileReadNode struct {
+	dag.NodeBase
 	FilePath string
 }
 
-func (t *FileReadType) InitNode(node *dag.Node) {
-	dag.NodeNewOutputStream(node, &ioswitch2.VarProps{})
+func (b *GraphNodeBuilder) NewFileRead(filePath string) *FileReadNode {
+	node := &FileReadNode{
+		FilePath: filePath,
+	}
+	b.AddNode(node)
+	node.OutputStreams().SetupNew(node, b.NewStreamVar())
+	return node
 }
 
-func (t *FileReadType) GenerateOp(op *dag.Node) (exec.Op, error) {
+func (t *FileReadNode) Output() dag.StreamSlot {
+	return dag.StreamSlot{
+		Var:   t.OutputStreams().Get(0),
+		Index: 0,
+	}
+}
+
+func (t *FileReadNode) GenerateOp() (exec.Op, error) {
 	return &FileRead{
-		Output:   op.OutputStreams[0].Var,
+		Output:   t.OutputStreams().Get(0).Var,
 		FilePath: t.FilePath,
 	}, nil
 }
 
-func (t *FileReadType) String(node *dag.Node) string {
-	return fmt.Sprintf("FileRead[%s]%v%v", t.FilePath, formatStreamIO(node), formatValueIO(node))
-}
+// func (t *FileReadType) String() string {
+// 	return fmt.Sprintf("FileRead[%s]%v%v", t.FilePath, formatStreamIO(node), formatValueIO(node))
+// }
 
-type FileWriteType struct {
+type FileWriteNode struct {
+	dag.NodeBase
 	FilePath string
 }
 
-func (t *FileWriteType) InitNode(node *dag.Node) {
-	dag.NodeDeclareInputStream(node, 1)
+func (b *GraphNodeBuilder) NewFileWrite(filePath string) *FileWriteNode {
+	node := &FileWriteNode{
+		FilePath: filePath,
+	}
+	b.AddNode(node)
+	return node
 }
 
-func (t *FileWriteType) GenerateOp(op *dag.Node) (exec.Op, error) {
+func (t *FileWriteNode) Input() dag.StreamSlot {
+	return dag.StreamSlot{
+		Var:   t.InputStreams().Get(0),
+		Index: 0,
+	}
+}
+
+func (t *FileWriteNode) SetInput(str *dag.StreamVar) {
+	t.InputStreams().EnsureSize(1)
+	str.Connect(t, 0)
+}
+
+func (t *FileWriteNode) GenerateOp() (exec.Op, error) {
 	return &FileWrite{
-		Input:    op.InputStreams[0].Var,
+		Input:    t.InputStreams().Get(0).Var,
 		FilePath: t.FilePath,
 	}, nil
 }
