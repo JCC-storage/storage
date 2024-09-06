@@ -12,7 +12,6 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gitlink.org.cn/cloudream/common/utils/io2"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc"
 )
 
 func init() {
@@ -94,44 +93,78 @@ func (o *IPFSWrite) String() string {
 	return fmt.Sprintf("IPFSWrite %v -> %v", o.Input.ID, o.FileHash.ID)
 }
 
-type IPFSReadType struct {
+type IPFSReadNode struct {
+	dag.NodeBase
 	FileHash string
 	Option   ipfs.ReadOption
 }
 
-func (t *IPFSReadType) InitNode(node *dag.Node) {
-	dag.NodeNewOutputStream(node, &ioswitchlrc.VarProps{})
+func (b *GraphNodeBuilder) NewIPFSRead(fileHash string, option ipfs.ReadOption) *IPFSReadNode {
+	node := &IPFSReadNode{
+		FileHash: fileHash,
+		Option:   option,
+	}
+	b.AddNode(node)
+	node.OutputStreams().SetupNew(node, b.NewStreamVar())
+	return node
 }
 
-func (t *IPFSReadType) GenerateOp(n *dag.Node) (exec.Op, error) {
+func (t *IPFSReadNode) Output() dag.StreamSlot {
+	return dag.StreamSlot{
+		Var:   t.OutputStreams().Get(0),
+		Index: 0,
+	}
+}
+
+func (t *IPFSReadNode) GenerateOp() (exec.Op, error) {
 	return &IPFSRead{
-		Output:   n.OutputStreams[0].Var,
+		Output:   t.OutputStreams().Get(0).Var,
 		FileHash: t.FileHash,
 		Option:   t.Option,
 	}, nil
 }
 
-func (t *IPFSReadType) String(node *dag.Node) string {
-	return fmt.Sprintf("IPFSRead[%s,%v+%v]%v%v", t.FileHash, t.Option.Offset, t.Option.Length, formatStreamIO(node), formatValueIO(node))
-}
+// func (t *IPFSReadType) String() string {
+// 	return fmt.Sprintf("IPFSRead[%s,%v+%v]%v%v", t.FileHash, t.Option.Offset, t.Option.Length, formatStreamIO(node), formatValueIO(node))
+// }
 
-type IPFSWriteType struct {
+type IPFSWriteNode struct {
+	dag.NodeBase
 	FileHashStoreKey string
-	Range            exec.Range
 }
 
-func (t *IPFSWriteType) InitNode(node *dag.Node) {
-	dag.NodeDeclareInputStream(node, 1)
-	dag.NodeNewOutputValue(node, dag.StringValueVar, &ioswitchlrc.VarProps{})
+func (b *GraphNodeBuilder) NewIPFSWrite(fileHashStoreKey string) *IPFSWriteNode {
+	node := &IPFSWriteNode{
+		FileHashStoreKey: fileHashStoreKey,
+	}
+	b.AddNode(node)
+	return node
 }
 
-func (t *IPFSWriteType) GenerateOp(op *dag.Node) (exec.Op, error) {
+func (t *IPFSWriteNode) SetInput(input *dag.StreamVar) {
+	t.InputStreams().EnsureSize(1)
+	input.Connect(t, 0)
+	t.OutputValues().SetupNew(t, t.Graph().NewValueVar(dag.StringValueVar))
+}
+
+func (t *IPFSWriteNode) Input() dag.StreamSlot {
+	return dag.StreamSlot{
+		Var:   t.InputStreams().Get(0),
+		Index: 0,
+	}
+}
+
+func (t *IPFSWriteNode) FileHashVar() *dag.ValueVar {
+	return t.OutputValues().Get(0)
+}
+
+func (t *IPFSWriteNode) GenerateOp() (exec.Op, error) {
 	return &IPFSWrite{
-		Input:    op.InputStreams[0].Var,
-		FileHash: op.OutputValues[0].Var.(*exec.StringVar),
+		Input:    t.InputStreams().Get(0).Var,
+		FileHash: t.OutputValues().Get(0).Var.(*exec.StringVar),
 	}, nil
 }
 
-func (t *IPFSWriteType) String(node *dag.Node) string {
-	return fmt.Sprintf("IPFSWrite[%s,%v+%v]%v%v", t.FileHashStoreKey, t.Range.Offset, t.Range.Length, formatStreamIO(node), formatValueIO(node))
-}
+// func (t *IPFSWriteType) String() string {
+// 	return fmt.Sprintf("IPFSWrite[%s,%v+%v]%v%v", t.FileHashStoreKey, t.Range.Offset, t.Range.Length, formatStreamIO(node), formatValueIO(node))
+// }

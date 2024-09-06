@@ -11,7 +11,6 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/utils"
 	"gitlink.org.cn/cloudream/common/utils/io2"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -101,24 +100,40 @@ func (o *ChunkedJoin) String() string {
 	)
 }
 
-type ChunkedSplitType struct {
-	OutputCount int
-	ChunkSize   int
+type ChunkedSplitNode struct {
+	dag.NodeBase
+	ChunkSize int
 }
 
-func (t *ChunkedSplitType) InitNode(node *dag.Node) {
-	dag.NodeDeclareInputStream(node, 1)
-	for i := 0; i < t.OutputCount; i++ {
-		dag.NodeNewOutputStream(node, &ioswitchlrc.VarProps{
-			StreamIndex: i,
-		})
+func (b *GraphNodeBuilder) NewChunkedSplit(chunkSize int) *ChunkedSplitNode {
+	node := &ChunkedSplitNode{
+		ChunkSize: chunkSize,
+	}
+	b.AddNode(node)
+	return node
+}
+
+func (t *ChunkedSplitNode) Split(input *dag.StreamVar, cnt int) {
+	t.InputStreams().EnsureSize(1)
+	input.Connect(t, 0)
+	t.OutputStreams().Resize(cnt)
+	for i := 0; i < cnt; i++ {
+		t.OutputStreams().Setup(t, t.Graph().NewStreamVar(), i)
 	}
 }
 
-func (t *ChunkedSplitType) GenerateOp(op *dag.Node) (exec.Op, error) {
+func (t *ChunkedSplitNode) SubStream(idx int) *dag.StreamVar {
+	return t.OutputStreams().Get(idx)
+}
+
+func (t *ChunkedSplitNode) SplitCount() int {
+	return t.OutputStreams().Len()
+}
+
+func (t *ChunkedSplitNode) GenerateOp() (exec.Op, error) {
 	return &ChunkedSplit{
-		Input: op.InputStreams[0].Var,
-		Outputs: lo.Map(op.OutputStreams, func(v *dag.StreamVar, idx int) *exec.StreamVar {
+		Input: t.InputStreams().Get(0).Var,
+		Outputs: lo.Map(t.OutputStreams().RawArray(), func(v *dag.StreamVar, idx int) *exec.StreamVar {
 			return v.Var
 		}),
 		ChunkSize:    t.ChunkSize,
@@ -126,32 +141,43 @@ func (t *ChunkedSplitType) GenerateOp(op *dag.Node) (exec.Op, error) {
 	}, nil
 }
 
-func (t *ChunkedSplitType) String(node *dag.Node) string {
-	return fmt.Sprintf("ChunkedSplit[%v]%v%v", t.ChunkSize, formatStreamIO(node), formatValueIO(node))
+// func (t *ChunkedSplitNode) String() string {
+// 	return fmt.Sprintf("ChunkedSplit[%v]%v%v", t.ChunkSize, formatStreamIO(node), formatValueIO(node))
+// }
+
+type ChunkedJoinNode struct {
+	dag.NodeBase
+	ChunkSize int
 }
 
-type ChunkedJoinType struct {
-	InputCount int
-	ChunkSize  int
+func (b *GraphNodeBuilder) NewChunkedJoin(chunkSize int) *ChunkedJoinNode {
+	node := &ChunkedJoinNode{
+		ChunkSize: chunkSize,
+	}
+	b.AddNode(node)
+	node.OutputStreams().SetupNew(node, b.Graph.NewStreamVar())
+	return node
 }
 
-func (t *ChunkedJoinType) InitNode(node *dag.Node) {
-	dag.NodeDeclareInputStream(node, t.InputCount)
-	dag.NodeNewOutputStream(node, &ioswitchlrc.VarProps{
-		StreamIndex: -1,
-	})
+func (t *ChunkedJoinNode) AddInput(str *dag.StreamVar) {
+	idx := t.InputStreams().EnlargeOne()
+	str.Connect(t, idx)
 }
 
-func (t *ChunkedJoinType) GenerateOp(op *dag.Node) (exec.Op, error) {
+func (t *ChunkedJoinNode) Joined() *dag.StreamVar {
+	return t.OutputStreams().Get(0)
+}
+
+func (t *ChunkedJoinNode) GenerateOp() (exec.Op, error) {
 	return &ChunkedJoin{
-		Inputs: lo.Map(op.InputStreams, func(v *dag.StreamVar, idx int) *exec.StreamVar {
+		Inputs: lo.Map(t.InputStreams().RawArray(), func(v *dag.StreamVar, idx int) *exec.StreamVar {
 			return v.Var
 		}),
-		Output:    op.OutputStreams[0].Var,
+		Output:    t.OutputStreams().Get(0).Var,
 		ChunkSize: t.ChunkSize,
 	}, nil
 }
 
-func (t *ChunkedJoinType) String(node *dag.Node) string {
-	return fmt.Sprintf("ChunkedJoin[%v]%v%v", t.ChunkSize, formatStreamIO(node), formatValueIO(node))
-}
+// func (t *ChunkedJoinType) String() string {
+// 	return fmt.Sprintf("ChunkedJoin[%v]%v%v", t.ChunkSize, formatStreamIO(node), formatValueIO(node))
+// }

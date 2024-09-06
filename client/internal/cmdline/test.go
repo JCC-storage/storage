@@ -19,8 +19,8 @@ import (
 
 func init() {
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "test2",
-		Short: "test2",
+		Use:   "test",
+		Short: "test",
 		// Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			// cmdCtx := GetCmdCtx(cmd)
@@ -160,8 +160,8 @@ func init() {
 	})
 
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "test",
-		Short: "test",
+		Use:   "test4",
+		Short: "test4",
 		// Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			// cmdCtx := GetCmdCtx(cmd)
@@ -202,8 +202,8 @@ func init() {
 	})
 
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "test4",
-		Short: "test4",
+		Use:   "test3",
+		Short: "test3",
 		// Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			// cmdCtx := GetCmdCtx(cmd)
@@ -228,7 +228,7 @@ func init() {
 				ioswitchlrc.NewFromNode("QmQBKncEDqxw3BrGr3th3gS3jUC2fizGz1w29ZxxrrKfNv", &nodes.Nodes[0], 2),
 			}, []ioswitchlrc.To{
 				ioswitchlrc.NewToNodeWithRange(nodes.Nodes[1], -1, "-1", exec.Range{0, &le}),
-				ioswitchlrc.NewToNode(nodes.Nodes[1], 0, "0"),
+				ioswitchlrc.NewToNodeWithRange(nodes.Nodes[1], 0, "0", exec.Range{10, &le}),
 				ioswitchlrc.NewToNode(nodes.Nodes[1], 1, "1"),
 				ioswitchlrc.NewToNode(nodes.Nodes[1], 2, "2"),
 				ioswitchlrc.NewToNode(nodes.Nodes[1], 3, "3"),

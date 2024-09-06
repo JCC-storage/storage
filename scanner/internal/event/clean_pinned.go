@@ -54,6 +54,7 @@ func (t *CleanPinned) Execute(execCtx ExecuteContext) {
 		log.Debugf("end, time: %v", time.Since(startTime))
 	}()
 
+	// TODO 应该与其他event一样，直接访问数据库
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		log.Warnf("new coordinator client: %s", err.Error())
@@ -67,12 +68,18 @@ func (t *CleanPinned) Execute(execCtx ExecuteContext) {
 		return
 	}
 
-	getLoadLog, err := coorCli.GetPackageLoadLogDetails(coormq.ReqGetPackageLoadLogDetails(t.PackageID))
+	stats, err := execCtx.Args.DB.PackageAccessStat().GetByPackageID(execCtx.Args.DB.SQLCtx(), t.PackageID)
 	if err != nil {
-		log.Warnf("getting package load log details: %s", err.Error())
+		log.Warnf("getting package access stat: %s", err.Error())
 		return
 	}
-	readerNodeIDs := lo.Map(getLoadLog.Logs, func(item coormq.PackageLoadLogDetail, idx int) cdssdk.NodeID { return item.Storage.NodeID })
+	var readerNodeIDs []cdssdk.NodeID
+	for _, item := range stats {
+		// TODO 可以考虑做成配置
+		if item.Amount >= float64(len(getObjs.Objects)/2) {
+			readerNodeIDs = append(readerNodeIDs, item.NodeID)
+		}
+	}
 
 	// 注意！需要保证allNodeID包含所有之后可能用到的节点ID
 	// TOOD 可以考虑设计Cache机制

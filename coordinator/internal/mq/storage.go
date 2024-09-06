@@ -3,7 +3,6 @@ package mq
 import (
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/jmoiron/sqlx"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
@@ -52,11 +51,6 @@ func (svc *Service) StoragePackageLoaded(msg *coormq.StoragePackageLoaded) (*coo
 		err := svc.db.StoragePackage().CreateOrUpdate(tx, msg.StorageID, msg.PackageID, msg.UserID)
 		if err != nil {
 			return fmt.Errorf("creating storage package: %w", err)
-		}
-
-		err = svc.db.StoragePackageLog().Create(tx, msg.StorageID, msg.PackageID, msg.UserID, time.Now())
-		if err != nil {
-			return fmt.Errorf("creating storage package log: %w", err)
 		}
 
 		stg, err := svc.db.Storage().GetByID(tx, msg.StorageID)

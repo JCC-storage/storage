@@ -40,9 +40,8 @@ func NewCheckPackageRedundancy(evt *scevt.CheckPackageRedundancy) *CheckPackageR
 }
 
 type NodeLoadInfo struct {
-	Node             cdssdk.Node
-	LoadsRecentMonth int
-	LoadsRecentYear  int
+	Node         cdssdk.Node
+	AccessAmount float64
 }
 
 func (t *CheckPackageRedundancy) TryMerge(other Event) bool {
@@ -62,6 +61,8 @@ func (t *CheckPackageRedundancy) Execute(execCtx ExecuteContext) {
 		log.Debugf("end, time: %v", time.Since(startTime))
 	}()
 
+	// TODO 应该像其他event一样直接读取数据库
+
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		log.Warnf("new coordinator client: %s", err.Error())
@@ -75,9 +76,9 @@ func (t *CheckPackageRedundancy) Execute(execCtx ExecuteContext) {
 		return
 	}
 
-	getLogs, err := coorCli.GetPackageLoadLogDetails(coormq.ReqGetPackageLoadLogDetails(t.PackageID))
+	stats, err := execCtx.Args.DB.PackageAccessStat().GetByPackageID(execCtx.Args.DB.SQLCtx(), t.PackageID)
 	if err != nil {
-		log.Warnf("getting package load log details: %s", err.Error())
+		log.Warnf("getting package access stats: %s", err.Error())
 		return
 	}
 
@@ -100,18 +101,12 @@ func (t *CheckPackageRedundancy) Execute(execCtx ExecuteContext) {
 		}
 	}
 
-	for _, log := range getLogs.Logs {
-		info, ok := userAllNodes[log.Storage.NodeID]
+	for _, stat := range stats {
+		info, ok := userAllNodes[stat.NodeID]
 		if !ok {
 			continue
 		}
-
-		sinceNow := time.Since(log.CreateTime)
-		if sinceNow.Hours() < monthHours {
-			info.LoadsRecentMonth++
-		} else if sinceNow.Hours() < yearHours {
-			info.LoadsRecentYear++
-		}
+		info.AccessAmount = stat.Amount
 	}
 
 	var changedObjects []coormq.UpdatingObjectRedundancy
@@ -215,8 +210,11 @@ func (t *CheckPackageRedundancy) Execute(execCtx ExecuteContext) {
 func (t *CheckPackageRedundancy) chooseRedundancy(obj stgmod.ObjectDetail, userAllNodes map[cdssdk.NodeID]*NodeLoadInfo) (cdssdk.Redundancy, []*NodeLoadInfo) {
 	switch obj.Object.Redundancy.(type) {
 	case *cdssdk.NoneRedundancy:
-		newLRCNodes := t.chooseNewNodesForLRC(&cdssdk.DefaultLRCRedundancy, userAllNodes)
-		return &cdssdk.DefaultLRCRedundancy, newLRCNodes
+		newNodes := t.chooseNewNodesForEC(&cdssdk.DefaultECRedundancy, userAllNodes)
+		return &cdssdk.DefaultECRedundancy, newNodes
+
+		// newLRCNodes := t.chooseNewNodesForLRC(&cdssdk.DefaultLRCRedundancy, userAllNodes)
+		// return &cdssdk.DefaultLRCRedundancy, newLRCNodes
 
 	case *cdssdk.LRCRedundancy:
 		newLRCNodes := t.rechooseNodesForLRC(obj, &cdssdk.DefaultLRCRedundancy, userAllNodes)
@@ -263,12 +261,7 @@ func (t *CheckPackageRedundancy) summaryRepObjectBlockNodes(objs []stgmod.Object
 
 func (t *CheckPackageRedundancy) chooseNewNodesForRep(red *cdssdk.RepRedundancy, allNodes map[cdssdk.NodeID]*NodeLoadInfo) []*NodeLoadInfo {
 	sortedNodes := sort2.Sort(lo.Values(allNodes), func(left *NodeLoadInfo, right *NodeLoadInfo) int {
-		dm := right.LoadsRecentMonth - left.LoadsRecentMonth
-		if dm != 0 {
-			return dm
-		}
-
-		return right.LoadsRecentYear - left.LoadsRecentYear
+		return sort2.Cmp(right.AccessAmount, left.AccessAmount)
 	})
 
 	return t.chooseSoManyNodes(red.RepCount, sortedNodes)
@@ -276,12 +269,7 @@ func (t *CheckPackageRedundancy) chooseNewNodesForRep(red *cdssdk.RepRedundancy,
 
 func (t *CheckPackageRedundancy) chooseNewNodesForEC(red *cdssdk.ECRedundancy, allNodes map[cdssdk.NodeID]*NodeLoadInfo) []*NodeLoadInfo {
 	sortedNodes := sort2.Sort(lo.Values(allNodes), func(left *NodeLoadInfo, right *NodeLoadInfo) int {
-		dm := right.LoadsRecentMonth - left.LoadsRecentMonth
-		if dm != 0 {
-			return dm
-		}
-
-		return right.LoadsRecentYear - left.LoadsRecentYear
+		return sort2.Cmp(right.AccessAmount, left.AccessAmount)
 	})
 
 	return t.chooseSoManyNodes(red.N, sortedNodes)
@@ -289,12 +277,7 @@ func (t *CheckPackageRedundancy) chooseNewNodesForEC(red *cdssdk.ECRedundancy, a
 
 func (t *CheckPackageRedundancy) chooseNewNodesForLRC(red *cdssdk.LRCRedundancy, allNodes map[cdssdk.NodeID]*NodeLoadInfo) []*NodeLoadInfo {
 	sortedNodes := sort2.Sort(lo.Values(allNodes), func(left *NodeLoadInfo, right *NodeLoadInfo) int {
-		dm := right.LoadsRecentMonth - left.LoadsRecentMonth
-		if dm != 0 {
-			return dm
-		}
-
-		return right.LoadsRecentYear - left.LoadsRecentYear
+		return sort2.Cmp(right.AccessAmount, left.AccessAmount)
 	})
 
 	return t.chooseSoManyNodes(red.N, sortedNodes)
@@ -323,18 +306,13 @@ func (t *CheckPackageRedundancy) rechooseNodesForRep(mostBlockNodeIDs []cdssdk.N
 	}
 
 	sortedNodes := sort2.Sort(rechooseNodes, func(left *rechooseNode, right *rechooseNode) int {
-		dm := right.LoadsRecentMonth - left.LoadsRecentMonth
-		if dm != 0 {
-			return dm
-		}
-
 		// 已经缓存了文件块的节点优先选择
 		v := sort2.CmpBool(right.HasBlock, left.HasBlock)
 		if v != 0 {
 			return v
 		}
 
-		return right.LoadsRecentYear - left.LoadsRecentYear
+		return sort2.Cmp(right.AccessAmount, left.AccessAmount)
 	})
 
 	return t.chooseSoManyNodes(red.RepCount, lo.Map(sortedNodes, func(node *rechooseNode, idx int) *NodeLoadInfo { return node.NodeLoadInfo }))
@@ -363,18 +341,13 @@ func (t *CheckPackageRedundancy) rechooseNodesForEC(obj stgmod.ObjectDetail, red
 	}
 
 	sortedNodes := sort2.Sort(rechooseNodes, func(left *rechooseNode, right *rechooseNode) int {
-		dm := right.LoadsRecentMonth - left.LoadsRecentMonth
-		if dm != 0 {
-			return dm
-		}
-
 		// 已经缓存了文件块的节点优先选择
 		v := sort2.CmpBool(right.CachedBlockIndex > -1, left.CachedBlockIndex > -1)
 		if v != 0 {
 			return v
 		}
 
-		return right.LoadsRecentYear - left.LoadsRecentYear
+		return sort2.Cmp(right.AccessAmount, left.AccessAmount)
 	})
 
 	// TODO 可以考虑选择已有块的节点时，能依然按照Index顺序选择
@@ -404,18 +377,13 @@ func (t *CheckPackageRedundancy) rechooseNodesForLRC(obj stgmod.ObjectDetail, re
 	}
 
 	sortedNodes := sort2.Sort(rechooseNodes, func(left *rechooseNode, right *rechooseNode) int {
-		dm := right.LoadsRecentMonth - left.LoadsRecentMonth
-		if dm != 0 {
-			return dm
-		}
-
 		// 已经缓存了文件块的节点优先选择
 		v := sort2.CmpBool(right.CachedBlockIndex > -1, left.CachedBlockIndex > -1)
 		if v != 0 {
 			return v
 		}
 
-		return right.LoadsRecentYear - left.LoadsRecentYear
+		return sort2.Cmp(right.AccessAmount, left.AccessAmount)
 	})
 
 	// TODO 可以考虑选择已有块的节点时，能依然按照Index顺序选择

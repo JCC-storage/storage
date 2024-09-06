@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
 
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
-	log "gitlink.org.cn/cloudream/common/pkgs/logger"
+	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/storage/agent/internal/config"
 	"gitlink.org.cn/cloudream/storage/agent/internal/task"
@@ -15,6 +16,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 	agtrpc "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
+	packagestat "gitlink.org.cn/cloudream/storage/common/pkgs/package_stat"
 
 	"google.golang.org/grpc"
 
@@ -38,7 +40,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = log.Init(&config.Cfg().Logger)
+	err = logger.Init(&config.Cfg().Logger)
 	if err != nil {
 		fmt.Printf("init logger failed, err: %s", err.Error())
 		os.Exit(1)
@@ -51,7 +53,7 @@ func main() {
 
 	// 启动网络连通性检测，并就地检测一次
 	conCol := connectivity.NewCollector(&config.Cfg().Connectivity, func(collector *connectivity.Collector) {
-		log := log.WithField("Connectivity", "")
+		log := logger.WithField("Connectivity", "")
 
 		coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 		if err != nil {
@@ -84,25 +86,31 @@ func main() {
 	})
 	conCol.CollectInPlace()
 
+	pkgStat := packagestat.NewPackageStat(packagestat.Config{
+		// TODO 考虑放到配置里
+		ReportInterval: time.Second * 10,
+	})
+	go servePackageStat(pkgStat)
+
 	distlock, err := distlock.NewService(&config.Cfg().DistLock)
 	if err != nil {
-		log.Fatalf("new ipfs failed, err: %s", err.Error())
+		logger.Fatalf("new ipfs failed, err: %s", err.Error())
 	}
 
 	sw := exec.NewWorker()
 
 	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol)
 
-	taskMgr := task.NewManager(distlock, &conCol, &dlder)
+	taskMgr := task.NewManager(distlock, &conCol, &dlder, pkgStat)
 
 	// 启动命令服务器
 	// TODO 需要设计AgentID持久化机制
 	agtSvr, err := agtmq.NewServer(cmdsvc.NewService(&taskMgr), config.Cfg().ID, &config.Cfg().RabbitMQ)
 	if err != nil {
-		log.Fatalf("new agent server failed, err: %s", err.Error())
+		logger.Fatalf("new agent server failed, err: %s", err.Error())
 	}
 	agtSvr.OnError(func(err error) {
-		log.Warnf("agent server err: %s", err.Error())
+		logger.Warnf("agent server err: %s", err.Error())
 	})
 	go serveAgentServer(agtSvr)
 
@@ -110,7 +118,7 @@ func main() {
 	listenAddr := config.Cfg().GRPC.MakeListenAddress()
 	lis, err := net.Listen("tcp", listenAddr)
 	if err != nil {
-		log.Fatalf("listen on %s failed, err: %s", listenAddr, err.Error())
+		logger.Fatalf("listen on %s failed, err: %s", listenAddr, err.Error())
 	}
 	s := grpc.NewServer()
 	agtrpc.RegisterAgentServer(s, grpcsvc.NewService(&sw))
@@ -123,45 +131,69 @@ func main() {
 }
 
 func serveAgentServer(server *agtmq.Server) {
-	log.Info("start serving command server")
+	logger.Info("start serving command server")
 
 	err := server.Serve()
 
 	if err != nil {
-		log.Errorf("command server stopped with error: %s", err.Error())
+		logger.Errorf("command server stopped with error: %s", err.Error())
 	}
 
-	log.Info("command server stopped")
+	logger.Info("command server stopped")
 
 	// TODO 仅简单结束了程序
 	os.Exit(1)
 }
 
 func serveGRPC(s *grpc.Server, lis net.Listener) {
-	log.Info("start serving grpc")
+	logger.Info("start serving grpc")
 
 	err := s.Serve(lis)
 
 	if err != nil {
-		log.Errorf("grpc stopped with error: %s", err.Error())
+		logger.Errorf("grpc stopped with error: %s", err.Error())
 	}
 
-	log.Info("grpc stopped")
+	logger.Info("grpc stopped")
 
 	// TODO 仅简单结束了程序
 	os.Exit(1)
 }
 
 func serveDistLock(svc *distlock.Service) {
-	log.Info("start serving distlock")
+	logger.Info("start serving distlock")
 
 	err := svc.Serve()
 
 	if err != nil {
-		log.Errorf("distlock stopped with error: %s", err.Error())
+		logger.Errorf("distlock stopped with error: %s", err.Error())
 	}
 
-	log.Info("distlock stopped")
+	logger.Info("distlock stopped")
+
+	// TODO 仅简单结束了程序
+	os.Exit(1)
+}
+
+func servePackageStat(svc *packagestat.PackageStat) {
+	logger.Info("start serving package stat")
+
+	ch := svc.Start()
+loop:
+	for {
+		val, err := ch.Receive()
+		if err != nil {
+			logger.Errorf("package stat stopped with error: %v", err)
+			break
+		}
+
+		switch val := val.(type) {
+		case error:
+			logger.Errorf("package stat stopped with error: %v", val)
+			break loop
+		}
+	}
+	logger.Info("package stat stopped")
 
 	// TODO 仅简单结束了程序
 	os.Exit(1)

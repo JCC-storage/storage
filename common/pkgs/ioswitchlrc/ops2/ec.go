@@ -15,7 +15,6 @@ import (
 	"gitlink.org.cn/cloudream/common/utils/sync2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ec"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ec/lrc"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc"
 )
 
 func init() {
@@ -115,15 +114,43 @@ func (o *GalMultiply) String() string {
 	)
 }
 
-type LRCConstructAnyType struct {
+type LRCConstructAnyNode struct {
+	dag.NodeBase
 	LRC           cdssdk.LRCRedundancy
 	InputIndexes  []int
 	OutputIndexes []int
 }
 
-func (t *LRCConstructAnyType) InitNode(node *dag.Node) {}
+func (b *GraphNodeBuilder) NewLRCConstructAny(lrc cdssdk.LRCRedundancy) *LRCConstructAnyNode {
+	node := &LRCConstructAnyNode{
+		LRC: lrc,
+	}
+	b.AddNode(node)
+	return node
+}
 
-func (t *LRCConstructAnyType) GenerateOp(op *dag.Node) (exec.Op, error) {
+func (t *LRCConstructAnyNode) AddInput(str *dag.StreamVar, dataIndex int) {
+	t.InputIndexes = append(t.InputIndexes, dataIndex)
+	idx := t.InputStreams().EnlargeOne()
+	str.Connect(t, idx)
+}
+
+func (t *LRCConstructAnyNode) RemoveAllInputs() {
+	for i, in := range t.InputStreams().RawArray() {
+		in.Disconnect(t, i)
+	}
+	t.InputStreams().Resize(0)
+	t.InputIndexes = nil
+}
+
+func (t *LRCConstructAnyNode) NewOutput(dataIndex int) *dag.StreamVar {
+	t.OutputIndexes = append(t.OutputIndexes, dataIndex)
+	output := t.Graph().NewStreamVar()
+	t.OutputStreams().SetupNew(t, output)
+	return output
+}
+
+func (t *LRCConstructAnyNode) GenerateOp() (exec.Op, error) {
 	l, err := lrc.New(t.LRC.N, t.LRC.K, t.LRC.Groups)
 	if err != nil {
 		return nil, err
@@ -135,50 +162,45 @@ func (t *LRCConstructAnyType) GenerateOp(op *dag.Node) (exec.Op, error) {
 
 	return &GalMultiply{
 		Coef:      coef,
-		Inputs:    lo.Map(op.InputStreams, func(v *dag.StreamVar, idx int) *exec.StreamVar { return v.Var }),
-		Outputs:   lo.Map(op.OutputStreams, func(v *dag.StreamVar, idx int) *exec.StreamVar { return v.Var }),
+		Inputs:    lo.Map(t.InputStreams().RawArray(), func(v *dag.StreamVar, idx int) *exec.StreamVar { return v.Var }),
+		Outputs:   lo.Map(t.OutputStreams().RawArray(), func(v *dag.StreamVar, idx int) *exec.StreamVar { return v.Var }),
 		ChunkSize: t.LRC.ChunkSize,
 	}, nil
 }
 
-func (t *LRCConstructAnyType) AddInput(node *dag.Node, str *dag.StreamVar, dataIndex int) {
-	t.InputIndexes = append(t.InputIndexes, dataIndex)
-	node.InputStreams = append(node.InputStreams, str)
-	str.To(node, len(node.InputStreams)-1)
-}
+// func (t *LRCConstructAnyType) String() string {
+// 	return fmt.Sprintf("LRCAny[]%v%v", formatStreamIO(node), formatValueIO(node))
+// }
 
-func (t *LRCConstructAnyType) RemoveAllInputs(n *dag.Node) {
-	for _, in := range n.InputStreams {
-		in.From.Node.OutputStreams[in.From.SlotIndex].NotTo(n)
-	}
-	n.InputStreams = nil
-	t.InputIndexes = nil
-}
-
-func (t *LRCConstructAnyType) NewOutput(node *dag.Node, dataIndex int) *dag.StreamVar {
-	t.OutputIndexes = append(t.OutputIndexes, dataIndex)
-	return dag.NodeNewOutputStream(node, &ioswitchlrc.VarProps{StreamIndex: dataIndex})
-}
-
-func (t *LRCConstructAnyType) String(node *dag.Node) string {
-	return fmt.Sprintf("LRCAny[]%v%v", formatStreamIO(node), formatValueIO(node))
-}
-
-type LRCConstructGroupType struct {
+type LRCConstructGroupNode struct {
+	dag.NodeBase
 	LRC              cdssdk.LRCRedundancy
 	TargetBlockIndex int
 }
 
-func (t *LRCConstructGroupType) InitNode(node *dag.Node) {
-	dag.NodeNewOutputStream(node, &ioswitchlrc.VarProps{
-		StreamIndex: t.TargetBlockIndex,
-	})
-
-	grpIdx := t.LRC.FindGroup(t.TargetBlockIndex)
-	dag.NodeDeclareInputStream(node, t.LRC.Groups[grpIdx])
+func (b *GraphNodeBuilder) NewLRCConstructGroup(lrc cdssdk.LRCRedundancy) *LRCConstructGroupNode {
+	node := &LRCConstructGroupNode{
+		LRC: lrc,
+	}
+	b.AddNode(node)
+	return node
 }
 
-func (t *LRCConstructGroupType) GenerateOp(op *dag.Node) (exec.Op, error) {
+func (t *LRCConstructGroupNode) SetupForTarget(blockIdx int, inputs []*dag.StreamVar) *dag.StreamVar {
+	t.TargetBlockIndex = blockIdx
+
+	t.InputStreams().Resize(0)
+	for _, in := range inputs {
+		idx := t.InputStreams().EnlargeOne()
+		in.Connect(t, idx)
+	}
+
+	output := t.Graph().NewStreamVar()
+	t.OutputStreams().Setup(t, output, 0)
+	return output
+}
+
+func (t *LRCConstructGroupNode) GenerateOp() (exec.Op, error) {
 	l, err := lrc.New(t.LRC.N, t.LRC.K, t.LRC.Groups)
 	if err != nil {
 		return nil, err
@@ -190,12 +212,12 @@ func (t *LRCConstructGroupType) GenerateOp(op *dag.Node) (exec.Op, error) {
 
 	return &GalMultiply{
 		Coef:      coef,
-		Inputs:    lo.Map(op.InputStreams, func(v *dag.StreamVar, idx int) *exec.StreamVar { return v.Var }),
-		Outputs:   lo.Map(op.OutputStreams, func(v *dag.StreamVar, idx int) *exec.StreamVar { return v.Var }),
+		Inputs:    lo.Map(t.InputStreams().RawArray(), func(v *dag.StreamVar, idx int) *exec.StreamVar { return v.Var }),
+		Outputs:   lo.Map(t.OutputStreams().RawArray(), func(v *dag.StreamVar, idx int) *exec.StreamVar { return v.Var }),
 		ChunkSize: t.LRC.ChunkSize,
 	}, nil
 }
 
-func (t *LRCConstructGroupType) String(node *dag.Node) string {
-	return fmt.Sprintf("LRCGroup[]%v%v", formatStreamIO(node), formatValueIO(node))
-}
+// func (t *LRCConstructGroupType) String() string {
+// 	return fmt.Sprintf("LRCGroup[]%v%v", formatStreamIO(node), formatValueIO(node))
+// }

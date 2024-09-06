@@ -13,8 +13,9 @@ import (
 
 type GenerateContext struct {
 	LRC         cdssdk.LRCRedundancy
-	DAG         *dag.Graph
-	Toes        []ioswitchlrc.To
+	DAG         *ops2.GraphNodeBuilder
+	To          []ioswitchlrc.To
+	ToNodes     map[ioswitchlrc.To]ops2.ToNode
 	StreamRange exec.Range
 }
 
@@ -25,9 +26,10 @@ func Encode(fr ioswitchlrc.From, toes []ioswitchlrc.To, blder *exec.PlanBuilder)
 	}
 
 	ctx := GenerateContext{
-		LRC:  cdssdk.DefaultLRCRedundancy,
-		DAG:  dag.NewGraph(),
-		Toes: toes,
+		LRC:     cdssdk.DefaultLRCRedundancy,
+		DAG:     ops2.NewGraphNodeBuilder(),
+		To:      toes,
+		ToNodes: make(map[ioswitchlrc.To]ops2.ToNode),
 	}
 
 	calcStreamRange(&ctx)
@@ -46,7 +48,7 @@ func Encode(fr ioswitchlrc.From, toes []ioswitchlrc.To, blder *exec.PlanBuilder)
 	generateClone(&ctx)
 	generateRange(&ctx)
 
-	return plan.Generate(ctx.DAG, blder)
+	return plan.Generate(ctx.DAG.Graph, blder)
 }
 
 func buildDAGEncode(ctx *GenerateContext, fr ioswitchlrc.From, toes []ioswitchlrc.To) error {
@@ -66,9 +68,9 @@ func buildDAGEncode(ctx *GenerateContext, fr ioswitchlrc.From, toes []ioswitchlr
 			if err != nil {
 				return fmt.Errorf("building to node: %w", err)
 			}
+			ctx.ToNodes[to] = toNode
 
-			frNode.OutputStreams[0].To(toNode, 0)
-
+			toNode.SetInput(frNode.Output().Var)
 		} else if idx < ctx.LRC.K {
 			dataToes = append(dataToes, to)
 		} else {
@@ -81,19 +83,17 @@ func buildDAGEncode(ctx *GenerateContext, fr ioswitchlrc.From, toes []ioswitchlr
 	}
 
 	// 需要文件块，则生成Split指令
-	splitNode := ctx.DAG.NewNode(&ops2.ChunkedSplitType{
-		OutputCount: ctx.LRC.K,
-		ChunkSize:   ctx.LRC.ChunkSize,
-	}, &ioswitchlrc.NodeProps{})
-	frNode.OutputStreams[0].To(splitNode, 0)
+	splitNode := ctx.DAG.NewChunkedSplit(ctx.LRC.ChunkSize)
+	splitNode.Split(frNode.Output().Var, ctx.LRC.K)
 
 	for _, to := range dataToes {
 		toNode, err := buildToNode(ctx, to)
 		if err != nil {
 			return fmt.Errorf("building to node: %w", err)
 		}
+		ctx.ToNodes[to] = toNode
 
-		splitNode.OutputStreams[to.GetDataIndex()].To(toNode, 0)
+		toNode.SetInput(splitNode.SubStream(to.GetDataIndex()))
 	}
 
 	if len(parityToes) == 0 {
@@ -102,12 +102,10 @@ func buildDAGEncode(ctx *GenerateContext, fr ioswitchlrc.From, toes []ioswitchlr
 
 	// 需要校验块，则进一步生成Construct指令
 
-	conNode, conType := dag.NewNode(ctx.DAG, &ops2.LRCConstructAnyType{
-		LRC: ctx.LRC,
-	}, &ioswitchlrc.NodeProps{})
+	conType := ctx.DAG.NewLRCConstructAny(ctx.LRC)
 
-	for _, out := range splitNode.OutputStreams {
-		conType.AddInput(conNode, out, ioswitchlrc.SProps(out).StreamIndex)
+	for i, out := range splitNode.OutputStreams().RawArray() {
+		conType.AddInput(out, i)
 	}
 
 	for _, to := range parityToes {
@@ -115,8 +113,9 @@ func buildDAGEncode(ctx *GenerateContext, fr ioswitchlrc.From, toes []ioswitchlr
 		if err != nil {
 			return fmt.Errorf("building to node: %w", err)
 		}
+		ctx.ToNodes[to] = toNode
 
-		conType.NewOutput(conNode, to.GetDataIndex()).To(toNode, 0)
+		toNode.SetInput(conType.NewOutput(to.GetDataIndex()))
 	}
 	return nil
 }
@@ -124,9 +123,10 @@ func buildDAGEncode(ctx *GenerateContext, fr ioswitchlrc.From, toes []ioswitchlr
 // 提供数据块+编码块中的k个块，重建任意块，包括完整文件。
 func ReconstructAny(frs []ioswitchlrc.From, toes []ioswitchlrc.To, blder *exec.PlanBuilder) error {
 	ctx := GenerateContext{
-		LRC:  cdssdk.DefaultLRCRedundancy,
-		DAG:  dag.NewGraph(),
-		Toes: toes,
+		LRC:     cdssdk.DefaultLRCRedundancy,
+		DAG:     ops2.NewGraphNodeBuilder(),
+		To:      toes,
+		ToNodes: make(map[ioswitchlrc.To]ops2.ToNode),
 	}
 
 	calcStreamRange(&ctx)
@@ -145,11 +145,11 @@ func ReconstructAny(frs []ioswitchlrc.From, toes []ioswitchlrc.To, blder *exec.P
 	generateClone(&ctx)
 	generateRange(&ctx)
 
-	return plan.Generate(ctx.DAG, blder)
+	return plan.Generate(ctx.DAG.Graph, blder)
 }
 
 func buildDAGReconstructAny(ctx *GenerateContext, frs []ioswitchlrc.From, toes []ioswitchlrc.To) error {
-	frNodes := make(map[int]*dag.Node)
+	frNodes := make(map[int]ops2.FromNode)
 	for _, fr := range frs {
 		frNode, err := buildFromNode(ctx, fr)
 		if err != nil {
@@ -167,12 +167,13 @@ func buildDAGReconstructAny(ctx *GenerateContext, frs []ioswitchlrc.From, toes [
 		toIdx := to.GetDataIndex()
 		fr := frNodes[toIdx]
 		if fr != nil {
-			node, err := buildToNode(ctx, to)
+			toNode, err := buildToNode(ctx, to)
 			if err != nil {
 				return fmt.Errorf("building to node: %w", err)
 			}
+			ctx.ToNodes[to] = toNode
 
-			fr.OutputStreams[0].To(node, 0)
+			toNode.SetInput(fr.Output().Var)
 			continue
 		}
 
@@ -189,12 +190,9 @@ func buildDAGReconstructAny(ctx *GenerateContext, frs []ioswitchlrc.From, toes [
 
 	// 生成Construct指令来恢复缺少的块
 
-	conNode, conType := dag.NewNode(ctx.DAG, &ops2.LRCConstructAnyType{
-		LRC: ctx.LRC,
-	}, &ioswitchlrc.NodeProps{})
-
-	for _, fr := range frNodes {
-		conType.AddInput(conNode, fr.OutputStreams[0], ioswitchlrc.SProps(fr.OutputStreams[0]).StreamIndex)
+	conNode := ctx.DAG.NewLRCConstructAny(ctx.LRC)
+	for i, fr := range frNodes {
+		conNode.AddInput(fr.Output().Var, i)
 	}
 
 	for _, to := range missedToes {
@@ -202,8 +200,9 @@ func buildDAGReconstructAny(ctx *GenerateContext, frs []ioswitchlrc.From, toes [
 		if err != nil {
 			return fmt.Errorf("building to node: %w", err)
 		}
+		ctx.ToNodes[to] = toNode
 
-		conType.NewOutput(conNode, to.GetDataIndex()).To(toNode, 0)
+		toNode.SetInput(conNode.NewOutput(to.GetDataIndex()))
 	}
 
 	if len(completeToes) == 0 {
@@ -212,17 +211,14 @@ func buildDAGReconstructAny(ctx *GenerateContext, frs []ioswitchlrc.From, toes [
 
 	// 需要完整文件，则生成Join指令
 
-	joinNode := ctx.DAG.NewNode(&ops2.ChunkedJoinType{
-		InputCount: ctx.LRC.K,
-		ChunkSize:  ctx.LRC.ChunkSize,
-	}, &ioswitchlrc.NodeProps{})
+	joinNode := ctx.DAG.NewChunkedJoin(ctx.LRC.ChunkSize)
 
 	for i := 0; i < ctx.LRC.K; i++ {
-		n := frNodes[i]
-		if n == nil {
-			conType.NewOutput(conNode, i).To(joinNode, i)
+		fr := frNodes[i]
+		if fr == nil {
+			joinNode.AddInput(conNode.NewOutput(i))
 		} else {
-			n.OutputStreams[0].To(joinNode, i)
+			joinNode.AddInput(fr.Output().Var)
 		}
 	}
 
@@ -231,13 +227,14 @@ func buildDAGReconstructAny(ctx *GenerateContext, frs []ioswitchlrc.From, toes [
 		if err != nil {
 			return fmt.Errorf("building to node: %w", err)
 		}
+		ctx.ToNodes[to] = toNode
 
-		joinNode.OutputStreams[0].To(toNode, 0)
+		toNode.SetInput(joinNode.Joined())
 	}
 
 	// 如果不需要Construct任何块，则删除这个节点
-	if len(conNode.OutputStreams) == 0 {
-		conType.RemoveAllInputs(conNode)
+	if conNode.OutputStreams().Len() == 0 {
+		conNode.RemoveAllInputs()
 		ctx.DAG.RemoveNode(conNode)
 	}
 
@@ -247,9 +244,10 @@ func buildDAGReconstructAny(ctx *GenerateContext, frs []ioswitchlrc.From, toes [
 // 输入同一组的多个块，恢复出剩下缺少的一个块。
 func ReconstructGroup(frs []ioswitchlrc.From, toes []ioswitchlrc.To, blder *exec.PlanBuilder) error {
 	ctx := GenerateContext{
-		LRC:  cdssdk.DefaultLRCRedundancy,
-		DAG:  dag.NewGraph(),
-		Toes: toes,
+		LRC:     cdssdk.DefaultLRCRedundancy,
+		DAG:     ops2.NewGraphNodeBuilder(),
+		To:      toes,
+		ToNodes: make(map[ioswitchlrc.To]ops2.ToNode),
 	}
 
 	calcStreamRange(&ctx)
@@ -268,33 +266,33 @@ func ReconstructGroup(frs []ioswitchlrc.From, toes []ioswitchlrc.To, blder *exec
 	generateClone(&ctx)
 	generateRange(&ctx)
 
-	return plan.Generate(ctx.DAG, blder)
+	return plan.Generate(ctx.DAG.Graph, blder)
 }
 
 func buildDAGReconstructGroup(ctx *GenerateContext, frs []ioswitchlrc.From, toes []ioswitchlrc.To) error {
-	missedGrpIdx := toes[0].GetDataIndex()
 
-	conNode := ctx.DAG.NewNode(&ops2.LRCConstructGroupType{
-		LRC:              ctx.LRC,
-		TargetBlockIndex: missedGrpIdx,
-	}, &ioswitchlrc.NodeProps{})
-
-	for i, fr := range frs {
+	var inputs []*dag.StreamVar
+	for _, fr := range frs {
 		frNode, err := buildFromNode(ctx, fr)
 		if err != nil {
 			return fmt.Errorf("building from node: %w", err)
 		}
 
-		frNode.OutputStreams[0].To(conNode, i)
+		inputs = append(inputs, frNode.Output().Var)
 	}
+
+	missedGrpIdx := toes[0].GetDataIndex()
+	conNode := ctx.DAG.NewLRCConstructGroup(ctx.LRC)
+	missedBlk := conNode.SetupForTarget(missedGrpIdx, inputs)
 
 	for _, to := range toes {
 		toNode, err := buildToNode(ctx, to)
 		if err != nil {
 			return fmt.Errorf("building to node: %w", err)
 		}
+		ctx.ToNodes[to] = toNode
 
-		conNode.OutputStreams[0].To(toNode, 0)
+		toNode.SetInput(missedBlk)
 	}
 
 	return nil

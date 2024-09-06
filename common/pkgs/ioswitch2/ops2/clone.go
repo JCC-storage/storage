@@ -74,48 +74,70 @@ func (o *CloneVar) String() string {
 	return fmt.Sprintf("CloneStream %v -> (%v)", o.Raw.GetID(), utils.FormatVarIDs(o.Cloneds))
 }
 
-type CloneStreamType struct{}
-
-func (t *CloneStreamType) InitNode(node *dag.Node) {
-	dag.NodeDeclareInputStream(node, 1)
+type CloneStreamType struct {
+	dag.NodeBase
 }
 
-func (t *CloneStreamType) GenerateOp(op *dag.Node) (exec.Op, error) {
+func (b *GraphNodeBuilder) NewCloneStream() *CloneStreamType {
+	node := &CloneStreamType{}
+	b.AddNode(node)
+	return node
+}
+
+func (t *CloneStreamType) SetInput(raw *dag.StreamVar) {
+	t.InputStreams().EnsureSize(1)
+	raw.Connect(t, 0)
+}
+
+func (t *CloneStreamType) NewOutput() *dag.StreamVar {
+	output := t.Graph().NewStreamVar()
+	t.OutputStreams().SetupNew(t, output)
+	return output
+}
+
+func (t *CloneStreamType) GenerateOp() (exec.Op, error) {
 	return &CloneStream{
-		Raw: op.InputStreams[0].Var,
-		Cloneds: lo.Map(op.OutputStreams, func(v *dag.StreamVar, idx int) *exec.StreamVar {
+		Raw: t.InputStreams().Get(0).Var,
+		Cloneds: lo.Map(t.OutputStreams().RawArray(), func(v *dag.StreamVar, idx int) *exec.StreamVar {
 			return v.Var
 		}),
 	}, nil
 }
 
-func (t *CloneStreamType) NewOutput(node *dag.Node) *dag.StreamVar {
-	return dag.NodeNewOutputStream(node, nil)
+// func (t *CloneStreamType) String() string {
+// 	return fmt.Sprintf("CloneStream[]%v%v", formatStreamIO(node), formatValueIO(node))
+// }
+
+type CloneVarType struct {
+	dag.NodeBase
 }
 
-func (t *CloneStreamType) String(node *dag.Node) string {
-	return fmt.Sprintf("CloneStream[]%v%v", formatStreamIO(node), formatValueIO(node))
+func (b *GraphNodeBuilder) NewCloneValue() *CloneVarType {
+	node := &CloneVarType{}
+	b.AddNode(node)
+	return node
 }
 
-type CloneVarType struct{}
-
-func (t *CloneVarType) InitNode(node *dag.Node) {
-	dag.NodeDeclareInputValue(node, 1)
+func (t *CloneVarType) SetInput(raw *dag.ValueVar) {
+	t.InputValues().EnsureSize(1)
+	raw.Connect(t, 0)
 }
 
-func (t *CloneVarType) GenerateOp(op *dag.Node) (exec.Op, error) {
+func (t *CloneVarType) NewOutput() *dag.ValueVar {
+	output := t.Graph().NewValueVar(t.InputValues().Get(0).Type)
+	t.OutputValues().SetupNew(t, output)
+	return output
+}
+
+func (t *CloneVarType) GenerateOp() (exec.Op, error) {
 	return &CloneVar{
-		Raw: op.InputValues[0].Var,
-		Cloneds: lo.Map(op.OutputValues, func(v *dag.ValueVar, idx int) exec.Var {
+		Raw: t.InputValues().Get(0).Var,
+		Cloneds: lo.Map(t.OutputValues().RawArray(), func(v *dag.ValueVar, idx int) exec.Var {
 			return v.Var
 		}),
 	}, nil
 }
 
-func (t *CloneVarType) NewOutput(node *dag.Node) *dag.ValueVar {
-	return dag.NodeNewOutputValue(node, node.InputValues[0].Type, nil)
-}
-
-func (t *CloneVarType) String(node *dag.Node) string {
-	return fmt.Sprintf("CloneVar[]%v%v", formatStreamIO(node), formatValueIO(node))
-}
+// func (t *CloneVarType) String() string {
+// 	return fmt.Sprintf("CloneVar[]%v%v", formatStreamIO(node), formatValueIO(node))
+// }

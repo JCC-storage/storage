@@ -10,7 +10,6 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
@@ -129,6 +128,13 @@ func (svc *Service) DeletePackage(msg *coormq.DeletePackage) (*coormq.DeletePack
 				Warnf("deleting unused package: %w", err.Error())
 		}
 
+		err = svc.db.PackageAccessStat().DeleteByPackageID(tx, msg.PackageID)
+		if err != nil {
+			logger.WithField("UserID", msg.UserID).
+				WithField("PackageID", msg.PackageID).
+				Warnf("deleting package access stat: %w", err.Error())
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -215,36 +221,13 @@ func (svc *Service) GetPackageLoadedNodes(msg *coormq.GetPackageLoadedNodes) (*c
 	return mq.ReplyOK(coormq.NewGetPackageLoadedNodesResp(nodeIDs))
 }
 
-func (svc *Service) GetPackageLoadLogDetails(msg *coormq.GetPackageLoadLogDetails) (*coormq.GetPackageLoadLogDetailsResp, *mq.CodeMessage) {
-	var logs []coormq.PackageLoadLogDetail
-	rawLogs, err := svc.db.StoragePackageLog().GetByPackageID(svc.db.SQLCtx(), msg.PackageID)
+func (svc *Service) AddPackageAccessStatCounter(msg *coormq.AddPackageAccessStatCounter) (*coormq.AddPackageAccessStatCounterResp, *mq.CodeMessage) {
+	err := svc.db.PackageAccessStat().BatchAddCounter(svc.db.SQLCtx(), msg.Entries)
 	if err != nil {
-		logger.WithField("PackageID", msg.PackageID).
-			Warnf("getting storage package log: %s", err.Error())
-		return nil, mq.Failed(errorcode.OperationFailed, "get storage package log failed")
+		errMsg := fmt.Sprintf("batch add package access stat counter: %s", err.Error())
+		logger.Error(errMsg)
+		return nil, mq.Failed(errorcode.OperationFailed, errMsg)
 	}
 
-	stgs := make(map[cdssdk.StorageID]model.Storage)
-
-	for _, raw := range rawLogs {
-		stg, ok := stgs[raw.StorageID]
-		if !ok {
-			stg, err = svc.db.Storage().GetByID(svc.db.SQLCtx(), raw.StorageID)
-			if err != nil {
-				logger.WithField("PackageID", msg.PackageID).
-					Warnf("getting storage: %s", err.Error())
-				return nil, mq.Failed(errorcode.OperationFailed, "get storage failed")
-			}
-
-			stgs[raw.StorageID] = stg
-		}
-
-		logs = append(logs, coormq.PackageLoadLogDetail{
-			Storage:    stg,
-			UserID:     raw.UserID,
-			CreateTime: raw.CreateTime,
-		})
-	}
-
-	return mq.ReplyOK(coormq.RespGetPackageLoadLogDetails(logs))
+	return mq.ReplyOK(coormq.NewAddPackageAccessStatCounterResp())
 }

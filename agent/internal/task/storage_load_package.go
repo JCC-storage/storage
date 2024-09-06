@@ -99,6 +99,7 @@ func (t *StorageLoadPackage) do(task *task.Task[TaskContext], ctx TaskContext) e
 		if err != nil {
 			return err
 		}
+		ctx.packageStat.AddAccessCounter(t.packageID, *stgglb.Local.NodeID, 1)
 	}
 
 	_, err = coorCli.StoragePackageLoaded(coormq.NewStoragePackageLoaded(t.userID, t.storageID, t.packageID, t.pinnedBlocks))

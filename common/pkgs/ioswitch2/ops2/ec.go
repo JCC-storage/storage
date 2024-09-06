@@ -14,7 +14,6 @@ import (
 	"gitlink.org.cn/cloudream/common/utils/io2"
 	"gitlink.org.cn/cloudream/common/utils/sync2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ec"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -204,15 +203,43 @@ func (o *ECMultiply) String() string {
 	)
 }
 
-type MultiplyType struct {
+type ECMultiplyNode struct {
+	dag.NodeBase
 	EC            cdssdk.ECRedundancy
 	InputIndexes  []int
 	OutputIndexes []int
 }
 
-func (t *MultiplyType) InitNode(node *dag.Node) {}
+func (b *GraphNodeBuilder) NewECMultiply(ec cdssdk.ECRedundancy) *ECMultiplyNode {
+	node := &ECMultiplyNode{
+		EC: ec,
+	}
+	b.AddNode(node)
+	return node
+}
 
-func (t *MultiplyType) GenerateOp(op *dag.Node) (exec.Op, error) {
+func (t *ECMultiplyNode) AddInput(str *dag.StreamVar, dataIndex int) {
+	t.InputIndexes = append(t.InputIndexes, dataIndex)
+	idx := t.InputStreams().EnlargeOne()
+	str.Connect(t, idx)
+}
+
+func (t *ECMultiplyNode) RemoveAllInputs() {
+	for i, in := range t.InputStreams().RawArray() {
+		in.Disconnect(t, i)
+	}
+	t.InputStreams().Resize(0)
+	t.InputIndexes = nil
+}
+
+func (t *ECMultiplyNode) NewOutput(dataIndex int) *dag.StreamVar {
+	t.OutputIndexes = append(t.OutputIndexes, dataIndex)
+	output := t.Graph().NewStreamVar()
+	t.OutputStreams().SetupNew(t, output)
+	return output
+}
+
+func (t *ECMultiplyNode) GenerateOp() (exec.Op, error) {
 	rs, err := ec.NewRs(t.EC.K, t.EC.N)
 	if err != nil {
 		return nil, err
@@ -224,23 +251,12 @@ func (t *MultiplyType) GenerateOp(op *dag.Node) (exec.Op, error) {
 
 	return &ECMultiply{
 		Coef:      coef,
-		Inputs:    lo.Map(op.InputStreams, func(v *dag.StreamVar, idx int) *exec.StreamVar { return v.Var }),
-		Outputs:   lo.Map(op.OutputStreams, func(v *dag.StreamVar, idx int) *exec.StreamVar { return v.Var }),
+		Inputs:    lo.Map(t.InputStreams().RawArray(), func(v *dag.StreamVar, idx int) *exec.StreamVar { return v.Var }),
+		Outputs:   lo.Map(t.OutputStreams().RawArray(), func(v *dag.StreamVar, idx int) *exec.StreamVar { return v.Var }),
 		ChunkSize: t.EC.ChunkSize,
 	}, nil
 }
 
-func (t *MultiplyType) AddInput(node *dag.Node, str *dag.StreamVar, dataIndex int) {
-	t.InputIndexes = append(t.InputIndexes, dataIndex)
-	node.InputStreams = append(node.InputStreams, str)
-	str.To(node, len(node.InputStreams)-1)
-}
-
-func (t *MultiplyType) NewOutput(node *dag.Node, dataIndex int) *dag.StreamVar {
-	t.OutputIndexes = append(t.OutputIndexes, dataIndex)
-	return dag.NodeNewOutputStream(node, &ioswitch2.VarProps{StreamIndex: dataIndex})
-}
-
-func (t *MultiplyType) String(node *dag.Node) string {
-	return fmt.Sprintf("Multiply[]%v%v", formatStreamIO(node), formatValueIO(node))
-}
+// func (t *MultiplyType) String() string {
+// 	return fmt.Sprintf("Multiply[]%v%v", formatStreamIO(node), formatValueIO(node))
+// }

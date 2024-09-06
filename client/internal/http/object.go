@@ -14,6 +14,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	myhttp "gitlink.org.cn/cloudream/common/utils/http"
+	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 )
 
@@ -121,42 +122,51 @@ func (s *ObjectService) Download(ctx *gin.Context) {
 	ctx.Writer.Header().Set("Content-Type", fmt.Sprintf("%s;boundary=%s", myhttp.ContentTypeMultiPart, mw.Boundary()))
 	ctx.Writer.WriteHeader(http.StatusOK)
 
+	sendSize := int64(0)
 	if req.PartSize == 0 {
-		err = sendFileOnePart(mw, "file", path.Base(file.Object.Path), file.File)
+		sendSize, err = sendFileOnePart(mw, "file", path.Base(file.Object.Path), file.File)
 	} else {
-		err = sendFileMultiPart(mw, "file", path.Base(file.Object.Path), file.File, req.PartSize)
+		sendSize, err = sendFileMultiPart(mw, "file", path.Base(file.Object.Path), file.File, req.PartSize)
 	}
+
+	// TODO 当client不在某个代理节点上时如何处理？
+	if stgglb.Local.NodeID != nil {
+		s.svc.PackageStat.AddAccessCounter(file.Object.PackageID, *stgglb.Local.NodeID, float64(sendSize)/float64(file.Object.Size))
+	}
+
 	if err != nil {
 		log.Warnf("copying file: %s", err.Error())
 	}
 }
 
-func sendFileMultiPart(muWriter *multipart.Writer, fieldName, fileName string, file io.ReadCloser, partSize int64) error {
+func sendFileMultiPart(muWriter *multipart.Writer, fieldName, fileName string, file io.ReadCloser, partSize int64) (int64, error) {
+	total := int64(0)
 	for {
 		w, err := muWriter.CreateFormFile(fieldName, ul.PathEscape(fileName))
 		if err != nil {
-			return fmt.Errorf("create form file failed, err: %w", err)
+			return 0, fmt.Errorf("create form file failed, err: %w", err)
 		}
 
 		n, err := io.Copy(w, io.LimitReader(file, partSize))
 		if err != nil {
-			return err
+			return total, err
 		}
 		if n == 0 {
 			break
 		}
+		total += n
 	}
-	return nil
+	return total, nil
 }
 
-func sendFileOnePart(muWriter *multipart.Writer, fieldName, fileName string, file io.ReadCloser) error {
+func sendFileOnePart(muWriter *multipart.Writer, fieldName, fileName string, file io.ReadCloser) (int64, error) {
 	w, err := muWriter.CreateFormFile(fieldName, ul.PathEscape(fileName))
 	if err != nil {
-		return fmt.Errorf("create form file failed, err: %w", err)
+		return 0, fmt.Errorf("create form file failed, err: %w", err)
 	}
 
-	_, err = io.Copy(w, file)
-	return err
+	n, err := io.Copy(w, file)
+	return n, err
 }
 
 func (s *ObjectService) UpdateInfo(ctx *gin.Context) {
