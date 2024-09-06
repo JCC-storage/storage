@@ -64,7 +64,7 @@ func (*PinnedObjectDB) BatchTryCreate(ctx SQLContext, pinneds []cdssdk.PinnedObj
 		return nil
 	}
 
-	return BatchNamedExec(ctx, "insert ignore into PinnedObject values(:NodeID,:ObjectID,:CreateTime)", 3, pinneds, nil)
+	return BatchNamedExec(ctx, "insert ignore into PinnedObject values(:ObjectID,:NodeID,:CreateTime)", 3, pinneds, nil)
 }
 
 func (*PinnedObjectDB) CreateFromPackage(ctx SQLContext, packageID cdssdk.PackageID, nodeID cdssdk.NodeID) error {
