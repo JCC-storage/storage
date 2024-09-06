@@ -76,6 +76,8 @@ func (t *CacheMovePackage) do(ctx TaskContext) error {
 		if err != nil {
 			return fmt.Errorf("creating ipfs file: %w", err)
 		}
+
+		ctx.packageStat.AddAccessCounter(t.packageID, *stgglb.Local.NodeID, 1)
 	}
 
 	_, err = coorCli.CachePackageMoved(coormq.NewCachePackageMoved(t.packageID, *stgglb.Local.NodeID))

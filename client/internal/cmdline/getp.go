@@ -12,6 +12,7 @@ import (
 	"github.com/inhies/go-bytesize"
 	"github.com/spf13/cobra"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/iterator"
 )
 
@@ -117,6 +118,9 @@ func getpByID(cmdCtx *CommandContext, id cdssdk.PackageID, output string) {
 				return fmt.Errorf("copy object data to local file failed, err: %w", err)
 			}
 
+			if stgglb.Local.NodeID != nil {
+				cmdCtx.Cmdline.Svc.PackageStat.AddAccessCounter(id, *stgglb.Local.NodeID, 1)
+			}
 			return nil
 		}()
 		if err != nil {

@@ -18,6 +18,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
+	packagestat "gitlink.org.cn/cloudream/storage/common/pkgs/package_stat"
 )
 
 func main() {
@@ -83,11 +84,17 @@ func main() {
 	}
 	go serveDistLock(distlockSvc)
 
+	pkgStat := packagestat.NewPackageStat(packagestat.Config{
+		// TODO 考虑放到配置里
+		ReportInterval: time.Second * 10,
+	})
+	go servePackageStat(pkgStat)
+
 	taskMgr := task.NewManager(distlockSvc, &conCol)
 
 	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol)
 
-	svc, err := services.NewService(distlockSvc, &taskMgr, &dlder)
+	svc, err := services.NewService(distlockSvc, &taskMgr, &dlder, pkgStat)
 	if err != nil {
 		logger.Warnf("new services failed, err: %s", err.Error())
 		os.Exit(1)
@@ -112,6 +119,30 @@ func serveDistLock(svc *distlock.Service) {
 	}
 
 	logger.Info("distlock stopped")
+
+	// TODO 仅简单结束了程序
+	os.Exit(1)
+}
+
+func servePackageStat(svc *packagestat.PackageStat) {
+	logger.Info("start serving package stat")
+
+	ch := svc.Start()
+loop:
+	for {
+		val, err := ch.Receive()
+		if err != nil {
+			logger.Errorf("package stat stopped with error: %v", err)
+			break
+		}
+
+		switch val := val.(type) {
+		case error:
+			logger.Errorf("package stat stopped with error: %v", val)
+			break loop
+		}
+	}
+	logger.Info("package stat stopped")
 
 	// TODO 仅简单结束了程序
 	os.Exit(1)

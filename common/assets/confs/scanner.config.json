@@ -1,4 +1,5 @@
 {
+    "accessStatHistoryAmount": 0.8,
     "ecFileSizeThreshold": 104857600,
     "nodeUnavailableSeconds": 300,
     "logger": {
