@@ -265,9 +265,9 @@ type AddPackageAccessStatCounter struct {
 	Entries []AddPackageAccessStatCounterEntry `json:"entries"`
 }
 type AddPackageAccessStatCounterEntry struct {
-	PackageID cdssdk.PackageID `json:"packageID"`
-	NodeID    cdssdk.NodeID    `json:"nodeID"`
-	Value     float64          `json:"value"`
+	PackageID cdssdk.PackageID `json:"packageID" db:"PackageID"`
+	NodeID    cdssdk.NodeID    `json:"nodeID" db:"NodeID"`
+	Value     float64          `json:"value" db:"Value"`
 }
 
 type AddPackageAccessStatCounterResp struct {

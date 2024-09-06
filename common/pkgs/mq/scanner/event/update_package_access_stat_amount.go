@@ -7,6 +7,12 @@ type UpdatePackageAccessStatAmount struct {
 	PackageIDs []cdssdk.PackageID `json:"packageIDs"`
 }
 
+func NewUpdatePackageAccessStatAmount(packageIDs []cdssdk.PackageID) *UpdatePackageAccessStatAmount {
+	return &UpdatePackageAccessStatAmount{
+		PackageIDs: packageIDs,
+	}
+}
+
 func init() {
 	Register[*UpdatePackageAccessStatAmount]()
 }

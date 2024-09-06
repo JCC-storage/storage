@@ -210,8 +210,11 @@ func (t *CheckPackageRedundancy) Execute(execCtx ExecuteContext) {
 func (t *CheckPackageRedundancy) chooseRedundancy(obj stgmod.ObjectDetail, userAllNodes map[cdssdk.NodeID]*NodeLoadInfo) (cdssdk.Redundancy, []*NodeLoadInfo) {
 	switch obj.Object.Redundancy.(type) {
 	case *cdssdk.NoneRedundancy:
-		newLRCNodes := t.chooseNewNodesForLRC(&cdssdk.DefaultLRCRedundancy, userAllNodes)
-		return &cdssdk.DefaultLRCRedundancy, newLRCNodes
+		newNodes := t.chooseNewNodesForEC(&cdssdk.DefaultECRedundancy, userAllNodes)
+		return &cdssdk.DefaultECRedundancy, newNodes
+
+		// newLRCNodes := t.chooseNewNodesForLRC(&cdssdk.DefaultLRCRedundancy, userAllNodes)
+		// return &cdssdk.DefaultLRCRedundancy, newLRCNodes
 
 	case *cdssdk.LRCRedundancy:
 		newLRCNodes := t.rechooseNodesForLRC(obj, &cdssdk.DefaultLRCRedundancy, userAllNodes)
@@ -274,12 +277,7 @@ func (t *CheckPackageRedundancy) chooseNewNodesForEC(red *cdssdk.ECRedundancy, a
 
 func (t *CheckPackageRedundancy) chooseNewNodesForLRC(red *cdssdk.LRCRedundancy, allNodes map[cdssdk.NodeID]*NodeLoadInfo) []*NodeLoadInfo {
 	sortedNodes := sort2.Sort(lo.Values(allNodes), func(left *NodeLoadInfo, right *NodeLoadInfo) int {
-		dm := right.LoadsRecentMonth - left.LoadsRecentMonth
-		if dm != 0 {
-			return dm
-		}
-
-		return right.LoadsRecentYear - left.LoadsRecentYear
+		return sort2.Cmp(right.AccessAmount, left.AccessAmount)
 	})
 
 	return t.chooseSoManyNodes(red.N, sortedNodes)

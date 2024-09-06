@@ -29,14 +29,14 @@ func (*PackageAccessStatDB) GetByPackageID(ctx SQLContext, pkgID cdssdk.PackageI
 
 func (*PackageAccessStatDB) BatchAddCounter(ctx SQLContext, entries []coormq.AddPackageAccessStatCounterEntry) error {
 	sql := "insert into PackageAccessStat(PackageID, NodeID, Counter, Amount) " +
-		"values(:PackageID, :NodeID, :Counter, 0)" +
-		"on duplicate key update Counter=Counter+:Counter"
+		"values(:PackageID, :NodeID, :Value, 0)" +
+		"on duplicate key update Counter=Counter+:Value"
 	err := BatchNamedExec(ctx, sql, 4, entries, nil)
 	return err
 }
 
 func (*PackageAccessStatDB) BatchUpdateAmount(ctx SQLContext, pkgIDs []cdssdk.PackageID, historyWeight float64) error {
-	stmt, args, err := sqlx.In("update PackageAccessStat set Amount=Amount*?+Counter*(1-?) where PackageID in (?)", historyWeight, historyWeight, pkgIDs)
+	stmt, args, err := sqlx.In("update PackageAccessStat set Amount=Amount*?+Counter*(1-?), Counter = 0 where PackageID in (?)", historyWeight, historyWeight, pkgIDs)
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (*PackageAccessStatDB) BatchUpdateAmount(ctx SQLContext, pkgIDs []cdssdk.Pa
 }
 
 func (*PackageAccessStatDB) UpdateAllAmount(ctx SQLContext, historyWeight float64) error {
-	stmt, args, err := sqlx.In("update PackageAccessStat set Amount=Amount*?+Counter*(1-?)", historyWeight, historyWeight)
+	stmt, args, err := sqlx.In("update PackageAccessStat set Amount=Amount*?+Counter*(1-?), Counter = 0", historyWeight, historyWeight)
 	if err != nil {
 		return err
 	}

@@ -28,5 +28,5 @@ func (e *UpdateAllPackageAccessStatAmount) Execute(ctx ExecuteContext) {
 	}
 	e.todayUpdated = true
 
-	ctx.Args.EventExecutor.Post(evt.NewUpdatePackageAccessStatAmount(&event.UpdatePackageAccessStatAmount{}))
+	ctx.Args.EventExecutor.Post(evt.NewUpdatePackageAccessStatAmount(event.NewUpdatePackageAccessStatAmount(nil)))
 }

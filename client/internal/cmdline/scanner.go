@@ -41,5 +41,7 @@ func init() {
 
 	parseScannerEventCmdTrie.MustAdd(scevt.NewCleanPinned, reflect2.TypeNameOf[scevt.CleanPinned]())
 
+	parseScannerEventCmdTrie.MustAdd(scevt.NewUpdatePackageAccessStatAmount, reflect2.TypeNameOf[scevt.UpdatePackageAccessStatAmount]())
+
 	commands.MustAdd(ScannerPostEvent, "scanner", "event")
 }
