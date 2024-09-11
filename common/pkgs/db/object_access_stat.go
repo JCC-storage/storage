@@ -35,8 +35,11 @@ func (*ObjectAccessStatDB) BatchAddCounter(ctx SQLContext, entries []coormq.AddA
 	return err
 }
 
-func (*ObjectAccessStatDB) BatchUpdateAmount(ctx SQLContext, objIDs []cdssdk.ObjectID, historyWeight float64) error {
-	stmt, args, err := sqlx.In("update ObjectAccessStat set Amount=Amount*?+Counter*(1-?), Counter = 0 where ObjectID in (?)", historyWeight, historyWeight, objIDs)
+func (*ObjectAccessStatDB) BatchUpdateAmountInPackage(ctx SQLContext, pkgIDs []cdssdk.PackageID, historyWeight float64) error {
+	stmt, args, err := sqlx.In("update ObjectAccessStat inner join Object"+
+		" on ObjectAccessStat.ObjectID = Object.ObjectID"+
+		" set Amount=Amount*?+Counter*(1-?), Counter = 0"+
+		" where PackageID in (?)", historyWeight, historyWeight, pkgIDs)
 	if err != nil {
 		return err
 	}

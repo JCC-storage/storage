@@ -54,10 +54,22 @@ func (t *UpdatePackageAccessStatAmount) Execute(execCtx ExecuteContext) {
 			return
 		}
 
+		err = execCtx.Args.DB.ObjectAccessStat().UpdateAllAmount(execCtx.Args.DB.SQLCtx(), config.Cfg().AccessStatHistoryAmount)
+		if err != nil {
+			log.Warnf("update all object access stat amount: %v", err)
+			return
+		}
+
 	} else {
 		err := execCtx.Args.DB.PackageAccessStat().BatchUpdateAmount(execCtx.Args.DB.SQLCtx(), t.PackageIDs, config.Cfg().AccessStatHistoryAmount)
 		if err != nil {
 			log.Warnf("batch update package access stat amount: %v", err)
+			return
+		}
+
+		err = execCtx.Args.DB.ObjectAccessStat().BatchUpdateAmountInPackage(execCtx.Args.DB.SQLCtx(), t.PackageIDs, config.Cfg().AccessStatHistoryAmount)
+		if err != nil {
+			log.Warnf("batch update object access stat amount in package: %v", err)
 			return
 		}
 	}
