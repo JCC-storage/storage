@@ -119,7 +119,7 @@ func getpByID(cmdCtx *CommandContext, id cdssdk.PackageID, output string) {
 			}
 
 			if stgglb.Local.NodeID != nil {
-				cmdCtx.Cmdline.Svc.PackageStat.AddAccessCounter(id, *stgglb.Local.NodeID, 1)
+				cmdCtx.Cmdline.Svc.AccessStat.AddAccessCounter(objInfo.Object.ObjectID, id, *stgglb.Local.NodeID, 1)
 			}
 			return nil
 		}()

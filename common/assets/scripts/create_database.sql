@@ -177,3 +177,11 @@ insert into
   Location (LocationID, Name)
 values
   (1, "Local");
+
+create table ObjectAccessStat (
+  ObjectID int not null comment '对象ID',
+  NodeID int not null comment '节点ID',
+  Amount float not null comment '前一日流量的滑动平均值',
+  Counter float not null comment '本日的流量',
+  primary key(ObjectID, NodeID)
+);

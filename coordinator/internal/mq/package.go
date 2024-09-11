@@ -221,13 +221,48 @@ func (svc *Service) GetPackageLoadedNodes(msg *coormq.GetPackageLoadedNodes) (*c
 	return mq.ReplyOK(coormq.NewGetPackageLoadedNodesResp(nodeIDs))
 }
 
-func (svc *Service) AddPackageAccessStatCounter(msg *coormq.AddPackageAccessStatCounter) (*coormq.AddPackageAccessStatCounterResp, *mq.CodeMessage) {
-	err := svc.db.PackageAccessStat().BatchAddCounter(svc.db.SQLCtx(), msg.Entries)
-	if err != nil {
-		errMsg := fmt.Sprintf("batch add package access stat counter: %s", err.Error())
-		logger.Error(errMsg)
-		return nil, mq.Failed(errorcode.OperationFailed, errMsg)
+func (svc *Service) AddAccessStat(msg *coormq.AddAccessStat) {
+	pkgIDs := make([]cdssdk.PackageID, len(msg.Entries))
+	objIDs := make([]cdssdk.ObjectID, len(msg.Entries))
+	for i, e := range msg.Entries {
+		pkgIDs[i] = e.PackageID
+		objIDs[i] = e.ObjectID
 	}
 
-	return mq.ReplyOK(coormq.NewAddPackageAccessStatCounterResp())
+	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
+		avaiPkgIDs, err := svc.db.Package().BatchTestPackageID(tx, pkgIDs)
+		if err != nil {
+			return fmt.Errorf("batch test package id: %w", err)
+		}
+
+		avaiObjIDs, err := svc.db.Object().BatchTestObjectID(tx, objIDs)
+		if err != nil {
+			return fmt.Errorf("batch test object id: %w", err)
+		}
+
+		var willAdds []coormq.AddAccessStatEntry
+		for _, e := range msg.Entries {
+			if avaiPkgIDs[e.PackageID] && avaiObjIDs[e.ObjectID] {
+				willAdds = append(willAdds, e)
+			}
+		}
+
+		if len(willAdds) > 0 {
+			err := svc.db.PackageAccessStat().BatchAddCounter(tx, willAdds)
+			if err != nil {
+				return fmt.Errorf("batch add package access stat counter: %w", err)
+			}
+
+			err = svc.db.ObjectAccessStat().BatchAddCounter(tx, willAdds)
+			if err != nil {
+				return fmt.Errorf("batch add object access stat counter: %w", err)
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		logger.Warn(err.Error())
+	}
 }

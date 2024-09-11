@@ -23,8 +23,6 @@ type PackageService interface {
 	GetPackageCachedNodes(msg *GetPackageCachedNodes) (*GetPackageCachedNodesResp, *mq.CodeMessage)
 
 	GetPackageLoadedNodes(msg *GetPackageLoadedNodes) (*GetPackageLoadedNodesResp, *mq.CodeMessage)
-
-	AddPackageAccessStatCounter(msg *AddPackageAccessStatCounter) (*AddPackageAccessStatCounterResp, *mq.CodeMessage)
 }
 
 // 获取Package基本信息
@@ -255,35 +253,4 @@ func NewGetPackageLoadedNodesResp(nodeIDs []cdssdk.NodeID) *GetPackageLoadedNode
 
 func (client *Client) GetPackageLoadedNodes(msg *GetPackageLoadedNodes) (*GetPackageLoadedNodesResp, error) {
 	return mq.Request(Service.GetPackageLoadedNodes, client.rabbitCli, msg)
-}
-
-// 更新Pacakge访问统计中的计数值
-var _ = Register(Service.AddPackageAccessStatCounter)
-
-type AddPackageAccessStatCounter struct {
-	mq.MessageBodyBase
-	Entries []AddPackageAccessStatCounterEntry `json:"entries"`
-}
-type AddPackageAccessStatCounterEntry struct {
-	PackageID cdssdk.PackageID `json:"packageID" db:"PackageID"`
-	NodeID    cdssdk.NodeID    `json:"nodeID" db:"NodeID"`
-	Value     float64          `json:"value" db:"Value"`
-}
-
-type AddPackageAccessStatCounterResp struct {
-	mq.MessageBodyBase
-}
-
-func NewAddPackageAccessStatCounter(entries []AddPackageAccessStatCounterEntry) *AddPackageAccessStatCounter {
-	return &AddPackageAccessStatCounter{
-		Entries: entries,
-	}
-}
-
-func NewAddPackageAccessStatCounterResp() *AddPackageAccessStatCounterResp {
-	return &AddPackageAccessStatCounterResp{}
-}
-
-func (client *Client) AddPackageAccessStatCounter(msg *AddPackageAccessStatCounter) (*AddPackageAccessStatCounterResp, error) {
-	return mq.Request(Service.AddPackageAccessStatCounter, client.rabbitCli, msg)
 }

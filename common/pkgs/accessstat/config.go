@@ -1,4 +1,4 @@
-package packagestat
+package accessstat
 
 import "time"
 

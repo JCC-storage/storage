@@ -27,10 +27,10 @@ func (*PackageAccessStatDB) GetByPackageID(ctx SQLContext, pkgID cdssdk.PackageI
 	return ret, err
 }
 
-func (*PackageAccessStatDB) BatchAddCounter(ctx SQLContext, entries []coormq.AddPackageAccessStatCounterEntry) error {
-	sql := "insert into PackageAccessStat(PackageID, NodeID, Counter, Amount) " +
-		"values(:PackageID, :NodeID, :Value, 0)" +
-		"on duplicate key update Counter=Counter+:Value"
+func (*PackageAccessStatDB) BatchAddCounter(ctx SQLContext, entries []coormq.AddAccessStatEntry) error {
+	sql := "insert into PackageAccessStat(PackageID, NodeID, Counter, Amount)" +
+		" values(:PackageID, :NodeID, :Counter, 0) as new" +
+		" on duplicate key update Counter=Counter+new.Counter"
 	err := BatchNamedExec(ctx, sql, 4, entries, nil)
 	return err
 }

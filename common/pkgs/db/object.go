@@ -28,6 +28,26 @@ func (db *ObjectDB) GetByID(ctx SQLContext, objectID cdssdk.ObjectID) (model.Obj
 	return ret.ToObject(), err
 }
 
+func (db *ObjectDB) BatchTestObjectID(ctx SQLContext, objectIDs []cdssdk.ObjectID) (map[cdssdk.ObjectID]bool, error) {
+	stmt, args, err := sqlx.In("select ObjectID from Object where ObjectID in (?)", lo.Uniq(objectIDs))
+	if err != nil {
+		return nil, err
+	}
+
+	var avaiIDs []cdssdk.ObjectID
+	err = sqlx.Select(ctx, &avaiIDs, stmt, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	avaiIDMap := make(map[cdssdk.ObjectID]bool)
+	for _, pkgID := range avaiIDs {
+		avaiIDMap[pkgID] = true
+	}
+
+	return avaiIDMap, nil
+}
+
 func (db *ObjectDB) BatchGet(ctx SQLContext, objectIDs []cdssdk.ObjectID) ([]model.Object, error) {
 	if len(objectIDs) == 0 {
 		return nil, nil

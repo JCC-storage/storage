@@ -12,11 +12,11 @@ import (
 	"gitlink.org.cn/cloudream/storage/agent/internal/config"
 	"gitlink.org.cn/cloudream/storage/agent/internal/task"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/accessstat"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 	agtrpc "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
-	packagestat "gitlink.org.cn/cloudream/storage/common/pkgs/package_stat"
 
 	"google.golang.org/grpc"
 
@@ -86,11 +86,11 @@ func main() {
 	})
 	conCol.CollectInPlace()
 
-	pkgStat := packagestat.NewPackageStat(packagestat.Config{
+	acStat := accessstat.NewAccessStat(accessstat.Config{
 		// TODO 考虑放到配置里
 		ReportInterval: time.Second * 10,
 	})
-	go servePackageStat(pkgStat)
+	go serveAccessStat(acStat)
 
 	distlock, err := distlock.NewService(&config.Cfg().DistLock)
 	if err != nil {
@@ -101,7 +101,7 @@ func main() {
 
 	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol)
 
-	taskMgr := task.NewManager(distlock, &conCol, &dlder, pkgStat)
+	taskMgr := task.NewManager(distlock, &conCol, &dlder, acStat)
 
 	// 启动命令服务器
 	// TODO 需要设计AgentID持久化机制
@@ -175,25 +175,25 @@ func serveDistLock(svc *distlock.Service) {
 	os.Exit(1)
 }
 
-func servePackageStat(svc *packagestat.PackageStat) {
-	logger.Info("start serving package stat")
+func serveAccessStat(svc *accessstat.AccessStat) {
+	logger.Info("start serving access stat")
 
 	ch := svc.Start()
 loop:
 	for {
 		val, err := ch.Receive()
 		if err != nil {
-			logger.Errorf("package stat stopped with error: %v", err)
+			logger.Errorf("access stat stopped with error: %v", err)
 			break
 		}
 
 		switch val := val.(type) {
 		case error:
-			logger.Errorf("package stat stopped with error: %v", val)
+			logger.Errorf("access stat stopped with error: %v", val)
 			break loop
 		}
 	}
-	logger.Info("package stat stopped")
+	logger.Info("access stat stopped")
 
 	// TODO 仅简单结束了程序
 	os.Exit(1)

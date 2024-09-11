@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/samber/lo"
 
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
@@ -29,6 +30,26 @@ func (db *PackageDB) GetByName(ctx SQLContext, bucketID cdssdk.BucketID, name st
 	var ret model.Package
 	err := sqlx.Get(ctx, &ret, "select * from Package where BucketID = ? and Name = ?", bucketID, name)
 	return ret, err
+}
+
+func (db *PackageDB) BatchTestPackageID(ctx SQLContext, pkgIDs []cdssdk.PackageID) (map[cdssdk.PackageID]bool, error) {
+	stmt, args, err := sqlx.In("select PackageID from Package where PackageID in (?)", lo.Uniq(pkgIDs))
+	if err != nil {
+		return nil, err
+	}
+
+	var avaiIDs []cdssdk.PackageID
+	err = sqlx.Select(ctx, &avaiIDs, stmt, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	avaiIDMap := make(map[cdssdk.PackageID]bool)
+	for _, pkgID := range avaiIDs {
+		avaiIDMap[pkgID] = true
+	}
+
+	return avaiIDMap, nil
 }
 
 func (*PackageDB) BatchGetAllPackageIDs(ctx SQLContext, start int, count int) ([]cdssdk.PackageID, error) {
@@ -134,6 +155,11 @@ func (db *PackageDB) SoftDelete(ctx SQLContext, packageID cdssdk.PackageID) erro
 	err = db.ChangeState(ctx, packageID, cdssdk.PackageStateDeleted)
 	if err != nil {
 		return fmt.Errorf("change package state failed, err: %w", err)
+	}
+
+	err = db.ObjectAccessStat().DeleteInPackage(ctx, packageID)
+	if err != nil {
+		return fmt.Errorf("delete from object access stat: %w", err)
 	}
 
 	err = db.ObjectBlock().DeleteInPackage(ctx, packageID)

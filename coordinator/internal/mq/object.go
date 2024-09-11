@@ -429,6 +429,11 @@ func (svc *Service) DeleteObjects(msg *coormq.DeleteObjects) (*coormq.DeleteObje
 			return fmt.Errorf("batch deleting pinned objects: %w", err)
 		}
 
+		err = svc.db.ObjectAccessStat().BatchDeleteByObjectID(tx, msg.ObjectIDs)
+		if err != nil {
+			return fmt.Errorf("batch deleting object access stats: %w", err)
+		}
+
 		return nil
 	})
 	if err != nil {

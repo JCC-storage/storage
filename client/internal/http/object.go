@@ -131,7 +131,7 @@ func (s *ObjectService) Download(ctx *gin.Context) {
 
 	// TODO 当client不在某个代理节点上时如何处理？
 	if stgglb.Local.NodeID != nil {
-		s.svc.PackageStat.AddAccessCounter(file.Object.PackageID, *stgglb.Local.NodeID, float64(sendSize)/float64(file.Object.Size))
+		s.svc.AccessStat.AddAccessCounter(file.Object.ObjectID, file.Object.PackageID, *stgglb.Local.NodeID, float64(sendSize)/float64(file.Object.Size))
 	}
 
 	if err != nil {
