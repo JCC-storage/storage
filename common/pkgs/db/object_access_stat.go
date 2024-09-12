@@ -27,15 +27,38 @@ func (*ObjectAccessStatDB) GetByObjectID(ctx SQLContext, objID cdssdk.ObjectID) 
 	return ret, err
 }
 
+func (*ObjectAccessStatDB) BatchGetByObjectID(ctx SQLContext, objIDs []cdssdk.ObjectID) ([]model.ObjectAccessStat, error) {
+	if len(objIDs) == 0 {
+		return nil, nil
+	}
+
+	var ret []model.ObjectAccessStat
+	stmt, args, err := sqlx.In("select * from ObjectAccessStat where ObjectID in (?)", objIDs)
+	if err != nil {
+		return ret, err
+	}
+
+	err = sqlx.Select(ctx, &ret, stmt, args...)
+	return ret, err
+}
+
 func (*ObjectAccessStatDB) BatchAddCounter(ctx SQLContext, entries []coormq.AddAccessStatEntry) error {
+	if len(entries) == 0 {
+		return nil
+	}
+
 	sql := "insert into ObjectAccessStat(ObjectID, NodeID, Counter, Amount) " +
-		"values(:ObjectID, :NodeID, :Counter, 0) as new" +
-		"on duplicate key update Counter=Counter+new.Counter"
+		" values(:ObjectID, :NodeID, :Counter, 0) as new" +
+		" on duplicate key update ObjectAccessStat.Counter=ObjectAccessStat.Counter+new.Counter"
 	err := BatchNamedExec(ctx, sql, 4, entries, nil)
 	return err
 }
 
 func (*ObjectAccessStatDB) BatchUpdateAmountInPackage(ctx SQLContext, pkgIDs []cdssdk.PackageID, historyWeight float64) error {
+	if len(pkgIDs) == 0 {
+		return nil
+	}
+
 	stmt, args, err := sqlx.In("update ObjectAccessStat inner join Object"+
 		" on ObjectAccessStat.ObjectID = Object.ObjectID"+
 		" set Amount=Amount*?+Counter*(1-?), Counter = 0"+
@@ -64,6 +87,10 @@ func (*ObjectAccessStatDB) DeleteByObjectID(ctx SQLContext, objID cdssdk.ObjectI
 }
 
 func (*ObjectAccessStatDB) BatchDeleteByObjectID(ctx SQLContext, objIDs []cdssdk.ObjectID) error {
+	if len(objIDs) == 0 {
+		return nil
+	}
+
 	stmt, args, err := sqlx.In("delete from ObjectAccessStat where ObjectID in (?)", objIDs)
 	if err != nil {
 		return err

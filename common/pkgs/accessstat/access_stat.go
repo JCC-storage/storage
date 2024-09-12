@@ -57,6 +57,10 @@ func (p *AccessStat) Start() *sync2.UnboundChannel[AccessStatEvent] {
 			p.stats = nil
 			p.lock.Unlock()
 
+			if len(st) == 0 {
+				continue
+			}
+
 			err := coorCli.AddAccessStat(coormq.ReqAddAccessStat(st))
 			if err != nil {
 				logger.Errorf("add all package access stat counter: %v", err)

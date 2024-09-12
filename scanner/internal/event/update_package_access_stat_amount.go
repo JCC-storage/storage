@@ -40,7 +40,7 @@ func (t *UpdatePackageAccessStatAmount) TryMerge(other Event) bool {
 }
 
 func (t *UpdatePackageAccessStatAmount) Execute(execCtx ExecuteContext) {
-	log := logger.WithType[AgentCacheGC]("Event")
+	log := logger.WithType[UpdatePackageAccessStatAmount]("Event")
 	startTime := time.Now()
 	log.Debugf("begin with %v", logger.FormatStruct(t.UpdatePackageAccessStatAmount))
 	defer func() {

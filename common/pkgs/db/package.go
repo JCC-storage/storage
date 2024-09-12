@@ -33,6 +33,10 @@ func (db *PackageDB) GetByName(ctx SQLContext, bucketID cdssdk.BucketID, name st
 }
 
 func (db *PackageDB) BatchTestPackageID(ctx SQLContext, pkgIDs []cdssdk.PackageID) (map[cdssdk.PackageID]bool, error) {
+	if len(pkgIDs) == 0 {
+		return make(map[cdssdk.PackageID]bool), nil
+	}
+
 	stmt, args, err := sqlx.In("select PackageID from Package where PackageID in (?)", lo.Uniq(pkgIDs))
 	if err != nil {
 		return nil, err

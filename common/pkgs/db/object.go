@@ -29,6 +29,10 @@ func (db *ObjectDB) GetByID(ctx SQLContext, objectID cdssdk.ObjectID) (model.Obj
 }
 
 func (db *ObjectDB) BatchTestObjectID(ctx SQLContext, objectIDs []cdssdk.ObjectID) (map[cdssdk.ObjectID]bool, error) {
+	if len(objectIDs) == 0 {
+		return make(map[cdssdk.ObjectID]bool), nil
+	}
+
 	stmt, args, err := sqlx.In("select ObjectID from Object where ObjectID in (?)", lo.Uniq(objectIDs))
 	if err != nil {
 		return nil, err
