@@ -26,6 +26,9 @@ func (e *UpdateAllPackageAccessStatAmount) Execute(ctx ExecuteContext) {
 		e.todayUpdated = false
 		return
 	}
+	if e.todayUpdated {
+		return
+	}
 	e.todayUpdated = true
 
 	ctx.Args.EventExecutor.Post(evt.NewUpdatePackageAccessStatAmount(event.NewUpdatePackageAccessStatAmount(nil)))

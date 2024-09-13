@@ -3,7 +3,7 @@ package db
 import (
 	"github.com/jmoiron/sqlx"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
@@ -15,25 +15,40 @@ func (db *DB) ObjectAccessStat() *ObjectAccessStatDB {
 	return &ObjectAccessStatDB{db}
 }
 
-func (*ObjectAccessStatDB) Get(ctx SQLContext, objID cdssdk.ObjectID, nodeID cdssdk.NodeID) (model.ObjectAccessStat, error) {
-	var ret model.ObjectAccessStat
+func (*ObjectAccessStatDB) Get(ctx SQLContext, objID cdssdk.ObjectID, nodeID cdssdk.NodeID) (stgmod.ObjectAccessStat, error) {
+	var ret stgmod.ObjectAccessStat
 	err := sqlx.Get(ctx, &ret, "select * from ObjectAccessStat where ObjectID=? and NodeID=?", objID, nodeID)
 	return ret, err
 }
 
-func (*ObjectAccessStatDB) GetByObjectID(ctx SQLContext, objID cdssdk.ObjectID) ([]model.ObjectAccessStat, error) {
-	var ret []model.ObjectAccessStat
+func (*ObjectAccessStatDB) GetByObjectID(ctx SQLContext, objID cdssdk.ObjectID) ([]stgmod.ObjectAccessStat, error) {
+	var ret []stgmod.ObjectAccessStat
 	err := sqlx.Select(ctx, &ret, "select * from ObjectAccessStat where ObjectID=?", objID)
 	return ret, err
 }
 
-func (*ObjectAccessStatDB) BatchGetByObjectID(ctx SQLContext, objIDs []cdssdk.ObjectID) ([]model.ObjectAccessStat, error) {
+func (*ObjectAccessStatDB) BatchGetByObjectID(ctx SQLContext, objIDs []cdssdk.ObjectID) ([]stgmod.ObjectAccessStat, error) {
 	if len(objIDs) == 0 {
 		return nil, nil
 	}
 
-	var ret []model.ObjectAccessStat
+	var ret []stgmod.ObjectAccessStat
 	stmt, args, err := sqlx.In("select * from ObjectAccessStat where ObjectID in (?)", objIDs)
+	if err != nil {
+		return ret, err
+	}
+
+	err = sqlx.Select(ctx, &ret, stmt, args...)
+	return ret, err
+}
+
+func (*ObjectAccessStatDB) BatchGetByObjectIDOnNode(ctx SQLContext, objIDs []cdssdk.ObjectID, nodeID cdssdk.NodeID) ([]stgmod.ObjectAccessStat, error) {
+	if len(objIDs) == 0 {
+		return nil, nil
+	}
+
+	var ret []stgmod.ObjectAccessStat
+	stmt, args, err := sqlx.In("select * from ObjectAccessStat where ObjectID in (?) and NodeID=?", objIDs, nodeID)
 	if err != nil {
 		return ret, err
 	}

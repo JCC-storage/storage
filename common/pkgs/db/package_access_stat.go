@@ -3,7 +3,7 @@ package db
 import (
 	"github.com/jmoiron/sqlx"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
@@ -15,24 +15,24 @@ func (db *DB) PackageAccessStat() *PackageAccessStatDB {
 	return &PackageAccessStatDB{db}
 }
 
-func (*PackageAccessStatDB) Get(ctx SQLContext, pkgID cdssdk.PackageID, nodeID cdssdk.NodeID) (model.PackageAccessStat, error) {
-	var ret model.PackageAccessStat
+func (*PackageAccessStatDB) Get(ctx SQLContext, pkgID cdssdk.PackageID, nodeID cdssdk.NodeID) (stgmod.PackageAccessStat, error) {
+	var ret stgmod.PackageAccessStat
 	err := sqlx.Get(ctx, &ret, "select * from PackageAccessStat where PackageID=? and NodeID=?", pkgID, nodeID)
 	return ret, err
 }
 
-func (*PackageAccessStatDB) GetByPackageID(ctx SQLContext, pkgID cdssdk.PackageID) ([]model.PackageAccessStat, error) {
-	var ret []model.PackageAccessStat
+func (*PackageAccessStatDB) GetByPackageID(ctx SQLContext, pkgID cdssdk.PackageID) ([]stgmod.PackageAccessStat, error) {
+	var ret []stgmod.PackageAccessStat
 	err := sqlx.Select(ctx, &ret, "select * from PackageAccessStat where PackageID=?", pkgID)
 	return ret, err
 }
 
-func (*PackageAccessStatDB) BatchGetByPackageID(ctx SQLContext, pkgIDs []cdssdk.PackageID) ([]model.PackageAccessStat, error) {
+func (*PackageAccessStatDB) BatchGetByPackageID(ctx SQLContext, pkgIDs []cdssdk.PackageID) ([]stgmod.PackageAccessStat, error) {
 	if len(pkgIDs) == 0 {
 		return nil, nil
 	}
 
-	var ret []model.PackageAccessStat
+	var ret []stgmod.PackageAccessStat
 	stmt, args, err := sqlx.In("select * from PackageAccessStat where PackageID in (?)", pkgIDs)
 	if err != nil {
 		return nil, err

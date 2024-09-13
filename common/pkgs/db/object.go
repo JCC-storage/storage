@@ -164,35 +164,31 @@ func (db *ObjectDB) GetPackageObjectDetails(ctx SQLContext, packageID cdssdk.Pac
 		return nil, fmt.Errorf("getting all pinned objects: %w", err)
 	}
 
-	blksCur := 0
-	pinnedsCur := 0
-	for _, temp := range objs {
-		detail := stgmod.ObjectDetail{
-			Object: temp.ToObject(),
+	details := make([]stgmod.ObjectDetail, len(objs))
+	for i, obj := range objs {
+		details[i] = stgmod.ObjectDetail{
+			Object: obj.ToObject(),
 		}
-
-		// 1. 查询Object和ObjectBlock时均按照ObjectID升序排序
-		// 2. ObjectBlock结果集中的不同ObjectID数只会比Object结果集的少
-		// 因此在两个结果集上同时从头开始遍历时，如果两边的ObjectID字段不同，那么一定是ObjectBlock这边的ObjectID > Object的ObjectID，
-		// 此时让Object的遍历游标前进，直到两边的ObjectID再次相等
-		for ; blksCur < len(allBlocks); blksCur++ {
-			if allBlocks[blksCur].ObjectID != temp.ObjectID {
-				break
-			}
-			detail.Blocks = append(detail.Blocks, allBlocks[blksCur])
-		}
-
-		for ; pinnedsCur < len(allPinnedObjs); pinnedsCur++ {
-			if allPinnedObjs[pinnedsCur].ObjectID != temp.ObjectID {
-				break
-			}
-			detail.PinnedAt = append(detail.PinnedAt, allPinnedObjs[pinnedsCur].NodeID)
-		}
-
-		rets = append(rets, detail)
 	}
 
+	stgmod.DetailsFillObjectBlocks(details, allBlocks)
+	stgmod.DetailsFillPinnedAt(details, allPinnedObjs)
 	return rets, nil
+}
+
+func (*ObjectDB) GetObjectsIfAnyBlockOnNode(ctx SQLContext, nodeID cdssdk.NodeID) ([]cdssdk.Object, error) {
+	var temps []model.TempObject
+	err := sqlx.Select(ctx, &temps, "select * from Object where ObjectID in (select ObjectID from ObjectBlock where NodeID = ?) order by ObjectID asc", nodeID)
+	if err != nil {
+		return nil, fmt.Errorf("getting objects: %w", err)
+	}
+
+	objs := make([]cdssdk.Object, len(temps))
+	for i := range temps {
+		objs[i] = temps[i].ToObject()
+	}
+
+	return objs, nil
 }
 
 func (db *ObjectDB) BatchAdd(ctx SQLContext, packageID cdssdk.PackageID, adds []coormq.AddObjectEntry) ([]cdssdk.Object, error) {

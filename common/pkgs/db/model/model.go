@@ -100,17 +100,3 @@ type Location struct {
 	LocationID cdssdk.LocationID `db:"LocationID" json:"locationID"`
 	Name       string            `db:"Name" json:"name"`
 }
-
-type PackageAccessStat struct {
-	PackageID cdssdk.PackageID `db:"PackageID" json:"packageID"`
-	NodeID    cdssdk.NodeID    `db:"NodeID" json:"nodeID"`
-	Amount    float64          `db:"Amount" json:"Amount"`   // 前一日的读取量的滑动平均值
-	Counter   float64          `db:"Counter" json:"counter"` // 当日的读取量
-}
-
-type ObjectAccessStat struct {
-	ObjectID cdssdk.ObjectID `db:"ObjectID" json:"objectID"`
-	NodeID   cdssdk.NodeID   `db:"NodeID" json:"nodeID"`
-	Amount   float64         `db:"Amount" json:"Amount"`   // 前一日的读取量的滑动平均值
-	Counter  float64         `db:"Counter" json:"counter"` // 当日的读取量
-}
