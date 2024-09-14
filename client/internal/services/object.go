@@ -71,7 +71,7 @@ func (svc *ObjectService) Download(userID cdssdk.UserID, req downloader.Download
 	iter := svc.Downloader.DownloadObjects([]downloader.DownloadReqeust{req})
 
 	downloading, err := iter.MoveNext()
-	if downloading.Object == nil {
+	if downloading == nil {
 		return nil, fmt.Errorf("object not found")
 	}
 	if err != nil {
