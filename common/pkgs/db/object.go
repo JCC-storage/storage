@@ -150,8 +150,6 @@ func (db *ObjectDB) GetPackageObjectDetails(ctx SQLContext, packageID cdssdk.Pac
 		return nil, fmt.Errorf("getting objects: %w", err)
 	}
 
-	rets := make([]stgmod.ObjectDetail, 0, len(objs))
-
 	var allBlocks []stgmod.ObjectBlock
 	err = sqlx.Select(ctx, &allBlocks, "select ObjectBlock.* from ObjectBlock, Object where PackageID = ? and ObjectBlock.ObjectID = Object.ObjectID order by ObjectBlock.ObjectID, `Index` asc", packageID)
 	if err != nil {
@@ -173,7 +171,7 @@ func (db *ObjectDB) GetPackageObjectDetails(ctx SQLContext, packageID cdssdk.Pac
 
 	stgmod.DetailsFillObjectBlocks(details, allBlocks)
 	stgmod.DetailsFillPinnedAt(details, allPinnedObjs)
-	return rets, nil
+	return details, nil
 }
 
 func (*ObjectDB) GetObjectsIfAnyBlockOnNode(ctx SQLContext, nodeID cdssdk.NodeID) ([]cdssdk.Object, error) {
