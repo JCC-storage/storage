@@ -124,7 +124,7 @@ func (iter *DownloadObjectIterator) doMove() (*Downloading, error) {
 	case *cdssdk.NoneRedundancy:
 		reader, err := iter.downloadNoneOrRepObject(req)
 		if err != nil {
-			return nil, fmt.Errorf("downloading object: %w", err)
+			return nil, fmt.Errorf("downloading object %v: %w", req.Raw.ObjectID, err)
 		}
 
 		return &Downloading{
@@ -136,7 +136,7 @@ func (iter *DownloadObjectIterator) doMove() (*Downloading, error) {
 	case *cdssdk.RepRedundancy:
 		reader, err := iter.downloadNoneOrRepObject(req)
 		if err != nil {
-			return nil, fmt.Errorf("downloading rep object: %w", err)
+			return nil, fmt.Errorf("downloading rep object %v: %w", req.Raw.ObjectID, err)
 		}
 
 		return &Downloading{
@@ -148,7 +148,7 @@ func (iter *DownloadObjectIterator) doMove() (*Downloading, error) {
 	case *cdssdk.ECRedundancy:
 		reader, err := iter.downloadECObject(req, red)
 		if err != nil {
-			return nil, fmt.Errorf("downloading ec object: %w", err)
+			return nil, fmt.Errorf("downloading ec object %v: %w", req.Raw.ObjectID, err)
 		}
 
 		return &Downloading{
@@ -160,7 +160,7 @@ func (iter *DownloadObjectIterator) doMove() (*Downloading, error) {
 	case *cdssdk.LRCRedundancy:
 		reader, err := iter.downloadLRCObject(req, red)
 		if err != nil {
-			return nil, fmt.Errorf("downloading lrc object: %w", err)
+			return nil, fmt.Errorf("downloading lrc object %v: %w", req.Raw.ObjectID, err)
 		}
 
 		return &Downloading{
@@ -170,7 +170,7 @@ func (iter *DownloadObjectIterator) doMove() (*Downloading, error) {
 		}, nil
 	}
 
-	return nil, fmt.Errorf("unsupported redundancy type: %v", reflect.TypeOf(req.Detail.Object.Redundancy))
+	return nil, fmt.Errorf("unsupported redundancy type: %v of object %v", reflect.TypeOf(req.Detail.Object.Redundancy), req.Raw.ObjectID)
 }
 
 func (i *DownloadObjectIterator) Close() {
@@ -188,7 +188,7 @@ func (iter *DownloadObjectIterator) downloadNoneOrRepObject(obj downloadReqeust2
 	bsc, blocks := iter.getMinReadingBlockSolution(allNodes, 1)
 	osc, node := iter.getMinReadingObjectSolution(allNodes, 1)
 	if bsc < osc {
-		logger.Debugf("downloading object from node %v(%v)", blocks[0].Node.Name, blocks[0].Node.NodeID)
+		logger.Debugf("downloading object %v from node %v(%v)", obj.Raw.ObjectID, blocks[0].Node.Name, blocks[0].Node.NodeID)
 		return iter.downloadFromNode(&blocks[0].Node, obj)
 	}
 
@@ -197,7 +197,7 @@ func (iter *DownloadObjectIterator) downloadNoneOrRepObject(obj downloadReqeust2
 		return nil, fmt.Errorf("no node has this object")
 	}
 
-	logger.Debugf("downloading object from node %v(%v)", node.Name, node.NodeID)
+	logger.Debugf("downloading object %v from node %v(%v)", obj.Raw.ObjectID, node.Name, node.NodeID)
 	return iter.downloadFromNode(node, obj)
 }
 
@@ -211,7 +211,7 @@ func (iter *DownloadObjectIterator) downloadECObject(req downloadReqeust2, ecRed
 	osc, node := iter.getMinReadingObjectSolution(allNodes, ecRed.K)
 
 	if bsc < osc {
-		var logStrs []any = []any{"downloading ec object from blocks: "}
+		var logStrs []any = []any{fmt.Sprintf("downloading ec object %v from blocks: ", req.Raw.ObjectID)}
 		for i, b := range blocks {
 			if i > 0 {
 				logStrs = append(logStrs, ", ")
@@ -264,10 +264,10 @@ func (iter *DownloadObjectIterator) downloadECObject(req downloadReqeust2, ecRed
 
 	// bsc >= osc，如果osc是MaxFloat64，那么bsc也一定是，也就意味着没有足够块来恢复文件
 	if osc == math.MaxFloat64 {
-		return nil, fmt.Errorf("no enough blocks to reconstruct the file, want %d, get only %d", ecRed.K, len(blocks))
+		return nil, fmt.Errorf("no enough blocks to reconstruct the object %v , want %d, get only %d", req.Raw.ObjectID, ecRed.K, len(blocks))
 	}
 
-	logger.Debugf("downloading ec object from node %v(%v)", node.Name, node.NodeID)
+	logger.Debugf("downloading ec object %v from node %v(%v)", req.Raw.ObjectID, node.Name, node.NodeID)
 	return iter.downloadFromNode(node, req)
 }
 
