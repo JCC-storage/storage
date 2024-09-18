@@ -47,7 +47,7 @@ func (s *Service) SendStream(server agtrpc.Agent_SendStreamServer) error {
 	logger.
 		WithField("PlanID", msg.PlanID).
 		WithField("VarID", msg.VarID).
-		Debugf("receive stream")
+		Debugf("stream input")
 
 	// 同一批Plan中每个节点的Plan的启动时间有先后，但最多不应该超过30秒
 	ctx, cancel := context.WithTimeout(server.Context(), time.Second*30)
@@ -116,7 +116,7 @@ func (s *Service) GetStream(req *agtrpc.GetStreamReq, server agtrpc.Agent_GetStr
 	logger.
 		WithField("PlanID", req.PlanID).
 		WithField("VarID", req.VarID).
-		Debugf("send stream")
+		Debugf("stream output")
 
 	// 同上
 	ctx, cancel := context.WithTimeout(server.Context(), time.Second*30)
