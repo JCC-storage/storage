@@ -334,7 +334,8 @@ func (t *StorageLoadPackage) getMinReadingObjectSolution(sortedNodes []*download
 	for _, n := range sortedNodes {
 		if n.ObjectPinned && float64(k)*n.Distance < dist {
 			dist = float64(k) * n.Distance
-			downloadNode = &n.Node
+			node := n.Node
+			downloadNode = &node
 		}
 	}
 

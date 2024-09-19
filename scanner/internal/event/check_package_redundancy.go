@@ -717,7 +717,8 @@ func (t *CheckPackageRedundancy) ecToEC(obj stgmod.ObjectDetail, srcRed *cdssdk.
 
 		ft := ioswitch2.NewFromTo()
 		for _, block := range chosenBlocks {
-			ft.AddFrom(ioswitch2.NewFromNode(block.FileHash, &node.Node, block.Index))
+			node := node.Node
+			ft.AddFrom(ioswitch2.NewFromNode(block.FileHash, &node, block.Index))
 		}
 
 		// 输出只需要自己要保存的那一块
@@ -907,7 +908,8 @@ func (t *CheckPackageRedundancy) reconstructLRC(obj stgmod.ObjectDetail, grpBloc
 
 		for _, block := range chosenBlocks {
 			fmt.Printf("b: %v\n", block.Index)
-			froms = append(froms, ioswitchlrc.NewFromNode(block.FileHash, &node.Node, block.Index))
+			node := node.Node
+			froms = append(froms, ioswitchlrc.NewFromNode(block.FileHash, &node, block.Index))
 		}
 
 		// 输出只需要自己要保存的那一块

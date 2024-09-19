@@ -112,7 +112,8 @@ func (s *StripIterator) Close() {
 func (s *StripIterator) downloading() {
 	ft := ioswitch2.NewFromTo()
 	for _, b := range s.blocks {
-		ft.AddFrom(ioswitch2.NewFromNode(b.Block.FileHash, &b.Node, b.Block.Index))
+		node := b.Node
+		ft.AddFrom(ioswitch2.NewFromNode(b.Block.FileHash, &node, b.Block.Index))
 	}
 
 	toExec, hd := ioswitch2.NewToDriverWithRange(-1, exec.Range{

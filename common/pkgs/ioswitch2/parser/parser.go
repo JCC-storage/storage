@@ -559,13 +559,13 @@ func (p *DefaultParser) generateClone(ctx *ParseContext) {
 				continue
 			}
 
-			t := ctx.DAG.NewCloneStream()
-			*t.Env() = *node.Env()
+			c := ctx.DAG.NewCloneStream()
+			*c.Env() = *node.Env()
 			for _, to := range out.To().RawArray() {
-				t.NewOutput().Connect(to.Node, to.SlotIndex)
+				c.NewOutput().Connect(to.Node, to.SlotIndex)
 			}
 			out.To().Resize(0)
-			t.SetInput(out)
+			c.SetInput(out)
 		}
 
 		for _, out := range node.OutputValues().RawArray() {
