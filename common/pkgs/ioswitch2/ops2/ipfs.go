@@ -44,10 +44,7 @@ func (o *IPFSRead) Execute(ctx context.Context, e *exec.Executor) error {
 	defer file.Close()
 
 	fut := future.NewSetVoid()
-	rb := io2.RingBuffer(file, 16*1024)
-	rb.UpstreamName = "IPFS"
-	rb.DownstreamName = fmt.Sprintf("IPFS output %v", o.Output.ID)
-	o.Output.Stream = io2.AfterReadClosedOnce(rb, func(closer io.ReadCloser) {
+	o.Output.Stream = io2.AfterReadClosedOnce(file, func(closer io.ReadCloser) {
 		fut.SetVoid()
 	})
 	e.PutVars(o.Output)

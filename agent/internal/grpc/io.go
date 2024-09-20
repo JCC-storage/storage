@@ -60,14 +60,10 @@ func (s *Service) SendStream(server agtrpc.Agent_SendStreamServer) error {
 
 	pr, pw := io.Pipe()
 
-	rb := io2.RingBuffer(pr, 16*1024)
-	rb.UpstreamName = fmt.Sprintf("GRPC(send) input")
-	rb.DownstreamName = fmt.Sprintf("GRPC(send) output %v", msg.VarID)
-
 	varID := exec.VarID(msg.VarID)
 	sw.PutVars(&exec.StreamVar{
 		ID:     varID,
-		Stream: rb,
+		Stream: pr,
 	})
 
 	// 然后读取文件数据
