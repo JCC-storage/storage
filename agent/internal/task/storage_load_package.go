@@ -47,13 +47,16 @@ func NewStorageLoadPackage(userID cdssdk.UserID, packageID cdssdk.PackageID, sto
 func (t *StorageLoadPackage) Execute(task *task.Task[TaskContext], ctx TaskContext, complete CompleteFn) {
 	startTime := time.Now()
 	log := logger.WithType[StorageLoadPackage]("Task")
-	log.Infof("begin to load package %v to %v", t.packageID, t.storageID)
+	log.WithField("TaskID", task.ID()).
+		Infof("begin to load package %v to %v", t.packageID, t.storageID)
 
 	err := t.do(task, ctx)
 	if err == nil {
-		log.Infof("loading success, cost: %v", time.Since(startTime))
+		log.WithField("TaskID", task.ID()).
+			Infof("loading success, cost: %v", time.Since(startTime))
 	} else {
-		log.Warnf("loading package: %v, cost: %v", err, time.Since(startTime))
+		log.WithField("TaskID", task.ID()).
+			Warnf("loading package: %v, cost: %v", err, time.Since(startTime))
 	}
 
 	complete(err, CompleteOption{
