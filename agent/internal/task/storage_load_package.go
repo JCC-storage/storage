@@ -11,6 +11,7 @@ import (
 	"github.com/samber/lo"
 	"gitlink.org.cn/cloudream/common/pkgs/bitmap"
 	"gitlink.org.cn/cloudream/common/pkgs/ipfs"
+	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gitlink.org.cn/cloudream/common/pkgs/task"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/io2"
@@ -44,7 +45,16 @@ func NewStorageLoadPackage(userID cdssdk.UserID, packageID cdssdk.PackageID, sto
 	}
 }
 func (t *StorageLoadPackage) Execute(task *task.Task[TaskContext], ctx TaskContext, complete CompleteFn) {
+	startTime := time.Now()
+	log := logger.WithType[StorageLoadPackage]("Task")
+	log.Infof("begin to load package %v to %v", t.packageID, t.storageID)
+
 	err := t.do(task, ctx)
+	if err == nil {
+		log.Infof("loading success, cost: %v", time.Since(startTime))
+	} else {
+		log.Warnf("loading package: %v, cost: %v", err, time.Since(startTime))
+	}
 
 	complete(err, CompleteOption{
 		RemovingDelay: time.Minute,

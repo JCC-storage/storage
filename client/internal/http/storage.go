@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -34,7 +35,7 @@ func (s *StorageService) LoadPackage(ctx *gin.Context) {
 	nodeID, taskID, err := s.svc.StorageSvc().StartStorageLoadPackage(req.UserID, req.PackageID, req.StorageID)
 	if err != nil {
 		log.Warnf("start storage load package: %s", err.Error())
-		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "storage load package failed"))
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("start loading: %v", err)))
 		return
 	}
 
@@ -43,7 +44,7 @@ func (s *StorageService) LoadPackage(ctx *gin.Context) {
 		if complete {
 			if err != nil {
 				log.Warnf("loading complete with: %s", err.Error())
-				ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "storage load package failed"))
+				ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("loading complete with: %v", err)))
 				return
 			}
 
@@ -58,7 +59,7 @@ func (s *StorageService) LoadPackage(ctx *gin.Context) {
 
 		if err != nil {
 			log.Warnf("wait loadding: %s", err.Error())
-			ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "storage load package failed"))
+			ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("wait loading: %v", err)))
 			return
 		}
 	}
