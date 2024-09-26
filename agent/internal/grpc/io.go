@@ -6,6 +6,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/inhies/go-bytesize"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gitlink.org.cn/cloudream/common/utils/io2"
@@ -147,6 +148,7 @@ func (s *Service) GetStream(req *agtrpc.GetStreamReq, server agtrpc.Agent_GetStr
 
 	buf := make([]byte, 1024*64)
 	readAllCnt := 0
+	startTime := time.Now()
 	for {
 		readCnt, err := reader.Read(buf)
 
@@ -167,10 +169,11 @@ func (s *Service) GetStream(req *agtrpc.GetStreamReq, server agtrpc.Agent_GetStr
 
 		// 文件读取完毕
 		if err == io.EOF {
+			dt := time.Since(startTime)
 			logger.
 				WithField("PlanID", req.PlanID).
 				WithField("VarID", req.VarID).
-				Debugf("send data size %d", readAllCnt)
+				Debugf("send data size %d in %v, speed %v/s", readAllCnt, dt, bytesize.New(float64(readAllCnt)/dt.Seconds()))
 			// 发送EOF消息
 			server.Send(&agtrpc.StreamDataPacket{
 				Type: agtrpc.StreamDataPacketType_EOF,
