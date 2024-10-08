@@ -1,11 +1,10 @@
 package http
 
 import (
-	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
-	ul "net/url"
+	"net/url"
 	"path"
 	"time"
 
@@ -13,7 +12,6 @@ import (
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	myhttp "gitlink.org.cn/cloudream/common/utils/http"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 )
@@ -115,58 +113,21 @@ func (s *ObjectService) Download(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "download object failed"))
 		return
 	}
+	defer file.File.Close()
 
-	mw := multipart.NewWriter(ctx.Writer)
-	defer mw.Close()
+	ctx.Header("Content-Disposition", "attachment; filename="+url.PathEscape(path.Base(file.Object.Path)))
+	ctx.Header("Content-Type", "application/octet-stream")
+	ctx.Header("Content-Transfer-Encoding", "binary")
 
-	ctx.Writer.Header().Set("Content-Type", fmt.Sprintf("%s;boundary=%s", myhttp.ContentTypeMultiPart, mw.Boundary()))
-	ctx.Writer.WriteHeader(http.StatusOK)
-
-	sendSize := int64(0)
-	if req.PartSize == 0 {
-		sendSize, err = sendFileOnePart(mw, "file", path.Base(file.Object.Path), file.File)
-	} else {
-		sendSize, err = sendFileMultiPart(mw, "file", path.Base(file.Object.Path), file.File, req.PartSize)
+	n, err := io.Copy(ctx.Writer, file.File)
+	if err != nil {
+		ctx.String(http.StatusInternalServerError, err.Error())
 	}
 
 	// TODO 当client不在某个代理节点上时如何处理？
 	if stgglb.Local.NodeID != nil {
-		s.svc.AccessStat.AddAccessCounter(file.Object.ObjectID, file.Object.PackageID, *stgglb.Local.NodeID, float64(sendSize)/float64(file.Object.Size))
+		s.svc.AccessStat.AddAccessCounter(file.Object.ObjectID, file.Object.PackageID, *stgglb.Local.NodeID, float64(n)/float64(file.Object.Size))
 	}
-
-	if err != nil {
-		log.Warnf("copying file: %s", err.Error())
-	}
-}
-
-func sendFileMultiPart(muWriter *multipart.Writer, fieldName, fileName string, file io.ReadCloser, partSize int64) (int64, error) {
-	total := int64(0)
-	for {
-		w, err := muWriter.CreateFormFile(fieldName, ul.PathEscape(fileName))
-		if err != nil {
-			return 0, fmt.Errorf("create form file failed, err: %w", err)
-		}
-
-		n, err := io.Copy(w, io.LimitReader(file, partSize))
-		if err != nil {
-			return total, err
-		}
-		if n == 0 {
-			break
-		}
-		total += n
-	}
-	return total, nil
-}
-
-func sendFileOnePart(muWriter *multipart.Writer, fieldName, fileName string, file io.ReadCloser) (int64, error) {
-	w, err := muWriter.CreateFormFile(fieldName, ul.PathEscape(fileName))
-	if err != nil {
-		return 0, fmt.Errorf("create form file failed, err: %w", err)
-	}
-
-	n, err := io.Copy(w, file)
-	return n, err
 }
 
 func (s *ObjectService) UpdateInfo(ctx *gin.Context) {

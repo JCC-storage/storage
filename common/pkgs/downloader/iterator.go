@@ -228,7 +228,7 @@ func (iter *DownloadObjectIterator) downloadECObject(req downloadReqeust2, ecRed
 				totalReadLen = math2.Min(req.Raw.Length, totalReadLen)
 			}
 
-			firstStripIndex := readPos / int64(ecRed.K) / int64(ecRed.ChunkSize)
+			firstStripIndex := readPos / ecRed.StripSize()
 			stripIter := NewStripIterator(req.Detail.Object, blocks, ecRed, firstStripIndex, iter.downloader.strips, iter.downloader.cfg.ECStripPrefetchCount)
 			defer stripIter.Close()
 
@@ -244,8 +244,7 @@ func (iter *DownloadObjectIterator) downloadECObject(req downloadReqeust2, ecRed
 				}
 
 				readRelativePos := readPos - strip.Position
-				nextStripPos := strip.Position + int64(ecRed.K)*int64(ecRed.ChunkSize)
-				curReadLen := math2.Min(totalReadLen, nextStripPos-readPos)
+				curReadLen := math2.Min(totalReadLen, ecRed.StripSize()-readRelativePos)
 
 				err = io2.WriteAll(pw, strip.Data[readRelativePos:readRelativePos+curReadLen])
 				if err != nil {

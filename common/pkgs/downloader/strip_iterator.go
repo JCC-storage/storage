@@ -172,6 +172,7 @@ loop:
 		dataBuf := make([]byte, int64(s.red.K*s.red.ChunkSize))
 		n, err := io.ReadFull(str, dataBuf)
 		if err == io.ErrUnexpectedEOF {
+			// dataBuf中的内容可能不足一个条带，但仍然将其完整放入cache中，外部应该自行计算该从这个buffer中读多少数据
 			s.cache.Add(stripKey, ObjectECStrip{
 				Data:           dataBuf,
 				ObjectFileHash: s.object.FileHash,
