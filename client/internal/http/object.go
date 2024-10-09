@@ -121,7 +121,7 @@ func (s *ObjectService) Download(ctx *gin.Context) {
 
 	n, err := io.Copy(ctx.Writer, file.File)
 	if err != nil {
-		ctx.String(http.StatusInternalServerError, err.Error())
+		log.Warnf("copying file: %s", err.Error())
 	}
 
 	// TODO 当client不在某个代理节点上时如何处理？
