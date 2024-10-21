@@ -3,7 +3,6 @@ package mq
 import (
 	"database/sql"
 	"fmt"
-
 	"github.com/jmoiron/sqlx"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"

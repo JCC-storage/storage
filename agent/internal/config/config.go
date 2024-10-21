@@ -14,6 +14,7 @@ import (
 
 type Config struct {
 	ID           int64                      `json:"id"`
+	ListenAddr   string                     `json:"listenAddr"`
 	Local        stgmodels.LocalMachineInfo `json:"local"`
 	GRPC         *grpc.Config               `json:"grpc"`
 	Logger       log.Config                 `json:"logger"`

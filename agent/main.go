@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"gitlink.org.cn/cloudream/storage/agent/internal/http"
 	"net"
 	"os"
 	"time"
@@ -50,6 +51,16 @@ func main() {
 	stgglb.InitMQPool(&config.Cfg().RabbitMQ)
 	stgglb.InitAgentRPCPool(&agtrpc.PoolConfig{})
 	stgglb.InitIPFSPool(&config.Cfg().IPFS)
+
+	svc, err := http.NewService()
+	if err != nil {
+		logger.Fatalf("new http service failed, err: %s", err.Error())
+	}
+	server, err := http.NewServer(config.Cfg().ListenAddr, svc)
+	err = server.Serve()
+	if err != nil {
+		logger.Fatalf("http server stopped with error: %s", err.Error())
+	}
 
 	// 启动网络连通性检测，并就地检测一次
 	conCol := connectivity.NewCollector(&config.Cfg().Connectivity, func(collector *connectivity.Collector) {
