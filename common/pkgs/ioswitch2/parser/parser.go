@@ -253,8 +253,18 @@ func (p *DefaultParser) buildFromNode(ctx *ParseContext, f ioswitch2.From) (ops2
 		}
 
 		if f.Node != nil {
-			t.Env().ToEnvWorker(&ioswitch2.AgentWorker{Node: *f.Node})
-			t.Env().Pinned = true
+			switch typeInfo := f.Node.Address.(type) {
+			case *cdssdk.HttpAddressInfo:
+				t.Env().ToEnvWorker(&ioswitch2.HttpHubWorker{Node: *f.Node})
+				t.Env().Pinned = true
+
+			case *cdssdk.GRPCAddressInfo:
+				t.Env().ToEnvWorker(&ioswitch2.AgentWorker{Node: *f.Node})
+				t.Env().Pinned = true
+
+			default:
+				return nil, fmt.Errorf("unsupported node address type %T", typeInfo)
+			}
 		}
 
 		return t, nil

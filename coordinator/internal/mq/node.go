@@ -27,7 +27,7 @@ func (svc *Service) GetNodes(msg *coormq.GetNodes) (*coormq.GetNodesResp, *mq.Co
 
 	if msg.NodeIDs == nil {
 		var err error
-		nodes, err = svc.db.Node().GetAllNodes(svc.db.SQLCtx())
+		nodes, err = svc.db2.Node().GetAllNodes()
 		if err != nil {
 			logger.Warnf("getting all nodes: %s", err.Error())
 			return nil, mq.Failed(errorcode.OperationFailed, "get all node failed")
@@ -36,7 +36,7 @@ func (svc *Service) GetNodes(msg *coormq.GetNodes) (*coormq.GetNodesResp, *mq.Co
 	} else {
 		// 可以不用事务
 		for _, id := range msg.NodeIDs {
-			node, err := svc.db.Node().GetByID(svc.db.SQLCtx(), id)
+			node, err := svc.db2.Node().GetByID(id)
 			if err != nil {
 				logger.WithField("NodeID", id).
 					Warnf("query node failed, err: %s", err.Error())

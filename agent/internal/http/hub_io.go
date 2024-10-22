@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -11,13 +12,13 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/serder"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"time"
 )
 
 type IOService struct {
 	*Server
-	swWorker *exec.Worker
 }
 
 func (s *Server) IOSvc() *IOService {
@@ -27,12 +28,8 @@ func (s *Server) IOSvc() *IOService {
 }
 
 func (s *IOService) GetStream(ctx *gin.Context) {
-	//planID := ctx.Query("plan_id")
-	//varID := ctx.Query("var_id")
-	//signalData := ctx.Query("signal")
-
 	var req cdssdk.GetStreamReq
-	if err := ctx.ShouldBindQuery(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		logger.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
 		return
@@ -47,7 +44,7 @@ func (s *IOService) GetStream(ctx *gin.Context) {
 	c, cancel := context.WithTimeout(ctx.Request.Context(), time.Second*30)
 	defer cancel()
 
-	sw := s.swWorker.FindByIDContexted(c, req.PlanID)
+	sw := s.svc.swWorker.FindByIDContexted(c, req.PlanID)
 	if sw == nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "plan not found"})
 		return
@@ -145,7 +142,7 @@ func (s *IOService) SendStream(ctx *gin.Context) {
 	c, cancel := context.WithTimeout(ctx.Request.Context(), time.Second*30)
 	defer cancel()
 
-	sw := s.swWorker.FindByIDContexted(c, req.PlanID)
+	sw := s.svc.swWorker.FindByIDContexted(c, req.PlanID)
 	if sw == nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "plan not found"})
 		return
@@ -197,6 +194,15 @@ func (s *IOService) SendStream(ctx *gin.Context) {
 }
 
 func (s *IOService) ExecuteIOPlan(ctx *gin.Context) {
+	bodyBytes, err := ioutil.ReadAll(ctx.Request.Body)
+	if err != nil {
+		logger.Warnf("reading body: %s", err.Error())
+		ctx.JSON(http.StatusInternalServerError, Failed("400", "internal error"))
+		return
+	}
+	println("Received body: %s", string(bodyBytes))
+	ctx.Request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes)) // Reset body for subsequent reads
+
 	var req cdssdk.ExecuteIOPlanReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		logger.Warnf("binding body: %s", err.Error())
@@ -217,8 +223,8 @@ func (s *IOService) ExecuteIOPlan(ctx *gin.Context) {
 
 	sw := exec.NewExecutor(plan)
 
-	s.swWorker.Add(sw)
-	defer s.swWorker.Remove(sw)
+	s.svc.swWorker.Add(sw)
+	defer s.svc.swWorker.Remove(sw)
 
 	// 设置上下文超时
 	c, cancel := context.WithTimeout(ctx.Request.Context(), time.Second*30)
@@ -244,7 +250,7 @@ func (s *IOService) SendVar(ctx *gin.Context) {
 	c, cancel := context.WithTimeout(ctx.Request.Context(), time.Second*30)
 	defer cancel()
 
-	sw := s.swWorker.FindByIDContexted(c, req.PlanID)
+	sw := s.svc.swWorker.FindByIDContexted(c, req.PlanID)
 	if sw == nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "plan not found"})
 		return
@@ -272,7 +278,7 @@ func (s *IOService) GetVar(ctx *gin.Context) {
 	c, cancel := context.WithTimeout(ctx.Request.Context(), time.Second*30)
 	defer cancel()
 
-	sw := s.swWorker.FindByIDContexted(c, req.PlanID)
+	sw := s.svc.swWorker.FindByIDContexted(c, req.PlanID)
 	if sw == nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "plan not found"})
 		return

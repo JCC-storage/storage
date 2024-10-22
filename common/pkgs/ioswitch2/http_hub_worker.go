@@ -3,6 +3,7 @@ package ioswitch2
 import (
 	"context"
 	"io"
+	"strconv"
 
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/pkgs/types"
@@ -19,13 +20,10 @@ type HttpHubWorker struct {
 }
 
 func (w *HttpHubWorker) NewClient() (exec.WorkerClient, error) {
-	//cli, err := stgglb.AgentRPCPool.Acquire(stgglb.SelectGRPCAddress(&w.Node))
-	//if err != nil {
-	//	return nil, err
-	//}
-
+	addressInfo := w.Node.Address.(*cdssdk.HttpAddressInfo)
+	baseUrl := "http://" + addressInfo.ExternalIP + ":" + strconv.Itoa(addressInfo.Port)
 	config := cdssdk.Config{
-		URL: "",
+		URL: baseUrl,
 	}
 	pool := cdssdk.NewPool(&config)
 	cli, err := pool.Acquire()

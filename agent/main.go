@@ -52,7 +52,9 @@ func main() {
 	stgglb.InitAgentRPCPool(&agtrpc.PoolConfig{})
 	stgglb.InitIPFSPool(&config.Cfg().IPFS)
 
-	svc, err := http.NewService()
+	sw := exec.NewWorker()
+
+	svc := http.NewService(&sw)
 	if err != nil {
 		logger.Fatalf("new http service failed, err: %s", err.Error())
 	}
@@ -107,8 +109,6 @@ func main() {
 	if err != nil {
 		logger.Fatalf("new ipfs failed, err: %s", err.Error())
 	}
-
-	sw := exec.NewWorker()
 
 	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol)
 
