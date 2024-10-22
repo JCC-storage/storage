@@ -15,8 +15,12 @@ type Config struct {
 
 var cfg Config
 
-func Init() error {
-	return c.DefaultLoad("coordinator", &cfg)
+func Init(path string) error {
+	if path == "" {
+		return c.DefaultLoad("coordinator", &cfg)
+	}
+
+	return c.Load(path, &cfg)
 }
 
 func Cfg() *Config {
