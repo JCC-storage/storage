@@ -3,6 +3,7 @@ package ioswitchlrc
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/shardstore/types"
 )
 
 type From interface {
@@ -37,12 +38,13 @@ func (f *FromDriver) GetDataIndex() int {
 }
 
 type FromNode struct {
-	FileHash  string
-	Node      *cdssdk.Node
+	FileHash  types.FileHash
+	Node      cdssdk.Node
+	Storage   cdssdk.Storage
 	DataIndex int
 }
 
-func NewFromNode(fileHash string, node *cdssdk.Node, dataIndex int) *FromNode {
+func NewFromNode(fileHash types.FileHash, node cdssdk.Node, storage cdssdk.Storage, dataIndex int) *FromNode {
 	return &FromNode{
 		FileHash:  fileHash,
 		Node:      node,

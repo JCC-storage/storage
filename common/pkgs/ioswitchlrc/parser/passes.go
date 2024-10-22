@@ -6,10 +6,10 @@ import (
 
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/dag"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
-	"gitlink.org.cn/cloudream/common/pkgs/ipfs"
 	"gitlink.org.cn/cloudream/common/utils/math2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc/ops2"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/shardstore/types"
 )
 
 // 计算输入流的打开范围。会把流的范围按条带大小取整
@@ -63,27 +63,16 @@ func buildFromNode(ctx *GenerateContext, f ioswitchlrc.From) (ops2.FromNode, err
 
 	switch f := f.(type) {
 	case *ioswitchlrc.FromNode:
-		t := ctx.DAG.NewIPFSRead(f.FileHash, ipfs.ReadOption{
-			Offset: 0,
-			Length: -1,
-		})
+		t := ctx.DAG.NewIPFSRead(f.Storage.StorageID, types.NewOpen(f.FileHash))
 
 		if f.DataIndex == -1 {
-			t.Option.Offset = repRange.Offset
-			if repRange.Length != nil {
-				t.Option.Length = *repRange.Length
-			}
+			t.Open.WithNullableLength(repRange.Offset, repRange.Length)
 		} else {
-			t.Option.Offset = blkRange.Offset
-			if blkRange.Length != nil {
-				t.Option.Length = *blkRange.Length
-			}
+			t.Open.WithNullableLength(blkRange.Offset, blkRange.Length)
 		}
 
-		if f.Node != nil {
-			t.Env().ToEnvWorker(&ioswitchlrc.AgentWorker{Node: *f.Node})
-			t.Env().Pinned = true
-		}
+		t.Env().ToEnvWorker(&ioswitchlrc.AgentWorker{Node: f.Node})
+		t.Env().Pinned = true
 
 		return t, nil
 

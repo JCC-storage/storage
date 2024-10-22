@@ -31,13 +31,13 @@ type ECReconstructAny struct {
 	OutputBlockIndexes []int               `json:"outputBlockIndexes"`
 }
 
-func (o *ECReconstructAny) Execute(ctx context.Context, e *exec.Executor) error {
+func (o *ECReconstructAny) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 	rs, err := ec.NewStreamRs(o.EC.K, o.EC.N, o.EC.ChunkSize)
 	if err != nil {
 		return fmt.Errorf("new ec: %w", err)
 	}
 
-	err = exec.BindArrayVars(e, ctx, o.Inputs)
+	err = exec.BindArrayVars(e, ctx.Context, o.Inputs)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (o *ECReconstructAny) Execute(ctx context.Context, e *exec.Executor) error 
 
 	sem := semaphore.NewWeighted(int64(len(o.Outputs)))
 	for i := range o.Outputs {
-		sem.Acquire(ctx, 1)
+		sem.Acquire(ctx.Context, 1)
 
 		o.Outputs[i].Stream = io2.AfterReadClosedOnce(outputs[i], func(closer io.ReadCloser) {
 			sem.Release(1)
@@ -64,7 +64,7 @@ func (o *ECReconstructAny) Execute(ctx context.Context, e *exec.Executor) error 
 	}
 	exec.PutArrayVars(e, o.Outputs)
 
-	return sem.Acquire(ctx, int64(len(o.Outputs)))
+	return sem.Acquire(ctx.Context, int64(len(o.Outputs)))
 }
 
 type ECReconstruct struct {
@@ -117,8 +117,8 @@ type ECMultiply struct {
 	ChunkSize int               `json:"chunkSize"`
 }
 
-func (o *ECMultiply) Execute(ctx context.Context, e *exec.Executor) error {
-	err := exec.BindArrayVars(e, ctx, o.Inputs)
+func (o *ECMultiply) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
+	err := exec.BindArrayVars(e, ctx.Context, o.Inputs)
 	if err != nil {
 		return err
 	}
@@ -180,7 +180,7 @@ func (o *ECMultiply) Execute(ctx context.Context, e *exec.Executor) error {
 	}()
 
 	exec.PutArrayVars(e, o.Outputs)
-	err = fut.Wait(ctx)
+	err = fut.Wait(ctx.Context)
 	if err != nil {
 		for _, wr := range outputWrs {
 			wr.CloseWithError(err)

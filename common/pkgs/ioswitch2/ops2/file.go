@@ -1,7 +1,6 @@
 package ops2
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -23,8 +22,8 @@ type FileWrite struct {
 	FilePath string          `json:"filePath"`
 }
 
-func (o *FileWrite) Execute(ctx context.Context, e *exec.Executor) error {
-	err := e.BindVars(ctx, o.Input)
+func (o *FileWrite) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
+	err := e.BindVars(ctx.Context, o.Input)
 	if err != nil {
 		return err
 	}
@@ -59,7 +58,7 @@ type FileRead struct {
 	FilePath string          `json:"filePath"`
 }
 
-func (o *FileRead) Execute(ctx context.Context, e *exec.Executor) error {
+func (o *FileRead) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 	file, err := os.Open(o.FilePath)
 	if err != nil {
 		return fmt.Errorf("opening file: %w", err)
@@ -70,7 +69,7 @@ func (o *FileRead) Execute(ctx context.Context, e *exec.Executor) error {
 		fut.SetVoid()
 	})
 	e.PutVars(o.Output)
-	fut.Wait(ctx)
+	fut.Wait(ctx.Context)
 
 	return nil
 }

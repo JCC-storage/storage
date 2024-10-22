@@ -114,3 +114,9 @@ type ObjectAccessStat struct {
 	Amount   float64         `db:"Amount" json:"Amount"`   // 前一日的读取量的滑动平均值
 	Counter  float64         `db:"Counter" json:"counter"` // 当日的读取量
 }
+
+type StorageDetail struct {
+	Storage cdssdk.Storage       `json:"storage"`
+	Shard   cdssdk.ShardStorage  `json:"shard"`
+	Shared  cdssdk.SharedStorage `json:"shared"`
+}

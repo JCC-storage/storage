@@ -1,7 +1,6 @@
 package ops2
 
 import (
-	"context"
 	"fmt"
 	"io"
 
@@ -26,8 +25,8 @@ type ChunkedSplit struct {
 	PaddingZeros bool              `json:"paddingZeros"`
 }
 
-func (o *ChunkedSplit) Execute(ctx context.Context, e *exec.Executor) error {
-	err := e.BindVars(ctx, o.Input)
+func (o *ChunkedSplit) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
+	err := e.BindVars(ctx.Context, o.Input)
 	if err != nil {
 		return err
 	}
@@ -39,7 +38,7 @@ func (o *ChunkedSplit) Execute(ctx context.Context, e *exec.Executor) error {
 
 	sem := semaphore.NewWeighted(int64(len(outputs)))
 	for i := range outputs {
-		sem.Acquire(ctx, 1)
+		sem.Acquire(ctx.Context, 1)
 
 		o.Outputs[i].Stream = io2.AfterReadClosedOnce(outputs[i], func(closer io.ReadCloser) {
 			sem.Release(1)
@@ -47,7 +46,7 @@ func (o *ChunkedSplit) Execute(ctx context.Context, e *exec.Executor) error {
 	}
 	exec.PutArrayVars(e, o.Outputs)
 
-	return sem.Acquire(ctx, int64(len(outputs)))
+	return sem.Acquire(ctx.Context, int64(len(outputs)))
 }
 
 func (o *ChunkedSplit) String() string {
@@ -66,8 +65,8 @@ type ChunkedJoin struct {
 	ChunkSize int               `json:"chunkSize"`
 }
 
-func (o *ChunkedJoin) Execute(ctx context.Context, e *exec.Executor) error {
-	err := exec.BindArrayVars(e, ctx, o.Inputs)
+func (o *ChunkedJoin) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
+	err := exec.BindArrayVars(e, ctx.Context, o.Inputs)
 	if err != nil {
 		return err
 	}
@@ -88,7 +87,7 @@ func (o *ChunkedJoin) Execute(ctx context.Context, e *exec.Executor) error {
 	})
 	e.PutVars(o.Output)
 
-	return fut.Wait(ctx)
+	return fut.Wait(ctx.Context)
 }
 
 func (o *ChunkedJoin) String() string {

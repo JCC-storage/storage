@@ -8,6 +8,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/pkgs/types"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 	"gitlink.org.cn/cloudream/common/utils/serder"
 )
 
@@ -22,10 +23,10 @@ type HttpHubWorker struct {
 func (w *HttpHubWorker) NewClient() (exec.WorkerClient, error) {
 	addressInfo := w.Node.Address.(*cdssdk.HttpAddressInfo)
 	baseUrl := "http://" + addressInfo.ExternalIP + ":" + strconv.Itoa(addressInfo.Port)
-	config := cdssdk.Config{
+	config := cdsapi.Config{
 		URL: baseUrl,
 	}
-	pool := cdssdk.NewPool(&config)
+	pool := cdsapi.NewPool(&config)
 	cli, err := pool.Acquire()
 	defer pool.Release(cli)
 	if err != nil {
@@ -49,7 +50,7 @@ func (w *HttpHubWorker) Equals(worker exec.WorkerInfo) bool {
 }
 
 type HttpHubWorkerClient struct {
-	cli *cdssdk.Client
+	cli *cdsapi.Client
 }
 
 func (c *HttpHubWorkerClient) ExecutePlan(ctx context.Context, plan exec.Plan) error {

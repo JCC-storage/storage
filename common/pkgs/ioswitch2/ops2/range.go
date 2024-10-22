@@ -1,7 +1,6 @@
 package ops2
 
 import (
-	"context"
 	"fmt"
 	"io"
 
@@ -23,8 +22,8 @@ type Range struct {
 	Length *int64          `json:"length"`
 }
 
-func (o *Range) Execute(ctx context.Context, e *exec.Executor) error {
-	err := e.BindVars(ctx, o.Input)
+func (o *Range) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
+	err := e.BindVars(ctx.Context, o.Input)
 	if err != nil {
 		return err
 	}
@@ -54,7 +53,7 @@ func (o *Range) Execute(ctx context.Context, e *exec.Executor) error {
 		})
 
 		e.PutVars(o.Output)
-		return fut.Wait(ctx)
+		return fut.Wait(ctx.Context)
 	}
 
 	o.Output.Stream = io2.AfterEOF(io2.Length(o.Input.Stream, *o.Length), func(closer io.ReadCloser, err error) {
@@ -62,7 +61,7 @@ func (o *Range) Execute(ctx context.Context, e *exec.Executor) error {
 	})
 
 	e.PutVars(o.Output)
-	err = fut.Wait(ctx)
+	err = fut.Wait(ctx.Context)
 	if err != nil {
 		return err
 	}

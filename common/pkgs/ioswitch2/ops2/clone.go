@@ -1,7 +1,6 @@
 package ops2
 
 import (
-	"context"
 	"fmt"
 	"io"
 
@@ -23,8 +22,8 @@ type CloneStream struct {
 	Cloneds []*exec.StreamVar `json:"cloneds"`
 }
 
-func (o *CloneStream) Execute(ctx context.Context, e *exec.Executor) error {
-	err := e.BindVars(ctx, o.Raw)
+func (o *CloneStream) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
+	err := e.BindVars(ctx.Context, o.Raw)
 	if err != nil {
 		return err
 	}
@@ -34,7 +33,7 @@ func (o *CloneStream) Execute(ctx context.Context, e *exec.Executor) error {
 
 	sem := semaphore.NewWeighted(int64(len(o.Cloneds)))
 	for i, s := range cloned {
-		sem.Acquire(ctx, 1)
+		sem.Acquire(ctx.Context, 1)
 
 		o.Cloneds[i].Stream = io2.AfterReadClosedOnce(s, func(closer io.ReadCloser) {
 			sem.Release(1)
@@ -42,7 +41,7 @@ func (o *CloneStream) Execute(ctx context.Context, e *exec.Executor) error {
 	}
 	exec.PutArrayVars(e, o.Cloneds)
 
-	return sem.Acquire(ctx, int64(len(o.Cloneds)))
+	return sem.Acquire(ctx.Context, int64(len(o.Cloneds)))
 }
 
 func (o *CloneStream) String() string {
@@ -54,8 +53,8 @@ type CloneVar struct {
 	Cloneds []exec.Var `json:"cloneds"`
 }
 
-func (o *CloneVar) Execute(ctx context.Context, e *exec.Executor) error {
-	err := e.BindVars(ctx, o.Raw)
+func (o *CloneVar) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
+	err := e.BindVars(ctx.Context, o.Raw)
 	if err != nil {
 		return err
 	}

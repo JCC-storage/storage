@@ -7,12 +7,12 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/dag"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/plan"
-	"gitlink.org.cn/cloudream/common/pkgs/ipfs"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/lo2"
 	"gitlink.org.cn/cloudream/common/utils/math2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/ops2"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/shardstore/types"
 )
 
 type DefaultParser struct {
@@ -235,36 +235,25 @@ func (p *DefaultParser) buildFromNode(ctx *ParseContext, f ioswitch2.From) (ops2
 
 	switch f := f.(type) {
 	case *ioswitch2.FromNode:
-		t := ctx.DAG.NewIPFSRead(f.FileHash, ipfs.ReadOption{
-			Offset: 0,
-			Length: -1,
-		})
+		t := ctx.DAG.NewIPFSRead(f.Storage.StorageID, types.NewOpen(f.FileHash))
 
 		if f.DataIndex == -1 {
-			t.Option.Offset = repRange.Offset
-			if repRange.Length != nil {
-				t.Option.Length = *repRange.Length
-			}
+			t.Open.WithNullableLength(repRange.Offset, repRange.Length)
 		} else {
-			t.Option.Offset = blkRange.Offset
-			if blkRange.Length != nil {
-				t.Option.Length = *blkRange.Length
-			}
+			t.Open.WithNullableLength(blkRange.Offset, blkRange.Length)
 		}
 
-		if f.Node != nil {
-			switch typeInfo := f.Node.Address.(type) {
-			case *cdssdk.HttpAddressInfo:
-				t.Env().ToEnvWorker(&ioswitch2.HttpHubWorker{Node: *f.Node})
-				t.Env().Pinned = true
+		switch typeInfo := f.Node.Address.(type) {
+		case *cdssdk.HttpAddressInfo:
+			t.Env().ToEnvWorker(&ioswitch2.HttpHubWorker{Node: f.Node})
+			t.Env().Pinned = true
 
-			case *cdssdk.GRPCAddressInfo:
-				t.Env().ToEnvWorker(&ioswitch2.AgentWorker{Node: *f.Node})
-				t.Env().Pinned = true
+		case *cdssdk.GRPCAddressInfo:
+			t.Env().ToEnvWorker(&ioswitch2.AgentWorker{Node: f.Node})
+			t.Env().Pinned = true
 
-			default:
-				return nil, fmt.Errorf("unsupported node address type %T", typeInfo)
-			}
+		default:
+			return nil, fmt.Errorf("unsupported node address type %T", typeInfo)
 		}
 
 		return t, nil

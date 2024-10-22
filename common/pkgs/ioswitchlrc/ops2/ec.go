@@ -1,7 +1,6 @@
 package ops2
 
 import (
-	"context"
 	"fmt"
 	"io"
 
@@ -28,8 +27,8 @@ type GalMultiply struct {
 	ChunkSize int               `json:"chunkSize"`
 }
 
-func (o *GalMultiply) Execute(ctx context.Context, e *exec.Executor) error {
-	err := exec.BindArrayVars(e, ctx, o.Inputs)
+func (o *GalMultiply) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
+	err := exec.BindArrayVars(e, ctx.Context, o.Inputs)
 	if err != nil {
 		return err
 	}
@@ -91,7 +90,7 @@ func (o *GalMultiply) Execute(ctx context.Context, e *exec.Executor) error {
 	}()
 
 	exec.PutArrayVars(e, o.Outputs)
-	err = fut.Wait(ctx)
+	err = fut.Wait(ctx.Context)
 	if err != nil {
 		for _, wr := range outputWrs {
 			wr.CloseWithError(err)
