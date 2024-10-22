@@ -39,6 +39,12 @@ func migrate(configPath string) {
 		os.Exit(1)
 	}
 
+	err = db.AutoMigrate(&cdssdk.Node{})
+	if err != nil {
+		fmt.Printf("migratting model Node: %v\n", err)
+		os.Exit(1)
+	}
+
 	err = db.AutoMigrate(&cdssdk.Storage{})
 	if err != nil {
 		fmt.Printf("migratting model Storage: %v\n", err)

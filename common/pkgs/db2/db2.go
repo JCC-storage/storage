@@ -22,3 +22,17 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		db: mydb,
 	}, nil
 }
+
+func (s *DB) DoTx(do func(tx SQLContext) error) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		return do(SQLContext{tx})
+	})
+}
+
+type SQLContext struct {
+	*gorm.DB
+}
+
+func (d *DB) DefCtx() SQLContext {
+	return SQLContext{d.db}
+}

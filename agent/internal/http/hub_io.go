@@ -4,17 +4,18 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/inhies/go-bytesize"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
-	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 	"gitlink.org.cn/cloudream/common/utils/serder"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"time"
 )
 
 type IOService struct {
@@ -28,7 +29,7 @@ func (s *Server) IOSvc() *IOService {
 }
 
 func (s *IOService) GetStream(ctx *gin.Context) {
-	var req cdssdk.GetStreamReq
+	var req cdsapi.GetStreamReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		logger.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -126,7 +127,7 @@ func (s *IOService) SendStream(ctx *gin.Context) {
 	//planID := ctx.PostForm("plan_id")
 	//varID := ctx.PostForm("var_id")
 
-	var req cdssdk.SendStreamReq
+	var req cdsapi.SendStreamReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		logger.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -201,9 +202,9 @@ func (s *IOService) ExecuteIOPlan(ctx *gin.Context) {
 		return
 	}
 	println("Received body: %s", string(bodyBytes))
-	ctx.Request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes)) // Reset body for subsequent reads
+	ctx.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes)) // Reset body for subsequent reads
 
-	var req cdssdk.ExecuteIOPlanReq
+	var req cdsapi.ExecuteIOPlanReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		logger.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -240,7 +241,7 @@ func (s *IOService) ExecuteIOPlan(ctx *gin.Context) {
 }
 
 func (s *IOService) SendVar(ctx *gin.Context) {
-	var req cdssdk.SendVarReq
+	var req cdsapi.SendVarReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		logger.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -268,7 +269,7 @@ func (s *IOService) SendVar(ctx *gin.Context) {
 }
 
 func (s *IOService) GetVar(ctx *gin.Context) {
-	var req cdssdk.GetVarReq
+	var req cdsapi.GetVarReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		logger.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))

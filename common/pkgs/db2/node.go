@@ -1,8 +1,9 @@
 package db2
 
 import (
-	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"time"
+
+	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 )
 
 type NodeDB struct {
@@ -13,24 +14,24 @@ func (nodeDB *DB) Node() *NodeDB {
 	return &NodeDB{DB: nodeDB}
 }
 
-func (nodeDB *NodeDB) GetAllNodes() ([]cdssdk.Node, error) {
+func (*NodeDB) GetAllNodes(ctx SQLContext) ([]cdssdk.Node, error) {
 	var ret []cdssdk.Node
 
-	err := nodeDB.DB.db.Table("node").Find(&ret).Error
+	err := ctx.Table("node").Find(&ret).Error
 	return ret, err
 }
 
-func (nodeDB *NodeDB) GetByID(nodeID cdssdk.NodeID) (cdssdk.Node, error) {
+func (*NodeDB) GetByID(ctx SQLContext, nodeID cdssdk.NodeID) (cdssdk.Node, error) {
 	var ret cdssdk.Node
-	err := nodeDB.DB.db.Table("node").Where("NodeID = ?", nodeID).Find(&ret).Error
+	err := ctx.Table("node").Where("NodeID = ?", nodeID).Find(&ret).Error
 
 	return ret, err
 }
 
 // GetUserNodes 根据用户id查询可用node
-func (nodeDB *NodeDB) GetUserNodes(userID cdssdk.UserID) ([]cdssdk.Node, error) {
+func (*NodeDB) GetUserNodes(ctx SQLContext, userID cdssdk.UserID) ([]cdssdk.Node, error) {
 	var nodes []cdssdk.Node
-	err := nodeDB.DB.db.
+	err := ctx.
 		Table("Node").
 		Select("Node.*").
 		Joins("JOIN UserNode ON UserNode.NodeID = Node.NodeID").
@@ -40,8 +41,8 @@ func (nodeDB *NodeDB) GetUserNodes(userID cdssdk.UserID) ([]cdssdk.Node, error) 
 }
 
 // UpdateState 更新状态，并且设置上次上报时间为现在
-func (nodeDB *NodeDB) UpdateState(nodeID cdssdk.NodeID, state string) error {
-	err := nodeDB.DB.db.
+func (*NodeDB) UpdateState(ctx SQLContext, nodeID cdssdk.NodeID, state string) error {
+	err := ctx.
 		Model(&cdssdk.Node{}).
 		Where("NodeID = ?", nodeID).
 		Updates(map[string]interface{}{

@@ -3,7 +3,7 @@ package http
 import (
 	"github.com/gin-gonic/gin"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
-	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 )
 
 type Server struct {
@@ -38,9 +38,9 @@ func (s *Server) Serve() error {
 }
 
 func (s *Server) initRouters() {
-	s.engine.GET(cdssdk.GetStreamPath, s.IOSvc().GetStream)
-	s.engine.POST(cdssdk.SendStreamPath, s.IOSvc().SendStream)
-	s.engine.POST(cdssdk.ExecuteIOPlanPath, s.IOSvc().ExecuteIOPlan)
-	s.engine.POST(cdssdk.SendVarPath, s.IOSvc().SendVar)
-	s.engine.GET(cdssdk.GetVarPath, s.IOSvc().GetVar)
+	s.engine.GET(cdsapi.GetStreamPath, s.IOSvc().GetStream)
+	s.engine.POST(cdsapi.SendStreamPath, s.IOSvc().SendStream)
+	s.engine.POST(cdsapi.ExecuteIOPlanPath, s.IOSvc().ExecuteIOPlan)
+	s.engine.POST(cdsapi.SendVarPath, s.IOSvc().SendVar)
+	s.engine.GET(cdsapi.GetVarPath, s.IOSvc().GetVar)
 }
