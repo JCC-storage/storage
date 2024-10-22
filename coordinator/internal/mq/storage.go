@@ -9,6 +9,8 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
@@ -20,6 +22,35 @@ func (svc *Service) GetStorage(msg *coormq.GetStorage) (*coormq.GetStorageResp, 
 	}
 
 	return mq.ReplyOK(coormq.RespGetStorage(stg))
+}
+
+func (svc *Service) GetStorageDetail(msg *coormq.GetStorageDetail) (*coormq.GetStorageDetailResp, *mq.CodeMessage) {
+	var ret stgmod.StorageDetail
+
+	svc.db2.DoTx(func(tx db2.SQLContext) error {
+		stg, err := svc.db2.Storage().GetByID(tx, msg.StorageID)
+		if err != nil {
+			return fmt.Errorf("getting storage: %w", err)
+		}
+
+		shard, err := svc.db2.ShardStorage().GetByStorageID(tx, msg.StorageID)
+		if err != nil {
+			return fmt.Errorf("getting shard storage: %w", err)
+		}
+
+		shared, err := svc.db2.SharedStorage().GetByStorageID(tx, msg.StorageID)
+		if err != nil {
+			return fmt.Errorf("getting shared storage: %w", err)
+		}
+
+		ret.Storage = stg
+		ret.Shard = shard
+		ret.Shared = shared
+
+		return nil
+	})
+
+	return mq.ReplyOK(coormq.RespGetStorageDetail(ret))
 }
 
 func (svc *Service) GetStorageByName(msg *coormq.GetStorageByName) (*coormq.GetStorageByNameResp, *mq.CodeMessage) {

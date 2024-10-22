@@ -10,6 +10,8 @@ import (
 type StorageService interface {
 	GetStorage(msg *GetStorage) (*GetStorageResp, *mq.CodeMessage)
 
+	GetStorageDetail(msg *GetStorageDetail) (*GetStorageDetailResp, *mq.CodeMessage)
+
 	GetStorageByName(msg *GetStorageByName) (*GetStorageByNameResp, *mq.CodeMessage)
 
 	StoragePackageLoaded(msg *StoragePackageLoaded) (*StoragePackageLoadedResp, *mq.CodeMessage)
@@ -41,6 +43,32 @@ func RespGetStorage(stg model.Storage) *GetStorageResp {
 }
 func (client *Client) GetStorage(msg *GetStorage) (*GetStorageResp, error) {
 	return mq.Request(Service.GetStorage, client.rabbitCli, msg)
+}
+
+// 获取Storage的详细信息
+var _ = Register(Service.GetStorageDetail)
+
+type GetStorageDetail struct {
+	mq.MessageBodyBase
+	StorageID cdssdk.StorageID `json:"storageID"`
+}
+type GetStorageDetailResp struct {
+	mq.MessageBodyBase
+	Storage stgmod.StorageDetail `json:"storage"`
+}
+
+func ReqGetStorageDetail(storageID cdssdk.StorageID) *GetStorageDetail {
+	return &GetStorageDetail{
+		StorageID: storageID,
+	}
+}
+func RespGetStorageDetail(stg stgmod.StorageDetail) *GetStorageDetailResp {
+	return &GetStorageDetailResp{
+		Storage: stg,
+	}
+}
+func (client *Client) GetStorageDetail(msg *GetStorageDetail) (*GetStorageDetailResp, error) {
+	return mq.Request(Service.GetStorageDetail, client.rabbitCli, msg)
 }
 
 var _ = Register(Service.GetStorageByName)

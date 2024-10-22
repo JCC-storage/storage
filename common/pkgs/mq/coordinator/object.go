@@ -3,6 +3,7 @@ package coordinator
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
@@ -143,7 +144,7 @@ var _ = Register(Service.UpdateObjectInfos)
 type UpdateObjectInfos struct {
 	mq.MessageBodyBase
 	UserID    cdssdk.UserID           `json:"userID"`
-	Updatings []cdssdk.UpdatingObject `json:"updatings"`
+	Updatings []cdsapi.UpdatingObject `json:"updatings"`
 }
 
 type UpdateObjectInfosResp struct {
@@ -151,7 +152,7 @@ type UpdateObjectInfosResp struct {
 	Successes []cdssdk.ObjectID `json:"successes"`
 }
 
-func ReqUpdateObjectInfos(userID cdssdk.UserID, updatings []cdssdk.UpdatingObject) *UpdateObjectInfos {
+func ReqUpdateObjectInfos(userID cdssdk.UserID, updatings []cdsapi.UpdatingObject) *UpdateObjectInfos {
 	return &UpdateObjectInfos{
 		UserID:    userID,
 		Updatings: updatings,
@@ -172,7 +173,7 @@ var _ = Register(Service.MoveObjects)
 type MoveObjects struct {
 	mq.MessageBodyBase
 	UserID  cdssdk.UserID         `json:"userID"`
-	Movings []cdssdk.MovingObject `json:"movings"`
+	Movings []cdsapi.MovingObject `json:"movings"`
 }
 
 type MoveObjectsResp struct {
@@ -180,7 +181,7 @@ type MoveObjectsResp struct {
 	Successes []cdssdk.ObjectID `json:"successes"`
 }
 
-func ReqMoveObjects(userID cdssdk.UserID, movings []cdssdk.MovingObject) *MoveObjects {
+func ReqMoveObjects(userID cdssdk.UserID, movings []cdsapi.MovingObject) *MoveObjects {
 	return &MoveObjects{
 		UserID:  userID,
 		Movings: movings,

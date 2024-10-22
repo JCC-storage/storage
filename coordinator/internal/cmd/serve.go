@@ -6,6 +6,7 @@ import (
 
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	mydb "gitlink.org.cn/cloudream/storage/common/pkgs/db"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 	"gitlink.org.cn/cloudream/storage/coordinator/internal/config"
 	"gitlink.org.cn/cloudream/storage/coordinator/internal/mq"
@@ -29,7 +30,12 @@ func serve(configPath string) {
 		logger.Fatalf("new db failed, err: %s", err.Error())
 	}
 
-	coorSvr, err := coormq.NewServer(mq.NewService(db), &config.Cfg().RabbitMQ)
+	db2, err := db2.NewDB(&config.Cfg().DB)
+	if err != nil {
+		logger.Fatalf("new db2 failed, err: %s", err.Error())
+	}
+
+	coorSvr, err := coormq.NewServer(mq.NewService(db, db2), &config.Cfg().RabbitMQ)
 	if err != nil {
 		logger.Fatalf("new coordinator server failed, err: %s", err.Error())
 	}
