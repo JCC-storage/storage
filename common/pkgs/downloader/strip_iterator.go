@@ -65,7 +65,7 @@ func NewStripIterator(object cdssdk.Object, blocks []downloadBlock, red *cdssdk.
 
 func (s *StripIterator) MoveNext() (Strip, error) {
 	if !s.inited {
-		go s.downloading()
+		go s.downloading(s.curStripIndex)
 		s.inited = true
 	}
 
@@ -112,8 +112,8 @@ func (s *StripIterator) Close() {
 	})
 }
 
-func (s *StripIterator) downloading() {
-	curStripIndex := s.curStripIndex
+func (s *StripIterator) downloading(startStripIndex int64) {
+	curStripIndex := startStripIndex
 loop:
 	for {
 		stripBytesPos := curStripIndex * int64(s.red.K) * int64(s.red.ChunkSize)
@@ -199,7 +199,7 @@ func (s *StripIterator) readStrip(stripIndex int64, buf []byte) (int, error) {
 		}
 
 		toExec, hd := ioswitch2.NewToDriverWithRange(-1, exec.Range{
-			Offset: s.curStripIndex * s.red.StripSize(),
+			Offset: stripIndex * s.red.StripSize(),
 		})
 		ft.AddTo(toExec)
 
