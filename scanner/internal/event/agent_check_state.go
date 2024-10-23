@@ -54,7 +54,7 @@ func (t *AgentCheckState) Execute(execCtx ExecuteContext) {
 	}
 	defer stgglb.AgentMQPool.Release(agtCli)
 
-	getResp, err := agtCli.GetState(agtmq.NewGetState(), mq.RequestOption{Timeout: time.Second * 30})
+	_, err = agtCli.GetState(agtmq.NewGetState(), mq.RequestOption{Timeout: time.Second * 30})
 	if err != nil {
 		log.WithField("NodeID", t.NodeID).Warnf("getting state: %s", err.Error())
 
@@ -65,17 +65,6 @@ func (t *AgentCheckState) Execute(execCtx ExecuteContext) {
 			if err != nil {
 				log.WithField("NodeID", t.NodeID).Warnf("set node state failed, err: %s", err.Error())
 			}
-		}
-		return
-	}
-
-	// 根据返回结果修改节点状态
-	if getResp.IPFSState != consts.IPFSStateOK {
-		log.WithField("NodeID", t.NodeID).Warnf("IPFS status is %s, set node state unavailable", getResp.IPFSState)
-
-		err := execCtx.Args.DB.Node().UpdateState(execCtx.Args.DB.SQLCtx(), t.NodeID, consts.NodeStateUnavailable)
-		if err != nil {
-			log.WithField("NodeID", t.NodeID).Warnf("change node state failed, err: %s", err.Error())
 		}
 		return
 	}

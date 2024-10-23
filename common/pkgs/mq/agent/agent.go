@@ -16,16 +16,13 @@ type GetState struct {
 }
 type GetStateResp struct {
 	mq.MessageBodyBase
-	IPFSState string `json:"ipfsState"`
 }
 
 func NewGetState() *GetState {
 	return &GetState{}
 }
-func NewGetStateResp(ipfsState string) *GetStateResp {
-	return &GetStateResp{
-		IPFSState: ipfsState,
-	}
+func NewGetStateResp() *GetStateResp {
+	return &GetStateResp{}
 }
 func (client *Client) GetState(msg *GetState, opts ...mq.RequestOption) (*GetStateResp, error) {
 	return mq.Request(Service.GetState, client.rabbitCli, msg, opts...)

@@ -235,7 +235,7 @@ func (p *DefaultParser) buildFromNode(ctx *ParseContext, f ioswitch2.From) (ops2
 
 	switch f := f.(type) {
 	case *ioswitch2.FromNode:
-		t := ctx.DAG.NewIPFSRead(f.Storage.StorageID, types.NewOpen(f.FileHash))
+		t := ctx.DAG.NewShardRead(f.Storage.StorageID, types.NewOpen(f.FileHash))
 
 		if f.DataIndex == -1 {
 			t.Open.WithNullableLength(repRange.Offset, repRange.Length)
@@ -281,7 +281,7 @@ func (p *DefaultParser) buildFromNode(ctx *ParseContext, f ioswitch2.From) (ops2
 func (p *DefaultParser) buildToNode(ctx *ParseContext, t ioswitch2.To) (ops2.ToNode, error) {
 	switch t := t.(type) {
 	case *ioswitch2.ToNode:
-		n := ctx.DAG.NewIPFSWrite(t.FileHashStoreKey)
+		n := ctx.DAG.NewShardWrite(t.FileHashStoreKey)
 		n.Env().ToEnvWorker(&ioswitch2.AgentWorker{Node: t.Node})
 		n.Env().Pinned = true
 
@@ -498,7 +498,7 @@ func (p *DefaultParser) dropUnused(ctx *ParseContext) {
 
 // 为IPFS写入指令存储结果
 func (p *DefaultParser) storeIPFSWriteResult(ctx *ParseContext) {
-	dag.WalkOnlyType[*ops2.IPFSWriteNode](ctx.DAG.Graph, func(n *ops2.IPFSWriteNode) bool {
+	dag.WalkOnlyType[*ops2.ShardWriteNode](ctx.DAG.Graph, func(n *ops2.ShardWriteNode) bool {
 		if n.FileHashStoreKey == "" {
 			return true
 		}

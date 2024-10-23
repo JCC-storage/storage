@@ -2,7 +2,6 @@ package config
 
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/distlock"
-	"gitlink.org.cn/cloudream/common/pkgs/ipfs"
 	log "gitlink.org.cn/cloudream/common/pkgs/logger"
 	c "gitlink.org.cn/cloudream/common/utils/config"
 	stgmodels "gitlink.org.cn/cloudream/storage/common/models"
@@ -19,7 +18,6 @@ type Config struct {
 	GRPC         *grpc.Config               `json:"grpc"`
 	Logger       log.Config                 `json:"logger"`
 	RabbitMQ     stgmq.Config               `json:"rabbitMQ"`
-	IPFS         ipfs.Config                `json:"ipfs"`
 	DistLock     distlock.Config            `json:"distlock"`
 	Connectivity connectivity.Config        `json:"connectivity"`
 	Downloader   downloader.Config          `json:"downloader"`

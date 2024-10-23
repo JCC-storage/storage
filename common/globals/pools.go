@@ -1,7 +1,6 @@
 package stgglb
 
 import (
-	"gitlink.org.cn/cloudream/common/pkgs/ipfs"
 	agtrpc "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
 	stgmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq"
 	agtmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/agent"
@@ -27,10 +26,4 @@ var AgentRPCPool *agtrpc.Pool
 
 func InitAgentRPCPool(cfg *agtrpc.PoolConfig) {
 	AgentRPCPool = agtrpc.NewPool(cfg)
-}
-
-var IPFSPool *ipfs.Pool
-
-func InitIPFSPool(cfg *ipfs.Config) {
-	IPFSPool = ipfs.NewPool(cfg)
 }

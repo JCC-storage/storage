@@ -108,7 +108,7 @@ func (o *ShardWrite) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 }
 
 func (o *ShardWrite) String() string {
-	return fmt.Sprintf("IPFSWrite %v -> %v", o.Input.ID, o.FileHash.ID)
+	return fmt.Sprintf("ShardWrite %v -> %v", o.Input.ID, o.FileHash.ID)
 }
 
 type ShardReadNode struct {
@@ -117,7 +117,7 @@ type ShardReadNode struct {
 	Open      types.OpenOption
 }
 
-func (b *GraphNodeBuilder) NewIPFSRead(stgID cdssdk.StorageID, open types.OpenOption) *ShardReadNode {
+func (b *GraphNodeBuilder) NewShardRead(stgID cdssdk.StorageID, open types.OpenOption) *ShardReadNode {
 	node := &ShardReadNode{
 		StorageID: stgID,
 		Open:      open,
@@ -146,37 +146,37 @@ func (t *ShardReadNode) GenerateOp() (exec.Op, error) {
 // 	return fmt.Sprintf("IPFSRead[%s,%v+%v]%v%v", t.FileHash, t.Option.Offset, t.Option.Length, formatStreamIO(node), formatValueIO(node))
 // }
 
-type IPFSWriteNode struct {
+type ShardWriteNode struct {
 	dag.NodeBase
 	FileHashStoreKey string
 }
 
-func (b *GraphNodeBuilder) NewIPFSWrite(fileHashStoreKey string) *IPFSWriteNode {
-	node := &IPFSWriteNode{
+func (b *GraphNodeBuilder) NewShardWrite(fileHashStoreKey string) *ShardWriteNode {
+	node := &ShardWriteNode{
 		FileHashStoreKey: fileHashStoreKey,
 	}
 	b.AddNode(node)
 	return node
 }
 
-func (t *IPFSWriteNode) SetInput(input *dag.StreamVar) {
+func (t *ShardWriteNode) SetInput(input *dag.StreamVar) {
 	t.InputStreams().EnsureSize(1)
 	input.Connect(t, 0)
 	t.OutputValues().SetupNew(t, t.Graph().NewValueVar(dag.StringValueVar))
 }
 
-func (t *IPFSWriteNode) Input() dag.StreamSlot {
+func (t *ShardWriteNode) Input() dag.StreamSlot {
 	return dag.StreamSlot{
 		Var:   t.InputStreams().Get(0),
 		Index: 0,
 	}
 }
 
-func (t *IPFSWriteNode) FileHashVar() *dag.ValueVar {
+func (t *ShardWriteNode) FileHashVar() *dag.ValueVar {
 	return t.OutputValues().Get(0)
 }
 
-func (t *IPFSWriteNode) GenerateOp() (exec.Op, error) {
+func (t *ShardWriteNode) GenerateOp() (exec.Op, error) {
 	return &ShardWrite{
 		Input:    t.InputStreams().Get(0).Var,
 		FileHash: t.OutputValues().Get(0).Var.(*exec.StringVar),

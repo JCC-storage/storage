@@ -37,11 +37,6 @@ func main() {
 	stgglb.InitLocal(&config.Cfg().Local)
 	stgglb.InitMQPool(&config.Cfg().RabbitMQ)
 	stgglb.InitAgentRPCPool(&config.Cfg().AgentGRPC)
-	if config.Cfg().IPFS != nil {
-		logger.Infof("IPFS config is not empty, so create a ipfs client")
-
-		stgglb.InitIPFSPool(config.Cfg().IPFS)
-	}
 
 	var conCol connectivity.Collector
 	if config.Cfg().Local.NodeID != nil {

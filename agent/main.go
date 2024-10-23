@@ -50,7 +50,6 @@ func main() {
 	stgglb.InitLocal(&config.Cfg().Local)
 	stgglb.InitMQPool(&config.Cfg().RabbitMQ)
 	stgglb.InitAgentRPCPool(&agtrpc.PoolConfig{})
-	stgglb.InitIPFSPool(&config.Cfg().IPFS)
 
 	sw := exec.NewWorker()
 

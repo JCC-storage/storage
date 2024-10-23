@@ -12,7 +12,6 @@ import (
 
 	"gitlink.org.cn/cloudream/common/pkgs/distlock"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
-	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/sort2"
 
@@ -22,7 +21,6 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/parser"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/iterator"
-	agtmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/agent"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
@@ -216,33 +214,9 @@ func uploadAndUpdatePackage(packageID cdssdk.PackageID, objectIter iterator.Uplo
 }
 
 func uploadFile(file io.Reader, uploadNode UploadNodeInfo) (string, error) {
-	// 本地有IPFS，则直接从本地IPFS上传
-	if stgglb.IPFSPool != nil {
-		logger.Debug("try to use local IPFS to upload file")
-
-		// 只有本地IPFS不是存储系统中的一个节点，才需要Pin文件
-		fileHash, err := uploadToLocalIPFS(file, uploadNode.Node.NodeID, stgglb.Local.NodeID == nil)
-		if err == nil {
-			return fileHash, nil
-
-		} else {
-			logger.Warnf("upload to local IPFS failed, so try to upload to node %d, err: %s", uploadNode.Node.NodeID, err.Error())
-		}
-	}
-
-	// 否则发送到agent上传
-	fileHash, err := uploadToNode(file, uploadNode.Node)
-	if err != nil {
-		return "", fmt.Errorf("uploading to node %v: %w", uploadNode.Node.NodeID, err)
-	}
-
-	return fileHash, nil
-}
-
-func uploadToNode(file io.Reader, node cdssdk.Node) (string, error) {
 	ft := ioswitch2.NewFromTo()
 	fromExec, hd := ioswitch2.NewFromDriver(-1)
-	ft.AddFrom(fromExec).AddTo(ioswitch2.NewToNode(node, -1, "fileHash"))
+	ft.AddFrom(fromExec).AddTo(ioswitch2.NewToNode(uploadNode.Node, -1, "fileHash"))
 
 	parser := parser.NewParser(cdssdk.DefaultECRedundancy)
 	plans := exec.NewPlanBuilder()
@@ -259,45 +233,4 @@ func uploadToNode(file io.Reader, node cdssdk.Node) (string, error) {
 	}
 
 	return ret["fileHash"].(string), nil
-}
-
-func uploadToLocalIPFS(file io.Reader, nodeID cdssdk.NodeID, shouldPin bool) (string, error) {
-	ipfsCli, err := stgglb.IPFSPool.Acquire()
-	if err != nil {
-		return "", fmt.Errorf("new ipfs client: %w", err)
-	}
-	defer ipfsCli.Close()
-
-	// 从本地IPFS上传文件
-	fileHash, err := ipfsCli.CreateFile(file)
-	if err != nil {
-		return "", fmt.Errorf("creating ipfs file: %w", err)
-	}
-
-	if !shouldPin {
-		return fileHash, nil
-	}
-
-	err = pinIPFSFile(nodeID, fileHash)
-	if err != nil {
-		return "", err
-	}
-
-	return fileHash, nil
-}
-
-func pinIPFSFile(nodeID cdssdk.NodeID, fileHash string) error {
-	agtCli, err := stgglb.AgentMQPool.Acquire(nodeID)
-	if err != nil {
-		return fmt.Errorf("new agent client: %w", err)
-	}
-	defer stgglb.AgentMQPool.Release(agtCli)
-
-	// 然后让最近节点pin本地上传的文件
-	_, err = agtCli.PinObject(agtmq.ReqPinObject([]string{fileHash}, false))
-	if err != nil {
-		return fmt.Errorf("start pinning object: %w", err)
-	}
-
-	return nil
 }
