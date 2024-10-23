@@ -9,7 +9,7 @@ import (
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/iterator"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
-	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 
 	stgiter "gitlink.org.cn/cloudream/storage/common/pkgs/iterator"
 )
@@ -27,7 +27,7 @@ func (s *Server) Package() *PackageService {
 func (s *PackageService) Get(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Package.Get")
 
-	var req cdssdk.PackageGetReq
+	var req cdsapi.PackageGetReq
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -41,13 +41,13 @@ func (s *PackageService) Get(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdssdk.PackageGetResp{Package: *pkg}))
+	ctx.JSON(http.StatusOK, OK(cdsapi.PackageGetResp{Package: *pkg}))
 }
 
 func (s *PackageService) GetByName(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Package.GetByName")
 
-	var req cdssdk.PackageGetByName
+	var req cdsapi.PackageGetByName
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.Warnf("binding query: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -61,12 +61,12 @@ func (s *PackageService) GetByName(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdssdk.PackageGetByNameResp{Package: *pkg}))
+	ctx.JSON(http.StatusOK, OK(cdsapi.PackageGetByNameResp{Package: *pkg}))
 }
 
 func (s *PackageService) Create(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Package.Create")
-	var req cdssdk.PackageCreate
+	var req cdsapi.PackageCreate
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -80,7 +80,7 @@ func (s *PackageService) Create(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdssdk.PackageCreateResp{
+	ctx.JSON(http.StatusOK, OK(cdsapi.PackageCreateResp{
 		Package: pkg,
 	}))
 }
@@ -88,7 +88,7 @@ func (s *PackageService) Create(ctx *gin.Context) {
 func (s *PackageService) Delete(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Package.Delete")
 
-	var req cdssdk.PackageDelete
+	var req cdsapi.PackageDelete
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -108,7 +108,7 @@ func (s *PackageService) Delete(ctx *gin.Context) {
 func (s *PackageService) ListBucketPackages(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Package.ListBucketPackages")
 
-	var req cdssdk.PackageListBucketPackages
+	var req cdsapi.PackageListBucketPackages
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.Warnf("binding query: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -122,7 +122,7 @@ func (s *PackageService) ListBucketPackages(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdssdk.PackageListBucketPackagesResp{
+	ctx.JSON(http.StatusOK, OK(cdsapi.PackageListBucketPackagesResp{
 		Packages: pkgs,
 	}))
 }
@@ -130,7 +130,7 @@ func (s *PackageService) ListBucketPackages(ctx *gin.Context) {
 func (s *PackageService) GetCachedNodes(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Package.GetCachedNodes")
 
-	var req cdssdk.PackageGetCachedNodesReq
+	var req cdsapi.PackageGetCachedNodesReq
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.Warnf("binding query: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -144,13 +144,13 @@ func (s *PackageService) GetCachedNodes(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdssdk.PackageGetCachedNodesResp{PackageCachingInfo: resp}))
+	ctx.JSON(http.StatusOK, OK(cdsapi.PackageGetCachedNodesResp{PackageCachingInfo: resp}))
 }
 
 func (s *PackageService) GetLoadedNodes(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Package.GetLoadedNodes")
 
-	var req cdssdk.PackageGetLoadedNodesReq
+	var req cdsapi.PackageGetLoadedNodesReq
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.Warnf("binding query: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -164,7 +164,7 @@ func (s *PackageService) GetLoadedNodes(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdssdk.PackageGetLoadedNodesResp{
+	ctx.JSON(http.StatusOK, OK(cdsapi.PackageGetLoadedNodesResp{
 		NodeIDs: nodeIDs,
 	}))
 }

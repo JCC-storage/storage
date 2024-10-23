@@ -5,6 +5,7 @@ import (
 	"time"
 
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 	mytask "gitlink.org.cn/cloudream/storage/client/internal/task"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
@@ -36,7 +37,7 @@ func (svc *ObjectService) WaitUploading(taskID string, waitTimeout time.Duration
 	return false, nil, nil
 }
 
-func (svc *ObjectService) UpdateInfo(userID cdssdk.UserID, updatings []cdssdk.UpdatingObject) ([]cdssdk.ObjectID, error) {
+func (svc *ObjectService) UpdateInfo(userID cdssdk.UserID, updatings []cdsapi.UpdatingObject) ([]cdssdk.ObjectID, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
@@ -51,7 +52,7 @@ func (svc *ObjectService) UpdateInfo(userID cdssdk.UserID, updatings []cdssdk.Up
 	return resp.Successes, nil
 }
 
-func (svc *ObjectService) Move(userID cdssdk.UserID, movings []cdssdk.MovingObject) ([]cdssdk.ObjectID, error) {
+func (svc *ObjectService) Move(userID cdssdk.UserID, movings []cdsapi.MovingObject) ([]cdssdk.ObjectID, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)

@@ -8,6 +8,7 @@ import (
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 )
 
 type CacheService struct {
@@ -25,7 +26,7 @@ type CacheMovePackageReq struct {
 	PackageID *cdssdk.PackageID `json:"packageID" binding:"required"`
 	NodeID    *cdssdk.NodeID    `json:"nodeID" binding:"required"`
 }
-type CacheMovePackageResp = cdssdk.CacheMovePackageResp
+type CacheMovePackageResp = cdsapi.CacheMovePackageResp
 
 func (s *CacheService) MovePackage(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Cache.LoadPackage")

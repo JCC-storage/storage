@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
-	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 )
 
 type StorageService struct {
@@ -25,7 +25,7 @@ func (s *Server) Storage() *StorageService {
 func (s *StorageService) LoadPackage(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Storage.LoadPackage")
 
-	var req cdssdk.StorageLoadPackageReq
+	var req cdsapi.StorageLoadPackageReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -48,7 +48,7 @@ func (s *StorageService) LoadPackage(ctx *gin.Context) {
 				return
 			}
 
-			ctx.JSON(http.StatusOK, OK(cdssdk.StorageLoadPackageResp{
+			ctx.JSON(http.StatusOK, OK(cdsapi.StorageLoadPackageResp{
 				FullPath:    filepath.Join(ret.RemoteBase, ret.PackagePath),
 				PackagePath: ret.PackagePath,
 				LocalBase:   ret.LocalBase,
@@ -68,7 +68,7 @@ func (s *StorageService) LoadPackage(ctx *gin.Context) {
 func (s *StorageService) CreatePackage(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Storage.CreatePackage")
 
-	var req cdssdk.StorageCreatePackageReq
+	var req cdsapi.StorageCreatePackageReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -92,7 +92,7 @@ func (s *StorageService) CreatePackage(ctx *gin.Context) {
 				return
 			}
 
-			ctx.JSON(http.StatusOK, OK(cdssdk.StorageCreatePackageResp{
+			ctx.JSON(http.StatusOK, OK(cdsapi.StorageCreatePackageResp{
 				PackageID: packageID,
 			}))
 			return
@@ -109,7 +109,7 @@ func (s *StorageService) CreatePackage(ctx *gin.Context) {
 func (s *StorageService) Get(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Storage.Get")
 
-	var req cdssdk.StorageGet
+	var req cdsapi.StorageGet
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.Warnf("binding query: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -123,7 +123,7 @@ func (s *StorageService) Get(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdssdk.StorageGetResp{
+	ctx.JSON(http.StatusOK, OK(cdsapi.StorageGetResp{
 		Storage: *info,
 	}))
 }

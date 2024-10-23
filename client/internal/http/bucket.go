@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
-	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 )
 
 type BucketService struct {
@@ -22,7 +22,7 @@ func (s *Server) Bucket() *BucketService {
 func (s *BucketService) GetByName(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Bucket.GetByName")
 
-	var req cdssdk.BucketGetByName
+	var req cdsapi.BucketGetByName
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.Warnf("binding query: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -36,7 +36,7 @@ func (s *BucketService) GetByName(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdssdk.BucketGetByNameResp{
+	ctx.JSON(http.StatusOK, OK(cdsapi.BucketGetByNameResp{
 		Bucket: bucket,
 	}))
 }
@@ -44,7 +44,7 @@ func (s *BucketService) GetByName(ctx *gin.Context) {
 func (s *BucketService) Create(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Bucket.Create")
 
-	var req cdssdk.BucketCreate
+	var req cdsapi.BucketCreate
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -58,7 +58,7 @@ func (s *BucketService) Create(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdssdk.BucketCreateResp{
+	ctx.JSON(http.StatusOK, OK(cdsapi.BucketCreateResp{
 		Bucket: bucket,
 	}))
 }
@@ -66,7 +66,7 @@ func (s *BucketService) Create(ctx *gin.Context) {
 func (s *BucketService) Delete(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Bucket.Delete")
 
-	var req cdssdk.BucketDelete
+	var req cdsapi.BucketDelete
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -85,7 +85,7 @@ func (s *BucketService) Delete(ctx *gin.Context) {
 func (s *BucketService) ListUserBuckets(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Bucket.ListUserBuckets")
 
-	var req cdssdk.BucketListUserBucketsReq
+	var req cdsapi.BucketListUserBucketsReq
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.Warnf("binding query: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -99,7 +99,7 @@ func (s *BucketService) ListUserBuckets(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdssdk.BucketListUserBucketsResp{
+	ctx.JSON(http.StatusOK, OK(cdsapi.BucketListUserBucketsResp{
 		Buckets: buckets,
 	}))
 }

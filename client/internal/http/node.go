@@ -7,6 +7,7 @@ import (
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 )
 
 type NodeService struct {
@@ -22,7 +23,7 @@ func (s *Server) NodeSvc() *NodeService {
 type GetNodesReq struct {
 	NodeIDs *[]cdssdk.NodeID `form:"nodeIDs" binding:"required"`
 }
-type GetNodesResp = cdssdk.NodeGetNodesResp
+type GetNodesResp = cdsapi.NodeGetNodesResp
 
 func (s *ObjectService) GetNodes(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Node.GetNodes")

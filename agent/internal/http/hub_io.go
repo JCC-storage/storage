@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -195,7 +194,7 @@ func (s *IOService) SendStream(ctx *gin.Context) {
 }
 
 func (s *IOService) ExecuteIOPlan(ctx *gin.Context) {
-	bodyBytes, err := ioutil.ReadAll(ctx.Request.Body)
+	bodyBytes, err := io.ReadAll(ctx.Request.Body)
 	if err != nil {
 		logger.Warnf("reading body: %s", err.Error())
 		ctx.JSON(http.StatusInternalServerError, Failed("400", "internal error"))

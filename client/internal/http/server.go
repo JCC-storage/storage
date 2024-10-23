@@ -3,7 +3,7 @@ package http
 import (
 	"github.com/gin-gonic/gin"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
-	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 	"gitlink.org.cn/cloudream/storage/client/internal/services"
 )
 
@@ -43,29 +43,29 @@ func (s *Server) initRouters() {
 
 	initTemp(rt, s)
 
-	rt.GET(cdssdk.ObjectDownloadPath, s.Object().Download)
-	rt.POST(cdssdk.ObjectUploadPath, s.Object().Upload)
-	rt.GET(cdssdk.ObjectGetPackageObjectsPath, s.Object().GetPackageObjects)
-	rt.POST(cdssdk.ObjectUpdateInfoPath, s.Object().UpdateInfo)
-	rt.POST(cdssdk.ObjectMovePath, s.Object().Move)
-	rt.POST(cdssdk.ObjectDeletePath, s.Object().Delete)
+	rt.GET(cdsapi.ObjectDownloadPath, s.Object().Download)
+	rt.POST(cdsapi.ObjectUploadPath, s.Object().Upload)
+	rt.GET(cdsapi.ObjectGetPackageObjectsPath, s.Object().GetPackageObjects)
+	rt.POST(cdsapi.ObjectUpdateInfoPath, s.Object().UpdateInfo)
+	rt.POST(cdsapi.ObjectMovePath, s.Object().Move)
+	rt.POST(cdsapi.ObjectDeletePath, s.Object().Delete)
 
-	rt.GET(cdssdk.PackageGetPath, s.Package().Get)
-	rt.GET(cdssdk.PackageGetByNamePath, s.Package().GetByName)
-	rt.POST(cdssdk.PackageCreatePath, s.Package().Create)
-	rt.POST(cdssdk.PackageDeletePath, s.Package().Delete)
-	rt.GET(cdssdk.PackageListBucketPackagesPath, s.Package().ListBucketPackages)
-	rt.GET(cdssdk.PackageGetCachedNodesPath, s.Package().GetCachedNodes)
-	rt.GET(cdssdk.PackageGetLoadedNodesPath, s.Package().GetLoadedNodes)
+	rt.GET(cdsapi.PackageGetPath, s.Package().Get)
+	rt.GET(cdsapi.PackageGetByNamePath, s.Package().GetByName)
+	rt.POST(cdsapi.PackageCreatePath, s.Package().Create)
+	rt.POST(cdsapi.PackageDeletePath, s.Package().Delete)
+	rt.GET(cdsapi.PackageListBucketPackagesPath, s.Package().ListBucketPackages)
+	rt.GET(cdsapi.PackageGetCachedNodesPath, s.Package().GetCachedNodes)
+	rt.GET(cdsapi.PackageGetLoadedNodesPath, s.Package().GetLoadedNodes)
 
-	rt.POST(cdssdk.StorageLoadPackagePath, s.Storage().LoadPackage)
-	rt.POST(cdssdk.StorageCreatePackagePath, s.Storage().CreatePackage)
-	rt.GET(cdssdk.StorageGetPath, s.Storage().Get)
+	rt.POST(cdsapi.StorageLoadPackagePath, s.Storage().LoadPackage)
+	rt.POST(cdsapi.StorageCreatePackagePath, s.Storage().CreatePackage)
+	rt.GET(cdsapi.StorageGetPath, s.Storage().Get)
 
-	rt.POST(cdssdk.CacheMovePackagePath, s.Cache().MovePackage)
+	rt.POST(cdsapi.CacheMovePackagePath, s.Cache().MovePackage)
 
-	rt.GET(cdssdk.BucketGetByNamePath, s.Bucket().GetByName)
-	rt.POST(cdssdk.BucketCreatePath, s.Bucket().Create)
-	rt.POST(cdssdk.BucketDeletePath, s.Bucket().Delete)
-	rt.GET(cdssdk.BucketListUserBucketsPath, s.Bucket().ListUserBuckets)
+	rt.GET(cdsapi.BucketGetByNamePath, s.Bucket().GetByName)
+	rt.POST(cdsapi.BucketCreatePath, s.Bucket().Create)
+	rt.POST(cdsapi.BucketDeletePath, s.Bucket().Delete)
+	rt.GET(cdsapi.BucketListUserBucketsPath, s.Bucket().ListUserBuckets)
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
-	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 )
@@ -27,7 +27,7 @@ func (s *Server) Object() *ObjectService {
 }
 
 type ObjectUploadReq struct {
-	Info  cdssdk.ObjectUploadInfo `form:"info" binding:"required"`
+	Info  cdsapi.ObjectUploadInfo `form:"info" binding:"required"`
 	Files []*multipart.FileHeader `form:"files"`
 }
 
@@ -62,20 +62,20 @@ func (s *ObjectService) Upload(ctx *gin.Context) {
 				return
 			}
 
-			uploadeds := make([]cdssdk.UploadedObject, len(objs.Objects))
+			uploadeds := make([]cdsapi.UploadedObject, len(objs.Objects))
 			for i, obj := range objs.Objects {
 				err := ""
 				if obj.Error != nil {
 					err = obj.Error.Error()
 				}
 				o := obj.Object
-				uploadeds[i] = cdssdk.UploadedObject{
+				uploadeds[i] = cdsapi.UploadedObject{
 					Object: &o,
 					Error:  err,
 				}
 			}
 
-			ctx.JSON(http.StatusOK, OK(cdssdk.ObjectUploadResp{Uploadeds: uploadeds}))
+			ctx.JSON(http.StatusOK, OK(cdsapi.ObjectUploadResp{Uploadeds: uploadeds}))
 			return
 		}
 
@@ -90,7 +90,7 @@ func (s *ObjectService) Upload(ctx *gin.Context) {
 func (s *ObjectService) Download(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Object.Download")
 
-	var req cdssdk.ObjectDownload
+	var req cdsapi.ObjectDownload
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -133,7 +133,7 @@ func (s *ObjectService) Download(ctx *gin.Context) {
 func (s *ObjectService) UpdateInfo(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Object.UpdateInfo")
 
-	var req cdssdk.ObjectUpdateInfo
+	var req cdsapi.ObjectUpdateInfo
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -147,13 +147,13 @@ func (s *ObjectService) UpdateInfo(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdssdk.ObjectUpdateInfoResp{Successes: sucs}))
+	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectUpdateInfoResp{Successes: sucs}))
 }
 
 func (s *ObjectService) Move(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Object.Move")
 
-	var req cdssdk.ObjectMove
+	var req cdsapi.ObjectMove
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -167,13 +167,13 @@ func (s *ObjectService) Move(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdssdk.ObjectMoveResp{Successes: sucs}))
+	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectMoveResp{Successes: sucs}))
 }
 
 func (s *ObjectService) Delete(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Object.Delete")
 
-	var req cdssdk.ObjectDelete
+	var req cdsapi.ObjectDelete
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -193,7 +193,7 @@ func (s *ObjectService) Delete(ctx *gin.Context) {
 func (s *ObjectService) GetPackageObjects(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Object.GetPackageObjects")
 
-	var req cdssdk.ObjectGetPackageObjects
+	var req cdsapi.ObjectGetPackageObjects
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -207,5 +207,5 @@ func (s *ObjectService) GetPackageObjects(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdssdk.ObjectGetPackageObjectsResp{Objects: objs}))
+	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectGetPackageObjectsResp{Objects: objs}))
 }
