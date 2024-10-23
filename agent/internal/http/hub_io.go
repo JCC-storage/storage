@@ -1,7 +1,6 @@
 package http
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -123,9 +122,6 @@ func (s *IOService) GetStream(ctx *gin.Context) {
 }
 
 func (s *IOService) SendStream(ctx *gin.Context) {
-	//planID := ctx.PostForm("plan_id")
-	//varID := ctx.PostForm("var_id")
-
 	var req cdsapi.SendStreamReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		logger.Warnf("binding body: %s", err.Error())
@@ -194,25 +190,14 @@ func (s *IOService) SendStream(ctx *gin.Context) {
 }
 
 func (s *IOService) ExecuteIOPlan(ctx *gin.Context) {
-	bodyBytes, err := io.ReadAll(ctx.Request.Body)
+	data, err := io.ReadAll(ctx.Request.Body)
 	if err != nil {
 		logger.Warnf("reading body: %s", err.Error())
 		ctx.JSON(http.StatusInternalServerError, Failed("400", "internal error"))
 		return
 	}
-	println("Received body: %s", string(bodyBytes))
-	ctx.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes)) // Reset body for subsequent reads
 
-	var req cdsapi.ExecuteIOPlanReq
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		logger.Warnf("binding body: %s", err.Error())
-		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
-		return
-	}
-
-	planBytes, err := serder.ObjectToJSON(req.Plan)
-	// 反序列化 Plan
-	plan, err := serder.JSONToObjectEx[exec.Plan](planBytes)
+	plan, err := serder.JSONToObjectEx[exec.Plan](data)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("deserializing plan: %v", err)})
 		return
@@ -226,11 +211,11 @@ func (s *IOService) ExecuteIOPlan(ctx *gin.Context) {
 	s.svc.swWorker.Add(sw)
 	defer s.svc.swWorker.Remove(sw)
 
-	// 设置上下文超时
-	c, cancel := context.WithTimeout(ctx.Request.Context(), time.Second*30)
-	defer cancel()
+	execCtx := exec.NewWithContext(ctx.Request.Context())
 
-	_, err = sw.Run(c)
+	// TODO 注入依赖
+
+	_, err = sw.Run(execCtx)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("running io plan: %v", err)})
 		return

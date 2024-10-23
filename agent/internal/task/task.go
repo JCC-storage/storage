@@ -6,13 +6,15 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/accessstat"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/pool"
 )
 
 type TaskContext struct {
-	distlock     *distlock.Service
-	connectivity *connectivity.Collector
-	downloader   *downloader.Downloader
-	accessStat   *accessstat.AccessStat
+	distlock       *distlock.Service
+	connectivity   *connectivity.Collector
+	downloader     *downloader.Downloader
+	accessStat     *accessstat.AccessStat
+	shardStorePool *pool.ShardStorePool
 }
 
 // 需要在Task结束后主动调用，completing函数将在Manager加锁期间被调用，
@@ -27,11 +29,12 @@ type Task = task.Task[TaskContext]
 
 type CompleteOption = task.CompleteOption
 
-func NewManager(distlock *distlock.Service, connectivity *connectivity.Collector, downloader *downloader.Downloader, accessStat *accessstat.AccessStat) Manager {
+func NewManager(distlock *distlock.Service, connectivity *connectivity.Collector, downloader *downloader.Downloader, accessStat *accessstat.AccessStat, shardStorePool *pool.ShardStorePool) Manager {
 	return task.NewManager(TaskContext{
-		distlock:     distlock,
-		connectivity: connectivity,
-		downloader:   downloader,
-		accessStat:   accessStat,
+		distlock:       distlock,
+		connectivity:   connectivity,
+		downloader:     downloader,
+		accessStat:     accessStat,
+		shardStorePool: shardStorePool,
 	})
 }

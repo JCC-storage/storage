@@ -2,6 +2,7 @@ package task
 
 import (
 	"fmt"
+	"io"
 	"time"
 
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
@@ -16,12 +17,14 @@ import (
 type CacheMovePackage struct {
 	userID    cdssdk.UserID
 	packageID cdssdk.PackageID
+	storageID cdssdk.StorageID
 }
 
-func NewCacheMovePackage(userID cdssdk.UserID, packageID cdssdk.PackageID) *CacheMovePackage {
+func NewCacheMovePackage(userID cdssdk.UserID, packageID cdssdk.PackageID, storageID cdssdk.StorageID) *CacheMovePackage {
 	return &CacheMovePackage{
 		userID:    userID,
 		packageID: packageID,
+		storageID: storageID,
 	}
 }
 
@@ -36,6 +39,11 @@ func (t *CacheMovePackage) do(ctx TaskContext) error {
 	log := logger.WithType[CacheMovePackage]("Task")
 	log.Debugf("begin with %v", logger.FormatStruct(t))
 	defer log.Debugf("end")
+
+	store, err := ctx.shardStorePool.Get(t.storageID)
+	if err != nil {
+		return fmt.Errorf("getting shard store: %w", err)
+	}
 
 	mutex, err := reqbuilder.NewBuilder().
 		// 保护解码出来的Object数据
@@ -52,12 +60,6 @@ func (t *CacheMovePackage) do(ctx TaskContext) error {
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-	ipfsCli, err := stgglb.IPFSPool.Acquire()
-	if err != nil {
-		return fmt.Errorf("new ipfs client: %w", err)
-	}
-	defer ipfsCli.Close()
-
 	// TODO 可以考虑优化，比如rep类型的直接pin就可以
 	objIter := ctx.downloader.DownloadPackage(t.packageID)
 	defer objIter.Close()
@@ -72,15 +74,20 @@ func (t *CacheMovePackage) do(ctx TaskContext) error {
 		}
 		defer obj.File.Close()
 
-		_, err = ipfsCli.CreateFile(obj.File)
+		writer := store.New()
+		_, err = io.Copy(writer, obj.File)
 		if err != nil {
-			return fmt.Errorf("creating ipfs file: %w", err)
+			return fmt.Errorf("writing to store: %w", err)
+		}
+		_, err = writer.Finish()
+		if err != nil {
+			return fmt.Errorf("finishing store: %w", err)
 		}
 
 		ctx.accessStat.AddAccessCounter(obj.Object.ObjectID, t.packageID, *stgglb.Local.NodeID, 1)
 	}
 
-	_, err = coorCli.CachePackageMoved(coormq.NewCachePackageMoved(t.packageID, *stgglb.Local.NodeID))
+	_, err = coorCli.CachePackageMoved(coormq.NewCachePackageMoved(t.packageID, t.storageID))
 	if err != nil {
 		return fmt.Errorf("request to coordinator: %w", err)
 	}

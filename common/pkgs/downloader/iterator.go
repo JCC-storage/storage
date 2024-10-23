@@ -396,7 +396,10 @@ func (iter *DownloadObjectIterator) downloadFromNode(node *cdssdk.Node, req down
 		return nil, fmt.Errorf("parsing plan: %w", err)
 	}
 
-	exec := plans.Execute()
+	// TODO2 注入依赖
+	exeCtx := exec.NewExecContext()
+
+	exec := plans.Execute(exeCtx)
 	go exec.Wait(context.TODO())
 
 	return exec.BeginRead(strHandle)

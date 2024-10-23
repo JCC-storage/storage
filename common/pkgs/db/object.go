@@ -341,7 +341,7 @@ func (db *ObjectDB) BatchUpdateRedundancy(ctx SQLContext, objs []coormq.Updating
 		for _, p := range obj.PinnedAt {
 			pinneds = append(pinneds, cdssdk.PinnedObject{
 				ObjectID:   obj.ObjectID,
-				NodeID:     p,
+				StorageID:  p,
 				CreateTime: time.Now(),
 			})
 		}

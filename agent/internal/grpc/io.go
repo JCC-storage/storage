@@ -28,7 +28,11 @@ func (s *Service) ExecuteIOPlan(ctx context.Context, req *agtrpc.ExecuteIOPlanRe
 	s.swWorker.Add(sw)
 	defer s.swWorker.Remove(sw)
 
-	_, err = sw.Run(ctx)
+	execCtx := exec.NewWithContext(ctx)
+
+	// TODO2 注入依赖
+
+	_, err = sw.Run(execCtx)
 	if err != nil {
 		return nil, fmt.Errorf("running io plan: %w", err)
 	}

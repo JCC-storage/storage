@@ -19,23 +19,38 @@ func (svc *Service) CacheSvc() *CacheService {
 	return &CacheService{Service: svc}
 }
 
-func (svc *CacheService) StartCacheMovePackage(userID cdssdk.UserID, packageID cdssdk.PackageID, nodeID cdssdk.NodeID) (string, error) {
-	agentCli, err := stgglb.AgentMQPool.Acquire(nodeID)
+func (svc *CacheService) StartCacheMovePackage(userID cdssdk.UserID, packageID cdssdk.PackageID, stgID cdssdk.StorageID) (cdssdk.NodeID, string, error) {
+	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
-		return "", fmt.Errorf("new agent client: %w", err)
+		return 0, "", fmt.Errorf("new coordinator client: %w", err)
+	}
+	defer stgglb.CoordinatorMQPool.Release(coorCli)
+
+	getStg, err := coorCli.GetStorageDetail(coormq.ReqGetStorageDetail(stgID))
+	if err != nil {
+		return 0, "", fmt.Errorf("get storage detail: %w", err)
+	}
+
+	if getStg.Storage.Shard == nil {
+		return 0, "", fmt.Errorf("shard storage is not enabled")
+	}
+
+	agentCli, err := stgglb.AgentMQPool.Acquire(getStg.Storage.Shard.MasterHub)
+	if err != nil {
+		return 0, "", fmt.Errorf("new agent client: %w", err)
 	}
 	defer stgglb.AgentMQPool.Release(agentCli)
 
-	startResp, err := agentCli.StartCacheMovePackage(agtmq.NewStartCacheMovePackage(userID, packageID))
+	startResp, err := agentCli.StartCacheMovePackage(agtmq.NewStartCacheMovePackage(userID, packageID, stgID))
 	if err != nil {
-		return "", fmt.Errorf("start cache move package: %w", err)
+		return 0, "", fmt.Errorf("start cache move package: %w", err)
 	}
 
-	return startResp.TaskID, nil
+	return getStg.Storage.Shard.MasterHub, startResp.TaskID, nil
 }
 
-func (svc *CacheService) WaitCacheMovePackage(nodeID cdssdk.NodeID, taskID string, waitTimeout time.Duration) (bool, error) {
-	agentCli, err := stgglb.AgentMQPool.Acquire(nodeID)
+func (svc *CacheService) WaitCacheMovePackage(hubID cdssdk.NodeID, taskID string, waitTimeout time.Duration) (bool, error) {
+	agentCli, err := stgglb.AgentMQPool.Acquire(hubID)
 	if err != nil {
 		return true, fmt.Errorf("new agent client: %w", err)
 	}

@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"gitlink.org.cn/cloudream/storage/agent/internal/http"
 	"net"
 	"os"
 	"time"
+
+	"gitlink.org.cn/cloudream/storage/agent/internal/http"
 
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
@@ -18,6 +19,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 	agtrpc "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/pool"
 
 	"google.golang.org/grpc"
 
@@ -104,6 +106,9 @@ func main() {
 	})
 	go serveAccessStat(acStat)
 
+	// TODO2 根据配置实例化Store并加入到Pool中
+	shardStorePool := pool.New()
+
 	distlock, err := distlock.NewService(&config.Cfg().DistLock)
 	if err != nil {
 		logger.Fatalf("new ipfs failed, err: %s", err.Error())
@@ -111,11 +116,11 @@ func main() {
 
 	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol)
 
-	taskMgr := task.NewManager(distlock, &conCol, &dlder, acStat)
+	taskMgr := task.NewManager(distlock, &conCol, &dlder, acStat, shardStorePool)
 
 	// 启动命令服务器
 	// TODO 需要设计AgentID持久化机制
-	agtSvr, err := agtmq.NewServer(cmdsvc.NewService(&taskMgr), config.Cfg().ID, &config.Cfg().RabbitMQ)
+	agtSvr, err := agtmq.NewServer(cmdsvc.NewService(&taskMgr, shardStorePool), config.Cfg().ID, &config.Cfg().RabbitMQ)
 	if err != nil {
 		logger.Fatalf("new agent server failed, err: %s", err.Error())
 	}

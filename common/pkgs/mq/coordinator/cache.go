@@ -17,16 +17,16 @@ var _ = Register(Service.CachePackageMoved)
 type CachePackageMoved struct {
 	mq.MessageBodyBase
 	PackageID cdssdk.PackageID `json:"packageID"`
-	NodeID    cdssdk.NodeID    `json:"nodeID"`
+	StorageID cdssdk.StorageID `json:"storageID"`
 }
 type CachePackageMovedResp struct {
 	mq.MessageBodyBase
 }
 
-func NewCachePackageMoved(packageID cdssdk.PackageID, nodeID cdssdk.NodeID) *CachePackageMoved {
+func NewCachePackageMoved(packageID cdssdk.PackageID, stgID cdssdk.StorageID) *CachePackageMoved {
 	return &CachePackageMoved{
 		PackageID: packageID,
-		NodeID:    nodeID,
+		StorageID: stgID,
 	}
 }
 func NewCachePackageMovedResp() *CachePackageMovedResp {

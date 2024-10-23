@@ -109,7 +109,11 @@ func (s *LRCStripIterator) downloading() {
 		s.sendToDataChan(dataChanEntry{Error: err})
 		return
 	}
-	exec := plans.Execute()
+
+	// TODO2 注入依赖
+	exeCtx := exec.NewExecContext()
+
+	exec := plans.Execute(exeCtx)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go exec.Wait(ctx)

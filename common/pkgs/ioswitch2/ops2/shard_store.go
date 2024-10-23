@@ -10,8 +10,8 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/io2"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/shardstore/pool"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/shardstore/types"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/pool"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/types"
 )
 
 func init() {

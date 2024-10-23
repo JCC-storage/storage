@@ -3,7 +3,7 @@ package ioswitchlrc
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/shardstore/types"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/types"
 )
 
 type From interface {

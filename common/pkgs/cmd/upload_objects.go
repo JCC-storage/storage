@@ -225,7 +225,10 @@ func uploadFile(file io.Reader, uploadNode UploadNodeInfo) (string, error) {
 		return "", fmt.Errorf("parsing plan: %w", err)
 	}
 
-	exec := plans.Execute()
+	// TODO2 注入依赖
+	exeCtx := exec.NewExecContext()
+
+	exec := plans.Execute(exeCtx)
 	exec.BeginWrite(io.NopCloser(file), hd)
 	ret, err := exec.Wait(context.TODO())
 	if err != nil {

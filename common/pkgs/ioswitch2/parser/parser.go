@@ -12,7 +12,7 @@ import (
 	"gitlink.org.cn/cloudream/common/utils/math2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/ops2"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/shardstore/types"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/types"
 )
 
 type DefaultParser struct {

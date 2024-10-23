@@ -22,9 +22,9 @@ func (s *Server) Cache() *CacheService {
 }
 
 type CacheMovePackageReq struct {
-	UserID    *cdssdk.UserID    `json:"userID" binding:"required"`
-	PackageID *cdssdk.PackageID `json:"packageID" binding:"required"`
-	NodeID    *cdssdk.NodeID    `json:"nodeID" binding:"required"`
+	UserID    cdssdk.UserID    `json:"userID" binding:"required"`
+	PackageID cdssdk.PackageID `json:"packageID" binding:"required"`
+	StorageID cdssdk.StorageID `json:"storageID" binding:"required"`
 }
 type CacheMovePackageResp = cdsapi.CacheMovePackageResp
 
@@ -38,7 +38,7 @@ func (s *CacheService) MovePackage(ctx *gin.Context) {
 		return
 	}
 
-	taskID, err := s.svc.CacheSvc().StartCacheMovePackage(*req.UserID, *req.PackageID, *req.NodeID)
+	hubID, taskID, err := s.svc.CacheSvc().StartCacheMovePackage(req.UserID, req.PackageID, req.StorageID)
 	if err != nil {
 		log.Warnf("start cache move package: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "cache move package failed"))
@@ -46,7 +46,7 @@ func (s *CacheService) MovePackage(ctx *gin.Context) {
 	}
 
 	for {
-		complete, err := s.svc.CacheSvc().WaitCacheMovePackage(*req.NodeID, taskID, time.Second*10)
+		complete, err := s.svc.CacheSvc().WaitCacheMovePackage(hubID, taskID, time.Second*10)
 		if complete {
 			if err != nil {
 				log.Warnf("moving complete with: %s", err.Error())

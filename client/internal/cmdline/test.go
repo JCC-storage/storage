@@ -1,5 +1,6 @@
 package cmdline
 
+/*
 import (
 	"context"
 	"fmt"
@@ -248,3 +249,4 @@ func init() {
 		},
 	})
 }
+*/

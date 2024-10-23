@@ -7,6 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
+	"gorm.io/gorm"
 
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
@@ -15,7 +16,7 @@ import (
 )
 
 func (svc *Service) GetStorage(msg *coormq.GetStorage) (*coormq.GetStorageResp, *mq.CodeMessage) {
-	stg, err := svc.db.Storage().GetUserStorage(svc.db.SQLCtx(), msg.UserID, msg.StorageID)
+	stg, err := svc.db2.Storage().GetUserStorage(svc.db2.DefCtx(), msg.UserID, msg.StorageID)
 	if err != nil {
 		logger.Warnf("getting user storage: %s", err.Error())
 		return nil, mq.Failed(errorcode.OperationFailed, "get user storage failed")
@@ -32,21 +33,21 @@ func (svc *Service) GetStorageDetail(msg *coormq.GetStorageDetail) (*coormq.GetS
 		if err != nil {
 			return fmt.Errorf("getting storage: %w", err)
 		}
+		ret.Storage = stg
 
 		shard, err := svc.db2.ShardStorage().GetByStorageID(tx, msg.StorageID)
-		if err != nil {
+		if err == nil {
+			ret.Shard = &shard
+		} else if err != gorm.ErrRecordNotFound {
 			return fmt.Errorf("getting shard storage: %w", err)
 		}
 
 		shared, err := svc.db2.SharedStorage().GetByStorageID(tx, msg.StorageID)
-		if err != nil {
+		if err == nil {
+			ret.Shared = &shared
+		} else if err != gorm.ErrRecordNotFound {
 			return fmt.Errorf("getting shared storage: %w", err)
 		}
-
-		ret.Storage = stg
-		ret.Shard = shard
-		ret.Shared = shared
-
 		return nil
 	})
 
@@ -54,7 +55,7 @@ func (svc *Service) GetStorageDetail(msg *coormq.GetStorageDetail) (*coormq.GetS
 }
 
 func (svc *Service) GetStorageByName(msg *coormq.GetStorageByName) (*coormq.GetStorageByNameResp, *mq.CodeMessage) {
-	stg, err := svc.db.Storage().GetUserStorageByName(svc.db.SQLCtx(), msg.UserID, msg.Name)
+	stg, err := svc.db2.Storage().GetUserStorageByName(svc.db2.DefCtx(), msg.UserID, msg.Name)
 	if err != nil {
 		logger.Warnf("getting user storage by name: %s", err.Error())
 

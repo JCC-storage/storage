@@ -57,12 +57,16 @@ func (svc *StorageService) StartStorageLoadPackage(userID cdssdk.UserID, package
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-	stgResp, err := coorCli.GetStorage(coormq.ReqGetStorage(userID, storageID))
+	stgResp, err := coorCli.GetStorageDetail(coormq.ReqGetStorageDetail(storageID))
 	if err != nil {
 		return 0, "", fmt.Errorf("getting storage info: %w", err)
 	}
 
-	agentCli, err := stgglb.AgentMQPool.Acquire(stgResp.Storage.NodeID)
+	if stgResp.Storage.Shard == nil {
+		return 0, "", fmt.Errorf("shard storage is not enabled")
+	}
+
+	agentCli, err := stgglb.AgentMQPool.Acquire(stgResp.Storage.Shard.MasterHub)
 	if err != nil {
 		return 0, "", fmt.Errorf("new agent client: %w", err)
 	}
@@ -73,7 +77,7 @@ func (svc *StorageService) StartStorageLoadPackage(userID cdssdk.UserID, package
 		return 0, "", fmt.Errorf("start storage load package: %w", err)
 	}
 
-	return stgResp.Storage.NodeID, startResp.TaskID, nil
+	return stgResp.Storage.Shard.MasterHub, startResp.TaskID, nil
 }
 
 type StorageLoadPackageResult struct {
@@ -124,12 +128,16 @@ func (svc *StorageService) StartStorageCreatePackage(userID cdssdk.UserID, bucke
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-	stgResp, err := coorCli.GetStorage(coormq.ReqGetStorage(userID, storageID))
+	stgResp, err := coorCli.GetStorageDetail(coormq.ReqGetStorageDetail(storageID))
 	if err != nil {
 		return 0, "", fmt.Errorf("getting storage info: %w", err)
 	}
 
-	agentCli, err := stgglb.AgentMQPool.Acquire(stgResp.Storage.NodeID)
+	if stgResp.Storage.Shard == nil {
+		return 0, "", fmt.Errorf("shard storage is not enabled")
+	}
+
+	agentCli, err := stgglb.AgentMQPool.Acquire(stgResp.Storage.Shard.MasterHub)
 	if err != nil {
 		return 0, "", fmt.Errorf("new agent client: %w", err)
 	}
@@ -140,7 +148,7 @@ func (svc *StorageService) StartStorageCreatePackage(userID cdssdk.UserID, bucke
 		return 0, "", fmt.Errorf("start storage upload package: %w", err)
 	}
 
-	return stgResp.Storage.NodeID, startResp.TaskID, nil
+	return stgResp.Storage.Shard.MasterHub, startResp.TaskID, nil
 }
 
 func (svc *StorageService) WaitStorageCreatePackage(nodeID cdssdk.NodeID, taskID string, waitTimeout time.Duration) (bool, cdssdk.PackageID, error) {

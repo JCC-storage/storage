@@ -3,6 +3,7 @@ package agent
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/types"
 )
 
 type CacheService interface {
@@ -19,16 +20,17 @@ var _ = Register(Service.CheckCache)
 
 type CheckCache struct {
 	mq.MessageBodyBase
+	StorageID cdssdk.StorageID `json:"storageID"`
 }
 type CheckCacheResp struct {
 	mq.MessageBodyBase
-	FileHashes []string `json:"fileHashes"`
+	FileHashes []types.FileHash `json:"fileHashes"`
 }
 
-func NewCheckCache() *CheckCache {
-	return &CheckCache{}
+func NewCheckCache(stgID cdssdk.StorageID) *CheckCache {
+	return &CheckCache{StorageID: stgID}
 }
-func NewCheckCacheResp(fileHashes []string) *CheckCacheResp {
+func NewCheckCacheResp(fileHashes []types.FileHash) *CheckCacheResp {
 	return &CheckCacheResp{
 		FileHashes: fileHashes,
 	}
@@ -42,15 +44,17 @@ var _ = Register(Service.CacheGC)
 
 type CacheGC struct {
 	mq.MessageBodyBase
-	PinnedFileHashes []string `json:"pinnedFileHashes"`
+	StorageID cdssdk.StorageID `json:"storageID"`
+	Avaiables []types.FileHash `json:"avaiables"`
 }
 type CacheGCResp struct {
 	mq.MessageBodyBase
 }
 
-func ReqCacheGC(pinnedFileHashes []string) *CacheGC {
+func ReqCacheGC(stgID cdssdk.StorageID, avaiables []types.FileHash) *CacheGC {
 	return &CacheGC{
-		PinnedFileHashes: pinnedFileHashes,
+		StorageID: stgID,
+		Avaiables: avaiables,
 	}
 }
 func RespCacheGC() *CacheGCResp {
@@ -67,16 +71,18 @@ type StartCacheMovePackage struct {
 	mq.MessageBodyBase
 	UserID    cdssdk.UserID    `json:"userID"`
 	PackageID cdssdk.PackageID `json:"packageID"`
+	StorageID cdssdk.StorageID `json:"storageID"`
 }
 type StartCacheMovePackageResp struct {
 	mq.MessageBodyBase
 	TaskID string `json:"taskID"`
 }
 
-func NewStartCacheMovePackage(userID cdssdk.UserID, packageID cdssdk.PackageID) *StartCacheMovePackage {
+func NewStartCacheMovePackage(userID cdssdk.UserID, packageID cdssdk.PackageID, stgID cdssdk.StorageID) *StartCacheMovePackage {
 	return &StartCacheMovePackage{
 		UserID:    userID,
 		PackageID: packageID,
+		StorageID: stgID,
 	}
 }
 func NewStartCacheMovePackageResp(taskID string) *StartCacheMovePackageResp {

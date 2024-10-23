@@ -64,7 +64,7 @@ func DetailsFillPinnedAt(objs []ObjectDetail, pinnedAt []cdssdk.PinnedObject) {
 			if pinnedAt[pinnedCur].ObjectID != obj.Object.ObjectID {
 				break
 			}
-			obj.PinnedAt = append(obj.PinnedAt, pinnedAt[pinnedCur].NodeID)
+			obj.PinnedAt = append(obj.PinnedAt, pinnedAt[pinnedCur].StorageID)
 		}
 	}
 }
@@ -116,7 +116,7 @@ type ObjectAccessStat struct {
 }
 
 type StorageDetail struct {
-	Storage cdssdk.Storage       `json:"storage"`
-	Shard   cdssdk.ShardStorage  `json:"shard"`
-	Shared  cdssdk.SharedStorage `json:"shared"`
+	Storage cdssdk.Storage        `json:"storage"`
+	Shard   *cdssdk.ShardStorage  `json:"shard"`
+	Shared  *cdssdk.SharedStorage `json:"shared"`
 }

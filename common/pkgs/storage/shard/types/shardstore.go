@@ -23,8 +23,10 @@ type ShardStore interface {
 	Open(opt OpenOption) (io.ReadCloser, error)
 	// 删除文件
 	Remove(hash FileHash) error
-	// 遍历所有文件，callback返回false则停止遍历
-	Walk(callback func(info FileInfo) bool) error
+	// 获取所有文件信息，尽量保证操作是原子的
+	ListAll() ([]FileInfo, error)
+	// 清除其他文件，只保留给定的文件，尽量保证操作是原子的
+	Purge(availables []FileHash) error
 	// 获得存储系统信息
 	Stats() Stats
 }

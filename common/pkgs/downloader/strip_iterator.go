@@ -209,7 +209,11 @@ func (s *StripIterator) readStrip(stripIndex int64, buf []byte) (int, error) {
 		if err != nil {
 			return 0, err
 		}
-		exec := plans.Execute()
+
+		// TODo2 注入依赖
+		exeCtx := exec.NewExecContext()
+
+		exec := plans.Execute(exeCtx)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		go exec.Wait(ctx)

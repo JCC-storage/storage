@@ -18,12 +18,12 @@ func (svc *Service) CachePackageMoved(msg *coormq.CachePackageMoved) (*coormq.Ca
 			return fmt.Errorf("getting package by id: %w", err)
 		}
 
-		_, err = svc.db.Node().GetByID(tx, msg.NodeID)
+		_, err = svc.db.Node().GetByID(tx, msg.StorageID)
 		if err != nil {
 			return fmt.Errorf("getting node by id: %w", err)
 		}
 
-		err = svc.db.PinnedObject().CreateFromPackage(tx, msg.PackageID, msg.NodeID)
+		err = svc.db.PinnedObject().CreateFromPackage(tx, msg.PackageID, msg.StorageID)
 		if err != nil {
 			return fmt.Errorf("creating pinned objects from package: %w", err)
 		}
@@ -31,7 +31,7 @@ func (svc *Service) CachePackageMoved(msg *coormq.CachePackageMoved) (*coormq.Ca
 		return nil
 	})
 	if err != nil {
-		logger.WithField("PackageID", msg.PackageID).WithField("NodeID", msg.NodeID).Warn(err.Error())
+		logger.WithField("PackageID", msg.PackageID).WithField("NodeID", msg.StorageID).Warn(err.Error())
 		return nil, mq.Failed(errorcode.OperationFailed, "create package pinned objects failed")
 	}
 
