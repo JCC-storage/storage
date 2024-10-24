@@ -2,7 +2,6 @@ package config
 
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/distlock"
-	"gitlink.org.cn/cloudream/common/pkgs/ipfs"
 	log "gitlink.org.cn/cloudream/common/pkgs/logger"
 	c "gitlink.org.cn/cloudream/common/utils/config"
 	stgmodels "gitlink.org.cn/cloudream/storage/common/models"
@@ -13,16 +12,15 @@ import (
 )
 
 type Config struct {
-	ID               int64                      `json:"id"`
-	Local            stgmodels.LocalMachineInfo `json:"local"`
-	GRPC             *grpc.Config               `json:"grpc"`
-	TempFileLifetime int                        `json:"tempFileLifetime"` // temp状态的副本最多能保持多久时间，单位：秒
-	Logger           log.Config                 `json:"logger"`
-	RabbitMQ         stgmq.Config               `json:"rabbitMQ"`
-	IPFS             ipfs.Config                `json:"ipfs"`
-	DistLock         distlock.Config            `json:"distlock"`
-	Connectivity     connectivity.Config        `json:"connectivity"`
-	Downloader       downloader.Config          `json:"downloader"`
+	ID           int64                      `json:"id"`
+	ListenAddr   string                     `json:"listenAddr"`
+	Local        stgmodels.LocalMachineInfo `json:"local"`
+	GRPC         *grpc.Config               `json:"grpc"`
+	Logger       log.Config                 `json:"logger"`
+	RabbitMQ     stgmq.Config               `json:"rabbitMQ"`
+	DistLock     distlock.Config            `json:"distlock"`
+	Connectivity connectivity.Config        `json:"connectivity"`
+	Downloader   downloader.Config          `json:"downloader"`
 }
 
 var cfg Config

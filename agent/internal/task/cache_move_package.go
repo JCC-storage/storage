@@ -2,6 +2,7 @@ package task
 
 import (
 	"fmt"
+	"io"
 	"time"
 
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
@@ -13,24 +14,20 @@ import (
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
-// CacheMovePackage 代表缓存移动包的任务实体。
 type CacheMovePackage struct {
-	userID    cdssdk.UserID    // 用户ID
-	packageID cdssdk.PackageID // 包ID
+	userID    cdssdk.UserID
+	packageID cdssdk.PackageID
+	storageID cdssdk.StorageID
 }
 
-// NewCacheMovePackage 创建一个新的缓存移动包任务实例。
-func NewCacheMovePackage(userID cdssdk.UserID, packageID cdssdk.PackageID) *CacheMovePackage {
+func NewCacheMovePackage(userID cdssdk.UserID, packageID cdssdk.PackageID, storageID cdssdk.StorageID) *CacheMovePackage {
 	return &CacheMovePackage{
 		userID:    userID,
 		packageID: packageID,
+		storageID: storageID,
 	}
 }
 
-// Execute 执行缓存移动包的任务。
-// task: 任务实例。
-// ctx: 任务上下文。
-// complete: 任务完成的回调函数。
 func (t *CacheMovePackage) Execute(task *task.Task[TaskContext], ctx TaskContext, complete CompleteFn) {
 	err := t.do(ctx)
 	complete(err, CompleteOption{
@@ -38,14 +35,18 @@ func (t *CacheMovePackage) Execute(task *task.Task[TaskContext], ctx TaskContext
 	})
 }
 
-// do 实际执行缓存移动的逻辑。
 func (t *CacheMovePackage) do(ctx TaskContext) error {
 	log := logger.WithType[CacheMovePackage]("Task")
 	log.Debugf("begin with %v", logger.FormatStruct(t))
 	defer log.Debugf("end")
 
-	// 获取分布式锁以保护操作
+	store, err := ctx.shardStorePool.Get(t.storageID)
+	if err != nil {
+		return fmt.Errorf("getting shard store: %w", err)
+	}
+
 	mutex, err := reqbuilder.NewBuilder().
+		// 保护解码出来的Object数据
 		IPFS().Buzy(*stgglb.Local.NodeID).
 		MutexLock(ctx.distlock)
 	if err != nil {
@@ -53,18 +54,11 @@ func (t *CacheMovePackage) do(ctx TaskContext) error {
 	}
 	defer mutex.Unlock()
 
-	// 获取协调器MQ客户端
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return fmt.Errorf("new coordinator client: %w", err)
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
-
-	ipfsCli, err := stgglb.IPFSPool.Acquire()
-	if err != nil {
-		return fmt.Errorf("new ipfs client: %w", err)
-	}
-	defer ipfsCli.Close()
 
 	// TODO 可以考虑优化，比如rep类型的直接pin就可以
 	objIter := ctx.downloader.DownloadPackage(t.packageID)
@@ -80,15 +74,20 @@ func (t *CacheMovePackage) do(ctx TaskContext) error {
 		}
 		defer obj.File.Close()
 
-		// 将对象文件添加到IPFS
-		_, err = ipfsCli.CreateFile(obj.File)
+		writer := store.New()
+		_, err = io.Copy(writer, obj.File)
 		if err != nil {
-			return fmt.Errorf("creating ipfs file: %w", err)
+			return fmt.Errorf("writing to store: %w", err)
 		}
+		_, err = writer.Finish()
+		if err != nil {
+			return fmt.Errorf("finishing store: %w", err)
+		}
+
+		ctx.accessStat.AddAccessCounter(obj.Object.ObjectID, t.packageID, *stgglb.Local.NodeID, 1)
 	}
 
-	// 通知协调器缓存已移动
-	_, err = coorCli.CachePackageMoved(coormq.NewCachePackageMoved(t.packageID, *stgglb.Local.NodeID))
+	_, err = coorCli.CachePackageMoved(coormq.NewCachePackageMoved(t.packageID, t.storageID))
 	if err != nil {
 		return fmt.Errorf("request to coordinator: %w", err)
 	}

@@ -1,55 +1,95 @@
 package grpc
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"time"
 
+	"github.com/inhies/go-bytesize"
+	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gitlink.org.cn/cloudream/common/utils/io2"
-	agentserver "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch"
+	"gitlink.org.cn/cloudream/common/utils/serder"
+	agtrpc "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
 )
 
-// SendStream 接收客户端通过流式传输发送的文件数据。
-//
-// server: 代表服务端发送流的接口，用于接收和响应客户端请求。
-// 返回值: 返回错误信息，如果处理成功则返回nil。
-func (s *Service) SendStream(server agentserver.Agent_SendStreamServer) error {
-	// 接收流式传输的初始化信息包
+func (s *Service) ExecuteIOPlan(ctx context.Context, req *agtrpc.ExecuteIOPlanReq) (*agtrpc.ExecuteIOPlanResp, error) {
+	plan, err := serder.JSONToObjectEx[exec.Plan]([]byte(req.Plan))
+	if err != nil {
+		return nil, fmt.Errorf("deserializing plan: %w", err)
+	}
+
+	logger.WithField("PlanID", plan.ID).Infof("begin execute io plan")
+	defer logger.WithField("PlanID", plan.ID).Infof("plan finished")
+
+	sw := exec.NewExecutor(plan)
+
+	s.swWorker.Add(sw)
+	defer s.swWorker.Remove(sw)
+
+	execCtx := exec.NewWithContext(ctx)
+
+	// TODO2 注入依赖
+
+	_, err = sw.Run(execCtx)
+	if err != nil {
+		return nil, fmt.Errorf("running io plan: %w", err)
+	}
+
+	return &agtrpc.ExecuteIOPlanResp{}, nil
+}
+
+func (s *Service) SendStream(server agtrpc.Agent_SendStreamServer) error {
 	msg, err := server.Recv()
 	if err != nil {
 		return fmt.Errorf("recving stream id packet: %w", err)
 	}
-	// 校验初始化信息包类型
-	if msg.Type != agentserver.StreamDataPacketType_SendArgs {
+	if msg.Type != agtrpc.StreamDataPacketType_SendArgs {
 		return fmt.Errorf("first packet must be a SendArgs packet")
 	}
 
 	logger.
 		WithField("PlanID", msg.PlanID).
-		WithField("StreamID", msg.StreamID).
-		Debugf("receive stream from grpc")
+		WithField("VarID", msg.VarID).
+		Debugf("stream input")
+
+	// 同一批Plan中每个节点的Plan的启动时间有先后，但最多不应该超过30秒
+	ctx, cancel := context.WithTimeout(server.Context(), time.Second*30)
+	defer cancel()
+
+	sw := s.swWorker.FindByIDContexted(ctx, exec.PlanID(msg.PlanID))
+	if sw == nil {
+		return fmt.Errorf("plan not found")
+	}
 
 	pr, pw := io.Pipe()
 
-	// 通知系统，流式传输已准备就绪
-	s.sw.StreamReady(ioswitch.PlanID(msg.PlanID), ioswitch.NewStream(ioswitch.StreamID(msg.StreamID), pr))
+	varID := exec.VarID(msg.VarID)
+	sw.PutVars(&exec.StreamVar{
+		ID:     varID,
+		Stream: pr,
+	})
 
-	// 循环接收客户端发送的文件数据
+	// 然后读取文件数据
 	var recvSize int64
 	for {
 		msg, err := server.Recv()
 
-		// 处理接收数据错误
+		// 读取客户端数据失败
+		// 即使err是io.EOF，只要没有收到客户端包含EOF数据包就被断开了连接，就认为接收失败
 		if err != nil {
+			// 关闭文件写入
 			pw.CloseWithError(io.ErrClosedPipe)
 			logger.WithField("ReceiveSize", recvSize).
+				WithField("VarID", varID).
 				Warnf("recv message failed, err: %s", err.Error())
 			return fmt.Errorf("recv message failed, err: %w", err)
 		}
 
 		err = io2.WriteAll(pw, msg.Data)
 		if err != nil {
+			// 关闭文件写入
 			pw.CloseWithError(io.ErrClosedPipe)
 			logger.Warnf("write data to file failed, err: %s", err.Error())
 			return fmt.Errorf("write data to file failed, err: %w", err)
@@ -57,16 +97,16 @@ func (s *Service) SendStream(server agentserver.Agent_SendStreamServer) error {
 
 		recvSize += int64(len(msg.Data))
 
-		// 当接收到EOF信息时，结束写入并返回
-		if msg.Type == agentserver.StreamDataPacketType_EOF {
+		if msg.Type == agtrpc.StreamDataPacketType_EOF {
+			// 客户端明确说明文件传输已经结束，那么结束写入，获得文件Hash
 			err := pw.Close()
 			if err != nil {
 				logger.Warnf("finish writing failed, err: %s", err.Error())
 				return fmt.Errorf("finish writing failed, err: %w", err)
 			}
 
-			// 向客户端发送传输完成的响应
-			err = server.SendAndClose(&agentserver.SendStreamResp{})
+			// 并将结果返回到客户端
+			err = server.SendAndClose(&agtrpc.SendStreamResp{})
 			if err != nil {
 				logger.Warnf("send response failed, err: %s", err.Error())
 				return fmt.Errorf("send response failed, err: %w", err)
@@ -77,71 +117,135 @@ func (s *Service) SendStream(server agentserver.Agent_SendStreamServer) error {
 	}
 }
 
-// FetchStream 从服务端获取流式数据并发送给客户端。
-//
-// req: 包含获取流式数据所需的计划ID和流ID的请求信息。
-// server: 用于向客户端发送流数据的服务器接口。
-// 返回值: 返回处理过程中出现的任何错误。
-func (s *Service) FetchStream(req *agentserver.FetchStreamReq, server agentserver.Agent_FetchStreamServer) error {
+func (s *Service) GetStream(req *agtrpc.GetStreamReq, server agtrpc.Agent_GetStreamServer) error {
 	logger.
 		WithField("PlanID", req.PlanID).
-		WithField("StreamID", req.StreamID).
-		Debugf("send stream by grpc")
+		WithField("VarID", req.VarID).
+		Debugf("stream output")
 
-	// 等待对应的流数据准备就绪
-	strs, err := s.sw.WaitStreams(ioswitch.PlanID(req.PlanID), ioswitch.StreamID(req.StreamID))
-	if err != nil {
-		logger.
-			WithField("PlanID", req.PlanID).
-			WithField("StreamID", req.StreamID).
-			Warnf("watting stream: %s", err.Error())
-		return fmt.Errorf("watting stream: %w", err)
+	// 同上
+	ctx, cancel := context.WithTimeout(server.Context(), time.Second*30)
+	defer cancel()
+
+	sw := s.swWorker.FindByIDContexted(ctx, exec.PlanID(req.PlanID))
+	if sw == nil {
+		return fmt.Errorf("plan not found")
 	}
 
-	reader := strs[0].Stream
+	signal, err := serder.JSONToObjectEx[*exec.SignalVar]([]byte(req.Signal))
+	if err != nil {
+		return fmt.Errorf("deserializing var: %w", err)
+	}
+
+	sw.PutVars(signal)
+
+	strVar := &exec.StreamVar{
+		ID: exec.VarID(req.VarID),
+	}
+	err = sw.BindVars(server.Context(), strVar)
+	if err != nil {
+		return fmt.Errorf("binding vars: %w", err)
+	}
+
+	reader := strVar.Stream
 	defer reader.Close()
 
-	// 读取流数据并发送给客户端
-	buf := make([]byte, 4096)
+	buf := make([]byte, 1024*64)
 	readAllCnt := 0
+	startTime := time.Now()
 	for {
 		readCnt, err := reader.Read(buf)
 
 		if readCnt > 0 {
 			readAllCnt += readCnt
-			err = server.Send(&agentserver.StreamDataPacket{
-				Type: agentserver.StreamDataPacketType_Data,
+			err = server.Send(&agtrpc.StreamDataPacket{
+				Type: agtrpc.StreamDataPacketType_Data,
 				Data: buf[:readCnt],
 			})
 			if err != nil {
 				logger.
 					WithField("PlanID", req.PlanID).
-					WithField("StreamID", req.StreamID).
+					WithField("VarID", req.VarID).
 					Warnf("send stream data failed, err: %s", err.Error())
 				return fmt.Errorf("send stream data failed, err: %w", err)
 			}
 		}
 
-		// 当读取完毕或遇到EOF时返回
+		// 文件读取完毕
 		if err == io.EOF {
+			dt := time.Since(startTime)
 			logger.
 				WithField("PlanID", req.PlanID).
-				WithField("StreamID", req.StreamID).
-				Debugf("send data size %d", readAllCnt)
-			// 发送EOF消息通知客户端数据传输完成
-			server.Send(&agentserver.StreamDataPacket{
-				Type: agentserver.StreamDataPacketType_EOF,
+				WithField("VarID", req.VarID).
+				Debugf("send data size %d in %v, speed %v/s", readAllCnt, dt, bytesize.New(float64(readAllCnt)/dt.Seconds()))
+			// 发送EOF消息
+			server.Send(&agtrpc.StreamDataPacket{
+				Type: agtrpc.StreamDataPacketType_EOF,
 			})
 			return nil
 		}
 
-		// 处理除EOF和io.ErrUnexpectedEOF之外的读取错误
+		// io.ErrUnexpectedEOF没有读满整个buf就遇到了EOF，此时正常发送剩余数据即可。除了这两个错误之外，其他错误都中断操作
 		if err != nil && err != io.ErrUnexpectedEOF {
 			logger.
 				WithField("PlanID", req.PlanID).
-				WithField("StreamID", req.StreamID).
+				WithField("VarID", req.VarID).
 				Warnf("reading stream data: %s", err.Error())
 			return fmt.Errorf("reading stream data: %w", err)
 		}
 	}
+}
+
+func (s *Service) SendVar(ctx context.Context, req *agtrpc.SendVarReq) (*agtrpc.SendVarResp, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*30)
+	defer cancel()
+
+	sw := s.swWorker.FindByIDContexted(ctx, exec.PlanID(req.PlanID))
+	if sw == nil {
+		return nil, fmt.Errorf("plan not found")
+	}
+
+	v, err := serder.JSONToObjectEx[exec.Var]([]byte(req.Var))
+	if err != nil {
+		return nil, fmt.Errorf("deserializing var: %w", err)
+	}
+
+	sw.PutVars(v)
+	return &agtrpc.SendVarResp{}, nil
+}
+
+func (s *Service) GetVar(ctx context.Context, req *agtrpc.GetVarReq) (*agtrpc.GetVarResp, error) {
+	ctx2, cancel := context.WithTimeout(ctx, time.Second*30)
+	defer cancel()
+
+	sw := s.swWorker.FindByIDContexted(ctx2, exec.PlanID(req.PlanID))
+	if sw == nil {
+		return nil, fmt.Errorf("plan not found")
+	}
+
+	v, err := serder.JSONToObjectEx[exec.Var]([]byte(req.Var))
+	if err != nil {
+		return nil, fmt.Errorf("deserializing var: %w", err)
+	}
+
+	signal, err := serder.JSONToObjectEx[*exec.SignalVar]([]byte(req.Signal))
+	if err != nil {
+		return nil, fmt.Errorf("deserializing var: %w", err)
+	}
+
+	sw.PutVars(signal)
+
+	err = sw.BindVars(ctx, v)
+	if err != nil {
+		return nil, fmt.Errorf("binding vars: %w", err)
+	}
+
+	vd, err := serder.ObjectToJSONEx(v)
+	if err != nil {
+		return nil, fmt.Errorf("serializing var: %w", err)
+	}
+
+	return &agtrpc.GetVarResp{
+		Var: string(vd),
+	}, nil
 }

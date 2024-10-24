@@ -5,8 +5,10 @@ import (
 	"time"
 
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 	mytask "gitlink.org.cn/cloudream/storage/client/internal/task"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/iterator"
@@ -47,7 +49,7 @@ func (svc *ObjectService) WaitUploading(taskID string, waitTimeout time.Duration
 	return false, nil, nil
 }
 
-func (svc *ObjectService) UpdateInfo(userID cdssdk.UserID, updatings []cdssdk.UpdatingObject) ([]cdssdk.ObjectID, error) {
+func (svc *ObjectService) UpdateInfo(userID cdssdk.UserID, updatings []cdsapi.UpdatingObject) ([]cdssdk.ObjectID, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
@@ -62,7 +64,7 @@ func (svc *ObjectService) UpdateInfo(userID cdssdk.UserID, updatings []cdssdk.Up
 	return resp.Successes, nil
 }
 
-func (svc *ObjectService) Move(userID cdssdk.UserID, movings []cdssdk.MovingObject) ([]cdssdk.ObjectID, error) {
+func (svc *ObjectService) Move(userID cdssdk.UserID, movings []cdsapi.MovingObject) ([]cdssdk.ObjectID, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
@@ -83,8 +85,8 @@ func (svc *ObjectService) Download(userID cdssdk.UserID, req downloader.Download
 
 	// 初始化下载过程
 	downloading, err := iter.MoveNext()
-	if downloading.Object == nil {
-		return nil, fmt.Errorf("object not found")
+	if downloading == nil {
+		return nil, fmt.Errorf("object %v not found", req.ObjectID)
 	}
 	if err != nil {
 		return nil, err
@@ -125,4 +127,19 @@ func (svc *ObjectService) GetPackageObjects(userID cdssdk.UserID, packageID cdss
 	}
 
 	return getResp.Objects, nil
+}
+
+func (svc *ObjectService) GetObjectDetail(objectID cdssdk.ObjectID) (*stgmod.ObjectDetail, error) {
+	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
+	if err != nil {
+		return nil, fmt.Errorf("new coordinator client: %w", err)
+	}
+	defer stgglb.CoordinatorMQPool.Release(coorCli)
+
+	getResp, err := coorCli.GetObjectDetails(coormq.ReqGetObjectDetails([]cdssdk.ObjectID{objectID}))
+	if err != nil {
+		return nil, fmt.Errorf("requsting to coodinator: %w", err)
+	}
+
+	return getResp.Objects[0], nil
 }

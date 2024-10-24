@@ -1,8 +1,6 @@
 package coordinator
 
 import (
-	"time"
-
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
@@ -10,45 +8,94 @@ import (
 )
 
 type StorageService interface {
-	GetStorageInfo(msg *GetStorageInfo) (*GetStorageInfoResp, *mq.CodeMessage)
+	GetStorage(msg *GetStorage) (*GetStorageResp, *mq.CodeMessage)
+
+	GetStorageDetail(msg *GetStorageDetail) (*GetStorageDetailResp, *mq.CodeMessage)
+
+	GetStorageByName(msg *GetStorageByName) (*GetStorageByNameResp, *mq.CodeMessage)
 
 	StoragePackageLoaded(msg *StoragePackageLoaded) (*StoragePackageLoadedResp, *mq.CodeMessage)
-
-	GetPackageLoadLogDetails(msg *GetPackageLoadLogDetails) (*GetPackageLoadLogDetailsResp, *mq.CodeMessage)
 }
 
 // 获取Storage信息
-var _ = Register(Service.GetStorageInfo)
+var _ = Register(Service.GetStorage)
 
-type GetStorageInfo struct {
+type GetStorage struct {
 	mq.MessageBodyBase
 	UserID    cdssdk.UserID    `json:"userID"`
 	StorageID cdssdk.StorageID `json:"storageID"`
 }
-type GetStorageInfoResp struct {
+type GetStorageResp struct {
 	mq.MessageBodyBase
-	model.Storage
+	Storage model.Storage `json:"storage"`
 }
 
-func NewGetStorageInfo(userID cdssdk.UserID, storageID cdssdk.StorageID) *GetStorageInfo {
-	return &GetStorageInfo{
+func ReqGetStorage(userID cdssdk.UserID, storageID cdssdk.StorageID) *GetStorage {
+	return &GetStorage{
 		UserID:    userID,
 		StorageID: storageID,
 	}
 }
-func NewGetStorageInfoResp(storageID cdssdk.StorageID, name string, nodeID cdssdk.NodeID, dir string, state string) *GetStorageInfoResp {
-	return &GetStorageInfoResp{
-		Storage: model.Storage{
-			StorageID: storageID,
-			Name:      name,
-			NodeID:    nodeID,
-			Directory: dir,
-			State:     state,
-		},
+func RespGetStorage(stg model.Storage) *GetStorageResp {
+	return &GetStorageResp{
+		Storage: stg,
 	}
 }
-func (client *Client) GetStorageInfo(msg *GetStorageInfo) (*GetStorageInfoResp, error) {
-	return mq.Request(Service.GetStorageInfo, client.rabbitCli, msg)
+func (client *Client) GetStorage(msg *GetStorage) (*GetStorageResp, error) {
+	return mq.Request(Service.GetStorage, client.rabbitCli, msg)
+}
+
+// 获取Storage的详细信息
+var _ = Register(Service.GetStorageDetail)
+
+type GetStorageDetail struct {
+	mq.MessageBodyBase
+	StorageID cdssdk.StorageID `json:"storageID"`
+}
+type GetStorageDetailResp struct {
+	mq.MessageBodyBase
+	Storage stgmod.StorageDetail `json:"storage"`
+}
+
+func ReqGetStorageDetail(storageID cdssdk.StorageID) *GetStorageDetail {
+	return &GetStorageDetail{
+		StorageID: storageID,
+	}
+}
+func RespGetStorageDetail(stg stgmod.StorageDetail) *GetStorageDetailResp {
+	return &GetStorageDetailResp{
+		Storage: stg,
+	}
+}
+func (client *Client) GetStorageDetail(msg *GetStorageDetail) (*GetStorageDetailResp, error) {
+	return mq.Request(Service.GetStorageDetail, client.rabbitCli, msg)
+}
+
+var _ = Register(Service.GetStorageByName)
+
+type GetStorageByName struct {
+	mq.MessageBodyBase
+	UserID cdssdk.UserID `json:"userID"`
+	Name   string        `json:"name"`
+}
+type GetStorageByNameResp struct {
+	mq.MessageBodyBase
+	Storage model.Storage `json:"storage"`
+}
+
+func ReqGetStorageByName(userID cdssdk.UserID, name string) *GetStorageByName {
+	return &GetStorageByName{
+		UserID: userID,
+		Name:   name,
+	}
+}
+func RespGetStorageByNameResp(storage model.Storage) *GetStorageByNameResp {
+	return &GetStorageByNameResp{
+		Storage: storage,
+	}
+}
+func (client *Client) GetStorageByName(msg *GetStorageByName) (*GetStorageByNameResp, error) {
+	return mq.Request(Service.GetStorageByName, client.rabbitCli, msg)
 }
 
 // 提交调度记录
@@ -78,35 +125,4 @@ func NewStoragePackageLoadedResp() *StoragePackageLoadedResp {
 }
 func (client *Client) StoragePackageLoaded(msg *StoragePackageLoaded) (*StoragePackageLoadedResp, error) {
 	return mq.Request(Service.StoragePackageLoaded, client.rabbitCli, msg)
-}
-
-// 查询Package的导入记录
-var _ = Register(Service.GetPackageLoadLogDetails)
-
-type GetPackageLoadLogDetails struct {
-	mq.MessageBodyBase
-	PackageID cdssdk.PackageID `json:"packageID"`
-}
-type GetPackageLoadLogDetailsResp struct {
-	mq.MessageBodyBase
-	Logs []PackageLoadLogDetail `json:"logs"`
-}
-type PackageLoadLogDetail struct {
-	Storage    model.Storage `json:"storage"`
-	UserID     cdssdk.UserID `json:"userID"`
-	CreateTime time.Time     `json:"createTime"`
-}
-
-func ReqGetPackageLoadLogDetails(packageID cdssdk.PackageID) *GetPackageLoadLogDetails {
-	return &GetPackageLoadLogDetails{
-		PackageID: packageID,
-	}
-}
-func RespGetPackageLoadLogDetails(logs []PackageLoadLogDetail) *GetPackageLoadLogDetailsResp {
-	return &GetPackageLoadLogDetailsResp{
-		Logs: logs,
-	}
-}
-func (client *Client) GetPackageLoadLogDetails(msg *GetPackageLoadLogDetails) (*GetPackageLoadLogDetailsResp, error) {
-	return mq.Request(Service.GetPackageLoadLogDetails, client.rabbitCli, msg)
 }

@@ -3,24 +3,70 @@ package mq
 import (
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/jmoiron/sqlx"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
+	"gorm.io/gorm"
 
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
-func (svc *Service) GetStorageInfo(msg *coormq.GetStorageInfo) (*coormq.GetStorageInfoResp, *mq.CodeMessage) {
-	stg, err := svc.db.Storage().GetUserStorage(svc.db.SQLCtx(), msg.UserID, msg.StorageID)
+func (svc *Service) GetStorage(msg *coormq.GetStorage) (*coormq.GetStorageResp, *mq.CodeMessage) {
+	stg, err := svc.db2.Storage().GetUserStorage(svc.db2.DefCtx(), msg.UserID, msg.StorageID)
 	if err != nil {
 		logger.Warnf("getting user storage: %s", err.Error())
 		return nil, mq.Failed(errorcode.OperationFailed, "get user storage failed")
 	}
 
-	return mq.ReplyOK(coormq.NewGetStorageInfoResp(stg.StorageID, stg.Name, stg.NodeID, stg.Directory, stg.State))
+	return mq.ReplyOK(coormq.RespGetStorage(stg))
+}
+
+func (svc *Service) GetStorageDetail(msg *coormq.GetStorageDetail) (*coormq.GetStorageDetailResp, *mq.CodeMessage) {
+	var ret stgmod.StorageDetail
+
+	svc.db2.DoTx(func(tx db2.SQLContext) error {
+		stg, err := svc.db2.Storage().GetByID(tx, msg.StorageID)
+		if err != nil {
+			return fmt.Errorf("getting storage: %w", err)
+		}
+		ret.Storage = stg
+
+		shard, err := svc.db2.ShardStorage().GetByStorageID(tx, msg.StorageID)
+		if err == nil {
+			ret.Shard = &shard
+		} else if err != gorm.ErrRecordNotFound {
+			return fmt.Errorf("getting shard storage: %w", err)
+		}
+
+		shared, err := svc.db2.SharedStorage().GetByStorageID(tx, msg.StorageID)
+		if err == nil {
+			ret.Shared = &shared
+		} else if err != gorm.ErrRecordNotFound {
+			return fmt.Errorf("getting shared storage: %w", err)
+		}
+		return nil
+	})
+
+	return mq.ReplyOK(coormq.RespGetStorageDetail(ret))
+}
+
+func (svc *Service) GetStorageByName(msg *coormq.GetStorageByName) (*coormq.GetStorageByNameResp, *mq.CodeMessage) {
+	stg, err := svc.db2.Storage().GetUserStorageByName(svc.db2.DefCtx(), msg.UserID, msg.Name)
+	if err != nil {
+		logger.Warnf("getting user storage by name: %s", err.Error())
+
+		if err == sql.ErrNoRows {
+			return nil, mq.Failed(errorcode.DataNotFound, "storage not found")
+		}
+
+		return nil, mq.Failed(errorcode.OperationFailed, "get user storage failed")
+	}
+
+	return mq.ReplyOK(coormq.RespGetStorageByNameResp(stg))
 }
 
 func (svc *Service) StoragePackageLoaded(msg *coormq.StoragePackageLoaded) (*coormq.StoragePackageLoadedResp, *mq.CodeMessage) {
@@ -37,11 +83,6 @@ func (svc *Service) StoragePackageLoaded(msg *coormq.StoragePackageLoaded) (*coo
 		err := svc.db.StoragePackage().CreateOrUpdate(tx, msg.StorageID, msg.PackageID, msg.UserID)
 		if err != nil {
 			return fmt.Errorf("creating storage package: %w", err)
-		}
-
-		err = svc.db.StoragePackageLog().Create(tx, msg.StorageID, msg.PackageID, msg.UserID, time.Now())
-		if err != nil {
-			return fmt.Errorf("creating storage package log: %w", err)
 		}
 
 		stg, err := svc.db.Storage().GetByID(tx, msg.StorageID)

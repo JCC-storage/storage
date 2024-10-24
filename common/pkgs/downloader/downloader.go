@@ -9,6 +9,7 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
@@ -37,9 +38,11 @@ type Downloading struct {
 
 type Downloader struct {
 	strips *StripCache
+	conn   *connectivity.Collector
+	cfg    Config
 }
 
-func NewDownloader(cfg Config) Downloader {
+func NewDownloader(cfg Config, conn *connectivity.Collector) Downloader {
 	if cfg.MaxStripCacheCount == 0 {
 		cfg.MaxStripCacheCount = DefaultMaxStripCacheCount
 	}
@@ -47,6 +50,8 @@ func NewDownloader(cfg Config) Downloader {
 	ch, _ := lru.New[ECStripKey, ObjectECStrip](cfg.MaxStripCacheCount)
 	return Downloader{
 		strips: ch,
+		conn:   conn,
+		cfg:    cfg,
 	}
 }
 
@@ -116,8 +121,8 @@ type ObjectECStrip struct {
 }
 
 type ECStripKey struct {
-	ObjectID      cdssdk.ObjectID
-	StripPosition int64
+	ObjectID   cdssdk.ObjectID
+	StripIndex int64
 }
 
 type StripCache = lru.Cache[ECStripKey, ObjectECStrip]

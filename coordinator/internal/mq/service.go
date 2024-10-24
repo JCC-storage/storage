@@ -2,17 +2,17 @@ package mq
 
 import (
 	mydb "gitlink.org.cn/cloudream/storage/common/pkgs/db"
-	scmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/scanner"
+	mydb2 "gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 )
 
 type Service struct {
-	db      *mydb.DB
-	scanner *scmq.Client
+	db  *mydb.DB
+	db2 *mydb2.DB
 }
 
-func NewService(db *mydb.DB, scanner *scmq.Client) *Service {
+func NewService(db *mydb.DB, db2 *mydb2.DB) *Service {
 	return &Service{
-		db:      db,
-		scanner: scanner,
+		db:  db,
+		db2: db2,
 	}
 }

@@ -2,11 +2,13 @@ package db
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/samber/lo"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/utils/sort2"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
@@ -24,6 +26,30 @@ func (db *ObjectDB) GetByID(ctx SQLContext, objectID cdssdk.ObjectID) (model.Obj
 	var ret model.TempObject
 	err := sqlx.Get(ctx, &ret, "select * from Object where ObjectID = ?", objectID)
 	return ret.ToObject(), err
+}
+
+func (db *ObjectDB) BatchTestObjectID(ctx SQLContext, objectIDs []cdssdk.ObjectID) (map[cdssdk.ObjectID]bool, error) {
+	if len(objectIDs) == 0 {
+		return make(map[cdssdk.ObjectID]bool), nil
+	}
+
+	stmt, args, err := sqlx.In("select ObjectID from Object where ObjectID in (?)", lo.Uniq(objectIDs))
+	if err != nil {
+		return nil, err
+	}
+
+	var avaiIDs []cdssdk.ObjectID
+	err = sqlx.Select(ctx, &avaiIDs, stmt, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	avaiIDMap := make(map[cdssdk.ObjectID]bool)
+	for _, pkgID := range avaiIDs {
+		avaiIDMap[pkgID] = true
+	}
+
+	return avaiIDMap, nil
 }
 
 func (db *ObjectDB) BatchGet(ctx SQLContext, objectIDs []cdssdk.ObjectID) ([]model.Object, error) {
@@ -117,66 +143,50 @@ func (*ObjectDB) GetPackageObjects(ctx SQLContext, packageID cdssdk.PackageID) (
 	return lo.Map(ret, func(o model.TempObject, idx int) model.Object { return o.ToObject() }), err
 }
 
-// GetPackageObjectDetails 获取指定包ID的对象详情列表。
-//
-// ctx: SQL执行上下文。
-// packageID: 指定的包ID。
-//
-// 返回值为Object详情列表和可能出现的错误。
 func (db *ObjectDB) GetPackageObjectDetails(ctx SQLContext, packageID cdssdk.PackageID) ([]stgmod.ObjectDetail, error) {
-	// 从Object表中查询所有属于指定包ID的对象，按ObjectID升序排序
 	var objs []model.TempObject
 	err := sqlx.Select(ctx, &objs, "select * from Object where PackageID = ? order by ObjectID asc", packageID)
 	if err != nil {
 		return nil, fmt.Errorf("getting objects: %w", err)
 	}
 
-	// 初始化返回的Object详情列表
-	rets := make([]stgmod.ObjectDetail, 0, len(objs))
-
-	// 从ObjectBlock表中查询所有属于指定包ID的对象块，按ObjectID和Index升序排序
 	var allBlocks []stgmod.ObjectBlock
 	err = sqlx.Select(ctx, &allBlocks, "select ObjectBlock.* from ObjectBlock, Object where PackageID = ? and ObjectBlock.ObjectID = Object.ObjectID order by ObjectBlock.ObjectID, `Index` asc", packageID)
 	if err != nil {
 		return nil, fmt.Errorf("getting all object blocks: %w", err)
 	}
 
-	// 从PinnedObject表中查询所有属于指定包ID的被固定的对象，按ObjectID排序
 	var allPinnedObjs []cdssdk.PinnedObject
 	err = sqlx.Select(ctx, &allPinnedObjs, "select PinnedObject.* from PinnedObject, Object where PackageID = ? and PinnedObject.ObjectID = Object.ObjectID order by PinnedObject.ObjectID", packageID)
 	if err != nil {
 		return nil, fmt.Errorf("getting all pinned objects: %w", err)
 	}
 
-	// 遍历查询得到的对象，为每个对象构建详细的Object信息
-	blksCur := 0    // 当前遍历到的对象块索引
-	pinnedsCur := 0 // 当前遍历到的被固定对象索引
-	for _, temp := range objs {
-		detail := stgmod.ObjectDetail{
-			Object: temp.ToObject(),
+	details := make([]stgmod.ObjectDetail, len(objs))
+	for i, obj := range objs {
+		details[i] = stgmod.ObjectDetail{
+			Object: obj.ToObject(),
 		}
-
-		// 同时遍历对象和对象块的结果集，将属于同一对象的对象块附加到Object详情中
-		for ; blksCur < len(allBlocks); blksCur++ {
-			if allBlocks[blksCur].ObjectID != temp.ObjectID {
-				break
-			}
-			detail.Blocks = append(detail.Blocks, allBlocks[blksCur])
-		}
-
-		// 遍历被固定对象的结果集，将被固定的信息附加到Object详情中
-		for ; pinnedsCur < len(allPinnedObjs); pinnedsCur++ {
-			if allPinnedObjs[pinnedsCur].ObjectID != temp.ObjectID {
-				break
-			}
-			detail.PinnedAt = append(detail.PinnedAt, allPinnedObjs[pinnedsCur].NodeID)
-		}
-
-		// 将构建好的Object详情添加到返回列表中
-		rets = append(rets, detail)
 	}
 
-	return rets, nil
+	stgmod.DetailsFillObjectBlocks(details, allBlocks)
+	stgmod.DetailsFillPinnedAt(details, allPinnedObjs)
+	return details, nil
+}
+
+func (*ObjectDB) GetObjectsIfAnyBlockOnNode(ctx SQLContext, nodeID cdssdk.NodeID) ([]cdssdk.Object, error) {
+	var temps []model.TempObject
+	err := sqlx.Select(ctx, &temps, "select * from Object where ObjectID in (select ObjectID from ObjectBlock where NodeID = ?) order by ObjectID asc", nodeID)
+	if err != nil {
+		return nil, fmt.Errorf("getting objects: %w", err)
+	}
+
+	objs := make([]cdssdk.Object, len(temps))
+	for i := range temps {
+		objs[i] = temps[i].ToObject()
+	}
+
+	return objs, nil
 }
 
 func (db *ObjectDB) BatchAdd(ctx SQLContext, packageID cdssdk.PackageID, adds []coormq.AddObjectEntry) ([]cdssdk.Object, error) {
@@ -211,6 +221,11 @@ func (db *ObjectDB) BatchAdd(ctx SQLContext, packageID cdssdk.PackageID, adds []
 	if err != nil {
 		return nil, fmt.Errorf("batch get object ids: %w", err)
 	}
+
+	// 所有需要按索引来一一对应的数据都需要进行排序
+	adds = sort2.Sort(adds, func(l, r coormq.AddObjectEntry) int { return strings.Compare(l.Path, r.Path) })
+	addedObjs = sort2.Sort(addedObjs, func(l, r cdssdk.Object) int { return strings.Compare(l.Path, r.Path) })
+
 	addedObjIDs := make([]cdssdk.ObjectID, len(addedObjs))
 	for i := range addedObjs {
 		addedObjIDs[i] = addedObjs[i].ObjectID
@@ -326,7 +341,7 @@ func (db *ObjectDB) BatchUpdateRedundancy(ctx SQLContext, objs []coormq.Updating
 		for _, p := range obj.PinnedAt {
 			pinneds = append(pinneds, cdssdk.PinnedObject{
 				ObjectID:   obj.ObjectID,
-				NodeID:     p,
+				StorageID:  p,
 				CreateTime: time.Now(),
 			})
 		}

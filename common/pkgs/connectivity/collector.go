@@ -39,6 +39,19 @@ func NewCollector(cfg *Config, onCollected func(collector *Collector)) Collector
 	return rpt
 }
 
+func NewCollectorWithInitData(cfg *Config, onCollected func(collector *Collector), initData map[cdssdk.NodeID]Connectivity) Collector {
+	rpt := Collector{
+		cfg:            cfg,
+		collectNow:     make(chan any),
+		close:          make(chan any),
+		connectivities: initData,
+		lock:           &sync.RWMutex{},
+		onCollected:    onCollected,
+	}
+	go rpt.serve()
+	return rpt
+}
+
 func (r *Collector) Get(nodeID cdssdk.NodeID) *Connectivity {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
@@ -202,8 +215,7 @@ func (r *Collector) ping(node cdssdk.Node) Connectivity {
 			}
 		}
 
-		// 此时间差为一个来回的时间，因此单程延迟需要除以2
-		delay := time.Since(start) / 2
+		delay := time.Since(start)
 		avgDelay += delay
 
 		// 每次ping之间间隔1秒

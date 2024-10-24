@@ -3,107 +3,107 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	_ "google.golang.org/grpc/balancer/grpclb"
 
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
+	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/storage/client/internal/cmdline"
 	"gitlink.org.cn/cloudream/storage/client/internal/config"
 	"gitlink.org.cn/cloudream/storage/client/internal/services"
 	"gitlink.org.cn/cloudream/storage/client/internal/task"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/accessstat"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
+	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
-/*
-该Go程序是一个客户端应用程序，主要负责初始化配置、日志、全局变量，并启动网络检测、分布式锁服务、任务管理器和服务处理客户端请求。具体功能如下：
-程序的主入口函数main()：
-初始化配置，如果失败则结束进程。
-初始化日志系统，如果失败则结束进程。
-初始化全局变量，包括本地配置、消息队列池和Agent RPC池。
-根据IPFS配置初始化IPFS客户端。
-启动网络连通性检测。
-启动分布式锁服务，并在独立的goroutine中运行。
-创建任务管理器。
-创建服务实例。
-创建命令行接口。
-分发命令行指令。
-辅助函数serveDistLock()：
-在独立的goroutine中启动分布式锁服务。
-处理服务停止时的错误。
-该程序使用了多个外部包和模块，包括配置管理、日志系统、全局变量初始化、网络检测、分布式锁服务、任务管理和命令行接口等。这些模块共同协作，提供了一个功能丰富的客户端应用程序。
-*/
-
-// @Description: 程序的主入口函数，负责初始化配置、日志、全局变量，并启动网络检测、分布式锁服务、任务管理器和服务处理客户端请求。
 func main() {
-	// 初始化配置，失败则结束进程
 	err := config.Init()
 	if err != nil {
 		fmt.Printf("init config failed, err: %s", err.Error())
 		os.Exit(1)
 	}
 
-	// 初始化日志系统
 	err = logger.Init(&config.Cfg().Logger)
 	if err != nil {
 		fmt.Printf("init logger failed, err: %s", err.Error())
 		os.Exit(1)
 	}
 
-	// 初始化全局变量
 	stgglb.InitLocal(&config.Cfg().Local)
 	stgglb.InitMQPool(&config.Cfg().RabbitMQ)
 	stgglb.InitAgentRPCPool(&config.Cfg().AgentGRPC)
-	// 如果IPFS配置非空，初始化IPFS客户端
-	if config.Cfg().IPFS != nil {
-		logger.Infof("IPFS config is not empty, so create a ipfs client")
-		stgglb.InitIPFSPool(config.Cfg().IPFS)
+
+	var conCol connectivity.Collector
+	if config.Cfg().Local.NodeID != nil {
+		//如果client与某个node处于同一台机器，则使用这个node的连通性信息
+		coorCli, err := stgglb.CoordinatorMQPool.Acquire()
+		if err != nil {
+			logger.Warnf("acquire coordinator mq failed, err: %s", err.Error())
+			os.Exit(1)
+		}
+		getCons, err := coorCli.GetNodeConnectivities(coormq.ReqGetNodeConnectivities([]cdssdk.NodeID{*config.Cfg().Local.NodeID}))
+		if err != nil {
+			logger.Warnf("get node connectivities failed, err: %s", err.Error())
+			os.Exit(1)
+		}
+		consMap := make(map[cdssdk.NodeID]connectivity.Connectivity)
+		for _, con := range getCons.Connectivities {
+			var delay *time.Duration
+			if con.Delay != nil {
+				d := time.Duration(*con.Delay * float32(time.Millisecond))
+				delay = &d
+			}
+			consMap[con.FromNodeID] = connectivity.Connectivity{
+				ToNodeID: con.ToNodeID,
+				Delay:    delay,
+			}
+		}
+		conCol = connectivity.NewCollectorWithInitData(&config.Cfg().Connectivity, nil, consMap)
+		logger.Info("use local node connectivities")
+
+	} else {
+		// 否则需要就地收集连通性信息
+		conCol = connectivity.NewCollector(&config.Cfg().Connectivity, nil)
+		conCol.CollectInPlace()
 	}
 
-	// 启动网络连通性检测
-	conCol := connectivity.NewCollector(&config.Cfg().Connectivity, nil)
-	conCol.CollectInPlace()
-
-	// 启动分布式锁服务
 	distlockSvc, err := distlock.NewService(&config.Cfg().DistLock)
 	if err != nil {
 		logger.Warnf("new distlock service failed, err: %s", err.Error())
 		os.Exit(1)
 	}
-	go serveDistLock(distlockSvc) // 在goroutine中运行分布式锁服务
+	go serveDistLock(distlockSvc)
 
-	// 创建任务管理器
+	acStat := accessstat.NewAccessStat(accessstat.Config{
+		// TODO 考虑放到配置里
+		ReportInterval: time.Second * 10,
+	})
+	go serveAccessStat(acStat)
+
 	taskMgr := task.NewManager(distlockSvc, &conCol)
 
-<<<<<<< HEAD
-	// 创建服务实例
-	svc, err := services.NewService(distlockSvc, &taskMgr)
-=======
-	dlder := downloader.NewDownloader(config.Cfg().Downloader)
+	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol)
 
-	svc, err := services.NewService(distlockSvc, &taskMgr, &dlder)
->>>>>>> 770feaf2da11a3de00fa3ec57b16dc54ff31b288
+	svc, err := services.NewService(distlockSvc, &taskMgr, &dlder, acStat)
 	if err != nil {
 		logger.Warnf("new services failed, err: %s", err.Error())
 		os.Exit(1)
 	}
 
-	// 创建命令行接口
 	cmds, err := cmdline.NewCommandline(svc)
 	if err != nil {
 		logger.Warnf("new command line failed, err: %s", err.Error())
 		os.Exit(1)
 	}
 
-	// 分发命令行指令
 	cmds.DispatchCommand(os.Args[1:])
 }
 
-// serveDistLock 启动分布式锁服务
-//
-// @Description: 在独立的goroutine中启动分布式锁服务，并处理服务停止时的错误。
 func serveDistLock(svc *distlock.Service) {
 	logger.Info("start serving distlock")
 
@@ -114,4 +114,31 @@ func serveDistLock(svc *distlock.Service) {
 	}
 
 	logger.Info("distlock stopped")
+
+	// TODO 仅简单结束了程序
+	os.Exit(1)
+}
+
+func serveAccessStat(svc *accessstat.AccessStat) {
+	logger.Info("start serving access stat")
+
+	ch := svc.Start()
+loop:
+	for {
+		val, err := ch.Receive()
+		if err != nil {
+			logger.Errorf("access stat stopped with error: %v", err)
+			break
+		}
+
+		switch val := val.(type) {
+		case error:
+			logger.Errorf("access stat stopped with error: %v", val)
+			break loop
+		}
+	}
+	logger.Info("access stat stopped")
+
+	// TODO 仅简单结束了程序
+	os.Exit(1)
 }

@@ -1,6 +1,7 @@
 package event
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"math/rand"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/samber/lo"
 	"gitlink.org.cn/cloudream/common/pkgs/bitmap"
+	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/lo2"
@@ -18,7 +20,8 @@ import (
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock/reqbuilder"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch/plans"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/parser"
 	agtmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/agent"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 	scevt "gitlink.org.cn/cloudream/storage/common/pkgs/mq/scanner/event"
@@ -51,6 +54,7 @@ func (t *CleanPinned) Execute(execCtx ExecuteContext) {
 		log.Debugf("end, time: %v", time.Since(startTime))
 	}()
 
+	// TODO 应该与其他event一样，直接访问数据库
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		log.Warnf("new coordinator client: %s", err.Error())
@@ -64,12 +68,18 @@ func (t *CleanPinned) Execute(execCtx ExecuteContext) {
 		return
 	}
 
-	getLoadLog, err := coorCli.GetPackageLoadLogDetails(coormq.ReqGetPackageLoadLogDetails(t.PackageID))
+	stats, err := execCtx.Args.DB.PackageAccessStat().GetByPackageID(execCtx.Args.DB.SQLCtx(), t.PackageID)
 	if err != nil {
-		log.Warnf("getting package load log details: %s", err.Error())
+		log.Warnf("getting package access stat: %s", err.Error())
 		return
 	}
-	readerNodeIDs := lo.Map(getLoadLog.Logs, func(item coormq.PackageLoadLogDetail, idx int) cdssdk.NodeID { return item.Storage.NodeID })
+	var readerNodeIDs []cdssdk.NodeID
+	for _, item := range stats {
+		// TODO 可以考虑做成配置
+		if item.Amount >= float64(len(getObjs.Objects)/2) {
+			readerNodeIDs = append(readerNodeIDs, item.NodeID)
+		}
+	}
 
 	// 注意！需要保证allNodeID包含所有之后可能用到的节点ID
 	// TOOD 可以考虑设计Cache机制
@@ -105,8 +115,9 @@ func (t *CleanPinned) Execute(execCtx ExecuteContext) {
 		}
 	}
 
-	planBld := plans.NewPlanBuilder()
+	planBld := exec.NewPlanBuilder()
 	pinPlans := make(map[cdssdk.NodeID]*[]string)
+	plnningNodeIDs := make(map[cdssdk.NodeID]bool)
 
 	// 对于rep对象，统计出所有对象块分布最多的两个节点，用这两个节点代表所有rep对象块的分布，去进行退火算法
 	var repObjectsUpdating []coormq.UpdatingObjectRedundancy
@@ -131,10 +142,10 @@ func (t *CleanPinned) Execute(execCtx ExecuteContext) {
 			pinnedAt:        obj.PinnedAt,
 			blocks:          obj.Blocks,
 		})
-		ecObjectsUpdating = append(ecObjectsUpdating, t.makePlansForECObject(allNodeInfos, solu, obj, &planBld))
+		ecObjectsUpdating = append(ecObjectsUpdating, t.makePlansForECObject(allNodeInfos, solu, obj, planBld, plnningNodeIDs))
 	}
 
-	ioSwRets, err := t.executePlans(execCtx, pinPlans, &planBld)
+	ioSwRets, err := t.executePlans(execCtx, pinPlans, planBld, plnningNodeIDs)
 	if err != nil {
 		log.Warn(err.Error())
 		return
@@ -748,7 +759,7 @@ func (t *CleanPinned) makePlansForRepObject(solu annealingSolution, obj stgmod.O
 	return entry
 }
 
-func (t *CleanPinned) makePlansForECObject(allNodeInfos map[cdssdk.NodeID]*cdssdk.Node, solu annealingSolution, obj stgmod.ObjectDetail, planBld *plans.PlanBuilder) coormq.UpdatingObjectRedundancy {
+func (t *CleanPinned) makePlansForECObject(allNodeInfos map[cdssdk.NodeID]*cdssdk.Node, solu annealingSolution, obj stgmod.ObjectDetail, planBld *exec.PlanBuilder, planningNodeIDs map[cdssdk.NodeID]bool) coormq.UpdatingObjectRedundancy {
 	entry := coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
 		Redundancy: obj.Object.Redundancy,
@@ -779,34 +790,37 @@ func (t *CleanPinned) makePlansForECObject(allNodeInfos map[cdssdk.NodeID]*cdssd
 	}
 
 	ecRed := obj.Object.Redundancy.(*cdssdk.ECRedundancy)
+	parser := parser.NewParser(*ecRed)
 
 	for id, idxs := range reconstrct {
-		agt := planBld.AtAgent(*allNodeInfos[id])
+		ft := ioswitch2.NewFromTo()
+		ft.AddFrom(ioswitch2.NewFromNode(obj.Object.FileHash, allNodeInfos[id], -1))
 
-		strs := agt.IPFSRead(obj.Object.FileHash).ChunkedSplit(ecRed.ChunkSize, ecRed.K, true)
-		ss := agt.ECReconstructAny(*ecRed, lo.Range(ecRed.K), *idxs, strs.Streams...)
-		for i, s := range ss.Streams {
-			s.IPFSWrite(fmt.Sprintf("%d.%d", obj.Object.ObjectID, (*idxs)[i]))
+		for _, i := range *idxs {
+			ft.AddTo(ioswitch2.NewToNode(*allNodeInfos[id], i, fmt.Sprintf("%d.%d", obj.Object.ObjectID, i)))
 		}
+
+		err := parser.Parse(ft, planBld)
+		if err != nil {
+			// TODO 错误处理
+			continue
+		}
+
+		planningNodeIDs[id] = true
 	}
 	return entry
 }
 
-func (t *CleanPinned) executePlans(execCtx ExecuteContext, pinPlans map[cdssdk.NodeID]*[]string, planBld *plans.PlanBuilder) (map[string]any, error) {
+func (t *CleanPinned) executePlans(execCtx ExecuteContext, pinPlans map[cdssdk.NodeID]*[]string, planBld *exec.PlanBuilder, plnningNodeIDs map[cdssdk.NodeID]bool) (map[string]any, error) {
 	log := logger.WithType[CleanPinned]("Event")
-
-	ioPlan, err := planBld.Build()
-	if err != nil {
-		return nil, fmt.Errorf("building io switch plan: %w", err)
-	}
 
 	// 统一加锁，有重复也没关系
 	lockBld := reqbuilder.NewBuilder()
 	for nodeID := range pinPlans {
 		lockBld.IPFS().Buzy(nodeID)
 	}
-	for _, plan := range ioPlan.AgentPlans {
-		lockBld.IPFS().Buzy(plan.Node.NodeID)
+	for id := range plnningNodeIDs {
+		lockBld.IPFS().Buzy(id)
 	}
 	lock, err := lockBld.MutexLock(execCtx.Args.DistLock)
 	if err != nil {
@@ -845,17 +859,12 @@ func (t *CleanPinned) executePlans(execCtx ExecuteContext, pinPlans map[cdssdk.N
 	go func() {
 		defer wg.Done()
 
-		exec, err := plans.Execute(*ioPlan)
+		ret, err := planBld.Execute().Wait(context.TODO())
 		if err != nil {
 			ioSwErr = fmt.Errorf("executing io switch plan: %w", err)
 			return
 		}
-		ret, err := exec.Wait()
-		if err != nil {
-			ioSwErr = fmt.Errorf("waiting io switch plan: %w", err)
-			return
-		}
-		ioSwRets = ret.ResultValues
+		ioSwRets = ret
 	}()
 
 	wg.Wait()

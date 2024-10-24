@@ -10,6 +10,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 	"gitlink.org.cn/cloudream/common/utils/sort2"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
@@ -167,7 +168,7 @@ func (svc *Service) UpdateObjectRedundancy(msg *coormq.UpdateObjectRedundancy) (
 func (svc *Service) UpdateObjectInfos(msg *coormq.UpdateObjectInfos) (*coormq.UpdateObjectInfosResp, *mq.CodeMessage) {
 	var sucs []cdssdk.ObjectID
 	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
-		msg.Updatings = sort2.Sort(msg.Updatings, func(o1, o2 cdssdk.UpdatingObject) int {
+		msg.Updatings = sort2.Sort(msg.Updatings, func(o1, o2 cdsapi.UpdatingObject) int {
 			return sort2.Cmp(o1.ObjectID, o2.ObjectID)
 		})
 
@@ -185,7 +186,7 @@ func (svc *Service) UpdateObjectInfos(msg *coormq.UpdateObjectInfos) (*coormq.Up
 			oldObjIDs[i] = obj.ObjectID
 		}
 
-		avaiUpdatings, notExistsObjs := pickByObjectIDs(msg.Updatings, oldObjIDs, func(obj cdssdk.UpdatingObject) cdssdk.ObjectID { return obj.ObjectID })
+		avaiUpdatings, notExistsObjs := pickByObjectIDs(msg.Updatings, oldObjIDs, func(obj cdsapi.UpdatingObject) cdssdk.ObjectID { return obj.ObjectID })
 		if len(notExistsObjs) > 0 {
 			// TODO 部分对象已经不存在
 		}
@@ -237,7 +238,7 @@ func pickByObjectIDs[T any](objs []T, objIDs []cdssdk.ObjectID, getID func(T) cd
 func (svc *Service) MoveObjects(msg *coormq.MoveObjects) (*coormq.MoveObjectsResp, *mq.CodeMessage) {
 	var sucs []cdssdk.ObjectID
 	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
-		msg.Movings = sort2.Sort(msg.Movings, func(o1, o2 cdssdk.MovingObject) int {
+		msg.Movings = sort2.Sort(msg.Movings, func(o1, o2 cdsapi.MovingObject) int {
 			return sort2.Cmp(o1.ObjectID, o2.ObjectID)
 		})
 
@@ -255,7 +256,7 @@ func (svc *Service) MoveObjects(msg *coormq.MoveObjects) (*coormq.MoveObjectsRes
 			oldObjIDs[i] = obj.ObjectID
 		}
 
-		avaiMovings, notExistsObjs := pickByObjectIDs(msg.Movings, oldObjIDs, func(obj cdssdk.MovingObject) cdssdk.ObjectID { return obj.ObjectID })
+		avaiMovings, notExistsObjs := pickByObjectIDs(msg.Movings, oldObjIDs, func(obj cdsapi.MovingObject) cdssdk.ObjectID { return obj.ObjectID })
 		if len(notExistsObjs) > 0 {
 			// TODO 部分对象已经不存在
 		}
@@ -427,6 +428,11 @@ func (svc *Service) DeleteObjects(msg *coormq.DeleteObjects) (*coormq.DeleteObje
 		err = svc.db.PinnedObject().BatchDeleteByObjectID(tx, msg.ObjectIDs)
 		if err != nil {
 			return fmt.Errorf("batch deleting pinned objects: %w", err)
+		}
+
+		err = svc.db.ObjectAccessStat().BatchDeleteByObjectID(tx, msg.ObjectIDs)
+		if err != nil {
+			return fmt.Errorf("batch deleting object access stats: %w", err)
 		}
 
 		return nil

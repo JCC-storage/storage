@@ -8,6 +8,8 @@ import (
 
 type Service = distlock.Service
 
+type Mutex = distlock.Mutex
+
 func NewService(cfg *distlock.Config) (*distlock.Service, error) {
 	srv, err := distlock.NewService(cfg, initProviders())
 	if err != nil {

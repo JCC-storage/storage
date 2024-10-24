@@ -1,31 +1,32 @@
 package downloader
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"math"
 	"reflect"
+	"time"
 
 	"github.com/samber/lo"
 
 	"gitlink.org.cn/cloudream/common/pkgs/bitmap"
-	"gitlink.org.cn/cloudream/common/pkgs/ipfs"
+	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
+	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 
 	"gitlink.org.cn/cloudream/common/utils/io2"
 	"gitlink.org.cn/cloudream/common/utils/math2"
 	"gitlink.org.cn/cloudream/common/utils/sort2"
-	"gitlink.org.cn/cloudream/common/utils/sync2"
 	"gitlink.org.cn/cloudream/storage/common/consts"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/ec"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/parser"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/iterator"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
-
-var errNoDirectReadBlock = fmt.Errorf("no direct read block")
 
 type DownloadNodeInfo struct {
 	Node         cdssdk.Node
@@ -83,6 +84,10 @@ func (i *DownloadObjectIterator) init() error {
 
 	allNodeIDs := make(map[cdssdk.NodeID]bool)
 	for _, obj := range i.reqs {
+		if obj.Detail == nil {
+			continue
+		}
+
 		for _, p := range obj.Detail.PinnedAt {
 			allNodeIDs[p] = true
 		}
@@ -119,7 +124,7 @@ func (iter *DownloadObjectIterator) doMove() (*Downloading, error) {
 	case *cdssdk.NoneRedundancy:
 		reader, err := iter.downloadNoneOrRepObject(req)
 		if err != nil {
-			return nil, fmt.Errorf("downloading object: %w", err)
+			return nil, fmt.Errorf("downloading object %v: %w", req.Raw.ObjectID, err)
 		}
 
 		return &Downloading{
@@ -131,7 +136,7 @@ func (iter *DownloadObjectIterator) doMove() (*Downloading, error) {
 	case *cdssdk.RepRedundancy:
 		reader, err := iter.downloadNoneOrRepObject(req)
 		if err != nil {
-			return nil, fmt.Errorf("downloading rep object: %w", err)
+			return nil, fmt.Errorf("downloading rep object %v: %w", req.Raw.ObjectID, err)
 		}
 
 		return &Downloading{
@@ -143,7 +148,19 @@ func (iter *DownloadObjectIterator) doMove() (*Downloading, error) {
 	case *cdssdk.ECRedundancy:
 		reader, err := iter.downloadECObject(req, red)
 		if err != nil {
-			return nil, fmt.Errorf("downloading ec object: %w", err)
+			return nil, fmt.Errorf("downloading ec object %v: %w", req.Raw.ObjectID, err)
+		}
+
+		return &Downloading{
+			Object:  &req.Detail.Object,
+			File:    reader,
+			Request: req.Raw,
+		}, nil
+
+	case *cdssdk.LRCRedundancy:
+		reader, err := iter.downloadLRCObject(req, red)
+		if err != nil {
+			return nil, fmt.Errorf("downloading lrc object %v: %w", req.Raw.ObjectID, err)
 		}
 
 		return &Downloading{
@@ -153,7 +170,7 @@ func (iter *DownloadObjectIterator) doMove() (*Downloading, error) {
 		}, nil
 	}
 
-	return nil, fmt.Errorf("unsupported redundancy type: %v", reflect.TypeOf(req.Detail.Object.Redundancy))
+	return nil, fmt.Errorf("unsupported redundancy type: %v of object %v", reflect.TypeOf(req.Detail.Object.Redundancy), req.Raw.ObjectID)
 }
 
 func (i *DownloadObjectIterator) Close() {
@@ -171,22 +188,17 @@ func (iter *DownloadObjectIterator) downloadNoneOrRepObject(obj downloadReqeust2
 	bsc, blocks := iter.getMinReadingBlockSolution(allNodes, 1)
 	osc, node := iter.getMinReadingObjectSolution(allNodes, 1)
 	if bsc < osc {
-
-		return NewIPFSReaderWithRange(blocks[0].Node, blocks[0].Block.FileHash, ipfs.ReadOption{
-			Offset: obj.Raw.Offset,
-			Length: obj.Raw.Length,
-		}), nil
+		logger.Debugf("downloading object %v from node %v(%v)", obj.Raw.ObjectID, blocks[0].Node.Name, blocks[0].Node.NodeID)
+		return iter.downloadFromNode(&blocks[0].Node, obj)
 	}
 
-	// bsc >= osc，如果osc是MaxFloat64，那么bsc也一定是，也就意味着没有足够块来恢复文件
 	if osc == math.MaxFloat64 {
+		// bsc >= osc，如果osc是MaxFloat64，那么bsc也一定是，也就意味着没有足够块来恢复文件
 		return nil, fmt.Errorf("no node has this object")
 	}
 
-	return NewIPFSReaderWithRange(*node, obj.Detail.Object.FileHash, ipfs.ReadOption{
-		Offset: obj.Raw.Offset,
-		Length: obj.Raw.Length,
-	}), nil
+	logger.Debugf("downloading object %v from node %v(%v)", obj.Raw.ObjectID, node.Name, node.NodeID)
+	return iter.downloadFromNode(node, obj)
 }
 
 func (iter *DownloadObjectIterator) downloadECObject(req downloadReqeust2, ecRed *cdssdk.ECRedundancy) (io.ReadCloser, error) {
@@ -199,99 +211,51 @@ func (iter *DownloadObjectIterator) downloadECObject(req downloadReqeust2, ecRed
 	osc, node := iter.getMinReadingObjectSolution(allNodes, ecRed.K)
 
 	if bsc < osc {
-		var fileStrs []*IPFSReader
-		for _, b := range blocks {
-			str := NewIPFSReader(b.Node, b.Block.FileHash)
-
-			fileStrs = append(fileStrs, str)
+		var logStrs []any = []any{fmt.Sprintf("downloading ec object %v from blocks: ", req.Raw.ObjectID)}
+		for i, b := range blocks {
+			if i > 0 {
+				logStrs = append(logStrs, ", ")
+			}
+			logStrs = append(logStrs, fmt.Sprintf("%v@%v(%v)", b.Block.Index, b.Node.Name, b.Node.NodeID))
 		}
-
-		rs, err := ec.NewRs(ecRed.K, ecRed.N)
-		if err != nil {
-			return nil, fmt.Errorf("new rs: %w", err)
-		}
+		logger.Debug(logStrs...)
 
 		pr, pw := io.Pipe()
 		go func() {
-			defer func() {
-				for _, str := range fileStrs {
-					str.Close()
-				}
-			}()
-
 			readPos := req.Raw.Offset
 			totalReadLen := req.Detail.Object.Size - req.Raw.Offset
 			if req.Raw.Length >= 0 {
-				totalReadLen = req.Raw.Length
+				totalReadLen = math2.Min(req.Raw.Length, totalReadLen)
 			}
+
+			firstStripIndex := readPos / ecRed.StripSize()
+			stripIter := NewStripIterator(req.Detail.Object, blocks, ecRed, firstStripIndex, iter.downloader.strips, iter.downloader.cfg.ECStripPrefetchCount)
+			defer stripIter.Close()
 
 			for totalReadLen > 0 {
-				curStripPos := readPos / int64(ecRed.K) / int64(ecRed.ChunkSize)
-				curStripPosInBytes := curStripPos * int64(ecRed.K) * int64(ecRed.ChunkSize)
-				nextStripPosInBytes := (curStripPos + 1) * int64(ecRed.K) * int64(ecRed.ChunkSize)
-				curReadLen := math2.Min(totalReadLen, nextStripPosInBytes-readPos)
-				readRelativePos := readPos - curStripPosInBytes
-				cacheKey := ECStripKey{
-					ObjectID:      req.Detail.Object.ObjectID,
-					StripPosition: curStripPos,
+				strip, err := stripIter.MoveNext()
+				if err == iterator.ErrNoMoreItem {
+					pw.CloseWithError(io.ErrUnexpectedEOF)
+					return
 				}
-
-				cache, ok := iter.downloader.strips.Get(cacheKey)
-				if ok {
-					if cache.ObjectFileHash == req.Detail.Object.FileHash {
-						err := io2.WriteAll(pw, cache.Data[readRelativePos:readRelativePos+curReadLen])
-						if err != nil {
-							pw.CloseWithError(err)
-							break
-						}
-						totalReadLen -= curReadLen
-						readPos += curReadLen
-						continue
-					}
-
-					// 如果Object的Hash和Cache的Hash不一致，说明Cache是无效的，需要重新下载
-					iter.downloader.strips.Remove(cacheKey)
-				}
-
-				for _, str := range fileStrs {
-					_, err := str.Seek(curStripPosInBytes, io.SeekStart)
-					if err != nil {
-						pw.CloseWithError(err)
-						break
-					}
-				}
-
-				dataBuf := make([]byte, int64(ecRed.K*ecRed.ChunkSize))
-				blockArrs := make([][]byte, ecRed.N)
-				for _, b := range blocks {
-					if b.Block.Index < ecRed.K {
-						blockArrs[b.Block.Index] = dataBuf[b.Block.Index*ecRed.ChunkSize : (b.Block.Index+1)*ecRed.ChunkSize]
-					} else {
-						blockArrs[b.Block.Index] = make([]byte, ecRed.ChunkSize)
-					}
-				}
-
-				err := sync2.ParallelDo(blocks, func(b downloadBlock, idx int) error {
-					_, err := io.ReadFull(fileStrs[idx], blockArrs[b.Block.Index])
-					return err
-				})
 				if err != nil {
 					pw.CloseWithError(err)
-					break
+					return
 				}
 
-				err = rs.ReconstructData(blockArrs)
+				readRelativePos := readPos - strip.Position
+				curReadLen := math2.Min(totalReadLen, ecRed.StripSize()-readRelativePos)
+
+				err = io2.WriteAll(pw, strip.Data[readRelativePos:readRelativePos+curReadLen])
 				if err != nil {
 					pw.CloseWithError(err)
-					break
+					return
 				}
 
-				iter.downloader.strips.Add(cacheKey, ObjectECStrip{
-					Data:           dataBuf,
-					ObjectFileHash: req.Detail.Object.FileHash,
-				})
-				// 下次循环就能从Cache中读取数据
+				totalReadLen -= curReadLen
+				readPos += curReadLen
 			}
+			pw.Close()
 		}()
 
 		return pr, nil
@@ -299,13 +263,11 @@ func (iter *DownloadObjectIterator) downloadECObject(req downloadReqeust2, ecRed
 
 	// bsc >= osc，如果osc是MaxFloat64，那么bsc也一定是，也就意味着没有足够块来恢复文件
 	if osc == math.MaxFloat64 {
-		return nil, fmt.Errorf("no enough blocks to reconstruct the file, want %d, get only %d", ecRed.K, len(blocks))
+		return nil, fmt.Errorf("no enough blocks to reconstruct the object %v , want %d, get only %d", req.Raw.ObjectID, ecRed.K, len(blocks))
 	}
 
-	return NewIPFSReaderWithRange(*node, req.Detail.Object.FileHash, ipfs.ReadOption{
-		Offset: req.Raw.Offset,
-		Length: req.Raw.Length,
-	}), nil
+	logger.Debugf("downloading ec object %v from node %v(%v)", req.Raw.ObjectID, node.Name, node.NodeID)
+	return iter.downloadFromNode(node, req)
 }
 
 func (iter *DownloadObjectIterator) sortDownloadNodes(req downloadReqeust2) ([]*DownloadNodeInfo, error) {
@@ -356,11 +318,6 @@ func (iter *DownloadObjectIterator) sortDownloadNodes(req downloadReqeust2) ([]*
 	}), nil
 }
 
-type downloadBlock struct {
-	Node  cdssdk.Node
-	Block stgmod.ObjectBlock
-}
-
 func (iter *DownloadObjectIterator) getMinReadingBlockSolution(sortedNodes []*DownloadNodeInfo, k int) (float64, []downloadBlock) {
 	gotBlocksMap := bitmap.Bitmap64(0)
 	var gotBlocks []downloadBlock
@@ -391,7 +348,8 @@ func (iter *DownloadObjectIterator) getMinReadingObjectSolution(sortedNodes []*D
 	for _, n := range sortedNodes {
 		if n.ObjectPinned && float64(k)*n.Distance < dist {
 			dist = float64(k) * n.Distance
-			downloadNode = &n.Node
+			node := n.Node
+			downloadNode = &node
 		}
 	}
 
@@ -409,5 +367,40 @@ func (iter *DownloadObjectIterator) getNodeDistance(node cdssdk.Node) float64 {
 		return consts.NodeDistanceSameLocation
 	}
 
+	c := iter.downloader.conn.Get(node.NodeID)
+	if c == nil || c.Delay == nil || *c.Delay > time.Duration(float64(time.Millisecond)*iter.downloader.cfg.HighLatencyNodeMs) {
+		return consts.NodeDistanceHighLatencyNode
+	}
+
 	return consts.NodeDistanceOther
+}
+
+func (iter *DownloadObjectIterator) downloadFromNode(node *cdssdk.Node, req downloadReqeust2) (io.ReadCloser, error) {
+	var strHandle *exec.DriverReadStream
+	ft := ioswitch2.NewFromTo()
+
+	toExec, handle := ioswitch2.NewToDriver(-1)
+	toExec.Range = exec.Range{
+		Offset: req.Raw.Offset,
+	}
+	if req.Raw.Length != -1 {
+		len := req.Raw.Length
+		toExec.Range.Length = &len
+	}
+	ft.AddFrom(ioswitch2.NewFromNode(req.Detail.Object.FileHash, node, -1)).AddTo(toExec)
+	strHandle = handle
+
+	parser := parser.NewParser(cdssdk.DefaultECRedundancy)
+	plans := exec.NewPlanBuilder()
+	if err := parser.Parse(ft, plans); err != nil {
+		return nil, fmt.Errorf("parsing plan: %w", err)
+	}
+
+	// TODO2 注入依赖
+	exeCtx := exec.NewExecContext()
+
+	exec := plans.Execute(exeCtx)
+	go exec.Wait(context.TODO())
+
+	return exec.BeginRead(strHandle)
 }

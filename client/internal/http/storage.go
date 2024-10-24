@@ -1,102 +1,74 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
-	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 )
 
-// StorageService 用于提供存储服务的相关操作
 type StorageService struct {
 	*Server
 }
 
-// Storage 返回StorageService的实例
 func (s *Server) Storage() *StorageService {
 	return &StorageService{
 		Server: s,
 	}
 }
 
-// StorageLoadPackageReq 定义加载存储包的请求参数
-type StorageLoadPackageReq struct {
-	UserID    *cdssdk.UserID    `json:"userID" binding:"required"`
-	PackageID *cdssdk.PackageID `json:"packageID" binding:"required"`
-	StorageID *cdssdk.StorageID `json:"storageID" binding:"required"`
-}
-
-// StorageLoadPackageResp 定义加载存储包的响应参数
-type StorageLoadPackageResp struct {
-	cdssdk.StorageLoadPackageResp
-}
-
-// LoadPackage 加载存储包
 func (s *StorageService) LoadPackage(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Storage.LoadPackage")
 
-	var req StorageLoadPackageReq
+	var req cdsapi.StorageLoadPackageReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
 		return
 	}
 
-	nodeID, taskID, err := s.svc.StorageSvc().StartStorageLoadPackage(*req.UserID, *req.PackageID, *req.StorageID)
+	nodeID, taskID, err := s.svc.StorageSvc().StartStorageLoadPackage(req.UserID, req.PackageID, req.StorageID)
 	if err != nil {
 		log.Warnf("start storage load package: %s", err.Error())
-		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "storage load package failed"))
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("start loading: %v", err)))
 		return
 	}
 
 	for {
-		complete, fullPath, err := s.svc.StorageSvc().WaitStorageLoadPackage(nodeID, taskID, time.Second*10)
+		complete, ret, err := s.svc.StorageSvc().WaitStorageLoadPackage(nodeID, taskID, time.Second*10)
 		if complete {
 			if err != nil {
 				log.Warnf("loading complete with: %s", err.Error())
-				ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "storage load package failed"))
+				ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("loading complete with: %v", err)))
 				return
 			}
 
-			ctx.JSON(http.StatusOK, OK(StorageLoadPackageResp{
-				StorageLoadPackageResp: cdssdk.StorageLoadPackageResp{
-					FullPath: fullPath,
-				},
+			ctx.JSON(http.StatusOK, OK(cdsapi.StorageLoadPackageResp{
+				FullPath:    filepath.Join(ret.RemoteBase, ret.PackagePath),
+				PackagePath: ret.PackagePath,
+				LocalBase:   ret.LocalBase,
+				RemoteBase:  ret.RemoteBase,
 			}))
 			return
 		}
 
 		if err != nil {
 			log.Warnf("wait loadding: %s", err.Error())
-			ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "storage load package failed"))
+			ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("wait loading: %v", err)))
 			return
 		}
 	}
 }
 
-// StorageCreatePackageReq 定义创建存储包的请求参数
-type StorageCreatePackageReq struct {
-	UserID       *cdssdk.UserID    `json:"userID" binding:"required"`
-	StorageID    *cdssdk.StorageID `json:"storageID" binding:"required"`
-	Path         string            `json:"path" binding:"required"`
-	BucketID     *cdssdk.BucketID  `json:"bucketID" binding:"required"`
-	Name         string            `json:"name" binding:"required"`
-	NodeAffinity *cdssdk.NodeID    `json:"nodeAffinity"`
-}
-
-// StorageCreatePackageResp 定义创建存储包的响应参数
-type StorageCreatePackageResp struct {
-	PackageID cdssdk.PackageID `json:"packageID"`
-}
-
-// CreatePackage 创建存储包
 func (s *StorageService) CreatePackage(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Storage.CreatePackage")
 
-	var req StorageCreatePackageReq
+	var req cdsapi.StorageCreatePackageReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -104,7 +76,7 @@ func (s *StorageService) CreatePackage(ctx *gin.Context) {
 	}
 
 	nodeID, taskID, err := s.svc.StorageSvc().StartStorageCreatePackage(
-		*req.UserID, *req.BucketID, req.Name, *req.StorageID, req.Path, req.NodeAffinity)
+		req.UserID, req.BucketID, req.Name, req.StorageID, req.Path, req.NodeAffinity)
 	if err != nil {
 		log.Warnf("start storage create package: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "storage create package failed"))
@@ -120,7 +92,7 @@ func (s *StorageService) CreatePackage(ctx *gin.Context) {
 				return
 			}
 
-			ctx.JSON(http.StatusOK, OK(StorageCreatePackageResp{
+			ctx.JSON(http.StatusOK, OK(cdsapi.StorageCreatePackageResp{
 				PackageID: packageID,
 			}))
 			return
@@ -134,40 +106,24 @@ func (s *StorageService) CreatePackage(ctx *gin.Context) {
 	}
 }
 
-// StorageGetInfoReq 定义获取存储信息的请求参数
-type StorageGetInfoReq struct {
-	UserID    *cdssdk.UserID    `form:"userID" binding:"required"`
-	StorageID *cdssdk.StorageID `form:"storageID" binding:"required"`
-}
+func (s *StorageService) Get(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Storage.Get")
 
-// StorageGetInfoResp 定义获取存储信息的响应参数
-type StorageGetInfoResp struct {
-	cdssdk.StorageGetInfoResp
-}
-
-// GetInfo 获取存储信息
-func (s *StorageService) GetInfo(ctx *gin.Context) {
-	log := logger.WithField("HTTP", "Storage.GetInfo")
-
-	var req StorageGetInfoReq
+	var req cdsapi.StorageGet
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.Warnf("binding query: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
 		return
 	}
 
-	info, err := s.svc.StorageSvc().GetInfo(*req.UserID, *req.StorageID)
+	info, err := s.svc.StorageSvc().Get(req.UserID, req.StorageID)
 	if err != nil {
 		log.Warnf("getting info: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get storage inf failed"))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(StorageGetInfoResp{
-		StorageGetInfoResp: cdssdk.StorageGetInfoResp{
-			Name:      info.Name,
-			NodeID:    info.NodeID,
-			Directory: info.Directory,
-		},
+	ctx.JSON(http.StatusOK, OK(cdsapi.StorageGetResp{
+		Storage: *info,
 	}))
 }

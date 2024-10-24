@@ -3,17 +3,19 @@ package task
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/distlock"
 	"gitlink.org.cn/cloudream/common/pkgs/task"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/accessstat"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/pool"
 )
 
 // TaskContext 定义了任务执行的上下文环境，包含分布式锁服务、IO开关和网络连接状态收集器
 type TaskContext struct {
-	distlock     *distlock.Service
-	sw           *ioswitch.Switch
-	connectivity *connectivity.Collector
-	downloader   *downloader.Downloader
+	distlock       *distlock.Service
+	connectivity   *connectivity.Collector
+	downloader     *downloader.Downloader
+	accessStat     *accessstat.AccessStat
+	shardStorePool *pool.ShardStorePool
 }
 
 // CompleteFn 类型定义了任务完成时需要执行的函数，用于设置任务的执行结果
@@ -31,11 +33,12 @@ type Task = task.Task[TaskContext]
 // CompleteOption 类型定义了任务完成时的选项，可用于定制化任务完成的处理方式
 type CompleteOption = task.CompleteOption
 
-func NewManager(distlock *distlock.Service, sw *ioswitch.Switch, connectivity *connectivity.Collector, downloader *downloader.Downloader) Manager {
+func NewManager(distlock *distlock.Service, connectivity *connectivity.Collector, downloader *downloader.Downloader, accessStat *accessstat.AccessStat, shardStorePool *pool.ShardStorePool) Manager {
 	return task.NewManager(TaskContext{
-		distlock:     distlock,
-		sw:           sw,
-		connectivity: connectivity,
-		downloader:   downloader,
+		distlock:       distlock,
+		connectivity:   connectivity,
+		downloader:     downloader,
+		accessStat:     accessStat,
+		shardStorePool: shardStorePool,
 	})
 }

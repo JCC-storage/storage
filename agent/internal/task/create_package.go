@@ -28,7 +28,7 @@ type CreatePackage struct {
 	name         string
 	objIter      iterator.UploadingObjectIterator
 	nodeAffinity *cdssdk.NodeID
-	Result       *CreatePackageResult
+	Result       CreatePackageResult
 }
 
 // NewCreatePackage 创建一个新的CreatePackage实例

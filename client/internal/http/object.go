@@ -1,40 +1,36 @@
 package http
 
 import (
-	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"path"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
-	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	myhttp "gitlink.org.cn/cloudream/common/utils/http"
+	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
+	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 )
 
-// ObjectService 服务结构体，处理对象相关的HTTP请求
 type ObjectService struct {
 	*Server
 }
 
-// Object 返回ObjectService的实例
 func (s *Server) Object() *ObjectService {
 	return &ObjectService{
 		Server: s,
 	}
 }
 
-// ObjectUploadReq 定义上传对象请求的结构体
 type ObjectUploadReq struct {
-	Info  cdssdk.ObjectUploadInfo `form:"info" binding:"required"` // 上传信息
-	Files []*multipart.FileHeader `form:"files"`                   // 上传文件列表
+	Info  cdsapi.ObjectUploadInfo `form:"info" binding:"required"`
+	Files []*multipart.FileHeader `form:"files"`
 }
 
-// Upload 处理对象上传请求
 func (s *ObjectService) Upload(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Object.Upload")
 
@@ -45,18 +41,18 @@ func (s *ObjectService) Upload(ctx *gin.Context) {
 		return
 	}
 
-	// 将multipart文件转换为上传对象
+	var err error
+
 	objIter := mapMultiPartFileToUploadingObject(req.Files)
 
-	// 开始上传任务
 	taskID, err := s.svc.ObjectSvc().StartUploading(req.Info.UserID, req.Info.PackageID, objIter, req.Info.NodeAffinity)
+
 	if err != nil {
 		log.Warnf("start uploading object task: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "start uploading task failed"))
 		return
 	}
 
-	// 等待上传任务完成
 	for {
 		complete, objs, err := s.svc.ObjectSvc().WaitUploading(taskID, time.Second*5)
 		if complete {
@@ -66,20 +62,20 @@ func (s *ObjectService) Upload(ctx *gin.Context) {
 				return
 			}
 
-			uploadeds := make([]cdssdk.UploadedObject, len(objs.Objects))
+			uploadeds := make([]cdsapi.UploadedObject, len(objs.Objects))
 			for i, obj := range objs.Objects {
 				err := ""
 				if obj.Error != nil {
 					err = obj.Error.Error()
 				}
 				o := obj.Object
-				uploadeds[i] = cdssdk.UploadedObject{
+				uploadeds[i] = cdsapi.UploadedObject{
 					Object: &o,
 					Error:  err,
 				}
 			}
 
-			ctx.JSON(http.StatusOK, OK(cdssdk.ObjectUploadResp{Uploadeds: uploadeds}))
+			ctx.JSON(http.StatusOK, OK(cdsapi.ObjectUploadResp{Uploadeds: uploadeds}))
 			return
 		}
 
@@ -94,7 +90,7 @@ func (s *ObjectService) Upload(ctx *gin.Context) {
 func (s *ObjectService) Download(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Object.Download")
 
-	var req cdssdk.ObjectDownload
+	var req cdsapi.ObjectDownload
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -117,26 +113,27 @@ func (s *ObjectService) Download(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "download object failed"))
 		return
 	}
+	defer file.File.Close()
 
-	mw := multipart.NewWriter(ctx.Writer)
-	defer mw.Close()
+	ctx.Header("Content-Disposition", "attachment; filename="+url.PathEscape(path.Base(file.Object.Path)))
+	ctx.Header("Content-Type", "application/octet-stream")
+	ctx.Header("Content-Transfer-Encoding", "binary")
 
-	ctx.Writer.Header().Set("Content-Type", fmt.Sprintf("%s;boundary=%s", myhttp.ContentTypeMultiPart, mw.Boundary()))
-	ctx.Writer.WriteHeader(http.StatusOK)
-
-	fw, err := mw.CreateFormFile("file", path.Base(file.Object.Path))
+	n, err := io.Copy(ctx.Writer, file.File)
 	if err != nil {
-		log.Warnf("creating form file: %s", err.Error())
-		return
+		log.Warnf("copying file: %s", err.Error())
 	}
 
-	io.Copy(fw, file.File)
+	// TODO 当client不在某个代理节点上时如何处理？
+	if stgglb.Local.NodeID != nil {
+		s.svc.AccessStat.AddAccessCounter(file.Object.ObjectID, file.Object.PackageID, *stgglb.Local.NodeID, float64(n)/float64(file.Object.Size))
+	}
 }
 
 func (s *ObjectService) UpdateInfo(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Object.UpdateInfo")
 
-	var req cdssdk.ObjectUpdateInfo
+	var req cdsapi.ObjectUpdateInfo
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -150,13 +147,13 @@ func (s *ObjectService) UpdateInfo(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdssdk.ObjectUpdateInfoResp{Successes: sucs}))
+	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectUpdateInfoResp{Successes: sucs}))
 }
 
 func (s *ObjectService) Move(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Object.Move")
 
-	var req cdssdk.ObjectMove
+	var req cdsapi.ObjectMove
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -170,13 +167,13 @@ func (s *ObjectService) Move(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdssdk.ObjectMoveResp{Successes: sucs}))
+	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectMoveResp{Successes: sucs}))
 }
 
 func (s *ObjectService) Delete(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Object.Delete")
 
-	var req cdssdk.ObjectDelete
+	var req cdsapi.ObjectDelete
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -193,11 +190,10 @@ func (s *ObjectService) Delete(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, OK(nil))
 }
 
-// GetPackageObjects 处理获取包内对象的请求
 func (s *ObjectService) GetPackageObjects(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Object.GetPackageObjects")
 
-	var req cdssdk.ObjectGetPackageObjects
+	var req cdsapi.ObjectGetPackageObjects
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -211,5 +207,5 @@ func (s *ObjectService) GetPackageObjects(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdssdk.ObjectGetPackageObjectsResp{Objects: objs}))
+	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectGetPackageObjectsResp{Objects: objs}))
 }

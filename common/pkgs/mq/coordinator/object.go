@@ -3,6 +3,7 @@ package coordinator
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
@@ -22,6 +23,10 @@ type ObjectService interface {
 	MoveObjects(msg *MoveObjects) (*MoveObjectsResp, *mq.CodeMessage)
 
 	DeleteObjects(msg *DeleteObjects) (*DeleteObjectsResp, *mq.CodeMessage)
+
+	GetDatabaseAll(msg *GetDatabaseAll) (*GetDatabaseAllResp, *mq.CodeMessage)
+
+	AddAccessStat(msg *AddAccessStat)
 }
 
 // 查询Package中的所有Object，返回的Objects会按照ObjectID升序
@@ -139,7 +144,7 @@ var _ = Register(Service.UpdateObjectInfos)
 type UpdateObjectInfos struct {
 	mq.MessageBodyBase
 	UserID    cdssdk.UserID           `json:"userID"`
-	Updatings []cdssdk.UpdatingObject `json:"updatings"`
+	Updatings []cdsapi.UpdatingObject `json:"updatings"`
 }
 
 type UpdateObjectInfosResp struct {
@@ -147,7 +152,7 @@ type UpdateObjectInfosResp struct {
 	Successes []cdssdk.ObjectID `json:"successes"`
 }
 
-func ReqUpdateObjectInfos(userID cdssdk.UserID, updatings []cdssdk.UpdatingObject) *UpdateObjectInfos {
+func ReqUpdateObjectInfos(userID cdssdk.UserID, updatings []cdsapi.UpdatingObject) *UpdateObjectInfos {
 	return &UpdateObjectInfos{
 		UserID:    userID,
 		Updatings: updatings,
@@ -168,7 +173,7 @@ var _ = Register(Service.MoveObjects)
 type MoveObjects struct {
 	mq.MessageBodyBase
 	UserID  cdssdk.UserID         `json:"userID"`
-	Movings []cdssdk.MovingObject `json:"movings"`
+	Movings []cdsapi.MovingObject `json:"movings"`
 }
 
 type MoveObjectsResp struct {
@@ -176,7 +181,7 @@ type MoveObjectsResp struct {
 	Successes []cdssdk.ObjectID `json:"successes"`
 }
 
-func ReqMoveObjects(userID cdssdk.UserID, movings []cdssdk.MovingObject) *MoveObjects {
+func ReqMoveObjects(userID cdssdk.UserID, movings []cdsapi.MovingObject) *MoveObjects {
 	return &MoveObjects{
 		UserID:  userID,
 		Movings: movings,
@@ -215,4 +220,29 @@ func RespDeleteObjects() *DeleteObjectsResp {
 }
 func (client *Client) DeleteObjects(msg *DeleteObjects) (*DeleteObjectsResp, error) {
 	return mq.Request(Service.DeleteObjects, client.rabbitCli, msg)
+}
+
+// 增加访问计数
+var _ = RegisterNoReply(Service.AddAccessStat)
+
+type AddAccessStat struct {
+	mq.MessageBodyBase
+	Entries []AddAccessStatEntry `json:"entries"`
+}
+
+type AddAccessStatEntry struct {
+	ObjectID  cdssdk.ObjectID  `json:"objectID" db:"ObjectID"`
+	PackageID cdssdk.PackageID `json:"packageID" db:"PackageID"`
+	NodeID    cdssdk.NodeID    `json:"nodeID" db:"NodeID"`
+	Counter   float64          `json:"counter" db:"Counter"`
+}
+
+func ReqAddAccessStat(entries []AddAccessStatEntry) *AddAccessStat {
+	return &AddAccessStat{
+		Entries: entries,
+	}
+}
+
+func (client *Client) AddAccessStat(msg *AddAccessStat) error {
+	return mq.Send(Service.AddAccessStat, client.rabbitCli, msg)
 }

@@ -35,16 +35,14 @@ type AgentStatusReport struct {
 	NodeID         int64   `json:"nodeID"`
 	NodeDelayIDs   []int64 `json:"nodeDelayIDs"`
 	NodeDelays     []int   `json:"nodeDelays"`
-	IPFSStatus     string  `json:"ipfsStatus"`
 	LocalDirStatus string  `json:"localDirStatus"`
 }
 
-func NewAgentStatusReportBody(nodeID int64, nodeDelayIDs []int64, nodeDelays []int, ipfsStatus string, localDirStatus string) *AgentStatusReport {
+func NewAgentStatusReportBody(nodeID int64, nodeDelayIDs []int64, nodeDelays []int, localDirStatus string) *AgentStatusReport {
 	return &AgentStatusReport{
 		NodeID:         nodeID,
 		NodeDelayIDs:   nodeDelayIDs,
 		NodeDelays:     nodeDelays,
-		IPFSStatus:     ipfsStatus,
 		LocalDirStatus: localDirStatus,
 	}
 }

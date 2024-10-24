@@ -44,6 +44,7 @@ create table Storage (
   Name varchar(100) not null comment '存储服务名称',
   NodeID int not null comment '存储服务所在节点的ID',
   Directory varchar(4096) not null comment '存储服务所在节点的目录',
+  Remote varchar(4096) not null,
   State varchar(100) comment '状态'
 ) comment = "存储服务表";
 
@@ -113,7 +114,7 @@ create table Package (
   PackageID int not null auto_increment primary key comment '包ID',
   Name varchar(100) not null comment '对象名',
   BucketID int not null comment '桶ID',
-  State varchar(100) not null comment '状态'
+  State varchar(100) not null comment '状态',
 );
 
 create table Object (
@@ -159,11 +160,12 @@ create table StoragePackage (
   primary key(StorageID, PackageID, UserID)
 );
 
-create table StoragePackageLog (
-  StorageID int not null comment '存储服务ID',
+create table PackageAccessStat (
   PackageID int not null comment '包ID',
-  UserID int not null comment '调度了此文件的用户ID',
-  CreateTime timestamp not null comment '加载Package完成的时间'
+  NodeID int not null comment '节点ID',
+  Amount float not null comment '前一日流量的滑动平均值',
+  Counter float not null comment '本日的流量',
+  primary key(PackageID, NodeID)
 );
 
 create table Location (
@@ -175,3 +177,11 @@ insert into
   Location (LocationID, Name)
 values
   (1, "Local");
+
+create table ObjectAccessStat (
+  ObjectID int not null comment '对象ID',
+  NodeID int not null comment '节点ID',
+  Amount float not null comment '前一日流量的滑动平均值',
+  Counter float not null comment '本日的流量',
+  primary key(ObjectID, NodeID)
+);
