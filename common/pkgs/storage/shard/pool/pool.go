@@ -12,6 +12,10 @@ func New() *ShardStorePool {
 
 }
 
+func (p *ShardStorePool) PutNew(stg cdssdk.Storage, config cdssdk.ShardStoreConfig) error {
+
+}
+
 func (p *ShardStorePool) Get(stgID cdssdk.StorageID) (types.ShardStore, error) {
 
 }

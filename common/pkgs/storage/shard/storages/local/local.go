@@ -3,11 +3,18 @@ package local
 import (
 	"io"
 
-	"gitlink.org.cn/cloudream/storage/common/pkgs/shardstore/types"
+	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/types"
 )
 
 type Local struct {
-	cfg Config
+	cfg cdssdk.LocalShardStorage
+}
+
+func New(stg cdssdk.Storage, cfg cdssdk.LocalShardStorage) *Local {
+	return &Local{
+		cfg: cfg,
+	}
 }
 
 func (s *Local) New() io.Writer {
@@ -24,7 +31,11 @@ func (s *Local) Remove(hash types.FileHash) error {
 }
 
 // 遍历所有文件，callback返回false则停止遍历
-func (s *Local) Walk(callback func(info types.FileInfo) bool) error {
+func (s *Local) ListAll() ([]types.FileInfo, error) {
+
+}
+
+func (s *Local) Purge(availables []types.FileHash) error {
 
 }
 
