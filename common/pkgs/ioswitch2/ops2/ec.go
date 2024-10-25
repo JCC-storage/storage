@@ -1,7 +1,6 @@
 package ops2
 
 import (
-	"context"
 	"fmt"
 	"io"
 
@@ -14,7 +13,6 @@ import (
 	"gitlink.org.cn/cloudream/common/utils/io2"
 	"gitlink.org.cn/cloudream/common/utils/sync2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ec"
-	"golang.org/x/sync/semaphore"
 )
 
 func init() {
@@ -23,116 +21,118 @@ func init() {
 	exec.UseOp[*ECMultiply]()
 }
 
-type ECReconstructAny struct {
-	EC                 cdssdk.ECRedundancy `json:"ec"`
-	Inputs             []*exec.StreamVar   `json:"inputs"`
-	Outputs            []*exec.StreamVar   `json:"outputs"`
-	InputBlockIndexes  []int               `json:"inputBlockIndexes"`
-	OutputBlockIndexes []int               `json:"outputBlockIndexes"`
-}
-
-func (o *ECReconstructAny) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
-	rs, err := ec.NewStreamRs(o.EC.K, o.EC.N, o.EC.ChunkSize)
-	if err != nil {
-		return fmt.Errorf("new ec: %w", err)
+/*
+	type ECReconstructAny struct {
+		EC                 cdssdk.ECRedundancy `json:"ec"`
+		Inputs             []exec.VarID        `json:"inputs"`
+		Outputs            []exec.VarID        `json:"outputs"`
+		InputBlockIndexes  []int               `json:"inputBlockIndexes"`
+		OutputBlockIndexes []int               `json:"outputBlockIndexes"`
 	}
 
-	err = exec.BindArrayVars(e, ctx.Context, o.Inputs)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		for _, s := range o.Inputs {
-			s.Stream.Close()
+	func (o *ECReconstructAny) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
+		rs, err := ec.NewStreamRs(o.EC.K, o.EC.N, o.EC.ChunkSize)
+		if err != nil {
+			return fmt.Errorf("new ec: %w", err)
 		}
-	}()
 
-	var inputs []io.Reader
-	for _, s := range o.Inputs {
-		inputs = append(inputs, s.Stream)
-	}
-
-	outputs := rs.ReconstructAny(inputs, o.InputBlockIndexes, o.OutputBlockIndexes)
-
-	sem := semaphore.NewWeighted(int64(len(o.Outputs)))
-	for i := range o.Outputs {
-		sem.Acquire(ctx.Context, 1)
-
-		o.Outputs[i].Stream = io2.AfterReadClosedOnce(outputs[i], func(closer io.ReadCloser) {
-			sem.Release(1)
-		})
-	}
-	exec.PutArrayVars(e, o.Outputs)
-
-	return sem.Acquire(ctx.Context, int64(len(o.Outputs)))
-}
-
-type ECReconstruct struct {
-	EC                cdssdk.ECRedundancy `json:"ec"`
-	Inputs            []*exec.StreamVar   `json:"inputs"`
-	Outputs           []*exec.StreamVar   `json:"outputs"`
-	InputBlockIndexes []int               `json:"inputBlockIndexes"`
-}
-
-func (o *ECReconstruct) Execute(ctx context.Context, e *exec.Executor) error {
-	rs, err := ec.NewStreamRs(o.EC.K, o.EC.N, o.EC.ChunkSize)
-	if err != nil {
-		return fmt.Errorf("new ec: %w", err)
-	}
-
-	err = exec.BindArrayVars(e, ctx, o.Inputs)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		for _, s := range o.Inputs {
-			s.Stream.Close()
+		err = exec.BindArrayVars(e, ctx.Context, inputs)
+		if err != nil {
+			return err
 		}
-	}()
+		defer func() {
+			for _, s := range o.Inputs {
+				s.Stream.Close()
+			}
+		}()
 
-	var inputs []io.Reader
-	for _, s := range o.Inputs {
-		inputs = append(inputs, s.Stream)
+		var inputs []io.Reader
+		for _, s := range o.Inputs {
+			inputs = append(inputs, s.Stream)
+		}
+
+		outputs := rs.ReconstructAny(inputs, o.InputBlockIndexes, o.OutputBlockIndexes)
+
+		sem := semaphore.NewWeighted(int64(len(o.Outputs)))
+		for i := range o.Outputs {
+			sem.Acquire(ctx.Context, 1)
+
+			o.Outputs[i].Stream = io2.AfterReadClosedOnce(outputs[i], func(closer io.ReadCloser) {
+				sem.Release(1)
+			})
+		}
+		e.PutVar(o.Outputs)
+
+		return sem.Acquire(ctx.Context, int64(len(o.Outputs)))
 	}
 
-	outputs := rs.ReconstructData(inputs, o.InputBlockIndexes)
-
-	sem := semaphore.NewWeighted(int64(len(o.Outputs)))
-	for i := range o.Outputs {
-		sem.Acquire(ctx, 1)
-
-		o.Outputs[i].Stream = io2.AfterReadClosedOnce(outputs[i], func(closer io.ReadCloser) {
-			sem.Release(1)
-		})
+	type ECReconstruct struct {
+		EC                cdssdk.ECRedundancy `json:"ec"`
+		Inputs            []exec.VarID        `json:"inputs"`
+		Outputs           []exec.VarID        `json:"outputs"`
+		InputBlockIndexes []int               `json:"inputBlockIndexes"`
 	}
-	exec.PutArrayVars(e, o.Outputs)
 
-	return sem.Acquire(ctx, int64(len(o.Outputs)))
-}
+	func (o *ECReconstruct) Execute(ctx context.Context, e *exec.Executor) error {
+		rs, err := ec.NewStreamRs(o.EC.K, o.EC.N, o.EC.ChunkSize)
+		if err != nil {
+			return fmt.Errorf("new ec: %w", err)
+		}
 
+		err = exec.BindArrayVars(e, ctx, o.Inputs)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			for _, s := range o.Inputs {
+				s.Stream.Close()
+			}
+		}()
+
+		var inputs []io.Reader
+		for _, s := range o.Inputs {
+			inputs = append(inputs, s.Stream)
+		}
+
+		outputs := rs.ReconstructData(inputs, o.InputBlockIndexes)
+
+		sem := semaphore.NewWeighted(int64(len(o.Outputs)))
+		for i := range o.Outputs {
+			sem.Acquire(ctx, 1)
+
+			o.Outputs[i].Stream = io2.AfterReadClosedOnce(outputs[i], func(closer io.ReadCloser) {
+				sem.Release(1)
+			})
+		}
+		e.PutVar(o.Outputs)
+
+		return sem.Acquire(ctx, int64(len(o.Outputs)))
+	}
+*/
 type ECMultiply struct {
-	Coef      [][]byte          `json:"coef"`
-	Inputs    []*exec.StreamVar `json:"inputs"`
-	Outputs   []*exec.StreamVar `json:"outputs"`
-	ChunkSize int               `json:"chunkSize"`
+	Coef      [][]byte     `json:"coef"`
+	Inputs    []exec.VarID `json:"inputs"`
+	Outputs   []exec.VarID `json:"outputs"`
+	ChunkSize int          `json:"chunkSize"`
 }
 
 func (o *ECMultiply) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
-	err := exec.BindArrayVars(e, ctx.Context, o.Inputs)
+	inputs, err := exec.BindArray[*exec.StreamValue](e, ctx.Context, o.Inputs)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		for _, s := range o.Inputs {
+		for _, s := range inputs {
 			s.Stream.Close()
 		}
 	}()
 
 	outputWrs := make([]*io.PipeWriter, len(o.Outputs))
+	outputVars := make([]*exec.StreamValue, len(o.Outputs))
 
 	for i := range o.Outputs {
 		rd, wr := io.Pipe()
-		o.Outputs[i].Stream = rd
+		outputVars[i].Stream = rd
 		outputWrs[i] = wr
 	}
 
@@ -150,7 +150,7 @@ func (o *ECMultiply) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 		}
 
 		for {
-			err := sync2.ParallelDo(o.Inputs, func(s *exec.StreamVar, i int) error {
+			err := sync2.ParallelDo(inputs, func(s *exec.StreamValue, i int) error {
 				_, err := io.ReadFull(s.Stream, inputChunks[i])
 				return err
 			})
@@ -179,7 +179,8 @@ func (o *ECMultiply) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 		}
 	}()
 
-	exec.PutArrayVars(e, o.Outputs)
+	exec.PutArray(e, o.Outputs, outputVars)
+
 	err = fut.Wait(ctx.Context)
 	if err != nil {
 		for _, wr := range outputWrs {
@@ -218,7 +219,7 @@ func (b *GraphNodeBuilder) NewECMultiply(ec cdssdk.ECRedundancy) *ECMultiplyNode
 	return node
 }
 
-func (t *ECMultiplyNode) AddInput(str *dag.StreamVar, dataIndex int) {
+func (t *ECMultiplyNode) AddInput(str *dag.Var, dataIndex int) {
 	t.InputIndexes = append(t.InputIndexes, dataIndex)
 	idx := t.InputStreams().EnlargeOne()
 	str.Connect(t, idx)
@@ -232,9 +233,9 @@ func (t *ECMultiplyNode) RemoveAllInputs() {
 	t.InputIndexes = nil
 }
 
-func (t *ECMultiplyNode) NewOutput(dataIndex int) *dag.StreamVar {
+func (t *ECMultiplyNode) NewOutput(dataIndex int) *dag.Var {
 	t.OutputIndexes = append(t.OutputIndexes, dataIndex)
-	output := t.Graph().NewStreamVar()
+	output := t.Graph().NewVar()
 	t.OutputStreams().SetupNew(t, output)
 	return output
 }
@@ -251,8 +252,8 @@ func (t *ECMultiplyNode) GenerateOp() (exec.Op, error) {
 
 	return &ECMultiply{
 		Coef:      coef,
-		Inputs:    lo.Map(t.InputStreams().RawArray(), func(v *dag.StreamVar, idx int) *exec.StreamVar { return v.Var }),
-		Outputs:   lo.Map(t.OutputStreams().RawArray(), func(v *dag.StreamVar, idx int) *exec.StreamVar { return v.Var }),
+		Inputs:    lo.Map(t.InputStreams().RawArray(), func(v *dag.Var, idx int) exec.VarID { return v.VarID }),
+		Outputs:   lo.Map(t.OutputStreams().RawArray(), func(v *dag.Var, idx int) exec.VarID { return v.VarID }),
 		ChunkSize: t.EC.ChunkSize,
 	}, nil
 }

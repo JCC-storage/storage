@@ -18,59 +18,57 @@ func init() {
 }
 
 type CloneStream struct {
-	Raw     *exec.StreamVar   `json:"raw"`
-	Cloneds []*exec.StreamVar `json:"cloneds"`
+	Raw     exec.VarID   `json:"raw"`
+	Cloneds []exec.VarID `json:"cloneds"`
 }
 
 func (o *CloneStream) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
-	err := e.BindVars(ctx.Context, o.Raw)
+	raw, err := exec.BindVar[*exec.StreamValue](e, ctx.Context, o.Raw)
 	if err != nil {
 		return err
 	}
-	defer o.Raw.Stream.Close()
+	defer raw.Stream.Close()
 
-	cloned := io2.Clone(o.Raw.Stream, len(o.Cloneds))
+	cloned := io2.Clone(raw.Stream, len(o.Cloneds))
 
 	sem := semaphore.NewWeighted(int64(len(o.Cloneds)))
 	for i, s := range cloned {
 		sem.Acquire(ctx.Context, 1)
 
-		o.Cloneds[i].Stream = io2.AfterReadClosedOnce(s, func(closer io.ReadCloser) {
-			sem.Release(1)
+		e.PutVar(o.Cloneds[i], &exec.StreamValue{
+			Stream: io2.AfterReadClosedOnce(s, func(closer io.ReadCloser) {
+				sem.Release(1)
+			}),
 		})
 	}
-	exec.PutArrayVars(e, o.Cloneds)
 
 	return sem.Acquire(ctx.Context, int64(len(o.Cloneds)))
 }
 
 func (o *CloneStream) String() string {
-	return fmt.Sprintf("CloneStream %v -> (%v)", o.Raw.ID, utils.FormatVarIDs(o.Cloneds))
+	return fmt.Sprintf("CloneStream %v -> (%v)", o.Raw, utils.FormatVarIDs(o.Cloneds))
 }
 
 type CloneVar struct {
-	Raw     exec.Var   `json:"raw"`
-	Cloneds []exec.Var `json:"cloneds"`
+	Raw     exec.VarID   `json:"raw"`
+	Cloneds []exec.VarID `json:"cloneds"`
 }
 
 func (o *CloneVar) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
-	err := e.BindVars(ctx.Context, o.Raw)
+	raw, err := e.BindVar(ctx.Context, o.Raw)
 	if err != nil {
 		return err
 	}
 
-	for _, v := range o.Cloneds {
-		if err := exec.AssignVar(o.Raw, v); err != nil {
-			return fmt.Errorf("clone var: %w", err)
-		}
+	for i := range o.Cloneds {
+		e.PutVar(o.Cloneds[i], raw.Clone())
 	}
-	e.PutVars(o.Cloneds...)
 
 	return nil
 }
 
 func (o *CloneVar) String() string {
-	return fmt.Sprintf("CloneStream %v -> (%v)", o.Raw.GetID(), utils.FormatVarIDs(o.Cloneds))
+	return fmt.Sprintf("CloneStream %v -> (%v)", o.Raw, utils.FormatVarIDs(o.Cloneds))
 }
 
 type CloneStreamType struct {
@@ -83,22 +81,22 @@ func (b *GraphNodeBuilder) NewCloneStream() *CloneStreamType {
 	return node
 }
 
-func (t *CloneStreamType) SetInput(raw *dag.StreamVar) {
+func (t *CloneStreamType) SetInput(raw *dag.Var) {
 	t.InputStreams().EnsureSize(1)
 	raw.Connect(t, 0)
 }
 
-func (t *CloneStreamType) NewOutput() *dag.StreamVar {
-	output := t.Graph().NewStreamVar()
+func (t *CloneStreamType) NewOutput() *dag.Var {
+	output := t.Graph().NewVar()
 	t.OutputStreams().SetupNew(t, output)
 	return output
 }
 
 func (t *CloneStreamType) GenerateOp() (exec.Op, error) {
 	return &CloneStream{
-		Raw: t.InputStreams().Get(0).Var,
-		Cloneds: lo.Map(t.OutputStreams().RawArray(), func(v *dag.StreamVar, idx int) *exec.StreamVar {
-			return v.Var
+		Raw: t.InputStreams().Get(0).VarID,
+		Cloneds: lo.Map(t.OutputStreams().RawArray(), func(v *dag.Var, idx int) exec.VarID {
+			return v.VarID
 		}),
 	}, nil
 }
@@ -117,22 +115,22 @@ func (b *GraphNodeBuilder) NewCloneValue() *CloneVarType {
 	return node
 }
 
-func (t *CloneVarType) SetInput(raw *dag.ValueVar) {
+func (t *CloneVarType) SetInput(raw *dag.Var) {
 	t.InputValues().EnsureSize(1)
 	raw.Connect(t, 0)
 }
 
-func (t *CloneVarType) NewOutput() *dag.ValueVar {
-	output := t.Graph().NewValueVar(t.InputValues().Get(0).Type)
+func (t *CloneVarType) NewOutput() *dag.Var {
+	output := t.Graph().NewVar()
 	t.OutputValues().SetupNew(t, output)
 	return output
 }
 
 func (t *CloneVarType) GenerateOp() (exec.Op, error) {
 	return &CloneVar{
-		Raw: t.InputValues().Get(0).Var,
-		Cloneds: lo.Map(t.OutputValues().RawArray(), func(v *dag.ValueVar, idx int) exec.Var {
-			return v.Var
+		Raw: t.InputValues().Get(0).VarID,
+		Cloneds: lo.Map(t.OutputValues().RawArray(), func(v *dag.Var, idx int) exec.VarID {
+			return v.VarID
 		}),
 	}, nil
 }

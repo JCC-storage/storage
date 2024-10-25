@@ -26,7 +26,7 @@ func NewParser(ec cdssdk.ECRedundancy) *DefaultParser {
 }
 
 type IndexedStream struct {
-	Stream    *dag.StreamVar
+	Stream    *dag.Var
 	DataIndex int
 }
 
@@ -94,8 +94,8 @@ func (p *DefaultParser) Parse(ft ioswitch2.FromTo, blder *exec.PlanBuilder) erro
 
 	return plan.Generate(ctx.DAG.Graph, blder)
 }
-func (p *DefaultParser) findOutputStream(ctx *ParseContext, streamIndex int) *dag.StreamVar {
-	var ret *dag.StreamVar
+func (p *DefaultParser) findOutputStream(ctx *ParseContext, streamIndex int) *dag.Var {
+	var ret *dag.Var
 	for _, s := range ctx.IndexedStreams {
 		if s.DataIndex == streamIndex {
 			ret = s.Stream
@@ -166,7 +166,7 @@ func (p *DefaultParser) extend(ctx *ParseContext) error {
 	}
 
 	// 如果有K个不同的文件块流，则生成Multiply指令，同时针对其生成的流，生成Join指令
-	ecInputStrs := make(map[int]*dag.StreamVar)
+	ecInputStrs := make(map[int]*dag.Var)
 	for _, s := range ctx.IndexedStreams {
 		if s.DataIndex >= 0 && ecInputStrs[s.DataIndex] == nil {
 			ecInputStrs[s.DataIndex] = s.Stream

@@ -66,10 +66,7 @@ func (s *Service) SendStream(server agtrpc.Agent_SendStreamServer) error {
 	pr, pw := io.Pipe()
 
 	varID := exec.VarID(msg.VarID)
-	sw.PutVars(&exec.StreamVar{
-		ID:     varID,
-		Stream: pr,
-	})
+	sw.PutVar(varID, &exec.StreamValue{Stream: pr})
 
 	// 然后读取文件数据
 	var recvSize int64
@@ -132,17 +129,14 @@ func (s *Service) GetStream(req *agtrpc.GetStreamReq, server agtrpc.Agent_GetStr
 		return fmt.Errorf("plan not found")
 	}
 
-	signal, err := serder.JSONToObjectEx[*exec.SignalVar]([]byte(req.Signal))
+	signal, err := serder.JSONToObjectEx[exec.VarValue]([]byte(req.Signal))
 	if err != nil {
 		return fmt.Errorf("deserializing var: %w", err)
 	}
 
-	sw.PutVars(signal)
+	sw.PutVar(exec.VarID(req.SignalID), signal)
 
-	strVar := &exec.StreamVar{
-		ID: exec.VarID(req.VarID),
-	}
-	err = sw.BindVars(server.Context(), strVar)
+	strVar, err := exec.BindVar[*exec.StreamValue](sw, server.Context(), exec.VarID(req.VarID))
 	if err != nil {
 		return fmt.Errorf("binding vars: %w", err)
 	}
@@ -205,12 +199,12 @@ func (s *Service) SendVar(ctx context.Context, req *agtrpc.SendVarReq) (*agtrpc.
 		return nil, fmt.Errorf("plan not found")
 	}
 
-	v, err := serder.JSONToObjectEx[exec.Var]([]byte(req.Var))
+	v, err := serder.JSONToObjectEx[exec.VarValue]([]byte(req.VarValue))
 	if err != nil {
 		return nil, fmt.Errorf("deserializing var: %w", err)
 	}
 
-	sw.PutVars(v)
+	sw.PutVar(exec.VarID(req.VarID), v)
 	return &agtrpc.SendVarResp{}, nil
 }
 
@@ -223,19 +217,14 @@ func (s *Service) GetVar(ctx context.Context, req *agtrpc.GetVarReq) (*agtrpc.Ge
 		return nil, fmt.Errorf("plan not found")
 	}
 
-	v, err := serder.JSONToObjectEx[exec.Var]([]byte(req.Var))
+	signal, err := serder.JSONToObjectEx[exec.VarValue]([]byte(req.Signal))
 	if err != nil {
 		return nil, fmt.Errorf("deserializing var: %w", err)
 	}
 
-	signal, err := serder.JSONToObjectEx[*exec.SignalVar]([]byte(req.Signal))
-	if err != nil {
-		return nil, fmt.Errorf("deserializing var: %w", err)
-	}
+	sw.PutVar(exec.VarID(req.SignalID), signal)
 
-	sw.PutVars(signal)
-
-	err = sw.BindVars(ctx, v)
+	v, err := sw.BindVar(ctx, exec.VarID(req.VarID))
 	if err != nil {
 		return nil, fmt.Errorf("binding vars: %w", err)
 	}

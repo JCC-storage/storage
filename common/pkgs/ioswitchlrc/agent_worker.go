@@ -47,17 +47,17 @@ type AgentWorkerClient struct {
 func (c *AgentWorkerClient) ExecutePlan(ctx context.Context, plan exec.Plan) error {
 	return c.cli.ExecuteIOPlan(ctx, plan)
 }
-func (c *AgentWorkerClient) SendStream(ctx context.Context, planID exec.PlanID, v *exec.StreamVar, str io.ReadCloser) error {
-	return c.cli.SendStream(ctx, planID, v.ID, str)
+func (c *AgentWorkerClient) SendStream(ctx context.Context, planID exec.PlanID, id exec.VarID, stream io.ReadCloser) error {
+	return c.cli.SendStream(ctx, planID, id, stream)
 }
-func (c *AgentWorkerClient) SendVar(ctx context.Context, planID exec.PlanID, v exec.Var) error {
-	return c.cli.SendVar(ctx, planID, v)
+func (c *AgentWorkerClient) SendVar(ctx context.Context, planID exec.PlanID, id exec.VarID, value exec.VarValue) error {
+	return c.cli.SendVar(ctx, planID, id, value)
 }
-func (c *AgentWorkerClient) GetStream(ctx context.Context, planID exec.PlanID, v *exec.StreamVar, signal *exec.SignalVar) (io.ReadCloser, error) {
-	return c.cli.GetStream(ctx, planID, v.ID, signal)
+func (c *AgentWorkerClient) GetStream(ctx context.Context, planID exec.PlanID, streamID exec.VarID, signalID exec.VarID, signal exec.VarValue) (io.ReadCloser, error) {
+	return c.cli.GetStream(ctx, planID, streamID, signalID, signal)
 }
-func (c *AgentWorkerClient) GetVar(ctx context.Context, planID exec.PlanID, v exec.Var, signal *exec.SignalVar) error {
-	return c.cli.GetVar(ctx, planID, v, signal)
+func (c *AgentWorkerClient) GetVar(ctx context.Context, planID exec.PlanID, varID exec.VarID, signalID exec.VarID, signal exec.VarValue) (exec.VarValue, error) {
+	return c.cli.GetVar(ctx, planID, varID, signalID, signal)
 }
 func (c *AgentWorkerClient) Close() error {
 	stgglb.AgentRPCPool.Release(c.cli)
