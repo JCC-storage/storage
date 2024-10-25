@@ -17,10 +17,19 @@ import (
 func init() {
 	exec.UseOp[*ShardRead]()
 	exec.UseOp[*ShardWrite]()
+	exec.UseVarValue[*FileHashValue]()
+}
+
+type FileHashValue struct {
+	Hash types.FileHash `json:"hash"`
+}
+
+func (v *FileHashValue) Clone() exec.VarValue {
+	return &FileHashValue{Hash: v.Hash}
 }
 
 type ShardRead struct {
-	Output    *exec.StreamVar  `json:"output"`
+	Output    exec.VarID       `json:"output"`
 	StorageID cdssdk.StorageID `json:"storageID"`
 	Open      types.OpenOption `json:"option"`
 }
@@ -47,28 +56,29 @@ func (o *ShardRead) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 	}
 
 	fut := future.NewSetVoid()
-	o.Output.Stream = io2.AfterReadClosedOnce(file, func(closer io.ReadCloser) {
-		fut.SetVoid()
+	e.PutVar(o.Output, &exec.StreamValue{
+		Stream: io2.AfterReadClosedOnce(file, func(closer io.ReadCloser) {
+			fut.SetVoid()
+		}),
 	})
-	e.PutVars(o.Output)
 
 	return fut.Wait(ctx.Context)
 }
 
 func (o *ShardRead) String() string {
-	return fmt.Sprintf("ShardRead %v -> %v", o.Open, o.Output.ID)
+	return fmt.Sprintf("ShardRead %v -> %v", o.Open, o.Output)
 }
 
 type ShardWrite struct {
-	Input     *exec.StreamVar  `json:"input"`
-	FileHash  *exec.StringVar  `json:"fileHash"`
+	Input     exec.VarID       `json:"input"`
+	FileHash  exec.VarID       `json:"fileHash"`
 	StorageID cdssdk.StorageID `json:"storageID"`
 }
 
 func (o *ShardWrite) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 	logger.
-		WithField("Input", o.Input.ID).
-		WithField("FileHashVar", o.FileHash.ID).
+		WithField("Input", o.Input).
+		WithField("FileHash", o.FileHash).
 		Debugf("writting file to shard store")
 	defer logger.Debugf("write to shard store finished")
 
@@ -82,16 +92,16 @@ func (o *ShardWrite) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 		return fmt.Errorf("getting shard store %v: %w", o.StorageID, err)
 	}
 
-	err = e.BindVars(ctx.Context, o.Input)
+	input, err := exec.BindVar[*exec.StreamValue](e, ctx.Context, o.Input)
 	if err != nil {
 		return err
 	}
-	defer o.Input.Stream.Close()
+	defer input.Stream.Close()
 
 	writer := store.New()
 	defer writer.Abort()
 
-	_, err = io.Copy(writer, o.Input.Stream)
+	_, err = io.Copy(writer, input.Stream)
 	if err != nil {
 		return fmt.Errorf("writing file to shard store: %w", err)
 	}
@@ -101,14 +111,14 @@ func (o *ShardWrite) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 		return fmt.Errorf("finishing writing file to shard store: %w", err)
 	}
 
-	o.FileHash.Value = string(fileInfo.Hash)
-
-	e.PutVars(o.FileHash)
+	e.PutVar(o.FileHash, &FileHashValue{
+		Hash: fileInfo.Hash,
+	})
 	return nil
 }
 
 func (o *ShardWrite) String() string {
-	return fmt.Sprintf("ShardWrite %v -> %v", o.Input.ID, o.FileHash.ID)
+	return fmt.Sprintf("ShardWrite %v -> %v", o.Input, o.FileHash)
 }
 
 type ShardReadNode struct {
@@ -123,12 +133,12 @@ func (b *GraphNodeBuilder) NewShardRead(stgID cdssdk.StorageID, open types.OpenO
 		Open:      open,
 	}
 	b.AddNode(node)
-	node.OutputStreams().SetupNew(node, b.NewStreamVar())
+	node.OutputStreams().SetupNew(node, b.NewVar())
 	return node
 }
 
-func (t *ShardReadNode) Output() dag.StreamSlot {
-	return dag.StreamSlot{
+func (t *ShardReadNode) Output() dag.Slot {
+	return dag.Slot{
 		Var:   t.OutputStreams().Get(0),
 		Index: 0,
 	}
@@ -136,7 +146,7 @@ func (t *ShardReadNode) Output() dag.StreamSlot {
 
 func (t *ShardReadNode) GenerateOp() (exec.Op, error) {
 	return &ShardRead{
-		Output:    t.OutputStreams().Get(0).Var,
+		Output:    t.OutputStreams().Get(0).VarID,
 		StorageID: t.StorageID,
 		Open:      t.Open,
 	}, nil
@@ -159,27 +169,27 @@ func (b *GraphNodeBuilder) NewShardWrite(fileHashStoreKey string) *ShardWriteNod
 	return node
 }
 
-func (t *ShardWriteNode) SetInput(input *dag.StreamVar) {
+func (t *ShardWriteNode) SetInput(input *dag.Var) {
 	t.InputStreams().EnsureSize(1)
 	input.Connect(t, 0)
-	t.OutputValues().SetupNew(t, t.Graph().NewValueVar(dag.StringValueVar))
+	t.OutputValues().SetupNew(t, t.Graph().NewVar())
 }
 
-func (t *ShardWriteNode) Input() dag.StreamSlot {
-	return dag.StreamSlot{
+func (t *ShardWriteNode) Input() dag.Slot {
+	return dag.Slot{
 		Var:   t.InputStreams().Get(0),
 		Index: 0,
 	}
 }
 
-func (t *ShardWriteNode) FileHashVar() *dag.ValueVar {
+func (t *ShardWriteNode) FileHashVar() *dag.Var {
 	return t.OutputValues().Get(0)
 }
 
 func (t *ShardWriteNode) GenerateOp() (exec.Op, error) {
 	return &ShardWrite{
-		Input:    t.InputStreams().Get(0).Var,
-		FileHash: t.OutputValues().Get(0).Var.(*exec.StringVar),
+		Input:    t.InputStreams().Get(0).VarID,
+		FileHash: t.OutputValues().Get(0).VarID,
 	}, nil
 }
 

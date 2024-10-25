@@ -21,28 +21,28 @@ func init() {
 }
 
 type GalMultiply struct {
-	Coef      [][]byte          `json:"coef"`
-	Inputs    []*exec.StreamVar `json:"inputs"`
-	Outputs   []*exec.StreamVar `json:"outputs"`
-	ChunkSize int               `json:"chunkSize"`
+	Coef      [][]byte     `json:"coef"`
+	Inputs    []exec.VarID `json:"inputs"`
+	Outputs   []exec.VarID `json:"outputs"`
+	ChunkSize int          `json:"chunkSize"`
 }
 
 func (o *GalMultiply) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
-	err := exec.BindArrayVars(e, ctx.Context, o.Inputs)
+	inputs, err := exec.BindArray[*exec.StreamValue](e, ctx.Context, o.Inputs)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		for _, s := range o.Inputs {
+		for _, s := range inputs {
 			s.Stream.Close()
 		}
 	}()
 
 	outputWrs := make([]*io.PipeWriter, len(o.Outputs))
-
+	outputVars := make([]*exec.StreamValue, len(o.Outputs))
 	for i := range o.Outputs {
 		rd, wr := io.Pipe()
-		o.Outputs[i].Stream = rd
+		outputVars[i].Stream = rd
 		outputWrs[i] = wr
 	}
 
@@ -60,7 +60,7 @@ func (o *GalMultiply) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 		}
 
 		for {
-			err := sync2.ParallelDo(o.Inputs, func(s *exec.StreamVar, i int) error {
+			err := sync2.ParallelDo(inputs, func(s *exec.StreamValue, i int) error {
 				_, err := io.ReadFull(s.Stream, inputChunks[i])
 				return err
 			})
@@ -89,7 +89,7 @@ func (o *GalMultiply) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 		}
 	}()
 
-	exec.PutArrayVars(e, o.Outputs)
+	exec.PutArray(e, o.Outputs, outputVars)
 	err = fut.Wait(ctx.Context)
 	if err != nil {
 		for _, wr := range outputWrs {
@@ -128,7 +128,7 @@ func (b *GraphNodeBuilder) NewLRCConstructAny(lrc cdssdk.LRCRedundancy) *LRCCons
 	return node
 }
 
-func (t *LRCConstructAnyNode) AddInput(str *dag.StreamVar, dataIndex int) {
+func (t *LRCConstructAnyNode) AddInput(str *dag.Var, dataIndex int) {
 	t.InputIndexes = append(t.InputIndexes, dataIndex)
 	idx := t.InputStreams().EnlargeOne()
 	str.Connect(t, idx)
@@ -142,9 +142,9 @@ func (t *LRCConstructAnyNode) RemoveAllInputs() {
 	t.InputIndexes = nil
 }
 
-func (t *LRCConstructAnyNode) NewOutput(dataIndex int) *dag.StreamVar {
+func (t *LRCConstructAnyNode) NewOutput(dataIndex int) *dag.Var {
 	t.OutputIndexes = append(t.OutputIndexes, dataIndex)
-	output := t.Graph().NewStreamVar()
+	output := t.Graph().NewVar()
 	t.OutputStreams().SetupNew(t, output)
 	return output
 }
@@ -161,8 +161,8 @@ func (t *LRCConstructAnyNode) GenerateOp() (exec.Op, error) {
 
 	return &GalMultiply{
 		Coef:      coef,
-		Inputs:    lo.Map(t.InputStreams().RawArray(), func(v *dag.StreamVar, idx int) *exec.StreamVar { return v.Var }),
-		Outputs:   lo.Map(t.OutputStreams().RawArray(), func(v *dag.StreamVar, idx int) *exec.StreamVar { return v.Var }),
+		Inputs:    lo.Map(t.InputStreams().RawArray(), func(v *dag.Var, idx int) exec.VarID { return v.VarID }),
+		Outputs:   lo.Map(t.OutputStreams().RawArray(), func(v *dag.Var, idx int) exec.VarID { return v.VarID }),
 		ChunkSize: t.LRC.ChunkSize,
 	}, nil
 }
@@ -185,7 +185,7 @@ func (b *GraphNodeBuilder) NewLRCConstructGroup(lrc cdssdk.LRCRedundancy) *LRCCo
 	return node
 }
 
-func (t *LRCConstructGroupNode) SetupForTarget(blockIdx int, inputs []*dag.StreamVar) *dag.StreamVar {
+func (t *LRCConstructGroupNode) SetupForTarget(blockIdx int, inputs []*dag.Var) *dag.Var {
 	t.TargetBlockIndex = blockIdx
 
 	t.InputStreams().Resize(0)
@@ -194,7 +194,7 @@ func (t *LRCConstructGroupNode) SetupForTarget(blockIdx int, inputs []*dag.Strea
 		in.Connect(t, idx)
 	}
 
-	output := t.Graph().NewStreamVar()
+	output := t.Graph().NewVar()
 	t.OutputStreams().Setup(t, output, 0)
 	return output
 }
@@ -211,8 +211,8 @@ func (t *LRCConstructGroupNode) GenerateOp() (exec.Op, error) {
 
 	return &GalMultiply{
 		Coef:      coef,
-		Inputs:    lo.Map(t.InputStreams().RawArray(), func(v *dag.StreamVar, idx int) *exec.StreamVar { return v.Var }),
-		Outputs:   lo.Map(t.OutputStreams().RawArray(), func(v *dag.StreamVar, idx int) *exec.StreamVar { return v.Var }),
+		Inputs:    lo.Map(t.InputStreams().RawArray(), func(v *dag.Var, idx int) exec.VarID { return v.VarID }),
+		Outputs:   lo.Map(t.OutputStreams().RawArray(), func(v *dag.Var, idx int) exec.VarID { return v.VarID }),
 		ChunkSize: t.LRC.ChunkSize,
 	}, nil
 }

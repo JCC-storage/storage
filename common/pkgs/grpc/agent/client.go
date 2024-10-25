@@ -132,7 +132,7 @@ func (c *Client) SendStream(ctx context.Context, planID exec.PlanID, varID exec.
 	}
 }
 
-func (c *Client) GetStream(ctx context.Context, planID exec.PlanID, varID exec.VarID, signal *exec.SignalVar) (io.ReadCloser, error) {
+func (c *Client) GetStream(ctx context.Context, planID exec.PlanID, varID exec.VarID, signalID exec.VarID, signal exec.VarValue) (io.ReadCloser, error) {
 	ctx, cancel := context.WithCancel(ctx)
 
 	sdata, err := serder.ObjectToJSONEx(signal)
@@ -142,9 +142,10 @@ func (c *Client) GetStream(ctx context.Context, planID exec.PlanID, varID exec.V
 	}
 
 	stream, err := c.cli.GetStream(ctx, &GetStreamReq{
-		PlanID: string(planID),
-		VarID:  int32(varID),
-		Signal: string(sdata),
+		PlanID:   string(planID),
+		VarID:    int32(varID),
+		SignalID: int32(signalID),
+		Signal:   string(sdata),
 	})
 	if err != nil {
 		cancel()
@@ -157,50 +158,42 @@ func (c *Client) GetStream(ctx context.Context, planID exec.PlanID, varID exec.V
 	}, nil
 }
 
-func (c *Client) SendVar(ctx context.Context, planID exec.PlanID, v exec.Var) error {
-	data, err := serder.ObjectToJSONEx(v)
+func (c *Client) SendVar(ctx context.Context, planID exec.PlanID, id exec.VarID, value exec.VarValue) error {
+	data, err := serder.ObjectToJSONEx(value)
 	if err != nil {
 		return err
 	}
 
 	_, err = c.cli.SendVar(ctx, &SendVarReq{
-		PlanID: string(planID),
-		Var:    string(data),
+		PlanID:   string(planID),
+		VarID:    int32(id),
+		VarValue: string(data),
 	})
 	return err
 }
 
-func (c *Client) GetVar(ctx context.Context, planID exec.PlanID, v exec.Var, signal *exec.SignalVar) error {
-	vdata, err := serder.ObjectToJSONEx(v)
-	if err != nil {
-		return err
-	}
-
+func (c *Client) GetVar(ctx context.Context, planID exec.PlanID, varID exec.VarID, signalID exec.VarID, signal exec.VarValue) (exec.VarValue, error) {
 	sdata, err := serder.ObjectToJSONEx(signal)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	resp, err := c.cli.GetVar(ctx, &GetVarReq{
-		PlanID: string(planID),
-		Var:    string(vdata),
-		Signal: string(sdata),
+		PlanID:   string(planID),
+		VarID:    int32(varID),
+		SignalID: int32(signalID),
+		Signal:   string(sdata),
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	v2, err := serder.JSONToObjectEx[exec.Var]([]byte(resp.Var))
+	getVar, err := serder.JSONToObjectEx[exec.VarValue]([]byte(resp.Var))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = exec.AssignVar(v2, v)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return getVar, nil
 }
 
 func (c *Client) Ping() error {

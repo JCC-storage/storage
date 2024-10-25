@@ -271,7 +271,7 @@ func ReconstructGroup(frs []ioswitchlrc.From, toes []ioswitchlrc.To, blder *exec
 
 func buildDAGReconstructGroup(ctx *GenerateContext, frs []ioswitchlrc.From, toes []ioswitchlrc.To) error {
 
-	var inputs []*dag.StreamVar
+	var inputs []*dag.Var
 	for _, fr := range frs {
 		frNode, err := buildFromNode(ctx, fr)
 		if err != nil {

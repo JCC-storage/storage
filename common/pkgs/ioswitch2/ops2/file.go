@@ -18,16 +18,16 @@ func init() {
 }
 
 type FileWrite struct {
-	Input    *exec.StreamVar `json:"input"`
-	FilePath string          `json:"filePath"`
+	Input    exec.VarID `json:"input"`
+	FilePath string     `json:"filePath"`
 }
 
 func (o *FileWrite) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
-	err := e.BindVars(ctx.Context, o.Input)
+	input, err := exec.BindVar[*exec.StreamValue](e, ctx.Context, o.Input)
 	if err != nil {
 		return err
 	}
-	defer o.Input.Stream.Close()
+	defer input.Stream.Close()
 
 	dir := path.Dir(o.FilePath)
 	err = os.MkdirAll(dir, 0777)
@@ -41,7 +41,7 @@ func (o *FileWrite) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 	}
 	defer file.Close()
 
-	_, err = io.Copy(file, o.Input.Stream)
+	_, err = io.Copy(file, input.Stream)
 	if err != nil {
 		return fmt.Errorf("copying data to file: %w", err)
 	}
@@ -50,12 +50,12 @@ func (o *FileWrite) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 }
 
 func (o *FileWrite) String() string {
-	return fmt.Sprintf("FileWrite %v -> %s", o.Input.ID, o.FilePath)
+	return fmt.Sprintf("FileWrite %v -> %s", o.Input, o.FilePath)
 }
 
 type FileRead struct {
-	Output   *exec.StreamVar `json:"output"`
-	FilePath string          `json:"filePath"`
+	Output   exec.VarID `json:"output"`
+	FilePath string     `json:"filePath"`
 }
 
 func (o *FileRead) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
@@ -65,17 +65,18 @@ func (o *FileRead) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 	}
 
 	fut := future.NewSetVoid()
-	o.Output.Stream = io2.AfterReadClosed(file, func(closer io.ReadCloser) {
-		fut.SetVoid()
+	e.PutVar(o.Output, &exec.StreamValue{
+		Stream: io2.AfterReadClosed(file, func(closer io.ReadCloser) {
+			fut.SetVoid()
+		}),
 	})
-	e.PutVars(o.Output)
 	fut.Wait(ctx.Context)
 
 	return nil
 }
 
 func (o *FileRead) String() string {
-	return fmt.Sprintf("FileRead %s -> %v", o.FilePath, o.Output.ID)
+	return fmt.Sprintf("FileRead %s -> %v", o.FilePath, o.Output)
 }
 
 type FileReadNode struct {
@@ -88,12 +89,12 @@ func (b *GraphNodeBuilder) NewFileRead(filePath string) *FileReadNode {
 		FilePath: filePath,
 	}
 	b.AddNode(node)
-	node.OutputStreams().SetupNew(node, b.NewStreamVar())
+	node.OutputStreams().SetupNew(node, b.NewVar())
 	return node
 }
 
-func (t *FileReadNode) Output() dag.StreamSlot {
-	return dag.StreamSlot{
+func (t *FileReadNode) Output() dag.Slot {
+	return dag.Slot{
 		Var:   t.OutputStreams().Get(0),
 		Index: 0,
 	}
@@ -101,7 +102,7 @@ func (t *FileReadNode) Output() dag.StreamSlot {
 
 func (t *FileReadNode) GenerateOp() (exec.Op, error) {
 	return &FileRead{
-		Output:   t.OutputStreams().Get(0).Var,
+		Output:   t.OutputStreams().Get(0).VarID,
 		FilePath: t.FilePath,
 	}, nil
 }
@@ -123,21 +124,21 @@ func (b *GraphNodeBuilder) NewFileWrite(filePath string) *FileWriteNode {
 	return node
 }
 
-func (t *FileWriteNode) Input() dag.StreamSlot {
-	return dag.StreamSlot{
+func (t *FileWriteNode) Input() dag.Slot {
+	return dag.Slot{
 		Var:   t.InputStreams().Get(0),
 		Index: 0,
 	}
 }
 
-func (t *FileWriteNode) SetInput(str *dag.StreamVar) {
+func (t *FileWriteNode) SetInput(str *dag.Var) {
 	t.InputStreams().EnsureSize(1)
 	str.Connect(t, 0)
 }
 
 func (t *FileWriteNode) GenerateOp() (exec.Op, error) {
 	return &FileWrite{
-		Input:    t.InputStreams().Get(0).Var,
+		Input:    t.InputStreams().Get(0).VarID,
 		FilePath: t.FilePath,
 	}, nil
 }
