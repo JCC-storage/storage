@@ -3,8 +3,8 @@ package mq
 import (
 	"database/sql"
 	"fmt"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/samber/lo"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
@@ -18,13 +18,13 @@ import (
 
 func (svc *Service) GetPackageObjects(msg *coormq.GetPackageObjects) (*coormq.GetPackageObjectsResp, *mq.CodeMessage) {
 	var objs []cdssdk.Object
-	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
-		_, err := svc.db.Package().GetUserPackage(tx, msg.UserID, msg.PackageID)
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
+		_, err := svc.db2.Package().GetUserPackage(tx, msg.UserID, msg.PackageID)
 		if err != nil {
 			return fmt.Errorf("getting package by id: %w", err)
 		}
 
-		objs, err = svc.db.Object().GetPackageObjects(svc.db.SQLCtx(), msg.PackageID)
+		objs, err = svc.db2.Object().GetPackageObjects(tx, msg.PackageID)
 		if err != nil {
 			return fmt.Errorf("getting package objects: %w", err)
 		}
@@ -44,14 +44,14 @@ func (svc *Service) GetPackageObjects(msg *coormq.GetPackageObjects) (*coormq.Ge
 func (svc *Service) GetPackageObjectDetails(msg *coormq.GetPackageObjectDetails) (*coormq.GetPackageObjectDetailsResp, *mq.CodeMessage) {
 	var details []stgmod.ObjectDetail
 	// 必须放在事务里进行，因为GetPackageBlockDetails是由多次数据库操作组成，必须保证数据的一致性
-	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
 		var err error
-		_, err = svc.db.Package().GetByID(tx, msg.PackageID)
+		_, err = svc.db2.Package().GetByID(tx, msg.PackageID)
 		if err != nil {
 			return fmt.Errorf("getting package by id: %w", err)
 		}
 
-		details, err = svc.db.Object().GetPackageObjectDetails(tx, msg.PackageID)
+		details, err = svc.db2.Object().GetPackageObjectDetails(tx, msg.PackageID)
 		if err != nil {
 			return fmt.Errorf("getting package block details: %w", err)
 		}
@@ -69,13 +69,13 @@ func (svc *Service) GetPackageObjectDetails(msg *coormq.GetPackageObjectDetails)
 
 func (svc *Service) GetObjectDetails(msg *coormq.GetObjectDetails) (*coormq.GetObjectDetailsResp, *mq.CodeMessage) {
 	details := make([]*stgmod.ObjectDetail, len(msg.ObjectIDs))
-	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
 		var err error
 
 		msg.ObjectIDs = sort2.SortAsc(msg.ObjectIDs)
 
 		// 根据ID依次查询Object，ObjectBlock，PinnedObject，并根据升序的特点进行合并
-		objs, err := svc.db.Object().BatchGet(tx, msg.ObjectIDs)
+		objs, err := svc.db2.Object().BatchGet(tx, msg.ObjectIDs)
 		if err != nil {
 			return fmt.Errorf("batch get objects: %w", err)
 		}
@@ -98,7 +98,7 @@ func (svc *Service) GetObjectDetails(msg *coormq.GetObjectDetails) (*coormq.GetO
 		}
 
 		// 查询合并
-		blocks, err := svc.db.ObjectBlock().BatchGetByObjectID(tx, msg.ObjectIDs)
+		blocks, err := svc.db2.ObjectBlock().BatchGetByObjectID(tx, msg.ObjectIDs)
 		if err != nil {
 			return fmt.Errorf("batch get object blocks: %w", err)
 		}
@@ -121,7 +121,7 @@ func (svc *Service) GetObjectDetails(msg *coormq.GetObjectDetails) (*coormq.GetO
 		}
 
 		// 查询合并
-		pinneds, err := svc.db.PinnedObject().BatchGetByObjectID(tx, msg.ObjectIDs)
+		pinneds, err := svc.db2.PinnedObject().BatchGetByObjectID(tx, msg.ObjectIDs)
 		if err != nil {
 			return fmt.Errorf("batch get pinned objects: %w", err)
 		}
@@ -154,8 +154,8 @@ func (svc *Service) GetObjectDetails(msg *coormq.GetObjectDetails) (*coormq.GetO
 }
 
 func (svc *Service) UpdateObjectRedundancy(msg *coormq.UpdateObjectRedundancy) (*coormq.UpdateObjectRedundancyResp, *mq.CodeMessage) {
-	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
-		return svc.db.Object().BatchUpdateRedundancy(tx, msg.Updatings)
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
+		return svc.db2.Object().BatchUpdateRedundancy(tx, msg.Updatings)
 	})
 	if err != nil {
 		logger.Warnf("batch updating redundancy: %s", err.Error())
@@ -167,7 +167,7 @@ func (svc *Service) UpdateObjectRedundancy(msg *coormq.UpdateObjectRedundancy) (
 
 func (svc *Service) UpdateObjectInfos(msg *coormq.UpdateObjectInfos) (*coormq.UpdateObjectInfosResp, *mq.CodeMessage) {
 	var sucs []cdssdk.ObjectID
-	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
 		msg.Updatings = sort2.Sort(msg.Updatings, func(o1, o2 cdsapi.UpdatingObject) int {
 			return sort2.Cmp(o1.ObjectID, o2.ObjectID)
 		})
@@ -177,7 +177,7 @@ func (svc *Service) UpdateObjectInfos(msg *coormq.UpdateObjectInfos) (*coormq.Up
 			objIDs[i] = obj.ObjectID
 		}
 
-		oldObjs, err := svc.db.Object().BatchGet(tx, objIDs)
+		oldObjs, err := svc.db2.Object().BatchGet(tx, objIDs)
 		if err != nil {
 			return fmt.Errorf("batch getting objects: %w", err)
 		}
@@ -197,7 +197,7 @@ func (svc *Service) UpdateObjectInfos(msg *coormq.UpdateObjectInfos) (*coormq.Up
 			avaiUpdatings[i].ApplyTo(&newObjs[i])
 		}
 
-		err = svc.db.Object().BatchUpsertByPackagePath(tx, newObjs)
+		err = svc.db2.Object().BatchUpsertByPackagePath(tx, newObjs)
 		if err != nil {
 			return fmt.Errorf("batch create or update: %w", err)
 		}
@@ -237,7 +237,7 @@ func pickByObjectIDs[T any](objs []T, objIDs []cdssdk.ObjectID, getID func(T) cd
 
 func (svc *Service) MoveObjects(msg *coormq.MoveObjects) (*coormq.MoveObjectsResp, *mq.CodeMessage) {
 	var sucs []cdssdk.ObjectID
-	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
 		msg.Movings = sort2.Sort(msg.Movings, func(o1, o2 cdsapi.MovingObject) int {
 			return sort2.Cmp(o1.ObjectID, o2.ObjectID)
 		})
@@ -247,7 +247,7 @@ func (svc *Service) MoveObjects(msg *coormq.MoveObjects) (*coormq.MoveObjectsRes
 			objIDs[i] = obj.ObjectID
 		}
 
-		oldObjs, err := svc.db.Object().BatchGet(tx, objIDs)
+		oldObjs, err := svc.db2.Object().BatchGet(tx, objIDs)
 		if err != nil {
 			return fmt.Errorf("batch getting objects: %w", err)
 		}
@@ -291,7 +291,7 @@ func (svc *Service) MoveObjects(msg *coormq.MoveObjects) (*coormq.MoveObjectsRes
 		}
 		newObjs = append(newObjs, ensuredObjs...)
 
-		err = svc.db.Object().BatchUpert(tx, newObjs)
+		err = svc.db2.Object().BatchUpert(tx, newObjs)
 		if err != nil {
 			return fmt.Errorf("batch create or update: %w", err)
 		}
@@ -307,7 +307,7 @@ func (svc *Service) MoveObjects(msg *coormq.MoveObjects) (*coormq.MoveObjectsRes
 	return mq.ReplyOK(coormq.RespMoveObjects(sucs))
 }
 
-func (svc *Service) ensurePackageChangedObjects(tx *sqlx.Tx, userID cdssdk.UserID, objs []cdssdk.Object) ([]cdssdk.Object, error) {
+func (svc *Service) ensurePackageChangedObjects(tx db2.SQLContext, userID cdssdk.UserID, objs []cdssdk.Object) ([]cdssdk.Object, error) {
 	if len(objs) == 0 {
 		return nil, nil
 	}
@@ -338,7 +338,7 @@ func (svc *Service) ensurePackageChangedObjects(tx *sqlx.Tx, userID cdssdk.UserI
 
 	var willUpdateObjs []cdssdk.Object
 	for _, pkg := range packages {
-		_, err := svc.db.Package().GetUserPackage(tx, userID, pkg.PackageID)
+		_, err := svc.db2.Package().GetUserPackage(tx, userID, pkg.PackageID)
 		if err == sql.ErrNoRows {
 			continue
 		}
@@ -346,7 +346,7 @@ func (svc *Service) ensurePackageChangedObjects(tx *sqlx.Tx, userID cdssdk.UserI
 			return nil, fmt.Errorf("getting user package by id: %w", err)
 		}
 
-		existsObjs, err := svc.db.Object().BatchGetByPackagePath(tx, pkg.PackageID, lo.Keys(pkg.ObjectByPath))
+		existsObjs, err := svc.db2.Object().BatchGetByPackagePath(tx, pkg.PackageID, lo.Keys(pkg.ObjectByPath))
 		if err != nil {
 			return nil, fmt.Errorf("batch getting objects by package path: %w", err)
 		}
@@ -368,7 +368,7 @@ func (svc *Service) ensurePackageChangedObjects(tx *sqlx.Tx, userID cdssdk.UserI
 	return willUpdateObjs, nil
 }
 
-func (svc *Service) ensurePathChangedObjects(tx *sqlx.Tx, userID cdssdk.UserID, objs []cdssdk.Object) ([]cdssdk.Object, error) {
+func (svc *Service) ensurePathChangedObjects(tx db2.SQLContext, userID cdssdk.UserID, objs []cdssdk.Object) ([]cdssdk.Object, error) {
 	if len(objs) == 0 {
 		return nil, nil
 	}
@@ -384,7 +384,7 @@ func (svc *Service) ensurePathChangedObjects(tx *sqlx.Tx, userID cdssdk.UserID, 
 
 	}
 
-	_, err := svc.db.Package().GetUserPackage(tx, userID, objs[0].PackageID)
+	_, err := svc.db2.Package().GetUserPackage(tx, userID, objs[0].PackageID)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -392,7 +392,7 @@ func (svc *Service) ensurePathChangedObjects(tx *sqlx.Tx, userID cdssdk.UserID, 
 		return nil, fmt.Errorf("getting user package by id: %w", err)
 	}
 
-	existsObjs, err := svc.db.Object().BatchGetByPackagePath(tx, objs[0].PackageID, lo.Map(objs, func(obj cdssdk.Object, idx int) string { return obj.Path }))
+	existsObjs, err := svc.db2.Object().BatchGetByPackagePath(tx, objs[0].PackageID, lo.Map(objs, func(obj cdssdk.Object, idx int) string { return obj.Path }))
 	if err != nil {
 		return nil, fmt.Errorf("batch getting objects by package path: %w", err)
 	}
@@ -414,23 +414,23 @@ func (svc *Service) ensurePathChangedObjects(tx *sqlx.Tx, userID cdssdk.UserID, 
 }
 
 func (svc *Service) DeleteObjects(msg *coormq.DeleteObjects) (*coormq.DeleteObjectsResp, *mq.CodeMessage) {
-	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
-		err := svc.db.Object().BatchDelete(tx, msg.ObjectIDs)
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
+		err := svc.db2.Object().BatchDelete(tx, msg.ObjectIDs)
 		if err != nil {
 			return fmt.Errorf("batch deleting objects: %w", err)
 		}
 
-		err = svc.db.ObjectBlock().BatchDeleteByObjectID(tx, msg.ObjectIDs)
+		err = svc.db2.ObjectBlock().BatchDeleteByObjectID(tx, msg.ObjectIDs)
 		if err != nil {
 			return fmt.Errorf("batch deleting object blocks: %w", err)
 		}
 
-		err = svc.db.PinnedObject().BatchDeleteByObjectID(tx, msg.ObjectIDs)
+		err = svc.db2.PinnedObject().BatchDeleteByObjectID(tx, msg.ObjectIDs)
 		if err != nil {
 			return fmt.Errorf("batch deleting pinned objects: %w", err)
 		}
 
-		err = svc.db.ObjectAccessStat().BatchDeleteByObjectID(tx, msg.ObjectIDs)
+		err = svc.db2.ObjectAccessStat().BatchDeleteByObjectID(tx, msg.ObjectIDs)
 		if err != nil {
 			return fmt.Errorf("batch deleting object access stats: %w", err)
 		}

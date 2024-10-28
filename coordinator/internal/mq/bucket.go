@@ -1,10 +1,9 @@
 package mq
 
 import (
-	"database/sql"
 	"fmt"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 
-	"github.com/jmoiron/sqlx"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
@@ -19,7 +18,7 @@ func (svc *Service) GetBucket(userID cdssdk.UserID, bucketID cdssdk.BucketID) (m
 }
 
 func (svc *Service) GetBucketByName(msg *coormq.GetBucketByName) (*coormq.GetBucketByNameResp, *mq.CodeMessage) {
-	bucket, err := svc.db.Bucket().GetUserBucketByName(svc.db.SQLCtx(), msg.UserID, msg.Name)
+	bucket, err := svc.db2.Bucket().GetUserBucketByName(svc.db2.DefCtx(), msg.UserID, msg.Name)
 	if err != nil {
 		logger.WithField("UserID", msg.UserID).
 			WithField("Name", msg.Name).
@@ -31,7 +30,7 @@ func (svc *Service) GetBucketByName(msg *coormq.GetBucketByName) (*coormq.GetBuc
 }
 
 func (svc *Service) GetUserBuckets(msg *coormq.GetUserBuckets) (*coormq.GetUserBucketsResp, *mq.CodeMessage) {
-	buckets, err := svc.db.Bucket().GetUserBuckets(svc.db.SQLCtx(), msg.UserID)
+	buckets, err := svc.db2.Bucket().GetUserBuckets(svc.db2.DefCtx(), msg.UserID)
 
 	if err != nil {
 		logger.WithField("UserID", msg.UserID).
@@ -43,7 +42,7 @@ func (svc *Service) GetUserBuckets(msg *coormq.GetUserBuckets) (*coormq.GetUserB
 }
 
 func (svc *Service) GetBucketPackages(msg *coormq.GetBucketPackages) (*coormq.GetBucketPackagesResp, *mq.CodeMessage) {
-	packages, err := svc.db.Package().GetBucketPackages(svc.db.SQLCtx(), msg.UserID, msg.BucketID)
+	packages, err := svc.db2.Package().GetBucketPackages(svc.db2.DefCtx(), msg.UserID, msg.BucketID)
 
 	if err != nil {
 		logger.WithField("UserID", msg.UserID).
@@ -57,18 +56,18 @@ func (svc *Service) GetBucketPackages(msg *coormq.GetBucketPackages) (*coormq.Ge
 
 func (svc *Service) CreateBucket(msg *coormq.CreateBucket) (*coormq.CreateBucketResp, *mq.CodeMessage) {
 	var bucket cdssdk.Bucket
-	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
-		_, err := svc.db.User().GetByID(tx, msg.UserID)
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
+		_, err := svc.db2.User().GetByID(tx, msg.UserID)
 		if err != nil {
 			return fmt.Errorf("getting user by id: %w", err)
 		}
 
-		bucketID, err := svc.db.Bucket().Create(tx, msg.UserID, msg.BucketName)
+		bucketID, err := svc.db2.Bucket().Create(tx, msg.UserID, msg.BucketName)
 		if err != nil {
 			return fmt.Errorf("creating bucket: %w", err)
 		}
 
-		bucket, err = svc.db.Bucket().GetByID(tx, bucketID)
+		bucket, err = svc.db2.Bucket().GetByID(tx, bucketID)
 		if err != nil {
 			return fmt.Errorf("getting bucket by id: %w", err)
 		}
@@ -85,13 +84,13 @@ func (svc *Service) CreateBucket(msg *coormq.CreateBucket) (*coormq.CreateBucket
 }
 
 func (svc *Service) DeleteBucket(msg *coormq.DeleteBucket) (*coormq.DeleteBucketResp, *mq.CodeMessage) {
-	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
-		isAvai, _ := svc.db.Bucket().IsAvailable(tx, msg.BucketID, msg.UserID)
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
+		isAvai, _ := svc.db2.Bucket().IsAvailable(tx, msg.BucketID, msg.UserID)
 		if !isAvai {
 			return fmt.Errorf("bucket is not avaiable to the user")
 		}
 
-		err := svc.db.Bucket().Delete(tx, msg.BucketID)
+		err := svc.db2.Bucket().Delete(tx, msg.BucketID)
 		if err != nil {
 			return fmt.Errorf("deleting bucket: %w", err)
 		}

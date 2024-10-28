@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gorm.io/gorm"
@@ -70,33 +69,33 @@ func (svc *Service) GetStorageByName(msg *coormq.GetStorageByName) (*coormq.GetS
 }
 
 func (svc *Service) StoragePackageLoaded(msg *coormq.StoragePackageLoaded) (*coormq.StoragePackageLoadedResp, *mq.CodeMessage) {
-	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
 		// 可以不用检查用户是否存在
-		if ok, _ := svc.db.Package().IsAvailable(tx, msg.UserID, msg.PackageID); !ok {
+		if ok, _ := svc.db2.Package().IsAvailable(tx, msg.UserID, msg.PackageID); !ok {
 			return fmt.Errorf("package is not available to user")
 		}
 
-		if ok, _ := svc.db.Storage().IsAvailable(tx, msg.UserID, msg.StorageID); !ok {
+		if ok, _ := svc.db2.Storage().IsAvailable(tx, msg.UserID, msg.StorageID); !ok {
 			return fmt.Errorf("storage is not available to user")
 		}
 
-		err := svc.db.StoragePackage().CreateOrUpdate(tx, msg.StorageID, msg.PackageID, msg.UserID)
+		err := svc.db2.StoragePackage().CreateOrUpdate(tx, msg.StorageID, msg.PackageID, msg.UserID)
 		if err != nil {
 			return fmt.Errorf("creating storage package: %w", err)
 		}
 
-		stg, err := svc.db.Storage().GetByID(tx, msg.StorageID)
+		stg, err := svc.db2.Storage().GetByID(tx, msg.StorageID)
 		if err != nil {
 			return fmt.Errorf("getting storage: %w", err)
 		}
 
-		err = svc.db.PinnedObject().CreateFromPackage(tx, msg.PackageID, stg.NodeID)
+		err = svc.db2.PinnedObject().CreateFromPackage(tx, msg.PackageID, stg.NodeID)
 		if err != nil {
 			return fmt.Errorf("creating pinned object from package: %w", err)
 		}
 
 		if len(msg.PinnedBlocks) > 0 {
-			err = svc.db.ObjectBlock().BatchCreate(tx, msg.PinnedBlocks)
+			err = svc.db2.ObjectBlock().BatchCreate(tx, msg.PinnedBlocks)
 			if err != nil {
 				return fmt.Errorf("batch creating object block: %w", err)
 			}

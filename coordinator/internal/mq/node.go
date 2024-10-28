@@ -1,10 +1,9 @@
 package mq
 
 import (
-	"database/sql"
 	"fmt"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 
-	"github.com/jmoiron/sqlx"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
@@ -13,7 +12,7 @@ import (
 )
 
 func (svc *Service) GetUserNodes(msg *coormq.GetUserNodes) (*coormq.GetUserNodesResp, *mq.CodeMessage) {
-	nodes, err := svc.db.Node().GetUserNodes(svc.db.SQLCtx(), msg.UserID)
+	nodes, err := svc.db2.Node().GetUserNodes(svc.db2.DefCtx(), msg.UserID)
 	if err != nil {
 		logger.WithField("UserID", msg.UserID).
 			Warnf("query user nodes failed, err: %s", err.Error())
@@ -52,7 +51,7 @@ func (svc *Service) GetNodes(msg *coormq.GetNodes) (*coormq.GetNodesResp, *mq.Co
 }
 
 func (svc *Service) GetNodeConnectivities(msg *coormq.GetNodeConnectivities) (*coormq.GetNodeConnectivitiesResp, *mq.CodeMessage) {
-	cons, err := svc.db.NodeConnectivity().BatchGetByFromNode(svc.db.SQLCtx(), msg.NodeIDs)
+	cons, err := svc.db2.NodeConnectivity().BatchGetByFromNode(svc.db2.DefCtx(), msg.NodeIDs)
 	if err != nil {
 		logger.Warnf("batch get node connectivities by from node: %s", err.Error())
 		return nil, mq.Failed(errorcode.OperationFailed, "batch get node connectivities by from node failed")
@@ -62,9 +61,9 @@ func (svc *Service) GetNodeConnectivities(msg *coormq.GetNodeConnectivities) (*c
 }
 
 func (svc *Service) UpdateNodeConnectivities(msg *coormq.UpdateNodeConnectivities) (*coormq.UpdateNodeConnectivitiesResp, *mq.CodeMessage) {
-	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
 		// 只有发起节点和目的节点都存在，才能插入这条记录到数据库
-		allNodes, err := svc.db.Node().GetAllNodes(tx)
+		allNodes, err := svc.db2.Node().GetAllNodes(tx)
 		if err != nil {
 			return fmt.Errorf("getting all nodes: %w", err)
 		}
@@ -81,7 +80,7 @@ func (svc *Service) UpdateNodeConnectivities(msg *coormq.UpdateNodeConnectivitie
 			}
 		}
 
-		err = svc.db.NodeConnectivity().BatchUpdateOrCreate(tx, avaiCons)
+		err = svc.db2.NodeConnectivity().BatchUpdateOrCreate(tx, avaiCons)
 		if err != nil {
 			return fmt.Errorf("batch update or create node connectivities: %s", err)
 		}

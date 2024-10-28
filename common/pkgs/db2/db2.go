@@ -23,8 +23,8 @@ func NewDB(cfg *config.Config) (*DB, error) {
 	}, nil
 }
 
-func (s *DB) DoTx(do func(tx SQLContext) error) error {
-	return s.db.Transaction(func(tx *gorm.DB) error {
+func (db *DB) DoTx(do func(tx SQLContext) error) error {
+	return db.db.Transaction(func(tx *gorm.DB) error {
 		return do(SQLContext{tx})
 	})
 }
@@ -33,6 +33,6 @@ type SQLContext struct {
 	*gorm.DB
 }
 
-func (d *DB) DefCtx() SQLContext {
-	return SQLContext{d.db}
+func (db *DB) DefCtx() SQLContext {
+	return SQLContext{db.db}
 }

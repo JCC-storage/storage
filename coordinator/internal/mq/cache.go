@@ -1,10 +1,9 @@
 package mq
 
 import (
-	"database/sql"
 	"fmt"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 
-	"github.com/jmoiron/sqlx"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
@@ -12,18 +11,18 @@ import (
 )
 
 func (svc *Service) CachePackageMoved(msg *coormq.CachePackageMoved) (*coormq.CachePackageMovedResp, *mq.CodeMessage) {
-	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
-		_, err := svc.db.Package().GetByID(tx, msg.PackageID)
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
+		_, err := svc.db2.Package().GetByID(tx, msg.PackageID)
 		if err != nil {
 			return fmt.Errorf("getting package by id: %w", err)
 		}
 
-		_, err = svc.db.Node().GetByID(tx, msg.StorageID)
+		_, err = svc.db2.Node().GetByID(tx, msg.StorageID)
 		if err != nil {
 			return fmt.Errorf("getting node by id: %w", err)
 		}
 
-		err = svc.db.PinnedObject().CreateFromPackage(tx, msg.PackageID, msg.StorageID)
+		err = svc.db2.PinnedObject().CreateFromPackage(tx, msg.PackageID, msg.StorageID)
 		if err != nil {
 			return fmt.Errorf("creating pinned objects from package: %w", err)
 		}
@@ -39,18 +38,18 @@ func (svc *Service) CachePackageMoved(msg *coormq.CachePackageMoved) (*coormq.Ca
 }
 
 func (svc *Service) CacheRemovePackage(msg *coormq.CacheRemovePackage) (*coormq.CacheRemovePackageResp, *mq.CodeMessage) {
-	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
-		_, err := svc.db.Package().GetByID(tx, msg.PackageID)
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
+		_, err := svc.db2.Package().GetByID(tx, msg.PackageID)
 		if err != nil {
 			return fmt.Errorf("getting package by id: %w", err)
 		}
 
-		_, err = svc.db.Node().GetByID(tx, msg.NodeID)
+		_, err = svc.db2.Node().GetByID(tx, msg.NodeID)
 		if err != nil {
 			return fmt.Errorf("getting node by id: %w", err)
 		}
 
-		err = svc.db.PinnedObject().DeleteInPackageAtNode(tx, msg.PackageID, msg.NodeID)
+		err = svc.db2.PinnedObject().DeleteInPackageAtNode(tx, msg.PackageID, msg.NodeID)
 		if err != nil {
 			return fmt.Errorf("delete pinned objects in package at node: %w", err)
 		}

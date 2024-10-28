@@ -3,9 +3,9 @@ package mq
 import (
 	"database/sql"
 	"fmt"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 	"sort"
 
-	"github.com/jmoiron/sqlx"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
@@ -14,7 +14,7 @@ import (
 )
 
 func (svc *Service) GetPackage(msg *coormq.GetPackage) (*coormq.GetPackageResp, *mq.CodeMessage) {
-	pkg, err := svc.db.Package().GetByID(svc.db.SQLCtx(), msg.PackageID)
+	pkg, err := svc.db2.Package().GetByID(svc.db2.DefCtx(), msg.PackageID)
 	if err != nil {
 		logger.WithField("PackageID", msg.PackageID).
 			Warnf("get package: %s", err.Error())
@@ -26,7 +26,7 @@ func (svc *Service) GetPackage(msg *coormq.GetPackage) (*coormq.GetPackageResp, 
 }
 
 func (svc *Service) GetPackageByName(msg *coormq.GetPackageByName) (*coormq.GetPackageByNameResp, *mq.CodeMessage) {
-	pkg, err := svc.db.Package().GetUserPackageByName(svc.db.SQLCtx(), msg.UserID, msg.BucketName, msg.PackageName)
+	pkg, err := svc.db2.Package().GetUserPackageByName(svc.db2.DefCtx(), msg.UserID, msg.BucketName, msg.PackageName)
 	if err != nil {
 		logger.WithField("UserID", msg.UserID).
 			WithField("BucketName", msg.BucketName).
@@ -45,20 +45,20 @@ func (svc *Service) GetPackageByName(msg *coormq.GetPackageByName) (*coormq.GetP
 
 func (svc *Service) CreatePackage(msg *coormq.CreatePackage) (*coormq.CreatePackageResp, *mq.CodeMessage) {
 	var pkg cdssdk.Package
-	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
 		var err error
 
-		isAvai, _ := svc.db.Bucket().IsAvailable(tx, msg.BucketID, msg.UserID)
+		isAvai, _ := svc.db2.Bucket().IsAvailable(tx, msg.BucketID, msg.UserID)
 		if !isAvai {
 			return fmt.Errorf("bucket is not avaiable to the user")
 		}
 
-		pkgID, err := svc.db.Package().Create(tx, msg.BucketID, msg.Name)
+		pkgID, err := svc.db2.Package().Create(tx, msg.BucketID, msg.Name)
 		if err != nil {
 			return fmt.Errorf("creating package: %w", err)
 		}
 
-		pkg, err = svc.db.Package().GetByID(tx, pkgID)
+		pkg, err = svc.db2.Package().GetByID(tx, pkgID)
 		if err != nil {
 			return fmt.Errorf("getting package by id: %w", err)
 		}
@@ -77,22 +77,22 @@ func (svc *Service) CreatePackage(msg *coormq.CreatePackage) (*coormq.CreatePack
 
 func (svc *Service) UpdatePackage(msg *coormq.UpdatePackage) (*coormq.UpdatePackageResp, *mq.CodeMessage) {
 	var added []cdssdk.Object
-	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
-		_, err := svc.db.Package().GetByID(tx, msg.PackageID)
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
+		_, err := svc.db2.Package().GetByID(tx, msg.PackageID)
 		if err != nil {
 			return fmt.Errorf("getting package by id: %w", err)
 		}
 
 		// 先执行删除操作
 		if len(msg.Deletes) > 0 {
-			if err := svc.db.Object().BatchDelete(tx, msg.Deletes); err != nil {
+			if err := svc.db2.Object().BatchDelete(tx, msg.Deletes); err != nil {
 				return fmt.Errorf("deleting objects: %w", err)
 			}
 		}
 
 		// 再执行添加操作
 		if len(msg.Adds) > 0 {
-			ad, err := svc.db.Object().BatchAdd(tx, msg.PackageID, msg.Adds)
+			ad, err := svc.db2.Object().BatchAdd(tx, msg.PackageID, msg.Adds)
 			if err != nil {
 				return fmt.Errorf("adding objects: %w", err)
 			}
@@ -110,25 +110,25 @@ func (svc *Service) UpdatePackage(msg *coormq.UpdatePackage) (*coormq.UpdatePack
 }
 
 func (svc *Service) DeletePackage(msg *coormq.DeletePackage) (*coormq.DeletePackageResp, *mq.CodeMessage) {
-	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
-		isAvai, _ := svc.db.Package().IsAvailable(tx, msg.UserID, msg.PackageID)
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
+		isAvai, _ := svc.db2.Package().IsAvailable(tx, msg.UserID, msg.PackageID)
 		if !isAvai {
 			return fmt.Errorf("package is not available to the user")
 		}
 
-		err := svc.db.Package().SoftDelete(tx, msg.PackageID)
+		err := svc.db2.Package().SoftDelete(tx, msg.PackageID)
 		if err != nil {
 			return fmt.Errorf("soft delete package: %w", err)
 		}
 
-		err = svc.db.Package().DeleteUnused(tx, msg.PackageID)
+		err = svc.db2.Package().DeleteUnused(tx, msg.PackageID)
 		if err != nil {
 			logger.WithField("UserID", msg.UserID).
 				WithField("PackageID", msg.PackageID).
 				Warnf("deleting unused package: %w", err.Error())
 		}
 
-		err = svc.db.PackageAccessStat().DeleteByPackageID(tx, msg.PackageID)
+		err = svc.db2.PackageAccessStat().DeleteByPackageID(tx, msg.PackageID)
 		if err != nil {
 			logger.WithField("UserID", msg.UserID).
 				WithField("PackageID", msg.PackageID).
@@ -148,7 +148,7 @@ func (svc *Service) DeletePackage(msg *coormq.DeletePackage) (*coormq.DeletePack
 }
 
 func (svc *Service) GetPackageCachedNodes(msg *coormq.GetPackageCachedNodes) (*coormq.GetPackageCachedNodesResp, *mq.CodeMessage) {
-	isAva, err := svc.db.Package().IsAvailable(svc.db.SQLCtx(), msg.UserID, msg.PackageID)
+	isAva, err := svc.db2.Package().IsAvailable(svc.db2.DefCtx(), msg.UserID, msg.PackageID)
 	if err != nil {
 		logger.WithField("UserID", msg.UserID).
 			WithField("PackageID", msg.PackageID).
@@ -163,7 +163,7 @@ func (svc *Service) GetPackageCachedNodes(msg *coormq.GetPackageCachedNodes) (*c
 	}
 
 	// 这个函数只是统计哪些节点缓存了Package中的数据，不需要多么精确，所以可以不用事务
-	objDetails, err := svc.db.Object().GetPackageObjectDetails(svc.db.SQLCtx(), msg.PackageID)
+	objDetails, err := svc.db2.Object().GetPackageObjectDetails(svc.db2.DefCtx(), msg.PackageID)
 	if err != nil {
 		logger.WithField("PackageID", msg.PackageID).
 			Warnf("get package block details: %s", err.Error())
@@ -202,7 +202,7 @@ func (svc *Service) GetPackageCachedNodes(msg *coormq.GetPackageCachedNodes) (*c
 }
 
 func (svc *Service) GetPackageLoadedNodes(msg *coormq.GetPackageLoadedNodes) (*coormq.GetPackageLoadedNodesResp, *mq.CodeMessage) {
-	storages, err := svc.db.StoragePackage().FindPackageStorages(svc.db.SQLCtx(), msg.PackageID)
+	storages, err := svc.db2.StoragePackage().FindPackageStorages(svc.db2.DefCtx(), msg.PackageID)
 	if err != nil {
 		logger.WithField("PackageID", msg.PackageID).
 			Warnf("get storages by packageID failed, err: %s", err.Error())
@@ -229,13 +229,13 @@ func (svc *Service) AddAccessStat(msg *coormq.AddAccessStat) {
 		objIDs[i] = e.ObjectID
 	}
 
-	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
-		avaiPkgIDs, err := svc.db.Package().BatchTestPackageID(tx, pkgIDs)
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
+		avaiPkgIDs, err := svc.db2.Package().BatchTestPackageID(tx, pkgIDs)
 		if err != nil {
 			return fmt.Errorf("batch test package id: %w", err)
 		}
 
-		avaiObjIDs, err := svc.db.Object().BatchTestObjectID(tx, objIDs)
+		avaiObjIDs, err := svc.db2.Object().BatchTestObjectID(tx, objIDs)
 		if err != nil {
 			return fmt.Errorf("batch test object id: %w", err)
 		}
@@ -248,12 +248,12 @@ func (svc *Service) AddAccessStat(msg *coormq.AddAccessStat) {
 		}
 
 		if len(willAdds) > 0 {
-			err := svc.db.PackageAccessStat().BatchAddCounter(tx, willAdds)
+			err := svc.db2.PackageAccessStat().BatchAddCounter(tx, willAdds)
 			if err != nil {
 				return fmt.Errorf("batch add package access stat counter: %w", err)
 			}
 
-			err = svc.db.ObjectAccessStat().BatchAddCounter(tx, willAdds)
+			err = svc.db2.ObjectAccessStat().BatchAddCounter(tx, willAdds)
 			if err != nil {
 				return fmt.Errorf("batch add object access stat counter: %w", err)
 			}

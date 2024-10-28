@@ -10,8 +10,8 @@ type NodeDB struct {
 	*DB
 }
 
-func (nodeDB *DB) Node() *NodeDB {
-	return &NodeDB{DB: nodeDB}
+func (db *DB) Node() *NodeDB {
+	return &NodeDB{DB: db}
 }
 
 func (*NodeDB) GetAllNodes(ctx SQLContext) ([]cdssdk.Node, error) {
