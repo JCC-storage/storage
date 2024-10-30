@@ -20,7 +20,11 @@
         "address": "127.0.0.1:5672",
         "account": "cloudream",
         "password": "123456",
-        "vhost": "/"
+        "vhost": "/",
+        "param": {
+            "retryNum": 5,
+            "retryInterval": 5000
+        }
     },
     "ipfs": {
         "address": "127.0.0.1:5001"

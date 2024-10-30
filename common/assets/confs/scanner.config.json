@@ -18,7 +18,11 @@
         "address": "106.75.6.194:5672",
         "account": "cloudream",
         "password": "cloudream123456",
-        "vhost": "/"
+        "vhost": "/",
+        "param": {
+            "retryNum": 5,
+            "retryInterval": 5000
+        }
     },
     "distlock": {
         "etcdAddress": "106.75.6.194:2379",

@@ -1,6 +1,6 @@
 package local
 
-import "gitlink.org.cn/cloudream/storage/common/pkgs/shardstore/types"
+import "gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/types"
 
 type Writer struct {
 }
