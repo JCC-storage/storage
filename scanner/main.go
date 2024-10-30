@@ -85,13 +85,29 @@ func serveEventExecutor(executor *event.Executor) {
 func serveScannerServer(server *scmq.Server) {
 	logger.Info("start serving scanner server")
 
-	err := server.Serve()
-
-	if err != nil {
-		logger.Errorf("scanner server stopped with error: %s", err.Error())
+	ch := server.Start()
+	if ch == nil {
+		logger.Errorf("RabbitMQ logEvent is nil")
+		os.Exit(1)
 	}
 
-	logger.Info("scanner server stopped")
+	for {
+		val, err := ch.Receive()
+		if err != nil {
+			logger.Errorf("command server stopped with error: %s", err.Error())
+			break
+		}
+
+		switch val := val.(type) {
+		case error:
+			logger.Errorf("rabbitmq connect with error: %v", val)
+		case int:
+			if val == 1 {
+				break
+			}
+		}
+	}
+	logger.Info("command server stopped")
 
 	// TODO 仅简单结束了程序
 	os.Exit(1)

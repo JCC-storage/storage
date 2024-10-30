@@ -1,10 +1,9 @@
 package mq
 
 import (
-	"database/sql"
 	"fmt"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 
-	"github.com/jmoiron/sqlx"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
@@ -18,15 +17,15 @@ func (svc *Service) GetDatabaseAll(msg *coormq.GetDatabaseAll) (*coormq.GetDatab
 	var pkgs []cdssdk.Package
 	var objs []stgmod.ObjectDetail
 
-	err := svc.db.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
 		var err error
-		bkts, err = svc.db.Bucket().GetUserBuckets(tx, msg.UserID)
+		bkts, err = svc.db2.Bucket().GetUserBuckets(tx, msg.UserID)
 		if err != nil {
 			return fmt.Errorf("get user buckets: %w", err)
 		}
 
 		for _, bkt := range bkts {
-			ps, err := svc.db.Package().GetBucketPackages(tx, msg.UserID, bkt.BucketID)
+			ps, err := svc.db2.Package().GetBucketPackages(tx, msg.UserID, bkt.BucketID)
 			if err != nil {
 				return fmt.Errorf("get bucket packages: %w", err)
 			}
@@ -34,7 +33,7 @@ func (svc *Service) GetDatabaseAll(msg *coormq.GetDatabaseAll) (*coormq.GetDatab
 		}
 
 		for _, pkg := range pkgs {
-			os, err := svc.db.Object().GetPackageObjectDetails(tx, pkg.PackageID)
+			os, err := svc.db2.Object().GetPackageObjectDetails(tx, pkg.PackageID)
 			if err != nil {
 				return fmt.Errorf("get package object details: %w", err)
 			}

@@ -15,8 +15,8 @@ func init() {
 
 type MultipartManage struct {
 	Address  cdssdk.StorageAddress `json:"address"`
-	UploadID *exec.StringVar       `json:"uploadID"`
-	ObjectID *exec.StringVar       `json:"objectID"`
+	UploadID *exec.VarID           `json:"uploadID"`
+	ObjectID *exec.VarID           `json:"objectID"`
 }
 
 func (o *MultipartManage) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
@@ -41,8 +41,6 @@ func (o *MultipartManage) Execute(ctx *exec.ExecContext, e *exec.Executor) error
 	if err != nil {
 		return err
 	}
-	o.UploadID.Value = uploadID
-	e.PutVars(o.UploadID)
 
 	objectID, err := client.CompleteMultipartUpload()
 	if err != nil {
@@ -79,7 +77,7 @@ func (t *MultipartManageNode) GenerateOp() (exec.Op, error) {
 
 type MultipartUpload struct {
 	Address cdssdk.StorageAddress `json:"address"`
-	FileMD5 *exec.StringVar       `json:"fileMD5"`
+	FileMD5 *exec.VarID           `json:"fileMD5"`
 }
 
 func (o *MultipartUpload) Execute(ctx *exec.ExecContext, e *exec.Executor) error {

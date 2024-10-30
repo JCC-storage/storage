@@ -2,6 +2,7 @@ package scanner
 
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
+	"gitlink.org.cn/cloudream/common/utils/sync2"
 	mymq "gitlink.org.cn/cloudream/storage/common/pkgs/mq"
 )
 
@@ -25,6 +26,7 @@ func NewServer(svc Service, cfg *mymq.Config) (*Server, error) {
 		func(msg *mq.Message) (*mq.Message, error) {
 			return msgDispatcher.Handle(srv.service, msg)
 		},
+		cfg.RabbitMQParam,
 	)
 	if err != nil {
 		return nil, err
@@ -39,8 +41,8 @@ func (s *Server) Stop() {
 	s.rabbitSvr.Close()
 }
 
-func (s *Server) Serve() error {
-	return s.rabbitSvr.Serve()
+func (s *Server) Start() *sync2.UnboundChannel[mq.RabbitMQLogEvent] {
+	return s.rabbitSvr.Start()
 }
 
 func (s *Server) OnError(callback func(error)) {

@@ -148,12 +148,28 @@ func main() {
 func serveAgentServer(server *agtmq.Server) {
 	logger.Info("start serving command server")
 
-	err := server.Serve()
-
-	if err != nil {
-		logger.Errorf("command server stopped with error: %s", err.Error())
+	ch := server.Start()
+	if ch == nil {
+		logger.Errorf("RabbitMQ logEvent is nil")
+		os.Exit(1)
 	}
 
+	for {
+		val, err := ch.Receive()
+		if err != nil {
+			logger.Errorf("command server stopped with error: %s", err.Error())
+			break
+		}
+
+		switch val := val.(type) {
+		case error:
+			logger.Errorf("rabbitmq connect with error: %v", val)
+		case int:
+			if val == 1 {
+				break
+			}
+		}
+	}
 	logger.Info("command server stopped")
 
 	// TODO 仅简单结束了程序

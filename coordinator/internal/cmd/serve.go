@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	stgmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq"
 	"os"
 
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
@@ -45,20 +46,35 @@ func serve(configPath string) {
 	})
 
 	// 启动服务
-	go serveCoorServer(coorSvr)
+	go serveCoorServer(coorSvr, config.Cfg().RabbitMQ)
 
 	forever := make(chan bool)
 	<-forever
 }
 
-func serveCoorServer(server *coormq.Server) {
+func serveCoorServer(server *coormq.Server, cfg stgmq.Config) {
 	logger.Info("start serving command server")
 
-	err := server.Serve()
-	if err != nil {
-		logger.Errorf("command server stopped with error: %s", err.Error())
+	ch := server.Start(cfg)
+	if ch == nil {
+		logger.Errorf("RabbitMQ logEvent is nil")
+		os.Exit(1)
 	}
 
+	for {
+		val, err := ch.Receive()
+		if err != nil {
+			logger.Errorf("command server stopped with error: %s", err.Error())
+			break
+		}
+
+		switch val := val.(type) {
+		case error:
+			logger.Errorf("rabbitmq connect with error: %v", val)
+		case int:
+			break
+		}
+	}
 	logger.Info("command server stopped")
 
 	// TODO 仅简单结束了程序
