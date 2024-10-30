@@ -14,8 +14,12 @@ import (
 type Storage = cdssdk.Storage
 
 type User struct {
-	UserID   cdssdk.UserID `gorm:"colunm:UserID" json:"userID"`
-	Password string        `gorm:"colunm:Password" json:"password"`
+	UserID   cdssdk.UserID `gorm:"column:UserID" json:"userID"`
+	Password string        `gorm:"column:Password" json:"password"`
+}
+
+func (User) TableName() string {
+	return "User"
 }
 
 type UserBucket struct {
@@ -23,14 +27,26 @@ type UserBucket struct {
 	BucketID cdssdk.BucketID `gorm:"column:BucketID; primaryKey" json:"bucketID"`
 }
 
+func (UserBucket) TableName() string {
+	return "UserBucket"
+}
+
 type UserNode struct {
 	UserID cdssdk.UserID `gorm:"column:UserID; primaryKey" json:"userID"`
 	NodeID cdssdk.NodeID `gorm:"column:NodeID; primaryKey" json:"nodeID"`
 }
 
+func (UserNode) TableName() string {
+	return "UserNode"
+}
+
 type UserStorage struct {
 	UserID    cdssdk.UserID    `gorm:"column:UserID; primaryKey" json:"userID"`
 	StorageID cdssdk.StorageID `gorm:"column:StorageID; primaryKey" json:"storageID"`
+}
+
+func (UserStorage) TableName() string {
+	return "UserStorage"
 }
 
 type Bucket = cdssdk.Bucket
@@ -76,10 +92,14 @@ func (o *RedundancyWarpper) Scan(src interface{}) error {
 type ObjectBlock = stgmod.ObjectBlock
 
 type Cache struct {
-	FileHash   cdssdk.FileHash  `gorm:"colunm:FileHash; primaryKey" json:"fileHash"`
-	StorageID  cdssdk.StorageID `gorm:"colunm:StorageID; primaryKey" json:"storageID"`
-	CreateTime time.Time        `gorm:"colunm:CreateTime" json:"createTime"`
-	Priority   int              `gorm:"colunm:Priority" json:"priority"`
+	FileHash   cdssdk.FileHash  `gorm:"column:FileHash; primaryKey" json:"fileHash"`
+	StorageID  cdssdk.StorageID `gorm:"column:StorageID; primaryKey" json:"storageID"`
+	CreateTime time.Time        `gorm:"column:CreateTime" json:"createTime"`
+	Priority   int              `gorm:"column:Priority" json:"priority"`
+}
+
+func (Cache) TableName() string {
+	return "Cache"
 }
 
 const (
@@ -96,7 +116,15 @@ type StoragePackage struct {
 	State     string           `gorm:"column:State" json:"state"`
 }
 
+func (StoragePackage) TableName() string {
+	return "StoragePackage"
+}
+
 type Location struct {
-	LocationID cdssdk.LocationID `gorm:"colunm:LocationID; primaryKey; autoIncrement" json:"locationID"`
-	Name       string            `gorm:"colunm:Name" json:"name"`
+	LocationID cdssdk.LocationID `gorm:"column:LocationID; primaryKey; autoIncrement" json:"locationID"`
+	Name       string            `gorm:"column:Name" json:"name"`
+}
+
+func (Location) TableName() string {
+	return "Location"
 }
