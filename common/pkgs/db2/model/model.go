@@ -14,23 +14,23 @@ import (
 type Storage = cdssdk.Storage
 
 type User struct {
-	UserID   cdssdk.UserID `db:"UserID" json:"userID"`
-	Password string        `db:"Password" json:"password"`
+	UserID   cdssdk.UserID `gorm:"colunm:UserID" json:"userID"`
+	Password string        `gorm:"colunm:Password" json:"password"`
 }
 
 type UserBucket struct {
-	UserID   cdssdk.UserID   `db:"UserID" json:"userID"`
-	BucketID cdssdk.BucketID `db:"BucketID" json:"bucketID"`
+	UserID   cdssdk.UserID   `gorm:"column:UserID; primaryKey" json:"userID"`
+	BucketID cdssdk.BucketID `gorm:"column:BucketID; primaryKey" json:"bucketID"`
 }
 
 type UserNode struct {
-	UserID cdssdk.UserID `db:"UserID" json:"userID"`
-	NodeID cdssdk.NodeID `db:"NodeID" json:"nodeID"`
+	UserID cdssdk.UserID `gorm:"column:UserID; primaryKey" json:"userID"`
+	NodeID cdssdk.NodeID `gorm:"column:NodeID; primaryKey" json:"nodeID"`
 }
 
 type UserStorage struct {
-	UserID    cdssdk.UserID    `db:"UserID" json:"userID"`
-	StorageID cdssdk.StorageID `db:"StorageID" json:"storageID"`
+	UserID    cdssdk.UserID    `gorm:"column:UserID; primaryKey" json:"userID"`
+	StorageID cdssdk.StorageID `gorm:"column:StorageID; primaryKey" json:"storageID"`
 }
 
 type Bucket = cdssdk.Bucket
@@ -76,10 +76,10 @@ func (o *RedundancyWarpper) Scan(src interface{}) error {
 type ObjectBlock = stgmod.ObjectBlock
 
 type Cache struct {
-	FileHash   string        `db:"FileHash" json:"fileHash"`
-	NodeID     cdssdk.NodeID `db:"NodeID" json:"nodeID"`
-	CreateTime time.Time     `db:"CreateTime" json:"createTime"`
-	Priority   int           `db:"Priority" json:"priority"`
+	FileHash   cdssdk.FileHash  `gorm:"colunm:FileHash; primaryKey" json:"fileHash"`
+	StorageID  cdssdk.StorageID `gorm:"colunm:StorageID; primaryKey" json:"storageID"`
+	CreateTime time.Time        `gorm:"colunm:CreateTime" json:"createTime"`
+	Priority   int              `gorm:"colunm:Priority" json:"priority"`
 }
 
 const (
@@ -90,13 +90,13 @@ const (
 
 // Storage当前加载的Package
 type StoragePackage struct {
-	StorageID cdssdk.StorageID `db:"StorageID" json:"storageID"`
-	PackageID cdssdk.PackageID `db:"PackageID" json:"packageID"`
-	UserID    cdssdk.UserID    `db:"UserID" json:"userID"`
-	State     string           `db:"State" json:"state"`
+	StorageID cdssdk.StorageID `gorm:"column:StorageID; primaryKey" json:"storageID"`
+	PackageID cdssdk.PackageID `gorm:"column:PackageID; primaryKey" json:"packageID"`
+	UserID    cdssdk.UserID    `gorm:"column:UserID; primaryKey" json:"userID"`
+	State     string           `gorm:"column:State" json:"state"`
 }
 
 type Location struct {
-	LocationID cdssdk.LocationID `db:"LocationID" json:"locationID"`
-	Name       string            `db:"Name" json:"name"`
+	LocationID cdssdk.LocationID `gorm:"colunm:LocationID; primaryKey; autoIncrement" json:"locationID"`
+	Name       string            `gorm:"colunm:Name" json:"name"`
 }

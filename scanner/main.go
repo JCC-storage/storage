@@ -6,7 +6,7 @@ import (
 
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/db"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
 	agtrpc "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
 	scmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/scanner"
@@ -29,7 +29,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := db.NewDB(&config.Cfg().DB)
+	db, err := db2.NewDB(&config.Cfg().DB)
 	if err != nil {
 		logger.Fatalf("new db failed, err: %s", err.Error())
 	}

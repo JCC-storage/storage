@@ -15,11 +15,12 @@ import (
 // )))
 
 type AgentWorker struct {
-	Node cdssdk.Node
+	Node    cdssdk.Node
+	Address cdssdk.GRPCAddressInfo
 }
 
 func (w *AgentWorker) NewClient() (exec.WorkerClient, error) {
-	cli, err := stgglb.AgentRPCPool.Acquire(stgglb.SelectGRPCAddress(&w.Node))
+	cli, err := stgglb.AgentRPCPool.Acquire(stgglb.SelectGRPCAddress(w.Node, w.Address))
 	if err != nil {
 		return nil, err
 	}

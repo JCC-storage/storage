@@ -41,7 +41,7 @@ func (s *Server) Serve() error {
 func (s *Server) initRouters() {
 	rt := s.engine.Use()
 
-	initTemp(rt, s)
+	// initTemp(rt, s)
 
 	rt.GET(cdsapi.ObjectDownloadPath, s.Object().Download)
 	rt.POST(cdsapi.ObjectUploadPath, s.Object().Upload)
@@ -55,8 +55,8 @@ func (s *Server) initRouters() {
 	rt.POST(cdsapi.PackageCreatePath, s.Package().Create)
 	rt.POST(cdsapi.PackageDeletePath, s.Package().Delete)
 	rt.GET(cdsapi.PackageListBucketPackagesPath, s.Package().ListBucketPackages)
-	rt.GET(cdsapi.PackageGetCachedNodesPath, s.Package().GetCachedNodes)
-	rt.GET(cdsapi.PackageGetLoadedNodesPath, s.Package().GetLoadedNodes)
+	rt.GET(cdsapi.PackageGetCachedStoragesPath, s.Package().GetCachedStorages)
+	rt.GET(cdsapi.PackageGetLoadedStoragesPath, s.Package().GetLoadedStorages)
 
 	rt.POST(cdsapi.StorageLoadPackagePath, s.Storage().LoadPackage)
 	rt.POST(cdsapi.StorageCreatePackagePath, s.Storage().CreatePackage)

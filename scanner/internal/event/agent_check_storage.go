@@ -4,13 +4,13 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/storage/common/consts"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/model"
 	agtmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/agent"
 	scevt "gitlink.org.cn/cloudream/storage/common/pkgs/mq/scanner/event"
 )
@@ -45,7 +45,7 @@ func (t *AgentCheckStorage) Execute(execCtx ExecuteContext) {
 
 	// 读取数据的地方就不加锁了，因为check任务会反复执行，单次失败问题不大
 
-	stg, err := execCtx.Args.DB.Storage().GetByID(execCtx.Args.DB.SQLCtx(), t.StorageID)
+	stg, err := execCtx.Args.DB.Storage().GetByID(execCtx.Args.DB.DefCtx(), t.StorageID)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			log.WithField("StorageID", t.StorageID).Warnf("get storage failed, err: %s", err.Error())
@@ -53,7 +53,7 @@ func (t *AgentCheckStorage) Execute(execCtx ExecuteContext) {
 		return
 	}
 
-	node, err := execCtx.Args.DB.Node().GetByID(execCtx.Args.DB.SQLCtx(), stg.NodeID)
+	node, err := execCtx.Args.DB.Node().GetByID(execCtx.Args.DB.DefCtx(), stg.MasterHub)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			log.WithField("StorageID", t.StorageID).Warnf("get storage node failed, err: %s", err.Error())
@@ -65,16 +65,16 @@ func (t *AgentCheckStorage) Execute(execCtx ExecuteContext) {
 		return
 	}
 
-	agtCli, err := stgglb.AgentMQPool.Acquire(stg.NodeID)
+	agtCli, err := stgglb.AgentMQPool.Acquire(stg.MasterHub)
 	if err != nil {
-		log.WithField("NodeID", stg.NodeID).Warnf("create agent client failed, err: %s", err.Error())
+		log.WithField("MasterHub", stg.MasterHub).Warnf("create agent client failed, err: %s", err.Error())
 		return
 	}
 	defer stgglb.AgentMQPool.Release(agtCli)
 
 	checkResp, err := agtCli.StorageCheck(agtmq.NewStorageCheck(stg.StorageID), mq.RequestOption{Timeout: time.Minute})
 	if err != nil {
-		log.WithField("NodeID", stg.NodeID).Warnf("checking storage: %s", err.Error())
+		log.WithField("MasterHub", stg.MasterHub).Warnf("checking storage: %s", err.Error())
 		return
 	}
 	realPkgs := make(map[cdssdk.UserID]map[cdssdk.PackageID]bool)
@@ -88,7 +88,7 @@ func (t *AgentCheckStorage) Execute(execCtx ExecuteContext) {
 		pkgs[pkg.PackageID] = true
 	}
 
-	execCtx.Args.DB.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
+	execCtx.Args.DB.DoTx(func(tx db2.SQLContext) error {
 		packages, err := execCtx.Args.DB.StoragePackage().GetAllByStorageID(tx, t.StorageID)
 		if err != nil {
 			log.Warnf("getting storage package: %s", err.Error())

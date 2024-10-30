@@ -6,6 +6,7 @@ import (
 
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/dag"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
+	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/math2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc/ops2"
@@ -71,7 +72,7 @@ func buildFromNode(ctx *GenerateContext, f ioswitchlrc.From) (ops2.FromNode, err
 			t.Open.WithNullableLength(blkRange.Offset, blkRange.Length)
 		}
 
-		t.Env().ToEnvWorker(&ioswitchlrc.AgentWorker{Node: f.Node})
+		t.Env().ToEnvWorker(&ioswitchlrc.AgentWorker{Node: f.Node, Address: *f.Node.Address.(*cdssdk.GRPCAddressInfo)})
 		t.Env().Pinned = true
 
 		return t, nil
@@ -100,7 +101,7 @@ func buildToNode(ctx *GenerateContext, t ioswitchlrc.To) (ops2.ToNode, error) {
 	switch t := t.(type) {
 	case *ioswitchlrc.ToNode:
 		n := ctx.DAG.NewShardWrite(t.FileHashStoreKey)
-		n.Env().ToEnvWorker(&ioswitchlrc.AgentWorker{Node: t.Node})
+		n.Env().ToEnvWorker(&ioswitchlrc.AgentWorker{Node: t.Hub})
 		n.Env().Pinned = true
 
 		return n, nil

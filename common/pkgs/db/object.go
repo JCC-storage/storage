@@ -1,5 +1,6 @@
 package db
 
+/*
 import (
 	"fmt"
 	"strings"
@@ -372,3 +373,4 @@ func (*ObjectDB) DeleteInPackage(ctx SQLContext, packageID cdssdk.PackageID) err
 	_, err := ctx.Exec("delete from Object where PackageID = ?", packageID)
 	return err
 }
+*/

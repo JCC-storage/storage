@@ -3,7 +3,6 @@ package agent
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/types"
 )
 
 type CacheService interface {
@@ -24,13 +23,13 @@ type CheckCache struct {
 }
 type CheckCacheResp struct {
 	mq.MessageBodyBase
-	FileHashes []types.FileHash `json:"fileHashes"`
+	FileHashes []cdssdk.FileHash `json:"fileHashes"`
 }
 
 func NewCheckCache(stgID cdssdk.StorageID) *CheckCache {
 	return &CheckCache{StorageID: stgID}
 }
-func NewCheckCacheResp(fileHashes []types.FileHash) *CheckCacheResp {
+func NewCheckCacheResp(fileHashes []cdssdk.FileHash) *CheckCacheResp {
 	return &CheckCacheResp{
 		FileHashes: fileHashes,
 	}
@@ -44,14 +43,14 @@ var _ = Register(Service.CacheGC)
 
 type CacheGC struct {
 	mq.MessageBodyBase
-	StorageID cdssdk.StorageID `json:"storageID"`
-	Avaiables []types.FileHash `json:"avaiables"`
+	StorageID cdssdk.StorageID  `json:"storageID"`
+	Avaiables []cdssdk.FileHash `json:"avaiables"`
 }
 type CacheGCResp struct {
 	mq.MessageBodyBase
 }
 
-func ReqCacheGC(stgID cdssdk.StorageID, avaiables []types.FileHash) *CacheGC {
+func ReqCacheGC(stgID cdssdk.StorageID, avaiables []cdssdk.FileHash) *CacheGC {
 	return &CacheGC{
 		StorageID: stgID,
 		Avaiables: avaiables,

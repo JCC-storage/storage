@@ -1,5 +1,6 @@
 package http
 
+/*
 import (
 	"net/http"
 
@@ -132,7 +133,7 @@ func (s *TempService) GetObjectDetail(ctx *gin.Context) {
 	var allNodeIDs []cdssdk.NodeID
 	allNodeIDs = append(allNodeIDs, details.PinnedAt...)
 	for _, b := range details.Blocks {
-		allNodeIDs = append(allNodeIDs, b.NodeID)
+		allNodeIDs = append(allNodeIDs, b.StorageID)
 	}
 	allNodeIDs = append(allNodeIDs, loadedNodeIDs...)
 
@@ -165,23 +166,23 @@ func (s *TempService) GetObjectDetail(ctx *gin.Context) {
 	switch details.Object.Redundancy.(type) {
 	case *cdssdk.NoneRedundancy:
 		for _, blk := range details.Blocks {
-			if !lo.Contains(details.PinnedAt, blk.NodeID) {
+			if !lo.Contains(details.PinnedAt, blk.StorageID) {
 				blocks = append(blocks, ObjectBlockDetail{
 					Type:         "Rep",
 					FileHash:     blk.FileHash,
 					LocationType: "Agent",
-					LocationName: allNodes[blk.NodeID].Name,
+					LocationName: allNodes[blk.StorageID].Name,
 				})
 			}
 		}
 	case *cdssdk.RepRedundancy:
 		for _, blk := range details.Blocks {
-			if !lo.Contains(details.PinnedAt, blk.NodeID) {
+			if !lo.Contains(details.PinnedAt, blk.StorageID) {
 				blocks = append(blocks, ObjectBlockDetail{
 					Type:         "Rep",
 					FileHash:     blk.FileHash,
 					LocationType: "Agent",
-					LocationName: allNodes[blk.NodeID].Name,
+					LocationName: allNodes[blk.StorageID].Name,
 				})
 			}
 		}
@@ -192,7 +193,7 @@ func (s *TempService) GetObjectDetail(ctx *gin.Context) {
 				Type:         "Block",
 				FileHash:     blk.FileHash,
 				LocationType: "Agent",
-				LocationName: allNodes[blk.NodeID].Name,
+				LocationName: allNodes[blk.StorageID].Name,
 			})
 		}
 	}
@@ -322,25 +323,25 @@ func (s *TempService) GetDatabaseAll(ctx *gin.Context) {
 		switch obj.Object.Redundancy.(type) {
 		case *cdssdk.NoneRedundancy:
 			for _, blk := range obj.Blocks {
-				if !lo.Contains(obj.PinnedAt, blk.NodeID) {
+				if !lo.Contains(obj.PinnedAt, blk.StorageID) {
 					blocks = append(blocks, ObjectBlockDetail{
 						ObjectID:     obj.Object.ObjectID,
 						Type:         "Rep",
 						FileHash:     blk.FileHash,
 						LocationType: "Agent",
-						LocationName: allNodes[blk.NodeID].Name,
+						LocationName: allNodes[blk.StorageID].Name,
 					})
 				}
 			}
 		case *cdssdk.RepRedundancy:
 			for _, blk := range obj.Blocks {
-				if !lo.Contains(obj.PinnedAt, blk.NodeID) {
+				if !lo.Contains(obj.PinnedAt, blk.StorageID) {
 					blocks = append(blocks, ObjectBlockDetail{
 						ObjectID:     obj.Object.ObjectID,
 						Type:         "Rep",
 						FileHash:     blk.FileHash,
 						LocationType: "Agent",
-						LocationName: allNodes[blk.NodeID].Name,
+						LocationName: allNodes[blk.StorageID].Name,
 					})
 				}
 			}
@@ -352,7 +353,7 @@ func (s *TempService) GetDatabaseAll(ctx *gin.Context) {
 					Type:         "Block",
 					FileHash:     blk.FileHash,
 					LocationType: "Agent",
-					LocationName: allNodes[blk.NodeID].Name,
+					LocationName: allNodes[blk.StorageID].Name,
 				})
 			}
 		}
@@ -389,3 +390,4 @@ func auth(ctx *gin.Context) {
 		ctx.AbortWithStatus(http.StatusUnauthorized)
 	}
 }
+*/

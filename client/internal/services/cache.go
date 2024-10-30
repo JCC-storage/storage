@@ -26,16 +26,16 @@ func (svc *CacheService) StartCacheMovePackage(userID cdssdk.UserID, packageID c
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-	getStg, err := coorCli.GetStorageDetail(coormq.ReqGetStorageDetail(stgID))
+	getStg, err := coorCli.GetStorageDetails(coormq.ReqGetStorageDetails([]cdssdk.StorageID{stgID}))
 	if err != nil {
 		return 0, "", fmt.Errorf("get storage detail: %w", err)
 	}
 
-	if getStg.Storage.Shard == nil {
+	if getStg.Storages[0].Shard == nil {
 		return 0, "", fmt.Errorf("shard storage is not enabled")
 	}
 
-	agentCli, err := stgglb.AgentMQPool.Acquire(getStg.Storage.Shard.MasterHub)
+	agentCli, err := stgglb.AgentMQPool.Acquire(getStg.Storages[0].MasterHub.NodeID)
 	if err != nil {
 		return 0, "", fmt.Errorf("new agent client: %w", err)
 	}
@@ -46,7 +46,7 @@ func (svc *CacheService) StartCacheMovePackage(userID cdssdk.UserID, packageID c
 		return 0, "", fmt.Errorf("start cache move package: %w", err)
 	}
 
-	return getStg.Storage.Shard.MasterHub, startResp.TaskID, nil
+	return getStg.Storages[0].MasterHub.NodeID, startResp.TaskID, nil
 }
 
 func (svc *CacheService) WaitCacheMovePackage(hubID cdssdk.NodeID, taskID string, waitTimeout time.Duration) (bool, error) {
@@ -72,14 +72,14 @@ func (svc *CacheService) WaitCacheMovePackage(hubID cdssdk.NodeID, taskID string
 	return true, nil
 }
 
-func (svc *CacheService) CacheRemovePackage(packageID cdssdk.PackageID, nodeID cdssdk.NodeID) error {
+func (svc *CacheService) CacheRemovePackage(packageID cdssdk.PackageID, stgID cdssdk.StorageID) error {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return fmt.Errorf("new agent client: %w", err)
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-	_, err = coorCli.CacheRemovePackage(coormq.ReqCacheRemoveMovedPackage(packageID, nodeID))
+	_, err = coorCli.CacheRemovePackage(coormq.ReqCacheRemoveMovedPackage(packageID, stgID))
 	if err != nil {
 		return fmt.Errorf("requesting to coordinator: %w", err)
 	}

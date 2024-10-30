@@ -19,7 +19,7 @@ func (e *BatchCheckAllPackage) Execute(ctx ExecuteContext) {
 	log.Debugf("begin")
 	defer log.Debugf("end")
 
-	packageIDs, err := ctx.Args.DB.Package().BatchGetAllPackageIDs(ctx.Args.DB.SQLCtx(), e.lastCheckStart, CheckPackageBatchSize)
+	packageIDs, err := ctx.Args.DB.Package().BatchGetAllPackageIDs(ctx.Args.DB.DefCtx(), e.lastCheckStart, CheckPackageBatchSize)
 	if err != nil {
 		log.Warnf("batch get package ids failed, err: %s", err.Error())
 		return

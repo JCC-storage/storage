@@ -117,7 +117,7 @@ func (d *Downloader) DownloadPackage(pkgID cdssdk.PackageID) DownloadIterator {
 
 type ObjectECStrip struct {
 	Data           []byte
-	ObjectFileHash string // 添加这条缓存时，Object的FileHash
+	ObjectFileHash cdssdk.FileHash // 添加这条缓存时，Object的FileHash
 }
 
 type ECStripKey struct {

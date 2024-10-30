@@ -21,7 +21,7 @@ func init() {
 }
 
 type FileHashValue struct {
-	Hash types.FileHash `json:"hash"`
+	Hash cdssdk.FileHash `json:"hash"`
 }
 
 func (v *FileHashValue) Clone() exec.VarValue {
@@ -45,9 +45,9 @@ func (o *ShardRead) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 		return fmt.Errorf("getting shard store pool: %w", err)
 	}
 
-	store, err := pool.Get(o.StorageID)
-	if err != nil {
-		return fmt.Errorf("getting shard store %v: %w", o.StorageID, err)
+	store := pool.Get(o.StorageID)
+	if store == nil {
+		return fmt.Errorf("shard store %v not found", o.StorageID)
 	}
 
 	file, err := store.Open(o.Open)
@@ -87,9 +87,9 @@ func (o *ShardWrite) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 		return fmt.Errorf("getting shard store pool: %w", err)
 	}
 
-	store, err := pool.Get(o.StorageID)
-	if err != nil {
-		return fmt.Errorf("getting shard store %v: %w", o.StorageID, err)
+	store := pool.Get(o.StorageID)
+	if store == nil {
+		return fmt.Errorf("shard store %v not found", o.StorageID)
 	}
 
 	input, err := exec.BindVar[*exec.StreamValue](e, ctx.Context, o.Input)
@@ -158,10 +158,11 @@ func (t *ShardReadNode) GenerateOp() (exec.Op, error) {
 
 type ShardWriteNode struct {
 	dag.NodeBase
+	StorageID        cdssdk.StorageID
 	FileHashStoreKey string
 }
 
-func (b *GraphNodeBuilder) NewShardWrite(fileHashStoreKey string) *ShardWriteNode {
+func (b *GraphNodeBuilder) NewShardWrite(stgID cdssdk.StorageID, fileHashStoreKey string) *ShardWriteNode {
 	node := &ShardWriteNode{
 		FileHashStoreKey: fileHashStoreKey,
 	}
@@ -188,8 +189,9 @@ func (t *ShardWriteNode) FileHashVar() *dag.Var {
 
 func (t *ShardWriteNode) GenerateOp() (exec.Op, error) {
 	return &ShardWrite{
-		Input:    t.InputStreams().Get(0).VarID,
-		FileHash: t.OutputValues().Get(0).VarID,
+		Input:     t.InputStreams().Get(0).VarID,
+		FileHash:  t.OutputValues().Get(0).VarID,
+		StorageID: t.StorageID,
 	}, nil
 }
 

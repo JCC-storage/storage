@@ -6,6 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/model"
 	"gitlink.org.cn/cloudream/storage/coordinator/internal/config"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -39,29 +41,33 @@ func migrate(configPath string) {
 		os.Exit(1)
 	}
 
-	err = db.AutoMigrate(&cdssdk.Node{})
-	if err != nil {
-		fmt.Printf("migratting model Node: %v\n", err)
-		os.Exit(1)
-	}
-
-	err = db.AutoMigrate(&cdssdk.Storage{})
-	if err != nil {
-		fmt.Printf("migratting model Storage: %v\n", err)
-		os.Exit(1)
-	}
-
-	err = db.AutoMigrate(&cdssdk.ShardStorage{})
-	if err != nil {
-		fmt.Printf("migratting model ShardStorage: %v\n", err)
-		os.Exit(1)
-	}
-
-	err = db.AutoMigrate(&cdssdk.SharedStorage{})
-	if err != nil {
-		fmt.Printf("migratting model SharedStorage: %v\n", err)
-		os.Exit(1)
-	}
+	migrateOne(db, cdssdk.Bucket{})
+	migrateOne(db, model.Cache{})
+	migrateOne(db, model.Location{})
+	migrateOne(db, model.NodeConnectivity{})
+	migrateOne(db, cdssdk.Node{})
+	migrateOne(db, stgmod.ObjectAccessStat{})
+	migrateOne(db, stgmod.ObjectBlock{})
+	migrateOne(db, cdssdk.Object{})
+	migrateOne(db, stgmod.PackageAccessStat{})
+	migrateOne(db, cdssdk.Package{})
+	migrateOne(db, cdssdk.PinnedObject{})
+	migrateOne(db, cdssdk.ShardStorage{})
+	migrateOne(db, cdssdk.SharedStorage{})
+	migrateOne(db, model.StoragePackage{})
+	migrateOne(db, cdssdk.Storage{})
+	migrateOne(db, model.UserStorage{})
+	migrateOne(db, model.UserBucket{})
+	migrateOne(db, model.User{})
+	migrateOne(db, model.UserNode{})
 
 	fmt.Println("migrate success")
+}
+
+func migrateOne[T any](db *gorm.DB, model T) {
+	err := db.AutoMigrate(model)
+	if err != nil {
+		fmt.Printf("migratting model %T: %v\n", model, err)
+		os.Exit(1)
+	}
 }

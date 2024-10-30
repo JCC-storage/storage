@@ -15,10 +15,10 @@ func (db *DB) ObjectAccessStat() *ObjectAccessStatDB {
 	return &ObjectAccessStatDB{db}
 }
 
-func (*ObjectAccessStatDB) Get(ctx SQLContext, objID cdssdk.ObjectID, nodeID cdssdk.NodeID) (stgmod.ObjectAccessStat, error) {
+func (*ObjectAccessStatDB) Get(ctx SQLContext, objID cdssdk.ObjectID, stgID cdssdk.StorageID) (stgmod.ObjectAccessStat, error) {
 	var ret stgmod.ObjectAccessStat
 	err := ctx.Table("ObjectAccessStat").
-		Where("ObjectID = ? AND NodeID = ?", objID, nodeID).
+		Where("ObjectID = ? AND StorageID = ?", objID, stgID).
 		First(&ret).Error
 	return ret, err
 }
@@ -43,14 +43,14 @@ func (*ObjectAccessStatDB) BatchGetByObjectID(ctx SQLContext, objIDs []cdssdk.Ob
 	return ret, err
 }
 
-func (*ObjectAccessStatDB) BatchGetByObjectIDOnNode(ctx SQLContext, objIDs []cdssdk.ObjectID, nodeID cdssdk.NodeID) ([]stgmod.ObjectAccessStat, error) {
+func (*ObjectAccessStatDB) BatchGetByObjectIDOnStorage(ctx SQLContext, objIDs []cdssdk.ObjectID, stgID cdssdk.StorageID) ([]stgmod.ObjectAccessStat, error) {
 	if len(objIDs) == 0 {
 		return nil, nil
 	}
 
 	var ret []stgmod.ObjectAccessStat
 	err := ctx.Table("ObjectAccessStat").
-		Where("ObjectID IN ? AND NodeID = ?", objIDs, nodeID).
+		Where("ObjectID IN ? AND StorageID = ?", objIDs, stgID).
 		Find(&ret).Error
 	return ret, err
 }

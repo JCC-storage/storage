@@ -27,7 +27,7 @@ func (e *BatchCleanPinned) Execute(ctx ExecuteContext) {
 		return
 	}
 
-	packageIDs, err := ctx.Args.DB.Package().BatchGetAllPackageIDs(ctx.Args.DB.SQLCtx(), e.lastCheckStart, CheckPackageBatchSize)
+	packageIDs, err := ctx.Args.DB.Package().BatchGetAllPackageIDs(ctx.Args.DB.DefCtx(), e.lastCheckStart, CheckPackageBatchSize)
 	if err != nil {
 		log.Warnf("batch get package ids failed, err: %s", err.Error())
 		return

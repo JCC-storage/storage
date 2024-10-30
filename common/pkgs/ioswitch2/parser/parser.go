@@ -234,7 +234,7 @@ func (p *DefaultParser) buildFromNode(ctx *ParseContext, f ioswitch2.From) (ops2
 	}
 
 	switch f := f.(type) {
-	case *ioswitch2.FromNode:
+	case *ioswitch2.FromShardstore:
 		t := ctx.DAG.NewShardRead(f.Storage.StorageID, types.NewOpen(f.FileHash))
 
 		if f.DataIndex == -1 {
@@ -243,17 +243,17 @@ func (p *DefaultParser) buildFromNode(ctx *ParseContext, f ioswitch2.From) (ops2
 			t.Open.WithNullableLength(blkRange.Offset, blkRange.Length)
 		}
 
-		switch typeInfo := f.Node.Address.(type) {
+		switch addr := f.Hub.Address.(type) {
 		case *cdssdk.HttpAddressInfo:
-			t.Env().ToEnvWorker(&ioswitch2.HttpHubWorker{Node: f.Node})
+			t.Env().ToEnvWorker(&ioswitch2.HttpHubWorker{Node: f.Hub})
 			t.Env().Pinned = true
 
 		case *cdssdk.GRPCAddressInfo:
-			t.Env().ToEnvWorker(&ioswitch2.AgentWorker{Node: f.Node})
+			t.Env().ToEnvWorker(&ioswitch2.AgentWorker{Node: f.Hub, Address: *addr})
 			t.Env().Pinned = true
 
 		default:
-			return nil, fmt.Errorf("unsupported node address type %T", typeInfo)
+			return nil, fmt.Errorf("unsupported node address type %T", addr)
 		}
 
 		return t, nil
@@ -280,9 +280,9 @@ func (p *DefaultParser) buildFromNode(ctx *ParseContext, f ioswitch2.From) (ops2
 
 func (p *DefaultParser) buildToNode(ctx *ParseContext, t ioswitch2.To) (ops2.ToNode, error) {
 	switch t := t.(type) {
-	case *ioswitch2.ToNode:
-		n := ctx.DAG.NewShardWrite(t.FileHashStoreKey)
-		n.Env().ToEnvWorker(&ioswitch2.AgentWorker{Node: t.Node})
+	case *ioswitch2.ToShardStore:
+		n := ctx.DAG.NewShardWrite(t.Storage.StorageID, t.FileHashStoreKey)
+		n.Env().ToEnvWorker(&ioswitch2.AgentWorker{Node: t.Hub})
 		n.Env().Pinned = true
 
 		return n, nil

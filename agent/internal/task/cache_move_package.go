@@ -40,14 +40,14 @@ func (t *CacheMovePackage) do(ctx TaskContext) error {
 	log.Debugf("begin with %v", logger.FormatStruct(t))
 	defer log.Debugf("end")
 
-	store, err := ctx.shardStorePool.Get(t.storageID)
-	if err != nil {
-		return fmt.Errorf("getting shard store: %w", err)
+	store := ctx.shardStorePool.Get(t.storageID)
+	if store == nil {
+		return fmt.Errorf("storage has no shard store")
 	}
 
 	mutex, err := reqbuilder.NewBuilder().
 		// 保护解码出来的Object数据
-		IPFS().Buzy(*stgglb.Local.NodeID).
+		Shard().Buzy(t.storageID).
 		MutexLock(ctx.distlock)
 	if err != nil {
 		return fmt.Errorf("acquiring distlock: %w", err)

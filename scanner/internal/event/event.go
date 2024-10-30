@@ -7,12 +7,12 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/distlock"
 	event "gitlink.org.cn/cloudream/common/pkgs/event"
 	"gitlink.org.cn/cloudream/common/pkgs/typedispatcher"
-	mydb "gitlink.org.cn/cloudream/storage/common/pkgs/db"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 	scevt "gitlink.org.cn/cloudream/storage/common/pkgs/mq/scanner/event"
 )
 
 type ExecuteArgs struct {
-	DB       *mydb.DB
+	DB       *db2.DB
 	DistLock *distlock.Service
 }
 
@@ -24,7 +24,7 @@ type Event = event.Event[ExecuteArgs]
 
 type ExecuteOption = event.ExecuteOption
 
-func NewExecutor(db *mydb.DB, distLock *distlock.Service) Executor {
+func NewExecutor(db *db2.DB, distLock *distlock.Service) Executor {
 	return event.NewExecutor(ExecuteArgs{
 		DB:       db,
 		DistLock: distLock,

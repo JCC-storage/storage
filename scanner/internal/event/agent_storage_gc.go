@@ -55,21 +55,21 @@ func (t *AgentStorageGC) Execute(execCtx ExecuteContext) {
 	}
 	defer mutex.Unlock()
 
-	getStg, err := execCtx.Args.DB.Storage().GetByID(execCtx.Args.DB.SQLCtx(), t.StorageID)
+	getStg, err := execCtx.Args.DB.Storage().GetByID(execCtx.Args.DB.DefCtx(), t.StorageID)
 	if err != nil {
 		log.WithField("StorageID", t.StorageID).Warnf("getting storage: %s", err.Error())
 		return
 	}
 
-	stgPkgs, err := execCtx.Args.DB.StoragePackage().GetAllByStorageID(execCtx.Args.DB.SQLCtx(), t.StorageID)
+	stgPkgs, err := execCtx.Args.DB.StoragePackage().GetAllByStorageID(execCtx.Args.DB.DefCtx(), t.StorageID)
 	if err != nil {
 		log.WithField("StorageID", t.StorageID).Warnf("getting storage packages: %s", err.Error())
 		return
 	}
 
-	agtCli, err := stgglb.AgentMQPool.Acquire(getStg.NodeID)
+	agtCli, err := stgglb.AgentMQPool.Acquire(getStg.MasterHub)
 	if err != nil {
-		log.WithField("NodeID", getStg.NodeID).Warnf("create agent client failed, err: %s", err.Error())
+		log.WithField("MasterHub", getStg.MasterHub).Warnf("create agent client failed, err: %s", err.Error())
 		return
 	}
 	defer stgglb.AgentMQPool.Release(agtCli)

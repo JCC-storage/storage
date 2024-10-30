@@ -1,14 +1,14 @@
 package event
 
 import (
-	"database/sql"
 	"fmt"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
+	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock/reqbuilder"
 
 	agtmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/agent"
@@ -37,7 +37,7 @@ func (t *AgentCacheGC) TryMerge(other Event) bool {
 		return false
 	}
 
-	if event.NodeID != t.NodeID {
+	if event.StorageID != t.StorageID {
 		return false
 	}
 
@@ -57,7 +57,7 @@ func (t *AgentCacheGC) Execute(execCtx ExecuteContext) {
 	// 使用分布式锁进行资源锁定
 	mutex, err := reqbuilder.NewBuilder().
 		// 执行IPFS垃圾回收
-		IPFS().GC(t.NodeID).
+		Shard().GC(t.StorageID).
 		MutexLock(execCtx.Args.DistLock)
 	if err != nil {
 		log.Warnf("acquire locks failed, err: %s", err.Error())
@@ -66,9 +66,20 @@ func (t *AgentCacheGC) Execute(execCtx ExecuteContext) {
 	defer mutex.Unlock()
 
 	// 收集需要进行垃圾回收的文件哈希值
-	var allFileHashes []string
-	err = execCtx.Args.DB.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
-		blocks, err := execCtx.Args.DB.ObjectBlock().GetByNodeID(tx, t.NodeID)
+	var allFileHashes []cdssdk.FileHash
+	var masterHub cdssdk.Node
+	err = execCtx.Args.DB.DoTx(func(tx db2.SQLContext) error {
+		stg, err := execCtx.Args.DB.Storage().GetByID(tx, t.StorageID)
+		if err != nil {
+			return fmt.Errorf("getting storage by id: %w", err)
+		}
+
+		masterHub, err = execCtx.Args.DB.Node().GetByID(tx, stg.MasterHub)
+		if err != nil {
+			return fmt.Errorf("getting master hub by id: %w", err)
+		}
+
+		blocks, err := execCtx.Args.DB.ObjectBlock().GetByStorageID(tx, t.StorageID)
 		if err != nil {
 			return fmt.Errorf("getting object blocks by node id: %w", err)
 		}
@@ -76,7 +87,7 @@ func (t *AgentCacheGC) Execute(execCtx ExecuteContext) {
 			allFileHashes = append(allFileHashes, c.FileHash)
 		}
 
-		objs, err := execCtx.Args.DB.PinnedObject().GetObjectsByNodeID(tx, t.NodeID)
+		objs, err := execCtx.Args.DB.PinnedObject().GetObjectsByStorageID(tx, t.StorageID)
 		if err != nil {
 			return fmt.Errorf("getting pinned objects by node id: %w", err)
 		}
@@ -87,22 +98,22 @@ func (t *AgentCacheGC) Execute(execCtx ExecuteContext) {
 		return nil
 	})
 	if err != nil {
-		log.WithField("NodeID", t.NodeID).Warn(err.Error())
+		log.WithField("NodeID", t.StorageID).Warn(err.Error())
 		return
 	}
 
 	// 获取与节点通信的代理客户端
-	agtCli, err := stgglb.AgentMQPool.Acquire(t.NodeID)
+	agtCli, err := stgglb.AgentMQPool.Acquire(masterHub.NodeID)
 	if err != nil {
-		log.WithField("NodeID", t.NodeID).Warnf("create agent client failed, err: %s", err.Error())
+		log.WithField("NodeID", t.StorageID).Warnf("create agent client failed, err: %s", err.Error())
 		return
 	}
 	defer stgglb.AgentMQPool.Release(agtCli)
 
 	// 向代理发送垃圾回收请求
-	_, err = agtCli.CacheGC(agtmq.ReqCacheGC(allFileHashes), mq.RequestOption{Timeout: time.Minute})
+	_, err = agtCli.CacheGC(agtmq.ReqCacheGC(t.StorageID, allFileHashes), mq.RequestOption{Timeout: time.Minute})
 	if err != nil {
-		log.WithField("NodeID", t.NodeID).Warnf("ipfs gc: %s", err.Error())
+		log.WithField("NodeID", t.StorageID).Warnf("ipfs gc: %s", err.Error())
 		return
 	}
 }

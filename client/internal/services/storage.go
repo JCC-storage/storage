@@ -7,7 +7,7 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/model"
 	agtmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/agent"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
@@ -57,16 +57,16 @@ func (svc *StorageService) StartStorageLoadPackage(userID cdssdk.UserID, package
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-	stgResp, err := coorCli.GetStorageDetail(coormq.ReqGetStorageDetail(storageID))
+	stgResp, err := coorCli.GetStorageDetails(coormq.ReqGetStorageDetails([]cdssdk.StorageID{storageID}))
 	if err != nil {
 		return 0, "", fmt.Errorf("getting storage info: %w", err)
 	}
 
-	if stgResp.Storage.Shard == nil {
+	if stgResp.Storages[0].Shard == nil {
 		return 0, "", fmt.Errorf("shard storage is not enabled")
 	}
 
-	agentCli, err := stgglb.AgentMQPool.Acquire(stgResp.Storage.Shard.MasterHub)
+	agentCli, err := stgglb.AgentMQPool.Acquire(stgResp.Storages[0].MasterHub.NodeID)
 	if err != nil {
 		return 0, "", fmt.Errorf("new agent client: %w", err)
 	}
@@ -77,7 +77,7 @@ func (svc *StorageService) StartStorageLoadPackage(userID cdssdk.UserID, package
 		return 0, "", fmt.Errorf("start storage load package: %w", err)
 	}
 
-	return stgResp.Storage.Shard.MasterHub, startResp.TaskID, nil
+	return stgResp.Storages[0].MasterHub.NodeID, startResp.TaskID, nil
 }
 
 type StorageLoadPackageResult struct {
@@ -128,16 +128,16 @@ func (svc *StorageService) StartStorageCreatePackage(userID cdssdk.UserID, bucke
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-	stgResp, err := coorCli.GetStorageDetail(coormq.ReqGetStorageDetail(storageID))
+	stgResp, err := coorCli.GetStorageDetails(coormq.ReqGetStorageDetails([]cdssdk.StorageID{storageID}))
 	if err != nil {
 		return 0, "", fmt.Errorf("getting storage info: %w", err)
 	}
 
-	if stgResp.Storage.Shard == nil {
+	if stgResp.Storages[0].Shard == nil {
 		return 0, "", fmt.Errorf("shard storage is not enabled")
 	}
 
-	agentCli, err := stgglb.AgentMQPool.Acquire(stgResp.Storage.Shard.MasterHub)
+	agentCli, err := stgglb.AgentMQPool.Acquire(stgResp.Storages[0].MasterHub.NodeID)
 	if err != nil {
 		return 0, "", fmt.Errorf("new agent client: %w", err)
 	}
@@ -148,7 +148,7 @@ func (svc *StorageService) StartStorageCreatePackage(userID cdssdk.UserID, bucke
 		return 0, "", fmt.Errorf("start storage upload package: %w", err)
 	}
 
-	return stgResp.Storage.Shard.MasterHub, startResp.TaskID, nil
+	return stgResp.Storages[0].MasterHub.NodeID, startResp.TaskID, nil
 }
 
 func (svc *StorageService) WaitStorageCreatePackage(nodeID cdssdk.NodeID, taskID string, waitTimeout time.Duration) (bool, cdssdk.PackageID, error) {

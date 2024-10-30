@@ -18,7 +18,7 @@ func (e *CheckAgentState) Execute(ctx ExecuteContext) {
 	log.Debugf("begin")
 	defer log.Debugf("end")
 
-	nodes, err := ctx.Args.DB.Node().GetAllNodes(ctx.Args.DB.SQLCtx())
+	nodes, err := ctx.Args.DB.Node().GetAllNodes(ctx.Args.DB.DefCtx())
 	if err != nil {
 		log.Warnf("get all nodes failed, err: %s", err.Error())
 		return

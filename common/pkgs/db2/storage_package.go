@@ -2,7 +2,7 @@ package db2
 
 import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/model"
 )
 
 type StoragePackageDB struct {

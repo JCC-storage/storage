@@ -1,14 +1,18 @@
 package types
 
-import "fmt"
+import (
+	"fmt"
+
+	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+)
 
 type OpenOption struct {
-	FileHash FileHash
+	FileHash cdssdk.FileHash
 	Offset   int64
 	Length   int64
 }
 
-func NewOpen(fileHash FileHash) OpenOption {
+func NewOpen(fileHash cdssdk.FileHash) OpenOption {
 	return OpenOption{
 		FileHash: fileHash,
 		Offset:   0,

@@ -4,13 +4,15 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/model"
 )
 
 type StorageService interface {
 	GetStorage(msg *GetStorage) (*GetStorageResp, *mq.CodeMessage)
 
-	GetStorageDetail(msg *GetStorageDetail) (*GetStorageDetailResp, *mq.CodeMessage)
+	GetStorageDetails(msg *GetStorageDetails) (*GetStorageDetailsResp, *mq.CodeMessage)
+
+	GetUserStorageDetails(msg *GetUserStorageDetails) (*GetUserStorageDetailsResp, *mq.CodeMessage)
 
 	GetStorageByName(msg *GetStorageByName) (*GetStorageByNameResp, *mq.CodeMessage)
 
@@ -46,29 +48,29 @@ func (client *Client) GetStorage(msg *GetStorage) (*GetStorageResp, error) {
 }
 
 // 获取Storage的详细信息
-var _ = Register(Service.GetStorageDetail)
+var _ = Register(Service.GetStorageDetails)
 
-type GetStorageDetail struct {
+type GetStorageDetails struct {
 	mq.MessageBodyBase
-	StorageID cdssdk.StorageID `json:"storageID"`
+	StorageIDs []cdssdk.StorageID `json:"storageIDs"`
 }
-type GetStorageDetailResp struct {
+type GetStorageDetailsResp struct {
 	mq.MessageBodyBase
-	Storage stgmod.StorageDetail `json:"storage"`
+	Storages []*stgmod.StorageDetail `json:"storages"`
 }
 
-func ReqGetStorageDetail(storageID cdssdk.StorageID) *GetStorageDetail {
-	return &GetStorageDetail{
-		StorageID: storageID,
+func ReqGetStorageDetails(storageIDs []cdssdk.StorageID) *GetStorageDetails {
+	return &GetStorageDetails{
+		StorageIDs: storageIDs,
 	}
 }
-func RespGetStorageDetail(stg stgmod.StorageDetail) *GetStorageDetailResp {
-	return &GetStorageDetailResp{
-		Storage: stg,
+func RespGetStorageDetails(stgs []*stgmod.StorageDetail) *GetStorageDetailsResp {
+	return &GetStorageDetailsResp{
+		Storages: stgs,
 	}
 }
-func (client *Client) GetStorageDetail(msg *GetStorageDetail) (*GetStorageDetailResp, error) {
-	return mq.Request(Service.GetStorageDetail, client.rabbitCli, msg)
+func (client *Client) GetStorageDetails(msg *GetStorageDetails) (*GetStorageDetailsResp, error) {
+	return mq.Request(Service.GetStorageDetails, client.rabbitCli, msg)
 }
 
 var _ = Register(Service.GetStorageByName)
@@ -96,6 +98,32 @@ func RespGetStorageByNameResp(storage model.Storage) *GetStorageByNameResp {
 }
 func (client *Client) GetStorageByName(msg *GetStorageByName) (*GetStorageByNameResp, error) {
 	return mq.Request(Service.GetStorageByName, client.rabbitCli, msg)
+}
+
+// 获取用户的Storage信息
+var _ = Register(Service.GetUserStorageDetails)
+
+type GetUserStorageDetails struct {
+	mq.MessageBodyBase
+	UserID cdssdk.UserID `json:"userID"`
+}
+type GetUserStorageDetailsResp struct {
+	mq.MessageBodyBase
+	Storages []stgmod.StorageDetail `json:"storages"`
+}
+
+func ReqGetUserStorageDetails(userID cdssdk.UserID) *GetUserStorageDetails {
+	return &GetUserStorageDetails{
+		UserID: userID,
+	}
+}
+func RespGetUserStorageDetails(stgs []stgmod.StorageDetail) *GetUserStorageDetailsResp {
+	return &GetUserStorageDetailsResp{
+		Storages: stgs,
+	}
+}
+func (client *Client) GetUserStorageDetails(msg *GetUserStorageDetails) (*GetUserStorageDetailsResp, error) {
+	return mq.Request(Service.GetUserStorageDetails, client.rabbitCli, msg)
 }
 
 // 提交调度记录

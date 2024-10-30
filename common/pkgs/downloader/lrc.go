@@ -12,21 +12,21 @@ import (
 )
 
 func (iter *DownloadObjectIterator) downloadLRCObject(req downloadReqeust2, red *cdssdk.LRCRedundancy) (io.ReadCloser, error) {
-	allNodes, err := iter.sortDownloadNodes(req)
+	allStgs, err := iter.sortDownloadStorages(req)
 	if err != nil {
 		return nil, err
 	}
 
 	var blocks []downloadBlock
 	selectedBlkIdx := make(map[int]bool)
-	for _, node := range allNodes {
-		for _, b := range node.Blocks {
+	for _, stg := range allStgs {
+		for _, b := range stg.Blocks {
 			if b.Index >= red.M() || selectedBlkIdx[b.Index] {
 				continue
 			}
 			blocks = append(blocks, downloadBlock{
-				Node:  node.Node,
-				Block: b,
+				Storage: stg.Storage,
+				Block:   b,
 			})
 			selectedBlkIdx[b.Index] = true
 		}
@@ -40,7 +40,7 @@ func (iter *DownloadObjectIterator) downloadLRCObject(req downloadReqeust2, red 
 		if i > 0 {
 			logStrs = append(logStrs, ", ")
 		}
-		logStrs = append(logStrs, fmt.Sprintf("%v@%v(%v)", b.Block.Index, b.Node.Name, b.Node.NodeID))
+		logStrs = append(logStrs, fmt.Sprintf("%v@%v", b.Block.Index, b.Storage))
 	}
 	logger.Debug(logStrs...)
 

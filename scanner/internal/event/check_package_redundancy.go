@@ -17,8 +17,8 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/parser"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc/ops2"
 	lrcparser "gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc/parser"
-	agtmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/agent"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 	scevt "gitlink.org.cn/cloudream/storage/common/pkgs/mq/scanner/event"
 	"gitlink.org.cn/cloudream/storage/scanner/internal/config"
@@ -39,8 +39,8 @@ func NewCheckPackageRedundancy(evt *scevt.CheckPackageRedundancy) *CheckPackageR
 	}
 }
 
-type NodeLoadInfo struct {
-	Node         cdssdk.Node
+type StorageLoadInfo struct {
+	Storage      stgmod.StorageDetail
 	AccessAmount float64
 }
 
@@ -76,33 +76,33 @@ func (t *CheckPackageRedundancy) Execute(execCtx ExecuteContext) {
 		return
 	}
 
-	stats, err := execCtx.Args.DB.PackageAccessStat().GetByPackageID(execCtx.Args.DB.SQLCtx(), t.PackageID)
+	stats, err := execCtx.Args.DB.PackageAccessStat().GetByPackageID(execCtx.Args.DB.DefCtx(), t.PackageID)
 	if err != nil {
 		log.Warnf("getting package access stats: %s", err.Error())
 		return
 	}
 
 	// TODO UserID
-	getNodes, err := coorCli.GetUserNodes(coormq.NewGetUserNodes(1))
+	getStgs, err := coorCli.GetUserStorageDetails(coormq.ReqGetUserStorageDetails(1))
 	if err != nil {
 		log.Warnf("getting all nodes: %s", err.Error())
 		return
 	}
 
-	if len(getNodes.Nodes) == 0 {
+	if len(getStgs.Storages) == 0 {
 		log.Warnf("no available nodes")
 		return
 	}
 
-	userAllNodes := make(map[cdssdk.NodeID]*NodeLoadInfo)
-	for _, node := range getNodes.Nodes {
-		userAllNodes[node.NodeID] = &NodeLoadInfo{
-			Node: node,
+	userAllStorages := make(map[cdssdk.StorageID]*StorageLoadInfo)
+	for _, stg := range getStgs.Storages {
+		userAllStorages[stg.Storage.StorageID] = &StorageLoadInfo{
+			Storage: stg,
 		}
 	}
 
 	for _, stat := range stats {
-		info, ok := userAllNodes[stat.NodeID]
+		info, ok := userAllStorages[stat.StorageID]
 		if !ok {
 			continue
 		}
@@ -116,18 +116,18 @@ func (t *CheckPackageRedundancy) Execute(execCtx ExecuteContext) {
 
 	// TODO 目前rep的备份数量固定为2，所以这里直接选出两个节点
 	// TODO 放到chooseRedundancy函数中
-	mostBlockNodeIDs := t.summaryRepObjectBlockNodes(getObjs.Objects, 2)
-	newRepNodes := t.chooseNewNodesForRep(&defRep, userAllNodes)
-	rechoosedRepNodes := t.rechooseNodesForRep(mostBlockNodeIDs, &defRep, userAllNodes)
-	newECNodes := t.chooseNewNodesForEC(&defEC, userAllNodes)
+	mostBlockStgIDs := t.summaryRepObjectBlockNodes(getObjs.Objects, 2)
+	newRepStgs := t.chooseNewNodesForRep(&defRep, userAllStorages)
+	rechoosedRepStgs := t.rechooseNodesForRep(mostBlockStgIDs, &defRep, userAllStorages)
+	newECStgs := t.chooseNewNodesForEC(&defEC, userAllStorages)
 
 	// 加锁
 	builder := reqbuilder.NewBuilder()
-	for _, node := range newRepNodes {
-		builder.IPFS().Buzy(node.Node.NodeID)
+	for _, node := range newRepStgs {
+		builder.Shard().Buzy(node.Storage.Storage.StorageID)
 	}
-	for _, node := range newECNodes {
-		builder.IPFS().Buzy(node.Node.NodeID)
+	for _, node := range newECStgs {
+		builder.Shard().Buzy(node.Storage.Storage.StorageID)
 	}
 	mutex, err := builder.MutexLock(execCtx.Args.DistLock)
 	if err != nil {
@@ -140,18 +140,18 @@ func (t *CheckPackageRedundancy) Execute(execCtx ExecuteContext) {
 		var updating *coormq.UpdatingObjectRedundancy
 		var err error
 
-		newRed, selectedNodes := t.chooseRedundancy(obj, userAllNodes)
+		newRed, selectedNodes := t.chooseRedundancy(obj, userAllStorages)
 
 		switch srcRed := obj.Object.Redundancy.(type) {
 		case *cdssdk.NoneRedundancy:
 			switch newRed := newRed.(type) {
 			case *cdssdk.RepRedundancy:
 				log.WithField("ObjectID", obj.Object.ObjectID).Debugf("redundancy: none -> rep")
-				updating, err = t.noneToRep(obj, newRed, newRepNodes)
+				updating, err = t.noneToRep(obj, newRed, newRepStgs)
 
 			case *cdssdk.ECRedundancy:
 				log.WithField("ObjectID", obj.Object.ObjectID).Debugf("redundancy: none -> ec")
-				updating, err = t.noneToEC(obj, newRed, newECNodes)
+				updating, err = t.noneToEC(obj, newRed, newECStgs)
 
 			case *cdssdk.LRCRedundancy:
 				log.WithField("ObjectID", obj.Object.ObjectID).Debugf("redundancy: none -> lrc")
@@ -161,28 +161,28 @@ func (t *CheckPackageRedundancy) Execute(execCtx ExecuteContext) {
 		case *cdssdk.RepRedundancy:
 			switch newRed := newRed.(type) {
 			case *cdssdk.RepRedundancy:
-				updating, err = t.repToRep(obj, srcRed, rechoosedRepNodes)
+				updating, err = t.repToRep(obj, srcRed, rechoosedRepStgs)
 
 			case *cdssdk.ECRedundancy:
 				log.WithField("ObjectID", obj.Object.ObjectID).Debugf("redundancy: rep -> ec")
-				updating, err = t.repToEC(obj, newRed, newECNodes)
+				updating, err = t.repToEC(obj, newRed, newECStgs)
 			}
 
 		case *cdssdk.ECRedundancy:
 			switch newRed := newRed.(type) {
 			case *cdssdk.RepRedundancy:
 				log.WithField("ObjectID", obj.Object.ObjectID).Debugf("redundancy: ec -> rep")
-				updating, err = t.ecToRep(obj, srcRed, newRed, newRepNodes)
+				updating, err = t.ecToRep(obj, srcRed, newRed, newRepStgs)
 
 			case *cdssdk.ECRedundancy:
-				uploadNodes := t.rechooseNodesForEC(obj, srcRed, userAllNodes)
+				uploadNodes := t.rechooseNodesForEC(obj, srcRed, userAllStorages)
 				updating, err = t.ecToEC(obj, srcRed, newRed, uploadNodes)
 			}
 
 		case *cdssdk.LRCRedundancy:
 			switch newRed := newRed.(type) {
 			case *cdssdk.LRCRedundancy:
-				uploadNodes := t.rechooseNodesForLRC(obj, srcRed, userAllNodes)
+				uploadNodes := t.rechooseNodesForLRC(obj, srcRed, userAllStorages)
 				updating, err = t.lrcToLRC(obj, srcRed, newRed, uploadNodes)
 			}
 		}
@@ -207,105 +207,105 @@ func (t *CheckPackageRedundancy) Execute(execCtx ExecuteContext) {
 	}
 }
 
-func (t *CheckPackageRedundancy) chooseRedundancy(obj stgmod.ObjectDetail, userAllNodes map[cdssdk.NodeID]*NodeLoadInfo) (cdssdk.Redundancy, []*NodeLoadInfo) {
+func (t *CheckPackageRedundancy) chooseRedundancy(obj stgmod.ObjectDetail, userAllStgs map[cdssdk.StorageID]*StorageLoadInfo) (cdssdk.Redundancy, []*StorageLoadInfo) {
 	switch obj.Object.Redundancy.(type) {
 	case *cdssdk.NoneRedundancy:
-		newNodes := t.chooseNewNodesForEC(&cdssdk.DefaultECRedundancy, userAllNodes)
-		return &cdssdk.DefaultECRedundancy, newNodes
+		newStgs := t.chooseNewNodesForEC(&cdssdk.DefaultECRedundancy, userAllStgs)
+		return &cdssdk.DefaultECRedundancy, newStgs
 
 		// newLRCNodes := t.chooseNewNodesForLRC(&cdssdk.DefaultLRCRedundancy, userAllNodes)
 		// return &cdssdk.DefaultLRCRedundancy, newLRCNodes
 
 	case *cdssdk.LRCRedundancy:
-		newLRCNodes := t.rechooseNodesForLRC(obj, &cdssdk.DefaultLRCRedundancy, userAllNodes)
-		return &cdssdk.DefaultLRCRedundancy, newLRCNodes
+		newLRCStgs := t.rechooseNodesForLRC(obj, &cdssdk.DefaultLRCRedundancy, userAllStgs)
+		return &cdssdk.DefaultLRCRedundancy, newLRCStgs
 
 	}
 	return nil, nil
 }
 
 // 统计每个对象块所在的节点，选出块最多的不超过nodeCnt个节点
-func (t *CheckPackageRedundancy) summaryRepObjectBlockNodes(objs []stgmod.ObjectDetail, nodeCnt int) []cdssdk.NodeID {
-	type nodeBlocks struct {
-		NodeID cdssdk.NodeID
-		Count  int
+func (t *CheckPackageRedundancy) summaryRepObjectBlockNodes(objs []stgmod.ObjectDetail, nodeCnt int) []cdssdk.StorageID {
+	type stgBlocks struct {
+		StorageID cdssdk.StorageID
+		Count     int
 	}
 
-	nodeBlocksMap := make(map[cdssdk.NodeID]*nodeBlocks)
+	stgBlocksMap := make(map[cdssdk.StorageID]*stgBlocks)
 	for _, obj := range objs {
 		shouldUseEC := obj.Object.Size > config.Cfg().ECFileSizeThreshold
 		if _, ok := obj.Object.Redundancy.(*cdssdk.RepRedundancy); ok && !shouldUseEC {
 			for _, block := range obj.Blocks {
-				if _, ok := nodeBlocksMap[block.NodeID]; !ok {
-					nodeBlocksMap[block.NodeID] = &nodeBlocks{
-						NodeID: block.NodeID,
-						Count:  0,
+				if _, ok := stgBlocksMap[block.StorageID]; !ok {
+					stgBlocksMap[block.StorageID] = &stgBlocks{
+						StorageID: block.StorageID,
+						Count:     0,
 					}
 				}
-				nodeBlocksMap[block.NodeID].Count++
+				stgBlocksMap[block.StorageID].Count++
 			}
 		}
 	}
 
-	nodes := lo.Values(nodeBlocksMap)
-	sort2.Sort(nodes, func(left *nodeBlocks, right *nodeBlocks) int {
+	nodes := lo.Values(stgBlocksMap)
+	sort2.Sort(nodes, func(left *stgBlocks, right *stgBlocks) int {
 		return right.Count - left.Count
 	})
 
-	ids := lo.Map(nodes, func(item *nodeBlocks, idx int) cdssdk.NodeID { return item.NodeID })
+	ids := lo.Map(nodes, func(item *stgBlocks, idx int) cdssdk.StorageID { return item.StorageID })
 	if len(ids) > nodeCnt {
 		ids = ids[:nodeCnt]
 	}
 	return ids
 }
 
-func (t *CheckPackageRedundancy) chooseNewNodesForRep(red *cdssdk.RepRedundancy, allNodes map[cdssdk.NodeID]*NodeLoadInfo) []*NodeLoadInfo {
-	sortedNodes := sort2.Sort(lo.Values(allNodes), func(left *NodeLoadInfo, right *NodeLoadInfo) int {
+func (t *CheckPackageRedundancy) chooseNewNodesForRep(red *cdssdk.RepRedundancy, allStgs map[cdssdk.StorageID]*StorageLoadInfo) []*StorageLoadInfo {
+	sortedNodes := sort2.Sort(lo.Values(allStgs), func(left *StorageLoadInfo, right *StorageLoadInfo) int {
 		return sort2.Cmp(right.AccessAmount, left.AccessAmount)
 	})
 
 	return t.chooseSoManyNodes(red.RepCount, sortedNodes)
 }
 
-func (t *CheckPackageRedundancy) chooseNewNodesForEC(red *cdssdk.ECRedundancy, allNodes map[cdssdk.NodeID]*NodeLoadInfo) []*NodeLoadInfo {
-	sortedNodes := sort2.Sort(lo.Values(allNodes), func(left *NodeLoadInfo, right *NodeLoadInfo) int {
+func (t *CheckPackageRedundancy) chooseNewNodesForEC(red *cdssdk.ECRedundancy, allStgs map[cdssdk.StorageID]*StorageLoadInfo) []*StorageLoadInfo {
+	sortedNodes := sort2.Sort(lo.Values(allStgs), func(left *StorageLoadInfo, right *StorageLoadInfo) int {
 		return sort2.Cmp(right.AccessAmount, left.AccessAmount)
 	})
 
 	return t.chooseSoManyNodes(red.N, sortedNodes)
 }
 
-func (t *CheckPackageRedundancy) chooseNewNodesForLRC(red *cdssdk.LRCRedundancy, allNodes map[cdssdk.NodeID]*NodeLoadInfo) []*NodeLoadInfo {
-	sortedNodes := sort2.Sort(lo.Values(allNodes), func(left *NodeLoadInfo, right *NodeLoadInfo) int {
+func (t *CheckPackageRedundancy) chooseNewNodesForLRC(red *cdssdk.LRCRedundancy, allNodes map[cdssdk.NodeID]*StorageLoadInfo) []*StorageLoadInfo {
+	sortedNodes := sort2.Sort(lo.Values(allNodes), func(left *StorageLoadInfo, right *StorageLoadInfo) int {
 		return sort2.Cmp(right.AccessAmount, left.AccessAmount)
 	})
 
 	return t.chooseSoManyNodes(red.N, sortedNodes)
 }
 
-func (t *CheckPackageRedundancy) rechooseNodesForRep(mostBlockNodeIDs []cdssdk.NodeID, red *cdssdk.RepRedundancy, allNodes map[cdssdk.NodeID]*NodeLoadInfo) []*NodeLoadInfo {
+func (t *CheckPackageRedundancy) rechooseNodesForRep(mostBlockStgIDs []cdssdk.StorageID, red *cdssdk.RepRedundancy, allStgs map[cdssdk.StorageID]*StorageLoadInfo) []*StorageLoadInfo {
 	type rechooseNode struct {
-		*NodeLoadInfo
+		*StorageLoadInfo
 		HasBlock bool
 	}
 
-	var rechooseNodes []*rechooseNode
-	for _, node := range allNodes {
+	var rechooseStgs []*rechooseNode
+	for _, stg := range allStgs {
 		hasBlock := false
-		for _, id := range mostBlockNodeIDs {
-			if id == node.Node.NodeID {
+		for _, id := range mostBlockStgIDs {
+			if id == stg.Storage.Storage.StorageID {
 				hasBlock = true
 				break
 			}
 		}
 
-		rechooseNodes = append(rechooseNodes, &rechooseNode{
-			NodeLoadInfo: node,
-			HasBlock:     hasBlock,
+		rechooseStgs = append(rechooseStgs, &rechooseNode{
+			StorageLoadInfo: stg,
+			HasBlock:        hasBlock,
 		})
 	}
 
-	sortedNodes := sort2.Sort(rechooseNodes, func(left *rechooseNode, right *rechooseNode) int {
+	sortedStgs := sort2.Sort(rechooseStgs, func(left *rechooseNode, right *rechooseNode) int {
 		// 已经缓存了文件块的节点优先选择
 		v := sort2.CmpBool(right.HasBlock, left.HasBlock)
 		if v != 0 {
@@ -315,32 +315,32 @@ func (t *CheckPackageRedundancy) rechooseNodesForRep(mostBlockNodeIDs []cdssdk.N
 		return sort2.Cmp(right.AccessAmount, left.AccessAmount)
 	})
 
-	return t.chooseSoManyNodes(red.RepCount, lo.Map(sortedNodes, func(node *rechooseNode, idx int) *NodeLoadInfo { return node.NodeLoadInfo }))
+	return t.chooseSoManyNodes(red.RepCount, lo.Map(sortedStgs, func(node *rechooseNode, idx int) *StorageLoadInfo { return node.StorageLoadInfo }))
 }
 
-func (t *CheckPackageRedundancy) rechooseNodesForEC(obj stgmod.ObjectDetail, red *cdssdk.ECRedundancy, allNodes map[cdssdk.NodeID]*NodeLoadInfo) []*NodeLoadInfo {
-	type rechooseNode struct {
-		*NodeLoadInfo
+func (t *CheckPackageRedundancy) rechooseNodesForEC(obj stgmod.ObjectDetail, red *cdssdk.ECRedundancy, allStgs map[cdssdk.StorageID]*StorageLoadInfo) []*StorageLoadInfo {
+	type rechooseStg struct {
+		*StorageLoadInfo
 		CachedBlockIndex int
 	}
 
-	var rechooseNodes []*rechooseNode
-	for _, node := range allNodes {
+	var rechooseStgs []*rechooseStg
+	for _, stg := range allStgs {
 		cachedBlockIndex := -1
 		for _, block := range obj.Blocks {
-			if block.NodeID == node.Node.NodeID {
+			if block.StorageID == stg.Storage.Storage.StorageID {
 				cachedBlockIndex = block.Index
 				break
 			}
 		}
 
-		rechooseNodes = append(rechooseNodes, &rechooseNode{
-			NodeLoadInfo:     node,
+		rechooseStgs = append(rechooseStgs, &rechooseStg{
+			StorageLoadInfo:  stg,
 			CachedBlockIndex: cachedBlockIndex,
 		})
 	}
 
-	sortedNodes := sort2.Sort(rechooseNodes, func(left *rechooseNode, right *rechooseNode) int {
+	sortedStgs := sort2.Sort(rechooseStgs, func(left *rechooseStg, right *rechooseStg) int {
 		// 已经缓存了文件块的节点优先选择
 		v := sort2.CmpBool(right.CachedBlockIndex > -1, left.CachedBlockIndex > -1)
 		if v != 0 {
@@ -351,32 +351,32 @@ func (t *CheckPackageRedundancy) rechooseNodesForEC(obj stgmod.ObjectDetail, red
 	})
 
 	// TODO 可以考虑选择已有块的节点时，能依然按照Index顺序选择
-	return t.chooseSoManyNodes(red.N, lo.Map(sortedNodes, func(node *rechooseNode, idx int) *NodeLoadInfo { return node.NodeLoadInfo }))
+	return t.chooseSoManyNodes(red.N, lo.Map(sortedStgs, func(node *rechooseStg, idx int) *StorageLoadInfo { return node.StorageLoadInfo }))
 }
 
-func (t *CheckPackageRedundancy) rechooseNodesForLRC(obj stgmod.ObjectDetail, red *cdssdk.LRCRedundancy, allNodes map[cdssdk.NodeID]*NodeLoadInfo) []*NodeLoadInfo {
-	type rechooseNode struct {
-		*NodeLoadInfo
+func (t *CheckPackageRedundancy) rechooseNodesForLRC(obj stgmod.ObjectDetail, red *cdssdk.LRCRedundancy, allStgs map[cdssdk.StorageID]*StorageLoadInfo) []*StorageLoadInfo {
+	type rechooseStg struct {
+		*StorageLoadInfo
 		CachedBlockIndex int
 	}
 
-	var rechooseNodes []*rechooseNode
-	for _, node := range allNodes {
+	var rechooseStgs []*rechooseStg
+	for _, stg := range allStgs {
 		cachedBlockIndex := -1
 		for _, block := range obj.Blocks {
-			if block.NodeID == node.Node.NodeID {
+			if block.StorageID == stg.Storage.Storage.StorageID {
 				cachedBlockIndex = block.Index
 				break
 			}
 		}
 
-		rechooseNodes = append(rechooseNodes, &rechooseNode{
-			NodeLoadInfo:     node,
+		rechooseStgs = append(rechooseStgs, &rechooseStg{
+			StorageLoadInfo:  stg,
 			CachedBlockIndex: cachedBlockIndex,
 		})
 	}
 
-	sortedNodes := sort2.Sort(rechooseNodes, func(left *rechooseNode, right *rechooseNode) int {
+	sortedStgs := sort2.Sort(rechooseStgs, func(left *rechooseStg, right *rechooseStg) int {
 		// 已经缓存了文件块的节点优先选择
 		v := sort2.CmpBool(right.CachedBlockIndex > -1, left.CachedBlockIndex > -1)
 		if v != 0 {
@@ -387,64 +387,96 @@ func (t *CheckPackageRedundancy) rechooseNodesForLRC(obj stgmod.ObjectDetail, re
 	})
 
 	// TODO 可以考虑选择已有块的节点时，能依然按照Index顺序选择
-	return t.chooseSoManyNodes(red.N, lo.Map(sortedNodes, func(node *rechooseNode, idx int) *NodeLoadInfo { return node.NodeLoadInfo }))
+	return t.chooseSoManyNodes(red.N, lo.Map(sortedStgs, func(node *rechooseStg, idx int) *StorageLoadInfo { return node.StorageLoadInfo }))
 }
 
-func (t *CheckPackageRedundancy) chooseSoManyNodes(count int, nodes []*NodeLoadInfo) []*NodeLoadInfo {
-	repeateCount := (count + len(nodes) - 1) / len(nodes)
-	extedNodes := make([]*NodeLoadInfo, repeateCount*len(nodes))
+func (t *CheckPackageRedundancy) chooseSoManyNodes(count int, stgs []*StorageLoadInfo) []*StorageLoadInfo {
+	repeateCount := (count + len(stgs) - 1) / len(stgs)
+	extendStgs := make([]*StorageLoadInfo, repeateCount*len(stgs))
 
 	// 使用复制的方式将节点数扩充到要求的数量
 	// 复制之后的结构：ABCD -> AAABBBCCCDDD
 	for p := 0; p < repeateCount; p++ {
-		for i, node := range nodes {
+		for i, node := range stgs {
 			putIdx := i*repeateCount + p
-			extedNodes[putIdx] = node
+			extendStgs[putIdx] = node
 		}
 	}
-	extedNodes = extedNodes[:count]
+	extendStgs = extendStgs[:count]
 
-	var chosen []*NodeLoadInfo
+	var chosen []*StorageLoadInfo
 	for len(chosen) < count {
 		// 在每一轮内都选不同地区的节点，如果节点数不够，那么就再来一轮
 		chosenLocations := make(map[cdssdk.LocationID]bool)
-		for i, node := range extedNodes {
-			if node == nil {
+		for i, stg := range extendStgs {
+			if stg == nil {
 				continue
 			}
 
-			if chosenLocations[node.Node.LocationID] {
+			if chosenLocations[stg.Storage.MasterHub.LocationID] {
 				continue
 			}
 
-			chosen = append(chosen, node)
-			chosenLocations[node.Node.LocationID] = true
-			extedNodes[i] = nil
+			chosen = append(chosen, stg)
+			chosenLocations[stg.Storage.MasterHub.LocationID] = true
+			extendStgs[i] = nil
 		}
 	}
 
 	return chosen
 }
 
-func (t *CheckPackageRedundancy) noneToRep(obj stgmod.ObjectDetail, red *cdssdk.RepRedundancy, uploadNodes []*NodeLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) noneToRep(obj stgmod.ObjectDetail, red *cdssdk.RepRedundancy, uploadStgs []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	if len(obj.Blocks) == 0 {
 		return nil, fmt.Errorf("object is not cached on any nodes, cannot change its redundancy to rep")
 	}
 
+	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
+	if err != nil {
+		return nil, fmt.Errorf("new coordinator client: %w", err)
+	}
+	defer stgglb.CoordinatorMQPool.Release(coorCli)
+
+	getStgs, err := coorCli.GetStorageDetails(coormq.ReqGetStorageDetails([]cdssdk.StorageID{obj.Blocks[0].StorageID}))
+	if err != nil {
+		return nil, fmt.Errorf("requesting to get storages: %w", err)
+	}
+	if getStgs.Storages[0] == nil {
+		return nil, fmt.Errorf("storage %v not found", obj.Blocks[0].StorageID)
+	}
+	if getStgs.Storages[0].MasterHub == nil {
+		return nil, fmt.Errorf("storage %v has no master hub", obj.Blocks[0].StorageID)
+	}
+
 	// 如果选择的备份节点都是同一个，那么就只要上传一次
-	uploadNodes = lo.UniqBy(uploadNodes, func(item *NodeLoadInfo) cdssdk.NodeID { return item.Node.NodeID })
+	uploadStgs = lo.UniqBy(uploadStgs, func(item *StorageLoadInfo) cdssdk.StorageID { return item.Storage.Storage.StorageID })
+
+	ft := ioswitch2.NewFromTo()
+	ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *getStgs.Storages[0].MasterHub, getStgs.Storages[0].Storage, -1))
+	for i, stg := range uploadStgs {
+		ft.AddTo(ioswitch2.NewToShardStore(*stg.Storage.MasterHub, stg.Storage.Storage, -1, fmt.Sprintf("%d", i)))
+	}
+
+	plans := exec.NewPlanBuilder()
+	parser := parser.NewParser(cdssdk.DefaultECRedundancy)
+	err = parser.Parse(ft, plans)
+	if err != nil {
+		return nil, fmt.Errorf("parsing plan: %w", err)
+	}
+
+	// TODO 添加依赖
+	ret, err := plans.Execute(exec.NewExecContext()).Wait(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("executing io plan: %w", err)
+	}
 
 	var blocks []stgmod.ObjectBlock
-	for _, node := range uploadNodes {
-		err := t.pinObject(node.Node.NodeID, obj.Object.FileHash)
-		if err != nil {
-			return nil, err
-		}
+	for i, stg := range uploadStgs {
 		blocks = append(blocks, stgmod.ObjectBlock{
-			ObjectID: obj.Object.ObjectID,
-			Index:    0,
-			NodeID:   node.Node.NodeID,
-			FileHash: obj.Object.FileHash,
+			ObjectID:  obj.Object.ObjectID,
+			Index:     0,
+			StorageID: stg.Storage.Storage.StorageID,
+			FileHash:  ret[fmt.Sprintf("%d", i)].(*ops2.FileHashValue).Hash,
 		})
 	}
 
@@ -455,7 +487,7 @@ func (t *CheckPackageRedundancy) noneToRep(obj stgmod.ObjectDetail, red *cdssdk.
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) noneToEC(obj stgmod.ObjectDetail, red *cdssdk.ECRedundancy, uploadNodes []*NodeLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) noneToEC(obj stgmod.ObjectDetail, red *cdssdk.ECRedundancy, uploadStgs []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
@@ -466,15 +498,21 @@ func (t *CheckPackageRedundancy) noneToEC(obj stgmod.ObjectDetail, red *cdssdk.E
 		return nil, fmt.Errorf("object is not cached on any nodes, cannot change its redundancy to ec")
 	}
 
-	getNodes, err := coorCli.GetNodes(coormq.NewGetNodes([]cdssdk.NodeID{obj.Blocks[0].NodeID}))
+	getStgs, err := coorCli.GetStorageDetails(coormq.ReqGetStorageDetails([]cdssdk.StorageID{obj.Blocks[0].StorageID}))
 	if err != nil {
-		return nil, fmt.Errorf("requesting to get nodes: %w", err)
+		return nil, fmt.Errorf("requesting to get storages: %w", err)
+	}
+	if getStgs.Storages[0] == nil {
+		return nil, fmt.Errorf("storage %v not found", obj.Blocks[0].StorageID)
+	}
+	if getStgs.Storages[0].MasterHub == nil {
+		return nil, fmt.Errorf("storage %v has no master hub", obj.Blocks[0].StorageID)
 	}
 
 	ft := ioswitch2.NewFromTo()
-	ft.AddFrom(ioswitch2.NewFromNode(obj.Object.FileHash, &getNodes.Nodes[0], -1))
+	ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *getStgs.Storages[0].MasterHub, getStgs.Storages[0].Storage, -1))
 	for i := 0; i < red.N; i++ {
-		ft.AddTo(ioswitch2.NewToNode(uploadNodes[i].Node, i, fmt.Sprintf("%d", i)))
+		ft.AddTo(ioswitch2.NewToShardStore(*uploadStgs[i].Storage.MasterHub, uploadStgs[i].Storage.Storage, i, fmt.Sprintf("%d", i)))
 	}
 	parser := parser.NewParser(*red)
 	plans := exec.NewPlanBuilder()
@@ -483,7 +521,8 @@ func (t *CheckPackageRedundancy) noneToEC(obj stgmod.ObjectDetail, red *cdssdk.E
 		return nil, fmt.Errorf("parsing plan: %w", err)
 	}
 
-	ioRet, err := plans.Execute().Wait(context.TODO())
+	// TODO 添加依赖
+	ioRet, err := plans.Execute(exec.NewExecContext()).Wait(context.TODO())
 	if err != nil {
 		return nil, fmt.Errorf("executing io plan: %w", err)
 	}
@@ -491,10 +530,10 @@ func (t *CheckPackageRedundancy) noneToEC(obj stgmod.ObjectDetail, red *cdssdk.E
 	var blocks []stgmod.ObjectBlock
 	for i := 0; i < red.N; i++ {
 		blocks = append(blocks, stgmod.ObjectBlock{
-			ObjectID: obj.Object.ObjectID,
-			Index:    i,
-			NodeID:   uploadNodes[i].Node.NodeID,
-			FileHash: ioRet[fmt.Sprintf("%d", i)].(string),
+			ObjectID:  obj.Object.ObjectID,
+			Index:     i,
+			StorageID: uploadStgs[i].Storage.Storage.StorageID,
+			FileHash:  ioRet[fmt.Sprintf("%d", i)].(*ops2.FileHashValue).Hash,
 		})
 	}
 
@@ -505,7 +544,7 @@ func (t *CheckPackageRedundancy) noneToEC(obj stgmod.ObjectDetail, red *cdssdk.E
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) noneToLRC(obj stgmod.ObjectDetail, red *cdssdk.LRCRedundancy, uploadNodes []*NodeLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) noneToLRC(obj stgmod.ObjectDetail, red *cdssdk.LRCRedundancy, uploadNodes []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
@@ -516,23 +555,30 @@ func (t *CheckPackageRedundancy) noneToLRC(obj stgmod.ObjectDetail, red *cdssdk.
 		return nil, fmt.Errorf("object is not cached on any nodes, cannot change its redundancy to ec")
 	}
 
-	getNodes, err := coorCli.GetNodes(coormq.NewGetNodes([]cdssdk.NodeID{obj.Blocks[0].NodeID}))
+	getStgs, err := coorCli.GetStorageDetails(coormq.ReqGetStorageDetails([]cdssdk.StorageID{obj.Blocks[0].StorageID}))
 	if err != nil {
-		return nil, fmt.Errorf("requesting to get nodes: %w", err)
+		return nil, fmt.Errorf("requesting to get storages: %w", err)
+	}
+	if getStgs.Storages[0] == nil {
+		return nil, fmt.Errorf("storage %v not found", obj.Blocks[0].StorageID)
+	}
+	if getStgs.Storages[0].MasterHub == nil {
+		return nil, fmt.Errorf("storage %v has no master hub", obj.Blocks[0].StorageID)
 	}
 
 	var toes []ioswitchlrc.To
 	for i := 0; i < red.N; i++ {
-		toes = append(toes, ioswitchlrc.NewToNode(uploadNodes[i].Node, i, fmt.Sprintf("%d", i)))
+		toes = append(toes, ioswitchlrc.NewToStorage(*uploadNodes[i].Storage.MasterHub, uploadNodes[i].Storage.Storage, i, fmt.Sprintf("%d", i)))
 	}
 
 	plans := exec.NewPlanBuilder()
-	err = lrcparser.Encode(ioswitchlrc.NewFromNode(obj.Object.FileHash, &getNodes.Nodes[0], -1), toes, plans)
+	err = lrcparser.Encode(ioswitchlrc.NewFromNode(obj.Object.FileHash, *getStgs.Storages[0].MasterHub, getStgs.Storages[0].Storage, -1), toes, plans)
 	if err != nil {
 		return nil, fmt.Errorf("parsing plan: %w", err)
 	}
 
-	ioRet, err := plans.Execute().Wait(context.TODO())
+	// TODO 添加依赖
+	ioRet, err := plans.Execute(exec.NewExecContext()).Wait(context.TODO())
 	if err != nil {
 		return nil, fmt.Errorf("executing io plan: %w", err)
 	}
@@ -540,10 +586,10 @@ func (t *CheckPackageRedundancy) noneToLRC(obj stgmod.ObjectDetail, red *cdssdk.
 	var blocks []stgmod.ObjectBlock
 	for i := 0; i < red.N; i++ {
 		blocks = append(blocks, stgmod.ObjectBlock{
-			ObjectID: obj.Object.ObjectID,
-			Index:    i,
-			NodeID:   uploadNodes[i].Node.NodeID,
-			FileHash: ioRet[fmt.Sprintf("%d", i)].(string),
+			ObjectID:  obj.Object.ObjectID,
+			Index:     i,
+			StorageID: uploadNodes[i].Storage.Storage.StorageID,
+			FileHash:  ioRet[fmt.Sprintf("%d", i)].(*ops2.FileHashValue).Hash,
 		})
 	}
 
@@ -554,32 +600,57 @@ func (t *CheckPackageRedundancy) noneToLRC(obj stgmod.ObjectDetail, red *cdssdk.
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) repToRep(obj stgmod.ObjectDetail, red *cdssdk.RepRedundancy, uploadNodes []*NodeLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) repToRep(obj stgmod.ObjectDetail, red *cdssdk.RepRedundancy, uploadStgs []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	if len(obj.Blocks) == 0 {
 		return nil, fmt.Errorf("object is not cached on any nodes, cannot change its redundancy to rep")
 	}
 
-	// 如果选择的备份节点都是同一个，那么就只要上传一次
-	uploadNodes = lo.UniqBy(uploadNodes, func(item *NodeLoadInfo) cdssdk.NodeID { return item.Node.NodeID })
+	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
+	if err != nil {
+		return nil, fmt.Errorf("new coordinator client: %w", err)
+	}
+	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-	for _, node := range uploadNodes {
-		err := t.pinObject(node.Node.NodeID, obj.Object.FileHash)
-		if err != nil {
-			logger.WithField("ObjectID", obj.Object.ObjectID).
-				Warn(err.Error())
-			return nil, err
-		}
+	getStgs, err := coorCli.GetStorageDetails(coormq.ReqGetStorageDetails([]cdssdk.StorageID{obj.Blocks[0].StorageID}))
+	if err != nil {
+		return nil, fmt.Errorf("requesting to get storages: %w", err)
+	}
+	if getStgs.Storages[0] == nil {
+		return nil, fmt.Errorf("storage %v not found", obj.Blocks[0].StorageID)
+	}
+	if getStgs.Storages[0].MasterHub == nil {
+		return nil, fmt.Errorf("storage %v has no master hub", obj.Blocks[0].StorageID)
+	}
+
+	// 如果选择的备份节点都是同一个，那么就只要上传一次
+	uploadStgs = lo.UniqBy(uploadStgs, func(item *StorageLoadInfo) cdssdk.StorageID { return item.Storage.Storage.StorageID })
+
+	ft := ioswitch2.NewFromTo()
+	ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *getStgs.Storages[0].MasterHub, getStgs.Storages[0].Storage, -1))
+	for i, stg := range uploadStgs {
+		ft.AddTo(ioswitch2.NewToShardStore(*stg.Storage.MasterHub, stg.Storage.Storage, -1, fmt.Sprintf("%d", i)))
+	}
+
+	plans := exec.NewPlanBuilder()
+	parser := parser.NewParser(cdssdk.DefaultECRedundancy)
+	err = parser.Parse(ft, plans)
+	if err != nil {
+		return nil, fmt.Errorf("parsing plan: %w", err)
+	}
+
+	// TODO 添加依赖
+	ret, err := plans.Execute(exec.NewExecContext()).Wait(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("executing io plan: %w", err)
 	}
 
 	var blocks []stgmod.ObjectBlock
-	for _, node := range uploadNodes {
-		// 由于更新冗余方式会删除所有Block记录然后重新填充，
-		// 所以即使是节点跳过了上传，也需要为它添加一条Block记录
+	for i, stg := range uploadStgs {
 		blocks = append(blocks, stgmod.ObjectBlock{
-			ObjectID: obj.Object.ObjectID,
-			Index:    0,
-			NodeID:   node.Node.NodeID,
-			FileHash: obj.Object.FileHash,
+			ObjectID:  obj.Object.ObjectID,
+			Index:     0,
+			StorageID: stg.Storage.Storage.StorageID,
+			FileHash:  ret[fmt.Sprintf("%d", i)].(*ops2.FileHashValue).Hash,
 		})
 	}
 
@@ -590,11 +661,11 @@ func (t *CheckPackageRedundancy) repToRep(obj stgmod.ObjectDetail, red *cdssdk.R
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) repToEC(obj stgmod.ObjectDetail, red *cdssdk.ECRedundancy, uploadNodes []*NodeLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) repToEC(obj stgmod.ObjectDetail, red *cdssdk.ECRedundancy, uploadNodes []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	return t.noneToEC(obj, red, uploadNodes)
 }
 
-func (t *CheckPackageRedundancy) ecToRep(obj stgmod.ObjectDetail, srcRed *cdssdk.ECRedundancy, tarRed *cdssdk.RepRedundancy, uploadNodes []*NodeLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) ecToRep(obj stgmod.ObjectDetail, srcRed *cdssdk.ECRedundancy, tarRed *cdssdk.RepRedundancy, uploadStgs []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
@@ -604,7 +675,7 @@ func (t *CheckPackageRedundancy) ecToRep(obj stgmod.ObjectDetail, srcRed *cdssdk
 	var chosenBlocks []stgmod.GrouppedObjectBlock
 	var chosenBlockIndexes []int
 	for _, block := range obj.GroupBlocks() {
-		if len(block.NodeIDs) > 0 {
+		if len(block.StorageIDs) > 0 {
 			chosenBlocks = append(chosenBlocks, block)
 			chosenBlockIndexes = append(chosenBlockIndexes, block.Index)
 		}
@@ -619,20 +690,20 @@ func (t *CheckPackageRedundancy) ecToRep(obj stgmod.ObjectDetail, srcRed *cdssdk
 	}
 
 	// 如果选择的备份节点都是同一个，那么就只要上传一次
-	uploadNodes = lo.UniqBy(uploadNodes, func(item *NodeLoadInfo) cdssdk.NodeID { return item.Node.NodeID })
+	uploadStgs = lo.UniqBy(uploadStgs, func(item *StorageLoadInfo) cdssdk.StorageID { return item.Storage.Storage.StorageID })
 
 	// 每个被选节点都在自己节点上重建原始数据
 	parser := parser.NewParser(*srcRed)
 	planBlder := exec.NewPlanBuilder()
-	for i := range uploadNodes {
+	for i := range uploadStgs {
 		ft := ioswitch2.NewFromTo()
 
 		for _, block := range chosenBlocks {
-			ft.AddFrom(ioswitch2.NewFromNode(block.FileHash, &uploadNodes[i].Node, block.Index))
+			ft.AddFrom(ioswitch2.NewFromShardstore(block.FileHash, *uploadStgs[i].Storage.MasterHub, uploadStgs[i].Storage.Storage, block.Index))
 		}
 
 		len := obj.Object.Size
-		ft.AddTo(ioswitch2.NewToNodeWithRange(uploadNodes[i].Node, -1, fmt.Sprintf("%d", i), exec.Range{
+		ft.AddTo(ioswitch2.NewToShardStoreWithRange(*uploadStgs[i].Storage.MasterHub, uploadStgs[i].Storage.Storage, -1, fmt.Sprintf("%d", i), exec.Range{
 			Offset: 0,
 			Length: &len,
 		}))
@@ -643,18 +714,19 @@ func (t *CheckPackageRedundancy) ecToRep(obj stgmod.ObjectDetail, srcRed *cdssdk
 		}
 	}
 
-	ioRet, err := planBlder.Execute().Wait(context.TODO())
+	// TODO 添加依赖
+	ioRet, err := planBlder.Execute(exec.NewExecContext()).Wait(context.TODO())
 	if err != nil {
 		return nil, fmt.Errorf("executing io plan: %w", err)
 	}
 
 	var blocks []stgmod.ObjectBlock
-	for i := range uploadNodes {
+	for i := range uploadStgs {
 		blocks = append(blocks, stgmod.ObjectBlock{
-			ObjectID: obj.Object.ObjectID,
-			Index:    0,
-			NodeID:   uploadNodes[i].Node.NodeID,
-			FileHash: ioRet[fmt.Sprintf("%d", i)].(string),
+			ObjectID:  obj.Object.ObjectID,
+			Index:     0,
+			StorageID: uploadStgs[i].Storage.Storage.StorageID,
+			FileHash:  ioRet[fmt.Sprintf("%d", i)].(*ops2.FileHashValue).Hash,
 		})
 	}
 
@@ -665,7 +737,7 @@ func (t *CheckPackageRedundancy) ecToRep(obj stgmod.ObjectDetail, srcRed *cdssdk
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) ecToEC(obj stgmod.ObjectDetail, srcRed *cdssdk.ECRedundancy, tarRed *cdssdk.ECRedundancy, uploadNodes []*NodeLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) ecToEC(obj stgmod.ObjectDetail, srcRed *cdssdk.ECRedundancy, tarRed *cdssdk.ECRedundancy, uploadNodes []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
@@ -676,7 +748,7 @@ func (t *CheckPackageRedundancy) ecToEC(obj stgmod.ObjectDetail, srcRed *cdssdk.
 
 	var chosenBlocks []stgmod.GrouppedObjectBlock
 	for _, block := range grpBlocks {
-		if len(block.NodeIDs) > 0 {
+		if len(block.StorageIDs) > 0 {
 			chosenBlocks = append(chosenBlocks, block)
 		}
 
@@ -695,17 +767,17 @@ func (t *CheckPackageRedundancy) ecToEC(obj stgmod.ObjectDetail, srcRed *cdssdk.
 
 	var newBlocks []stgmod.ObjectBlock
 	shouldUpdateBlocks := false
-	for i, node := range uploadNodes {
+	for i, stg := range uploadNodes {
 		newBlock := stgmod.ObjectBlock{
-			ObjectID: obj.Object.ObjectID,
-			Index:    i,
-			NodeID:   node.Node.NodeID,
+			ObjectID:  obj.Object.ObjectID,
+			Index:     i,
+			StorageID: stg.Storage.Storage.StorageID,
 		}
 
 		grp, ok := lo.Find(grpBlocks, func(grp stgmod.GrouppedObjectBlock) bool { return grp.Index == i })
 
 		// 如果新选中的节点已经记录在Block表中，那么就不需要任何变更
-		if ok && lo.Contains(grp.NodeIDs, node.Node.NodeID) {
+		if ok && lo.Contains(grp.StorageIDs, stg.Storage.Storage.StorageID) {
 			newBlock.FileHash = grp.FileHash
 			newBlocks = append(newBlocks, newBlock)
 			continue
@@ -717,12 +789,12 @@ func (t *CheckPackageRedundancy) ecToEC(obj stgmod.ObjectDetail, srcRed *cdssdk.
 
 		ft := ioswitch2.NewFromTo()
 		for _, block := range chosenBlocks {
-			node := node.Node
-			ft.AddFrom(ioswitch2.NewFromNode(block.FileHash, &node, block.Index))
+			stg := stg.Storage
+			ft.AddFrom(ioswitch2.NewFromShardstore(block.FileHash, *stg.MasterHub, stg.Storage, block.Index))
 		}
 
 		// 输出只需要自己要保存的那一块
-		ft.AddTo(ioswitch2.NewToNode(node.Node, i, fmt.Sprintf("%d", i)))
+		ft.AddTo(ioswitch2.NewToShardStore(*stg.Storage.MasterHub, stg.Storage.Storage, i, fmt.Sprintf("%d", i)))
 
 		err := parser.Parse(ft, planBlder)
 		if err != nil {
@@ -733,7 +805,8 @@ func (t *CheckPackageRedundancy) ecToEC(obj stgmod.ObjectDetail, srcRed *cdssdk.
 	}
 
 	// 如果没有任何Plan，Wait会直接返回成功
-	ret, err := planBlder.Execute().Wait(context.TODO())
+	// TODO 添加依赖
+	ret, err := planBlder.Execute(exec.NewExecContext()).Wait(context.TODO())
 	if err != nil {
 		return nil, fmt.Errorf("executing io plan: %w", err)
 	}
@@ -748,7 +821,7 @@ func (t *CheckPackageRedundancy) ecToEC(obj stgmod.ObjectDetail, srcRed *cdssdk.
 			return nil, fmt.Errorf("parsing result key %s as index: %w", k, err)
 		}
 
-		newBlocks[idx].FileHash = v.(string)
+		newBlocks[idx].FileHash = v.(*ops2.FileHashValue).Hash
 	}
 
 	return &coormq.UpdatingObjectRedundancy{
@@ -758,7 +831,7 @@ func (t *CheckPackageRedundancy) ecToEC(obj stgmod.ObjectDetail, srcRed *cdssdk.
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) lrcToLRC(obj stgmod.ObjectDetail, srcRed *cdssdk.LRCRedundancy, tarRed *cdssdk.LRCRedundancy, uploadNodes []*NodeLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) lrcToLRC(obj stgmod.ObjectDetail, srcRed *cdssdk.LRCRedundancy, tarRed *cdssdk.LRCRedundancy, uploadNodes []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
@@ -795,78 +868,80 @@ func (t *CheckPackageRedundancy) lrcToLRC(obj stgmod.ObjectDetail, srcRed *cdssd
 	}
 
 	if canGroupReconstruct {
-		return t.groupReconstructLRC(obj, lostBlocks, lostBlockGrps, blocksGrpByIndex, srcRed, uploadNodes)
+		// 	return t.groupReconstructLRC(obj, lostBlocks, lostBlockGrps, blocksGrpByIndex, srcRed, uploadNodes)
 	}
 
 	return t.reconstructLRC(obj, blocksGrpByIndex, srcRed, uploadNodes)
 }
 
-func (t *CheckPackageRedundancy) groupReconstructLRC(obj stgmod.ObjectDetail, lostBlocks []int, lostBlockGrps []int, grpedBlocks []stgmod.GrouppedObjectBlock, red *cdssdk.LRCRedundancy, uploadNodes []*NodeLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
-	grped := make(map[int]stgmod.GrouppedObjectBlock)
-	for _, b := range grpedBlocks {
-		grped[b.Index] = b
-	}
+/*
+	func (t *CheckPackageRedundancy) groupReconstructLRC(obj stgmod.ObjectDetail, lostBlocks []int, lostBlockGrps []int, grpedBlocks []stgmod.GrouppedObjectBlock, red *cdssdk.LRCRedundancy, uploadNodes []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+		grped := make(map[int]stgmod.GrouppedObjectBlock)
+		for _, b := range grpedBlocks {
+			grped[b.Index] = b
+		}
 
-	plans := exec.NewPlanBuilder()
+		plans := exec.NewPlanBuilder()
 
-	for i := 0; i < len(lostBlocks); i++ {
-		var froms []ioswitchlrc.From
-		grpEles := red.GetGroupElements(lostBlockGrps[i])
-		for _, ele := range grpEles {
-			if ele == lostBlocks[i] {
-				continue
+		for i := 0; i < len(lostBlocks); i++ {
+			var froms []ioswitchlrc.From
+			grpEles := red.GetGroupElements(lostBlockGrps[i])
+			for _, ele := range grpEles {
+				if ele == lostBlocks[i] {
+					continue
+				}
+
+				froms = append(froms, ioswitchlrc.NewFromNode(grped[ele].FileHash, nil, ele))
 			}
 
-			froms = append(froms, ioswitchlrc.NewFromNode(grped[ele].FileHash, nil, ele))
+			err := lrcparser.ReconstructGroup(froms, []ioswitchlrc.To{
+				ioswitchlrc.NewToNode(uploadNodes[i].Storage, lostBlocks[i], fmt.Sprintf("%d", lostBlocks[i])),
+			}, plans)
+			if err != nil {
+				return nil, fmt.Errorf("parsing plan: %w", err)
+			}
 		}
 
-		err := lrcparser.ReconstructGroup(froms, []ioswitchlrc.To{
-			ioswitchlrc.NewToNode(uploadNodes[i].Node, lostBlocks[i], fmt.Sprintf("%d", lostBlocks[i])),
-		}, plans)
+		fmt.Printf("plans: %v\n", plans)
+
+		// 如果没有任何Plan，Wait会直接返回成功
+		// TODO 添加依赖
+		ret, err := plans.Execute(exec.NewExecContext()).Wait(context.TODO())
 		if err != nil {
-			return nil, fmt.Errorf("parsing plan: %w", err)
+			return nil, fmt.Errorf("executing io plan: %w", err)
 		}
-	}
 
-	fmt.Printf("plans: %v\n", plans)
-
-	// 如果没有任何Plan，Wait会直接返回成功
-	ret, err := plans.Execute().Wait(context.TODO())
-	if err != nil {
-		return nil, fmt.Errorf("executing io plan: %w", err)
-	}
-
-	var newBlocks []stgmod.ObjectBlock
-	for _, i := range lostBlocks {
-		newBlocks = append(newBlocks, stgmod.ObjectBlock{
-			ObjectID: obj.Object.ObjectID,
-			Index:    i,
-			NodeID:   uploadNodes[i].Node.NodeID,
-			FileHash: ret[fmt.Sprintf("%d", i)].(string),
-		})
-	}
-	for _, b := range grpedBlocks {
-		for _, nodeID := range b.NodeIDs {
+		var newBlocks []stgmod.ObjectBlock
+		for _, i := range lostBlocks {
 			newBlocks = append(newBlocks, stgmod.ObjectBlock{
-				ObjectID: obj.Object.ObjectID,
-				Index:    b.Index,
-				NodeID:   nodeID,
-				FileHash: b.FileHash,
+				ObjectID:  obj.Object.ObjectID,
+				Index:     i,
+				StorageID: uploadNodes[i].Storage.Storage.StorageID,
+				FileHash:  ret[fmt.Sprintf("%d", i)].(*ops2.FileHashValue).Hash,
 			})
 		}
+		for _, b := range grpedBlocks {
+			for _, nodeID := range b.StorageIDs {
+				newBlocks = append(newBlocks, stgmod.ObjectBlock{
+					ObjectID:  obj.Object.ObjectID,
+					Index:     b.Index,
+					StorageID: nodeID,
+					FileHash:  b.FileHash,
+				})
+			}
+		}
+
+		return &coormq.UpdatingObjectRedundancy{
+			ObjectID:   obj.Object.ObjectID,
+			Redundancy: red,
+			Blocks:     newBlocks,
+		}, nil
 	}
-
-	return &coormq.UpdatingObjectRedundancy{
-		ObjectID:   obj.Object.ObjectID,
-		Redundancy: red,
-		Blocks:     newBlocks,
-	}, nil
-}
-
-func (t *CheckPackageRedundancy) reconstructLRC(obj stgmod.ObjectDetail, grpBlocks []stgmod.GrouppedObjectBlock, red *cdssdk.LRCRedundancy, uploadNodes []*NodeLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+*/
+func (t *CheckPackageRedundancy) reconstructLRC(obj stgmod.ObjectDetail, grpBlocks []stgmod.GrouppedObjectBlock, red *cdssdk.LRCRedundancy, uploadNodes []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	var chosenBlocks []stgmod.GrouppedObjectBlock
 	for _, block := range grpBlocks {
-		if len(block.NodeIDs) > 0 && block.Index < red.M() {
+		if len(block.StorageIDs) > 0 && block.Index < red.M() {
 			chosenBlocks = append(chosenBlocks, block)
 		}
 
@@ -888,15 +963,15 @@ func (t *CheckPackageRedundancy) reconstructLRC(obj stgmod.ObjectDetail, grpBloc
 	shouldUpdateBlocks := false
 	for i, node := range uploadNodes {
 		newBlock := stgmod.ObjectBlock{
-			ObjectID: obj.Object.ObjectID,
-			Index:    i,
-			NodeID:   node.Node.NodeID,
+			ObjectID:  obj.Object.ObjectID,
+			Index:     i,
+			StorageID: node.Storage.Storage.StorageID,
 		}
 
 		grp, ok := lo.Find(grpBlocks, func(grp stgmod.GrouppedObjectBlock) bool { return grp.Index == i })
 
 		// 如果新选中的节点已经记录在Block表中，那么就不需要任何变更
-		if ok && lo.Contains(grp.NodeIDs, node.Node.NodeID) {
+		if ok && lo.Contains(grp.StorageIDs, node.Storage.Storage.StorageID) {
 			newBlock.FileHash = grp.FileHash
 			newBlocks = append(newBlocks, newBlock)
 			continue
@@ -908,12 +983,12 @@ func (t *CheckPackageRedundancy) reconstructLRC(obj stgmod.ObjectDetail, grpBloc
 
 		for _, block := range chosenBlocks {
 			fmt.Printf("b: %v\n", block.Index)
-			node := node.Node
-			froms = append(froms, ioswitchlrc.NewFromNode(block.FileHash, &node, block.Index))
+			stg := node.Storage
+			froms = append(froms, ioswitchlrc.NewFromNode(block.FileHash, *stg.MasterHub, stg.Storage, block.Index))
 		}
 
 		// 输出只需要自己要保存的那一块
-		toes = append(toes, ioswitchlrc.NewToNode(node.Node, i, fmt.Sprintf("%d", i)))
+		toes = append(toes, ioswitchlrc.NewToStorage(*node.Storage.MasterHub, node.Storage.Storage, i, fmt.Sprintf("%d", i)))
 
 		newBlocks = append(newBlocks, newBlock)
 	}
@@ -926,7 +1001,8 @@ func (t *CheckPackageRedundancy) reconstructLRC(obj stgmod.ObjectDetail, grpBloc
 	fmt.Printf("plans: %v\n", planBlder)
 
 	// 如果没有任何Plan，Wait会直接返回成功
-	ret, err := planBlder.Execute().Wait(context.TODO())
+	// TODO 添加依赖
+	ret, err := planBlder.Execute(exec.NewExecContext()).Wait(context.TODO())
 	if err != nil {
 		return nil, fmt.Errorf("executing io plan: %w", err)
 	}
@@ -941,7 +1017,7 @@ func (t *CheckPackageRedundancy) reconstructLRC(obj stgmod.ObjectDetail, grpBloc
 			return nil, fmt.Errorf("parsing result key %s as index: %w", k, err)
 		}
 
-		newBlocks[idx].FileHash = v.(string)
+		newBlocks[idx].FileHash = v.(*ops2.FileHashValue).Hash
 	}
 
 	return &coormq.UpdatingObjectRedundancy{
@@ -951,20 +1027,20 @@ func (t *CheckPackageRedundancy) reconstructLRC(obj stgmod.ObjectDetail, grpBloc
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) pinObject(nodeID cdssdk.NodeID, fileHash string) error {
-	agtCli, err := stgglb.AgentMQPool.Acquire(nodeID)
-	if err != nil {
-		return fmt.Errorf("new agent client: %w", err)
-	}
-	defer stgglb.AgentMQPool.Release(agtCli)
+// func (t *CheckPackageRedundancy) pinObject(nodeID cdssdk.NodeID, fileHash string) error {
+// 	agtCli, err := stgglb.AgentMQPool.Acquire(nodeID)
+// 	if err != nil {
+// 		return fmt.Errorf("new agent client: %w", err)
+// 	}
+// 	defer stgglb.AgentMQPool.Release(agtCli)
 
-	_, err = agtCli.PinObject(agtmq.ReqPinObject([]string{fileHash}, false))
-	if err != nil {
-		return fmt.Errorf("start pinning object: %w", err)
-	}
+// 	_, err = agtCli.PinObject(agtmq.ReqPinObject([]string{fileHash}, false))
+// 	if err != nil {
+// 		return fmt.Errorf("start pinning object: %w", err)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func init() {
 	RegisterMessageConvertor(NewCheckPackageRedundancy)

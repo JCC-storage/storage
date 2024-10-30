@@ -4,12 +4,12 @@ import cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 
 type AgentCacheGC struct {
 	EventBase
-	NodeID cdssdk.NodeID `json:"nodeID"`
+	StorageID cdssdk.StorageID `json:"storageID"`
 }
 
-func NewAgentCacheGC(nodeID cdssdk.NodeID) *AgentCacheGC {
+func NewAgentCacheGC(stgID cdssdk.StorageID) *AgentCacheGC {
 	return &AgentCacheGC{
-		NodeID: nodeID,
+		StorageID: stgID,
 	}
 }
 

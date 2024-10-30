@@ -130,9 +130,9 @@ func (s *PackageService) ListBucketPackages(ctx *gin.Context) {
 	}))
 }
 
-// GetCachedNodes 处理获取包的缓存节点的HTTP请求。
-func (s *PackageService) GetCachedNodes(ctx *gin.Context) {
-	log := logger.WithField("HTTP", "Package.GetCachedNodes")
+// GetCachedStorages 处理获取包的缓存节点的HTTP请求。
+func (s *PackageService) GetCachedStorages(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Package.GetCachedStorages")
 
 	var req cdsapi.PackageGetCachedNodesReq
 	if err := ctx.ShouldBindQuery(&req); err != nil {
@@ -148,29 +148,29 @@ func (s *PackageService) GetCachedNodes(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdsapi.PackageGetCachedNodesResp{PackageCachingInfo: resp}))
+	ctx.JSON(http.StatusOK, OK(cdsapi.PackageGetCachedStoragesResp{PackageCachingInfo: resp}))
 }
 
-// GetLoadedNodes 处理获取包的加载节点的HTTP请求。
-func (s *PackageService) GetLoadedNodes(ctx *gin.Context) {
-	log := logger.WithField("HTTP", "Package.GetLoadedNodes")
+// GetLoadedStorages 处理获取包的加载节点的HTTP请求。
+func (s *PackageService) GetLoadedStorages(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Package.GetLoadedStorages")
 
-	var req cdsapi.PackageGetLoadedNodesReq
+	var req cdsapi.PackageGetLoadedStoragesReq
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.Warnf("binding query: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
 		return
 	}
 
-	nodeIDs, err := s.svc.PackageSvc().GetLoadedNodes(req.UserID, req.PackageID)
+	stgIDs, err := s.svc.PackageSvc().GetLoadedStorages(req.UserID, req.PackageID)
 	if err != nil {
 		log.Warnf("get package loaded nodes failed: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get package loaded nodes failed"))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdsapi.PackageGetLoadedNodesResp{
-		NodeIDs: nodeIDs,
+	ctx.JSON(http.StatusOK, OK(cdsapi.PackageGetLoadedStoragesResp{
+		StorageIDs: stgIDs,
 	}))
 }
 

@@ -6,7 +6,7 @@ import (
 	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/model"
 )
 
 type ObjectService interface {
@@ -122,7 +122,7 @@ type UpdateObjectRedundancyResp struct {
 type UpdatingObjectRedundancy struct {
 	ObjectID   cdssdk.ObjectID      `json:"objectID" db:"ObjectID"`
 	Redundancy cdssdk.Redundancy    `json:"redundancy" db:"Redundancy"`
-	PinnedAt   []cdssdk.NodeID      `json:"pinnedAt"`
+	PinnedAt   []cdssdk.StorageID   `json:"pinnedAt"`
 	Blocks     []stgmod.ObjectBlock `json:"blocks"`
 }
 

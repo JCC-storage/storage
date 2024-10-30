@@ -1,8 +1,11 @@
 package types
 
-import "io"
+import (
+	"io"
 
-type FileHash string
+	"gitlink.org.cn/cloudream/common/pkgs/async"
+	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+)
 
 type Status interface {
 	String() string
@@ -16,17 +19,20 @@ func (s *OKStatus) String() string {
 
 var StatusOK = &OKStatus{}
 
+type StoreEvent interface {
+}
+
 type ShardStore interface {
+	// 启动服务
+	Start() *async.UnboundChannel[StoreEvent]
 	// 准备写入一个新文件，写入后获得FileHash
 	New() Writer
 	// 使用F函数创建Option对象
 	Open(opt OpenOption) (io.ReadCloser, error)
-	// 删除文件
-	Remove(hash FileHash) error
 	// 获取所有文件信息，尽量保证操作是原子的
 	ListAll() ([]FileInfo, error)
-	// 清除其他文件，只保留给定的文件，尽量保证操作是原子的
-	Purge(availables []FileHash) error
+	// 删除指定的文件
+	Purge(removes []cdssdk.FileHash) error
 	// 获得存储系统信息
 	Stats() Stats
 }
@@ -37,7 +43,7 @@ type Config interface {
 
 type FileInfo struct {
 	// 文件的SHA256哈希值，全大写的16进制字符串格式
-	Hash FileHash
+	Hash cdssdk.FileHash
 	Size int64
 	// 文件描述信息，比如文件名，用于调试
 	Description string

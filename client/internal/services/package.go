@@ -116,21 +116,21 @@ func (svc *PackageService) GetCachedNodes(userID cdssdk.UserID, packageID cdssdk
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
 	// 向协调器请求获取包的缓存节点信息
-	resp, err := coorCli.GetPackageCachedNodes(coormq.NewGetPackageCachedNodes(userID, packageID))
+	resp, err := coorCli.GetPackageCachedStorages(coormq.ReqGetPackageCachedStorages(userID, packageID))
 	if err != nil {
 		return cdssdk.PackageCachingInfo{}, fmt.Errorf("get package cached nodes: %w", err)
 	}
 
 	// 构造并返回缓存信息
 	tmp := cdssdk.PackageCachingInfo{
-		NodeInfos:   resp.NodeInfos,
-		PackageSize: resp.PackageSize,
+		StorageInfos: resp.StorageInfos,
+		PackageSize:  resp.PackageSize,
 	}
 	return tmp, nil
 }
 
-// GetLoadedNodes 获取指定包加载的节点列表
-func (svc *PackageService) GetLoadedNodes(userID cdssdk.UserID, packageID cdssdk.PackageID) ([]cdssdk.NodeID, error) {
+// GetLoadedStorages 获取指定包加载的节点列表
+func (svc *PackageService) GetLoadedStorages(userID cdssdk.UserID, packageID cdssdk.PackageID) ([]cdssdk.StorageID, error) {
 	// 从协调器MQ池中获取客户端
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
@@ -139,9 +139,9 @@ func (svc *PackageService) GetLoadedNodes(userID cdssdk.UserID, packageID cdssdk
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
 	// 向协调器请求获取加载指定包的节点ID列表
-	resp, err := coorCli.GetPackageLoadedNodes(coormq.NewGetPackageLoadedNodes(userID, packageID))
+	resp, err := coorCli.GetPackageLoadedStorages(coormq.ReqGetPackageLoadedStorages(userID, packageID))
 	if err != nil {
 		return nil, fmt.Errorf("get package loaded nodes: %w", err)
 	}
-	return resp.NodeIDs, nil
+	return resp.StorageIDs, nil
 }
