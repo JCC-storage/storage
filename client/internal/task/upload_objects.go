@@ -41,6 +41,7 @@ func (t *UploadObjects) Execute(task *task.Task[TaskContext], ctx TaskContext, c
 	ret, err := t.cmd.Execute(&cmd.UploadObjectsContext{
 		Distlock:     ctx.distlock,     // 使用任务上下文中的分布式锁。
 		Connectivity: ctx.connectivity, // 使用任务上下文中的网络连接性信息。
+		StgMgr:       ctx.stgMgr,
 	})
 
 	t.Result = ret // 存储上传结果。

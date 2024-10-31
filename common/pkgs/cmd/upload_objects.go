@@ -24,6 +24,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/parser"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/iterator"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/mgr"
 )
 
 type UploadObjects struct {
@@ -52,6 +53,7 @@ type UploadStorageInfo struct {
 type UploadObjectsContext struct {
 	Distlock     *distlock.Service
 	Connectivity *connectivity.Collector
+	StgMgr       *mgr.Manager
 }
 
 func NewUploadObjects(userID cdssdk.UserID, packageID cdssdk.PackageID, objIter iterator.UploadingObjectIterator, nodeAffinity *cdssdk.NodeID) *UploadObjects {
@@ -114,7 +116,7 @@ func (t *UploadObjects) Execute(ctx *UploadObjectsContext) (*UploadObjectsResult
 	}
 	defer ipfsMutex.Unlock()
 
-	rets, err := uploadAndUpdatePackage(t.packageID, t.objectIter, userStgs, t.nodeAffinity)
+	rets, err := uploadAndUpdatePackage(ctx, t.packageID, t.objectIter, userStgs, t.nodeAffinity)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +149,7 @@ func chooseUploadNode(nodes []UploadStorageInfo, nodeAffinity *cdssdk.NodeID) Up
 	return nodes[0]
 }
 
-func uploadAndUpdatePackage(packageID cdssdk.PackageID, objectIter iterator.UploadingObjectIterator, userNodes []UploadStorageInfo, nodeAffinity *cdssdk.NodeID) ([]ObjectUploadResult, error) {
+func uploadAndUpdatePackage(ctx *UploadObjectsContext, packageID cdssdk.PackageID, objectIter iterator.UploadingObjectIterator, userNodes []UploadStorageInfo, nodeAffinity *cdssdk.NodeID) ([]ObjectUploadResult, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
@@ -172,7 +174,7 @@ func uploadAndUpdatePackage(packageID cdssdk.PackageID, objectIter iterator.Uplo
 			defer objInfo.File.Close()
 
 			uploadTime := time.Now()
-			fileHash, err := uploadFile(objInfo.File, uploadNode)
+			fileHash, err := uploadFile(ctx, objInfo.File, uploadNode)
 			if err != nil {
 				return fmt.Errorf("uploading file: %w", err)
 			}
@@ -213,7 +215,7 @@ func uploadAndUpdatePackage(packageID cdssdk.PackageID, objectIter iterator.Uplo
 	return uploadRets, nil
 }
 
-func uploadFile(file io.Reader, uploadStg UploadStorageInfo) (cdssdk.FileHash, error) {
+func uploadFile(ctx *UploadObjectsContext, file io.Reader, uploadStg UploadStorageInfo) (cdssdk.FileHash, error) {
 	ft := ioswitch2.NewFromTo()
 	fromExec, hd := ioswitch2.NewFromDriver(-1)
 	ft.AddFrom(fromExec).AddTo(ioswitch2.NewToShardStore(*uploadStg.Storage.MasterHub, uploadStg.Storage.Storage, -1, "fileHash"))
@@ -225,9 +227,8 @@ func uploadFile(file io.Reader, uploadStg UploadStorageInfo) (cdssdk.FileHash, e
 		return "", fmt.Errorf("parsing plan: %w", err)
 	}
 
-	// TODO2 注入依赖
 	exeCtx := exec.NewExecContext()
-
+	exec.SetValueByType(exeCtx, ctx.StgMgr)
 	exec := plans.Execute(exeCtx)
 	exec.BeginWrite(io.NopCloser(file), hd)
 	ret, err := exec.Wait(context.TODO())

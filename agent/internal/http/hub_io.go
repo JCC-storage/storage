@@ -168,8 +168,7 @@ func (s *IOService) ExecuteIOPlan(ctx *gin.Context) {
 	defer s.svc.swWorker.Remove(sw)
 
 	execCtx := exec.NewWithContext(ctx.Request.Context())
-
-	// TODO 注入依赖
+	exec.SetValueByType(execCtx, s.svc.stgMgr)
 	_, err = sw.Run(execCtx)
 	if err != nil {
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("executing plan: %v", err)))

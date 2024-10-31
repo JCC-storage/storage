@@ -53,7 +53,7 @@ func (iter *DownloadObjectIterator) downloadLRCObject(req downloadReqeust2, red 
 		}
 
 		firstStripIndex := readPos / int64(red.K) / int64(red.ChunkSize)
-		stripIter := NewLRCStripIterator(req.Detail.Object, blocks, red, firstStripIndex, iter.downloader.strips, iter.downloader.cfg.ECStripPrefetchCount)
+		stripIter := NewLRCStripIterator(iter.downloader, req.Detail.Object, blocks, red, firstStripIndex, iter.downloader.strips, iter.downloader.cfg.ECStripPrefetchCount)
 		defer stripIter.Close()
 
 		for totalReadLen > 0 {

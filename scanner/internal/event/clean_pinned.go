@@ -817,13 +817,13 @@ func (t *CleanPinned) makePlansForECObject(allStgInfos map[cdssdk.StorageID]*stg
 	return entry
 }
 
-func (t *CleanPinned) executePlans(execCtx ExecuteContext, planBld *exec.PlanBuilder, planningStgIDs map[cdssdk.StorageID]bool) (map[string]exec.VarValue, error) {
+func (t *CleanPinned) executePlans(ctx ExecuteContext, planBld *exec.PlanBuilder, planningStgIDs map[cdssdk.StorageID]bool) (map[string]exec.VarValue, error) {
 	// 统一加锁，有重复也没关系
 	lockBld := reqbuilder.NewBuilder()
 	for id := range planningStgIDs {
 		lockBld.Shard().Buzy(id)
 	}
-	lock, err := lockBld.MutexLock(execCtx.Args.DistLock)
+	lock, err := lockBld.MutexLock(ctx.Args.DistLock)
 	if err != nil {
 		return nil, fmt.Errorf("acquiring distlock: %w", err)
 	}
@@ -838,8 +838,9 @@ func (t *CleanPinned) executePlans(execCtx ExecuteContext, planBld *exec.PlanBui
 	go func() {
 		defer wg.Done()
 
-		// TODO 添加依赖
-		ret, err := planBld.Execute(exec.NewExecContext()).Wait(context.TODO())
+		execCtx := exec.NewExecContext()
+		exec.SetValueByType(execCtx, ctx.Args.StgMgr)
+		ret, err := planBld.Execute(execCtx).Wait(context.TODO())
 		if err != nil {
 			ioSwErr = fmt.Errorf("executing io switch plan: %w", err)
 			return

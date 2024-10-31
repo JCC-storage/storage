@@ -11,6 +11,7 @@ import (
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/mgr"
 )
 
 const (
@@ -38,11 +39,12 @@ type Downloading struct {
 
 type Downloader struct {
 	strips *StripCache
-	conn   *connectivity.Collector
 	cfg    Config
+	conn   *connectivity.Collector
+	stgMgr *mgr.Manager
 }
 
-func NewDownloader(cfg Config, conn *connectivity.Collector) Downloader {
+func NewDownloader(cfg Config, conn *connectivity.Collector, stgMgr *mgr.Manager) Downloader {
 	if cfg.MaxStripCacheCount == 0 {
 		cfg.MaxStripCacheCount = DefaultMaxStripCacheCount
 	}
@@ -50,8 +52,9 @@ func NewDownloader(cfg Config, conn *connectivity.Collector) Downloader {
 	ch, _ := lru.New[ECStripKey, ObjectECStrip](cfg.MaxStripCacheCount)
 	return Downloader{
 		strips: ch,
-		conn:   conn,
 		cfg:    cfg,
+		conn:   conn,
+		stgMgr: stgMgr,
 	}
 }
 

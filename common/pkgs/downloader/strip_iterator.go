@@ -25,6 +25,7 @@ type Strip struct {
 }
 
 type StripIterator struct {
+	downloader               *Downloader
 	object                   cdssdk.Object
 	blocks                   []downloadBlock
 	red                      *cdssdk.ECRedundancy
@@ -45,12 +46,13 @@ type dataChanEntry struct {
 	Error    error
 }
 
-func NewStripIterator(object cdssdk.Object, blocks []downloadBlock, red *cdssdk.ECRedundancy, beginStripIndex int64, cache *StripCache, maxPrefetch int) *StripIterator {
+func NewStripIterator(downloader *Downloader, object cdssdk.Object, blocks []downloadBlock, red *cdssdk.ECRedundancy, beginStripIndex int64, cache *StripCache, maxPrefetch int) *StripIterator {
 	if maxPrefetch <= 0 {
 		maxPrefetch = 1
 	}
 
 	iter := &StripIterator{
+		downloader:      downloader,
 		object:          object,
 		blocks:          blocks,
 		red:             red,
@@ -210,9 +212,8 @@ func (s *StripIterator) readStrip(stripIndex int64, buf []byte) (int, error) {
 			return 0, err
 		}
 
-		// TODo2 注入依赖
 		exeCtx := exec.NewExecContext()
-
+		exec.SetValueByType(exeCtx, s.downloader.stgMgr)
 		exec := plans.Execute(exeCtx)
 
 		ctx, cancel := context.WithCancel(context.Background())

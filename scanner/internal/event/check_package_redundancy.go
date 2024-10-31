@@ -147,43 +147,43 @@ func (t *CheckPackageRedundancy) Execute(execCtx ExecuteContext) {
 			switch newRed := newRed.(type) {
 			case *cdssdk.RepRedundancy:
 				log.WithField("ObjectID", obj.Object.ObjectID).Debugf("redundancy: none -> rep")
-				updating, err = t.noneToRep(obj, newRed, newRepStgs)
+				updating, err = t.noneToRep(execCtx, obj, newRed, newRepStgs)
 
 			case *cdssdk.ECRedundancy:
 				log.WithField("ObjectID", obj.Object.ObjectID).Debugf("redundancy: none -> ec")
-				updating, err = t.noneToEC(obj, newRed, newECStgs)
+				updating, err = t.noneToEC(execCtx, obj, newRed, newECStgs)
 
 			case *cdssdk.LRCRedundancy:
 				log.WithField("ObjectID", obj.Object.ObjectID).Debugf("redundancy: none -> lrc")
-				updating, err = t.noneToLRC(obj, newRed, selectedNodes)
+				updating, err = t.noneToLRC(execCtx, obj, newRed, selectedNodes)
 			}
 
 		case *cdssdk.RepRedundancy:
 			switch newRed := newRed.(type) {
 			case *cdssdk.RepRedundancy:
-				updating, err = t.repToRep(obj, srcRed, rechoosedRepStgs)
+				updating, err = t.repToRep(execCtx, obj, srcRed, rechoosedRepStgs)
 
 			case *cdssdk.ECRedundancy:
 				log.WithField("ObjectID", obj.Object.ObjectID).Debugf("redundancy: rep -> ec")
-				updating, err = t.repToEC(obj, newRed, newECStgs)
+				updating, err = t.repToEC(execCtx, obj, newRed, newECStgs)
 			}
 
 		case *cdssdk.ECRedundancy:
 			switch newRed := newRed.(type) {
 			case *cdssdk.RepRedundancy:
 				log.WithField("ObjectID", obj.Object.ObjectID).Debugf("redundancy: ec -> rep")
-				updating, err = t.ecToRep(obj, srcRed, newRed, newRepStgs)
+				updating, err = t.ecToRep(execCtx, obj, srcRed, newRed, newRepStgs)
 
 			case *cdssdk.ECRedundancy:
 				uploadNodes := t.rechooseNodesForEC(obj, srcRed, userAllStorages)
-				updating, err = t.ecToEC(obj, srcRed, newRed, uploadNodes)
+				updating, err = t.ecToEC(execCtx, obj, srcRed, newRed, uploadNodes)
 			}
 
 		case *cdssdk.LRCRedundancy:
 			switch newRed := newRed.(type) {
 			case *cdssdk.LRCRedundancy:
 				uploadNodes := t.rechooseNodesForLRC(obj, srcRed, userAllStorages)
-				updating, err = t.lrcToLRC(obj, srcRed, newRed, uploadNodes)
+				updating, err = t.lrcToLRC(execCtx, obj, srcRed, newRed, uploadNodes)
 			}
 		}
 
@@ -426,7 +426,7 @@ func (t *CheckPackageRedundancy) chooseSoManyNodes(count int, stgs []*StorageLoa
 	return chosen
 }
 
-func (t *CheckPackageRedundancy) noneToRep(obj stgmod.ObjectDetail, red *cdssdk.RepRedundancy, uploadStgs []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) noneToRep(ctx ExecuteContext, obj stgmod.ObjectDetail, red *cdssdk.RepRedundancy, uploadStgs []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	if len(obj.Blocks) == 0 {
 		return nil, fmt.Errorf("object is not cached on any nodes, cannot change its redundancy to rep")
 	}
@@ -465,7 +465,9 @@ func (t *CheckPackageRedundancy) noneToRep(obj stgmod.ObjectDetail, red *cdssdk.
 	}
 
 	// TODO 添加依赖
-	ret, err := plans.Execute(exec.NewExecContext()).Wait(context.Background())
+	execCtx := exec.NewExecContext()
+	exec.SetValueByType(execCtx, ctx.Args.StgMgr)
+	ret, err := plans.Execute(execCtx).Wait(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("executing io plan: %w", err)
 	}
@@ -487,7 +489,7 @@ func (t *CheckPackageRedundancy) noneToRep(obj stgmod.ObjectDetail, red *cdssdk.
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) noneToEC(obj stgmod.ObjectDetail, red *cdssdk.ECRedundancy, uploadStgs []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) noneToEC(ctx ExecuteContext, obj stgmod.ObjectDetail, red *cdssdk.ECRedundancy, uploadStgs []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
@@ -521,8 +523,9 @@ func (t *CheckPackageRedundancy) noneToEC(obj stgmod.ObjectDetail, red *cdssdk.E
 		return nil, fmt.Errorf("parsing plan: %w", err)
 	}
 
-	// TODO 添加依赖
-	ioRet, err := plans.Execute(exec.NewExecContext()).Wait(context.TODO())
+	execCtx := exec.NewExecContext()
+	exec.SetValueByType(execCtx, ctx.Args.StgMgr)
+	ioRet, err := plans.Execute(execCtx).Wait(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("executing io plan: %w", err)
 	}
@@ -544,7 +547,7 @@ func (t *CheckPackageRedundancy) noneToEC(obj stgmod.ObjectDetail, red *cdssdk.E
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) noneToLRC(obj stgmod.ObjectDetail, red *cdssdk.LRCRedundancy, uploadNodes []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) noneToLRC(ctx ExecuteContext, obj stgmod.ObjectDetail, red *cdssdk.LRCRedundancy, uploadNodes []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
@@ -577,8 +580,9 @@ func (t *CheckPackageRedundancy) noneToLRC(obj stgmod.ObjectDetail, red *cdssdk.
 		return nil, fmt.Errorf("parsing plan: %w", err)
 	}
 
-	// TODO 添加依赖
-	ioRet, err := plans.Execute(exec.NewExecContext()).Wait(context.TODO())
+	execCtx := exec.NewExecContext()
+	exec.SetValueByType(execCtx, ctx.Args.StgMgr)
+	ioRet, err := plans.Execute(execCtx).Wait(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("executing io plan: %w", err)
 	}
@@ -600,7 +604,7 @@ func (t *CheckPackageRedundancy) noneToLRC(obj stgmod.ObjectDetail, red *cdssdk.
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) repToRep(obj stgmod.ObjectDetail, red *cdssdk.RepRedundancy, uploadStgs []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) repToRep(ctx ExecuteContext, obj stgmod.ObjectDetail, red *cdssdk.RepRedundancy, uploadStgs []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	if len(obj.Blocks) == 0 {
 		return nil, fmt.Errorf("object is not cached on any nodes, cannot change its redundancy to rep")
 	}
@@ -639,7 +643,9 @@ func (t *CheckPackageRedundancy) repToRep(obj stgmod.ObjectDetail, red *cdssdk.R
 	}
 
 	// TODO 添加依赖
-	ret, err := plans.Execute(exec.NewExecContext()).Wait(context.Background())
+	execCtx := exec.NewExecContext()
+	exec.SetValueByType(execCtx, ctx.Args.StgMgr)
+	ret, err := plans.Execute(execCtx).Wait(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("executing io plan: %w", err)
 	}
@@ -661,11 +667,11 @@ func (t *CheckPackageRedundancy) repToRep(obj stgmod.ObjectDetail, red *cdssdk.R
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) repToEC(obj stgmod.ObjectDetail, red *cdssdk.ECRedundancy, uploadNodes []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
-	return t.noneToEC(obj, red, uploadNodes)
+func (t *CheckPackageRedundancy) repToEC(ctx ExecuteContext, obj stgmod.ObjectDetail, red *cdssdk.ECRedundancy, uploadNodes []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+	return t.noneToEC(ctx, obj, red, uploadNodes)
 }
 
-func (t *CheckPackageRedundancy) ecToRep(obj stgmod.ObjectDetail, srcRed *cdssdk.ECRedundancy, tarRed *cdssdk.RepRedundancy, uploadStgs []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) ecToRep(ctx ExecuteContext, obj stgmod.ObjectDetail, srcRed *cdssdk.ECRedundancy, tarRed *cdssdk.RepRedundancy, uploadStgs []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
@@ -715,7 +721,9 @@ func (t *CheckPackageRedundancy) ecToRep(obj stgmod.ObjectDetail, srcRed *cdssdk
 	}
 
 	// TODO 添加依赖
-	ioRet, err := planBlder.Execute(exec.NewExecContext()).Wait(context.TODO())
+	execCtx := exec.NewExecContext()
+	exec.SetValueByType(execCtx, ctx.Args.StgMgr)
+	ioRet, err := planBlder.Execute(execCtx).Wait(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("executing io plan: %w", err)
 	}
@@ -737,7 +745,7 @@ func (t *CheckPackageRedundancy) ecToRep(obj stgmod.ObjectDetail, srcRed *cdssdk
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) ecToEC(obj stgmod.ObjectDetail, srcRed *cdssdk.ECRedundancy, tarRed *cdssdk.ECRedundancy, uploadNodes []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) ecToEC(ctx ExecuteContext, obj stgmod.ObjectDetail, srcRed *cdssdk.ECRedundancy, tarRed *cdssdk.ECRedundancy, uploadNodes []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
@@ -805,8 +813,9 @@ func (t *CheckPackageRedundancy) ecToEC(obj stgmod.ObjectDetail, srcRed *cdssdk.
 	}
 
 	// 如果没有任何Plan，Wait会直接返回成功
-	// TODO 添加依赖
-	ret, err := planBlder.Execute(exec.NewExecContext()).Wait(context.TODO())
+	execCtx := exec.NewExecContext()
+	exec.SetValueByType(execCtx, ctx.Args.StgMgr)
+	ret, err := planBlder.Execute(execCtx).Wait(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("executing io plan: %w", err)
 	}
@@ -831,7 +840,7 @@ func (t *CheckPackageRedundancy) ecToEC(obj stgmod.ObjectDetail, srcRed *cdssdk.
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) lrcToLRC(obj stgmod.ObjectDetail, srcRed *cdssdk.LRCRedundancy, tarRed *cdssdk.LRCRedundancy, uploadNodes []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) lrcToLRC(ctx ExecuteContext, obj stgmod.ObjectDetail, srcRed *cdssdk.LRCRedundancy, tarRed *cdssdk.LRCRedundancy, uploadNodes []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
@@ -871,10 +880,12 @@ func (t *CheckPackageRedundancy) lrcToLRC(obj stgmod.ObjectDetail, srcRed *cdssd
 		// 	return t.groupReconstructLRC(obj, lostBlocks, lostBlockGrps, blocksGrpByIndex, srcRed, uploadNodes)
 	}
 
-	return t.reconstructLRC(obj, blocksGrpByIndex, srcRed, uploadNodes)
+	return t.reconstructLRC(ctx, obj, blocksGrpByIndex, srcRed, uploadNodes)
 }
 
 /*
+TODO2 修复这一块的代码
+
 	func (t *CheckPackageRedundancy) groupReconstructLRC(obj stgmod.ObjectDetail, lostBlocks []int, lostBlockGrps []int, grpedBlocks []stgmod.GrouppedObjectBlock, red *cdssdk.LRCRedundancy, uploadNodes []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 		grped := make(map[int]stgmod.GrouppedObjectBlock)
 		for _, b := range grpedBlocks {
@@ -938,7 +949,7 @@ func (t *CheckPackageRedundancy) lrcToLRC(obj stgmod.ObjectDetail, srcRed *cdssd
 		}, nil
 	}
 */
-func (t *CheckPackageRedundancy) reconstructLRC(obj stgmod.ObjectDetail, grpBlocks []stgmod.GrouppedObjectBlock, red *cdssdk.LRCRedundancy, uploadNodes []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) reconstructLRC(ctx ExecuteContext, obj stgmod.ObjectDetail, grpBlocks []stgmod.GrouppedObjectBlock, red *cdssdk.LRCRedundancy, uploadNodes []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	var chosenBlocks []stgmod.GrouppedObjectBlock
 	for _, block := range grpBlocks {
 		if len(block.StorageIDs) > 0 && block.Index < red.M() {
@@ -1001,8 +1012,9 @@ func (t *CheckPackageRedundancy) reconstructLRC(obj stgmod.ObjectDetail, grpBloc
 	fmt.Printf("plans: %v\n", planBlder)
 
 	// 如果没有任何Plan，Wait会直接返回成功
-	// TODO 添加依赖
-	ret, err := planBlder.Execute(exec.NewExecContext()).Wait(context.TODO())
+	execCtx := exec.NewExecContext()
+	exec.SetValueByType(execCtx, ctx.Args.StgMgr)
+	ret, err := planBlder.Execute(execCtx).Wait(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("executing io plan: %w", err)
 	}

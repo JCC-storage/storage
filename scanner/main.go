@@ -10,6 +10,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
 	agtrpc "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
 	scmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/scanner"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/mgr"
 	"gitlink.org.cn/cloudream/storage/scanner/internal/config"
 	"gitlink.org.cn/cloudream/storage/scanner/internal/event"
 	"gitlink.org.cn/cloudream/storage/scanner/internal/mq"
@@ -38,6 +39,7 @@ func main() {
 
 	stgglb.InitAgentRPCPool(&agtrpc.PoolConfig{})
 
+	// 启动分布式锁服务
 	distlockSvc, err := distlock.NewService(&config.Cfg().DistLock)
 	if err != nil {
 		logger.Warnf("new distlock service failed, err: %s", err.Error())
@@ -45,7 +47,11 @@ func main() {
 	}
 	go serveDistLock(distlockSvc)
 
-	eventExecutor := event.NewExecutor(db, distlockSvc)
+	// 启动存储服务管理器
+	stgMgr := mgr.NewManager()
+
+	// 启动事件执行器
+	eventExecutor := event.NewExecutor(db, distlockSvc, stgMgr)
 	go serveEventExecutor(&eventExecutor)
 
 	agtSvr, err := scmq.NewServer(mq.NewService(&eventExecutor), &config.Cfg().RabbitMQ)

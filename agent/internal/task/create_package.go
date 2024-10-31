@@ -87,6 +87,7 @@ func (t *CreatePackage) Execute(task *task.Task[TaskContext], ctx TaskContext, c
 	uploadRet, err := cmd.NewUploadObjects(t.userID, createResp.Package.PackageID, t.objIter, t.nodeAffinity).Execute(&cmd.UploadObjectsContext{
 		Distlock:     ctx.distlock,
 		Connectivity: ctx.connectivity,
+		StgMgr:       ctx.stgMgr,
 	})
 	if err != nil {
 		err = fmt.Errorf("uploading objects: %w", err)
