@@ -1,16 +1,15 @@
 package event
 
 import (
-	"database/sql"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/samber/lo"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 	agtmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/agent"
 	scevt "gitlink.org.cn/cloudream/storage/common/pkgs/mq/scanner/event"
 )
@@ -35,7 +34,7 @@ func (t *AgentCheckCache) TryMerge(other Event) bool {
 		return false
 	}
 
-	if event.NodeID != t.NodeID {
+	if event.StorageID != t.StorageID {
 		return false
 	}
 
@@ -51,23 +50,29 @@ func (t *AgentCheckCache) Execute(execCtx ExecuteContext) {
 		log.Debugf("end, time: %v", time.Since(startTime))
 	}()
 
-	agtCli, err := stgglb.AgentMQPool.Acquire(t.NodeID)
+	stg, err := execCtx.Args.DB.Storage().GetByID(execCtx.Args.DB.DefCtx(), t.StorageID)
 	if err != nil {
-		log.WithField("NodeID", t.NodeID).Warnf("create agent client failed, err: %s", err.Error())
+		log.WithField("NodeID", t.StorageID).Warnf("getting shard storage by storage id: %s", err.Error())
+		return
+	}
+
+	agtCli, err := stgglb.AgentMQPool.Acquire(stg.MasterHub)
+	if err != nil {
+		log.WithField("NodeID", t.StorageID).Warnf("create agent client failed, err: %s", err.Error())
 		return
 	}
 	defer stgglb.AgentMQPool.Release(agtCli)
 
-	checkResp, err := agtCli.CheckCache(agtmq.NewCheckCache(), mq.RequestOption{Timeout: time.Minute})
+	checkResp, err := agtCli.CheckCache(agtmq.NewCheckCache(t.StorageID), mq.RequestOption{Timeout: time.Minute})
 	if err != nil {
-		log.WithField("NodeID", t.NodeID).Warnf("checking ipfs: %s", err.Error())
+		log.WithField("NodeID", t.StorageID).Warnf("checking ipfs: %s", err.Error())
 		return
 	}
 
-	realFileHashes := lo.SliceToMap(checkResp.FileHashes, func(hash string) (string, bool) { return hash, true })
+	realFileHashes := lo.SliceToMap(checkResp.FileHashes, func(hash cdssdk.FileHash) (cdssdk.FileHash, bool) { return hash, true })
 
 	// 在事务中执行缓存更新操作
-	execCtx.Args.DB.DoTx(sql.LevelSerializable, func(tx *sqlx.Tx) error {
+	execCtx.Args.DB.DoTx(func(tx db2.SQLContext) error {
 		t.checkCache(execCtx, tx, realFileHashes)
 
 		t.checkPinnedObject(execCtx, tx, realFileHashes)
@@ -78,21 +83,21 @@ func (t *AgentCheckCache) Execute(execCtx ExecuteContext) {
 }
 
 // checkCache 对比Cache表中的记录，根据实际存在的文件哈希值，进行增加或删除操作
-func (t *AgentCheckCache) checkCache(execCtx ExecuteContext, tx *sqlx.Tx, realFileHashes map[string]bool) {
+func (t *AgentCheckCache) checkCache(execCtx ExecuteContext, tx db2.SQLContext, realFileHashes map[cdssdk.FileHash]bool) {
 	log := logger.WithType[AgentCheckCache]("Event")
 
-	caches, err := execCtx.Args.DB.Cache().GetByNodeID(tx, t.NodeID)
+	caches, err := execCtx.Args.DB.Cache().GetByStorageID(tx, t.StorageID)
 	if err != nil {
-		log.WithField("NodeID", t.NodeID).Warnf("getting caches by node id: %s", err.Error())
+		log.WithField("NodeID", t.StorageID).Warnf("getting caches by node id: %s", err.Error())
 		return
 	}
 
-	realFileHashesCp := make(map[string]bool)
+	realFileHashesCp := make(map[cdssdk.FileHash]bool)
 	for k, v := range realFileHashes {
 		realFileHashesCp[k] = v
 	}
 
-	var rms []string
+	var rms []cdssdk.FileHash
 	for _, c := range caches {
 		if realFileHashesCp[c.FileHash] {
 			delete(realFileHashesCp, c.FileHash)
@@ -102,14 +107,14 @@ func (t *AgentCheckCache) checkCache(execCtx ExecuteContext, tx *sqlx.Tx, realFi
 	}
 
 	if len(rms) > 0 {
-		err = execCtx.Args.DB.Cache().NodeBatchDelete(tx, t.NodeID, rms)
+		err = execCtx.Args.DB.Cache().StorageBatchDelete(tx, t.StorageID, rms)
 		if err != nil {
 			log.Warnf("batch delete node caches: %w", err.Error())
 		}
 	}
 
 	if len(realFileHashesCp) > 0 {
-		err = execCtx.Args.DB.Cache().BatchCreateOnSameNode(tx, lo.Keys(realFileHashesCp), t.NodeID, 0)
+		err = execCtx.Args.DB.Cache().BatchCreateOnSameStorage(tx, lo.Keys(realFileHashesCp), t.StorageID, 0)
 		if err != nil {
 			log.Warnf("batch create node caches: %w", err)
 			return
@@ -118,12 +123,12 @@ func (t *AgentCheckCache) checkCache(execCtx ExecuteContext, tx *sqlx.Tx, realFi
 }
 
 // checkPinnedObject 对比PinnedObject表，若实际文件不存在，则进行删除操作
-func (t *AgentCheckCache) checkPinnedObject(execCtx ExecuteContext, tx *sqlx.Tx, realFileHashes map[string]bool) {
+func (t *AgentCheckCache) checkPinnedObject(execCtx ExecuteContext, tx db2.SQLContext, realFileHashes map[cdssdk.FileHash]bool) {
 	log := logger.WithType[AgentCheckCache]("Event")
 
-	objs, err := execCtx.Args.DB.PinnedObject().GetObjectsByNodeID(tx, t.NodeID)
+	objs, err := execCtx.Args.DB.PinnedObject().GetObjectsByStorageID(tx, t.StorageID)
 	if err != nil {
-		log.WithField("NodeID", t.NodeID).Warnf("getting pinned objects by node id: %s", err.Error())
+		log.WithField("NodeID", t.StorageID).Warnf("getting pinned objects by node id: %s", err.Error())
 		return
 	}
 
@@ -136,7 +141,7 @@ func (t *AgentCheckCache) checkPinnedObject(execCtx ExecuteContext, tx *sqlx.Tx,
 	}
 
 	if len(rms) > 0 {
-		err = execCtx.Args.DB.PinnedObject().NodeBatchDelete(tx, t.NodeID, rms)
+		err = execCtx.Args.DB.PinnedObject().StorageBatchDelete(tx, t.StorageID, rms)
 		if err != nil {
 			log.Warnf("batch delete node pinned objects: %s", err.Error())
 		}
@@ -144,16 +149,16 @@ func (t *AgentCheckCache) checkPinnedObject(execCtx ExecuteContext, tx *sqlx.Tx,
 }
 
 // checkObjectBlock 对比ObjectBlock表，若实际文件不存在，则进行删除操作
-func (t *AgentCheckCache) checkObjectBlock(execCtx ExecuteContext, tx *sqlx.Tx, realFileHashes map[string]bool) {
+func (t *AgentCheckCache) checkObjectBlock(execCtx ExecuteContext, tx db2.SQLContext, realFileHashes map[cdssdk.FileHash]bool) {
 	log := logger.WithType[AgentCheckCache]("Event")
 
-	blocks, err := execCtx.Args.DB.ObjectBlock().GetByNodeID(tx, t.NodeID)
+	blocks, err := execCtx.Args.DB.ObjectBlock().GetByStorageID(tx, t.StorageID)
 	if err != nil {
-		log.WithField("NodeID", t.NodeID).Warnf("getting object blocks by node id: %s", err.Error())
+		log.WithField("NodeID", t.StorageID).Warnf("getting object blocks by node id: %s", err.Error())
 		return
 	}
 
-	var rms []string
+	var rms []cdssdk.FileHash
 	for _, b := range blocks {
 		if realFileHashes[b.FileHash] {
 			continue
@@ -162,7 +167,7 @@ func (t *AgentCheckCache) checkObjectBlock(execCtx ExecuteContext, tx *sqlx.Tx, 
 	}
 
 	if len(rms) > 0 {
-		err = execCtx.Args.DB.ObjectBlock().NodeBatchDelete(tx, t.NodeID, rms)
+		err = execCtx.Args.DB.ObjectBlock().StorageBatchDelete(tx, t.StorageID, rms)
 		if err != nil {
 			log.Warnf("batch delete node object blocks: %s", err.Error())
 		}

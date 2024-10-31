@@ -32,7 +32,7 @@ func (t *CheckPackage) Execute(execCtx ExecuteContext) {
 	defer log.Debugf("end")
 
 	for _, objID := range t.PackageIDs {
-		err := execCtx.Args.DB.Package().DeleteUnused(execCtx.Args.DB.SQLCtx(), objID)
+		err := execCtx.Args.DB.Package().DeleteUnused(execCtx.Args.DB.DefCtx(), objID)
 		if err != nil {
 			log.WithField("PackageID", objID).Warnf("delete unused package failed, err: %s", err.Error())
 		}

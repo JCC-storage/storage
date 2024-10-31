@@ -54,19 +54,46 @@ type HttpHubWorkerClient struct {
 }
 
 func (c *HttpHubWorkerClient) ExecutePlan(ctx context.Context, plan exec.Plan) error {
-	return c.cli.ExecuteIOPlan(plan)
+	return c.cli.ExecuteIOPlan(cdsapi.ExecuteIOPlanReq{
+		Plan: plan,
+	})
 }
 func (c *HttpHubWorkerClient) SendStream(ctx context.Context, planID exec.PlanID, id exec.VarID, stream io.ReadCloser) error {
-	return c.cli.SendStream(planID, id, stream)
+	return c.cli.SendStream(cdsapi.SendStreamReq{
+		SendStreamInfo: cdsapi.SendStreamInfo{
+			PlanID: planID,
+			VarID:  id,
+		},
+		Stream: stream,
+	})
 }
 func (c *HttpHubWorkerClient) SendVar(ctx context.Context, planID exec.PlanID, id exec.VarID, value exec.VarValue) error {
-	return c.cli.SendVar(planID, id, value)
+	return c.cli.SendVar(cdsapi.SendVarReq{
+		PlanID:   planID,
+		VarID:    id,
+		VarValue: value,
+	})
 }
 func (c *HttpHubWorkerClient) GetStream(ctx context.Context, planID exec.PlanID, streamID exec.VarID, signalID exec.VarID, signal exec.VarValue) (io.ReadCloser, error) {
-	return c.cli.GetStream(planID, streamID, signalID, signal)
+	return c.cli.GetStream(cdsapi.GetStreamReq{
+		PlanID:   planID,
+		VarID:    streamID,
+		SignalID: signalID,
+		Signal:   signal,
+	})
 }
 func (c *HttpHubWorkerClient) GetVar(ctx context.Context, planID exec.PlanID, varID exec.VarID, signalID exec.VarID, signal exec.VarValue) (exec.VarValue, error) {
-	return c.cli.GetVar(planID, varID, signalID, signal)
+	resp, err := c.cli.GetVar(cdsapi.GetVarReq{
+		PlanID:   planID,
+		VarID:    varID,
+		SignalID: signalID,
+		Signal:   signal,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Value, err
 }
 func (c *HttpHubWorkerClient) Close() error {
 	//stgglb.AgentRPCPool.Release(c.cli)

@@ -2,6 +2,7 @@ package ops2
 
 import (
 	"encoding/json"
+
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/dag"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/sdks/cloudstorage"
@@ -11,12 +12,21 @@ import (
 func init() {
 	exec.UseOp[*MultipartManage]()
 	exec.UseOp[*MultipartUpload]()
+	exec.UseVarValue[*InitUploadValue]()
+}
+
+type InitUploadValue struct {
+	UploadID string `json:"uploadID"`
+}
+
+func (v *InitUploadValue) Clone() exec.VarValue {
+	return &*v
 }
 
 type MultipartManage struct {
-	Address  cdssdk.StorageAddress `json:"address"`
-	UploadID *exec.VarID           `json:"uploadID"`
-	ObjectID *exec.VarID           `json:"objectID"`
+	Address    cdssdk.StorageAddress `json:"address"`
+	UploadArgs exec.VarID            `json:"uploadID"`
+	ObjectID   exec.VarID            `json:"objectID"`
 }
 
 func (o *MultipartManage) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
@@ -41,7 +51,9 @@ func (o *MultipartManage) Execute(ctx *exec.ExecContext, e *exec.Executor) error
 	if err != nil {
 		return err
 	}
+	e.PutVar(o.UploadArgs, &InitUploadValue{UploadID: uploadID})
 
+	fileMD5, err := e.BindVar(ctx.Context, o.UploadID)
 	objectID, err := client.CompleteMultipartUpload()
 	if err != nil {
 		return err
@@ -76,11 +88,14 @@ func (t *MultipartManageNode) GenerateOp() (exec.Op, error) {
 }
 
 type MultipartUpload struct {
-	Address cdssdk.StorageAddress `json:"address"`
-	FileMD5 *exec.VarID           `json:"fileMD5"`
+	Address    cdssdk.StorageAddress `json:"address"`
+	FileMD5    *exec.VarID           `json:"fileMD5"`
+	UploadArgs exec.VarID            `json:"uploadID"`
 }
 
 func (o *MultipartUpload) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
+	value, err2 := exec.BindVar[*InitUploadValue](e, ctx.Context, o.UploadArgs)
+
 	var oss cloudstorage.ObjectStorage
 	switch addr := o.Address.(type) {
 	case *cdssdk.LocalStorageAddress:

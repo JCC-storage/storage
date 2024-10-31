@@ -6,7 +6,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 
-	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/model"
 )
 
 type PackageService interface {
@@ -20,9 +20,9 @@ type PackageService interface {
 
 	DeletePackage(msg *DeletePackage) (*DeletePackageResp, *mq.CodeMessage)
 
-	GetPackageCachedNodes(msg *GetPackageCachedNodes) (*GetPackageCachedNodesResp, *mq.CodeMessage)
+	GetPackageCachedStorages(msg *GetPackageCachedStorages) (*GetPackageCachedStoragesResp, *mq.CodeMessage)
 
-	GetPackageLoadedNodes(msg *GetPackageLoadedNodes) (*GetPackageLoadedNodesResp, *mq.CodeMessage)
+	GetPackageLoadedStorages(msg *GetPackageLoadedStorages) (*GetPackageLoadedStoragesResp, *mq.CodeMessage)
 }
 
 // 获取Package基本信息
@@ -129,11 +129,11 @@ type UpdatePackageResp struct {
 	Added []cdssdk.Object `json:"added"`
 }
 type AddObjectEntry struct {
-	Path       string        `json:"path"`
-	Size       int64         `json:"size,string"`
-	FileHash   string        `json:"fileHash"`
-	UploadTime time.Time     `json:"uploadTime"` // 开始上传文件的时间
-	NodeID     cdssdk.NodeID `json:"nodeID"`
+	Path       string           `json:"path"`
+	Size       int64            `json:"size,string"`
+	FileHash   cdssdk.FileHash  `json:"fileHash"`
+	UploadTime time.Time        `json:"uploadTime"` // 开始上传文件的时间
+	StorageID  cdssdk.StorageID `json:"storageID"`
 }
 
 func NewUpdatePackage(packageID cdssdk.PackageID, adds []AddObjectEntry, deletes []cdssdk.ObjectID) *UpdatePackage {
@@ -148,13 +148,13 @@ func NewUpdatePackageResp(added []cdssdk.Object) *UpdatePackageResp {
 		Added: added,
 	}
 }
-func NewAddObjectEntry(path string, size int64, fileHash string, uploadTime time.Time, nodeID cdssdk.NodeID) AddObjectEntry {
+func NewAddObjectEntry(path string, size int64, fileHash cdssdk.FileHash, uploadTime time.Time, stgID cdssdk.StorageID) AddObjectEntry {
 	return AddObjectEntry{
 		Path:       path,
 		Size:       size,
 		FileHash:   fileHash,
 		UploadTime: uploadTime,
-		NodeID:     nodeID,
+		StorageID:  stgID,
 	}
 }
 func (client *Client) UpdatePackage(msg *UpdatePackage) (*UpdatePackageResp, error) {
@@ -187,72 +187,72 @@ func (client *Client) DeletePackage(msg *DeletePackage) (*DeletePackageResp, err
 }
 
 // 根据PackageID获取object分布情况
-var _ = Register(Service.GetPackageCachedNodes)
+var _ = Register(Service.GetPackageCachedStorages)
 
-type GetPackageCachedNodes struct {
+type GetPackageCachedStorages struct {
 	mq.MessageBodyBase
 	UserID    cdssdk.UserID    `json:"userID"`
 	PackageID cdssdk.PackageID `json:"packageID"`
 }
 
-type PackageCachedNodeInfo struct {
-	NodeID      int64 `json:"nodeID"`
+type PackageCachedStorageInfo struct {
+	StorageID   int64 `json:"storageID"`
 	FileSize    int64 `json:"fileSize"`
 	ObjectCount int64 `json:"objectCount"`
 }
 
-type GetPackageCachedNodesResp struct {
+type GetPackageCachedStoragesResp struct {
 	mq.MessageBodyBase
 	cdssdk.PackageCachingInfo
 }
 
-func NewGetPackageCachedNodes(userID cdssdk.UserID, packageID cdssdk.PackageID) *GetPackageCachedNodes {
-	return &GetPackageCachedNodes{
+func ReqGetPackageCachedStorages(userID cdssdk.UserID, packageID cdssdk.PackageID) *GetPackageCachedStorages {
+	return &GetPackageCachedStorages{
 		UserID:    userID,
 		PackageID: packageID,
 	}
 }
 
-func NewGetPackageCachedNodesResp(nodeInfos []cdssdk.NodePackageCachingInfo, packageSize int64) *GetPackageCachedNodesResp {
-	return &GetPackageCachedNodesResp{
+func ReqGetPackageCachedStoragesResp(nodeInfos []cdssdk.StoragePackageCachingInfo, packageSize int64) *GetPackageCachedStoragesResp {
+	return &GetPackageCachedStoragesResp{
 		PackageCachingInfo: cdssdk.PackageCachingInfo{
-			NodeInfos:   nodeInfos,
-			PackageSize: packageSize,
+			StorageInfos: nodeInfos,
+			PackageSize:  packageSize,
 		},
 	}
 }
 
-func (client *Client) GetPackageCachedNodes(msg *GetPackageCachedNodes) (*GetPackageCachedNodesResp, error) {
-	return mq.Request(Service.GetPackageCachedNodes, client.rabbitCli, msg)
+func (client *Client) GetPackageCachedStorages(msg *GetPackageCachedStorages) (*GetPackageCachedStoragesResp, error) {
+	return mq.Request(Service.GetPackageCachedStorages, client.rabbitCli, msg)
 }
 
 // 根据PackageID获取storage分布情况
-var _ = Register(Service.GetPackageLoadedNodes)
+var _ = Register(Service.GetPackageLoadedStorages)
 
-type GetPackageLoadedNodes struct {
+type GetPackageLoadedStorages struct {
 	mq.MessageBodyBase
 	UserID    cdssdk.UserID    `json:"userID"`
 	PackageID cdssdk.PackageID `json:"packageID"`
 }
 
-type GetPackageLoadedNodesResp struct {
+type GetPackageLoadedStoragesResp struct {
 	mq.MessageBodyBase
-	NodeIDs []cdssdk.NodeID `json:"nodeIDs"`
+	StorageIDs []cdssdk.StorageID `json:"storageIDs"`
 }
 
-func NewGetPackageLoadedNodes(userID cdssdk.UserID, packageID cdssdk.PackageID) *GetPackageLoadedNodes {
-	return &GetPackageLoadedNodes{
+func ReqGetPackageLoadedStorages(userID cdssdk.UserID, packageID cdssdk.PackageID) *GetPackageLoadedStorages {
+	return &GetPackageLoadedStorages{
 		UserID:    userID,
 		PackageID: packageID,
 	}
 }
 
-func NewGetPackageLoadedNodesResp(nodeIDs []cdssdk.NodeID) *GetPackageLoadedNodesResp {
-	return &GetPackageLoadedNodesResp{
-		NodeIDs: nodeIDs,
+func NewGetPackageLoadedStoragesResp(stgIDs []cdssdk.StorageID) *GetPackageLoadedStoragesResp {
+	return &GetPackageLoadedStoragesResp{
+		StorageIDs: stgIDs,
 	}
 }
 
-func (client *Client) GetPackageLoadedNodes(msg *GetPackageLoadedNodes) (*GetPackageLoadedNodesResp, error) {
-	return mq.Request(Service.GetPackageLoadedNodes, client.rabbitCli, msg)
+func (client *Client) GetPackageLoadedStorages(msg *GetPackageLoadedStorages) (*GetPackageLoadedStoragesResp, error) {
+	return mq.Request(Service.GetPackageLoadedStorages, client.rabbitCli, msg)
 }

@@ -15,8 +15,8 @@ import (
 )
 
 type downloadBlock struct {
-	Node  cdssdk.Node
-	Block stgmod.ObjectBlock
+	Storage stgmod.StorageDetail
+	Block   stgmod.ObjectBlock
 }
 
 type Strip struct {
@@ -194,8 +194,8 @@ func (s *StripIterator) readStrip(stripIndex int64, buf []byte) (int, error) {
 
 		ft := ioswitch2.NewFromTo()
 		for _, b := range s.blocks {
-			node := b.Node
-			ft.AddFrom(ioswitch2.NewFromNode(b.Block.FileHash, &node, b.Block.Index))
+			stg := b.Storage
+			ft.AddFrom(ioswitch2.NewFromShardstore(b.Block.FileHash, *stg.MasterHub, stg.Storage, b.Block.Index))
 		}
 
 		toExec, hd := ioswitch2.NewToDriverWithRange(-1, exec.Range{

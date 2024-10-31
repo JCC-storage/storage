@@ -2,7 +2,8 @@ package db2
 
 import (
 	"fmt"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
+
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/model"
 )
 
 type LocationDB struct {

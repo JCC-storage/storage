@@ -21,7 +21,7 @@ func (e *BatchCheckAllStorage) Execute(ctx ExecuteContext) {
 	log.Debugf("begin")
 	defer log.Debugf("end")
 
-	storageIDs, err := ctx.Args.DB.Storage().BatchGetAllStorageIDs(ctx.Args.DB.SQLCtx(), e.lastCheckStart, CHECK_STORAGE_BATCH_SIZE)
+	storageIDs, err := ctx.Args.DB.Storage().BatchGetAllStorageIDs(ctx.Args.DB.DefCtx(), e.lastCheckStart, CHECK_STORAGE_BATCH_SIZE)
 	if err != nil {
 		log.Warnf("batch get storage ids failed, err: %s", err.Error())
 		return

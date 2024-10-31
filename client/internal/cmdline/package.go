@@ -161,7 +161,7 @@ func PackageDeletePackage(ctx CommandContext, packageID cdssdk.PackageID) error 
 	return nil
 }
 
-// PackageGetCachedNodes 获取指定包裹的缓存节点信息。
+// PackageGetCachedStorages 获取指定包裹的缓存节点信息。
 //
 // 参数:
 //
@@ -171,7 +171,7 @@ func PackageDeletePackage(ctx CommandContext, packageID cdssdk.PackageID) error 
 // 返回值:
 //
 //	error - 操作过程中发生的任何错误。
-func PackageGetCachedNodes(ctx CommandContext, packageID cdssdk.PackageID) error {
+func PackageGetCachedStorages(ctx CommandContext, packageID cdssdk.PackageID) error {
 	userID := cdssdk.UserID(1)
 	resp, err := ctx.Cmdline.Svc.PackageSvc().GetCachedNodes(userID, packageID)
 	fmt.Printf("resp: %v\n", resp)
@@ -181,7 +181,7 @@ func PackageGetCachedNodes(ctx CommandContext, packageID cdssdk.PackageID) error
 	return nil
 }
 
-// PackageGetLoadedNodes 获取指定包裹的已加载节点信息。
+// PackageGetLoadedStorages 获取指定包裹的已加载节点信息。
 //
 // 参数:
 //
@@ -191,9 +191,9 @@ func PackageGetCachedNodes(ctx CommandContext, packageID cdssdk.PackageID) error
 // 返回值:
 //
 //	error - 操作过程中发生的任何错误。
-func PackageGetLoadedNodes(ctx CommandContext, packageID cdssdk.PackageID) error {
+func PackageGetLoadedStorages(ctx CommandContext, packageID cdssdk.PackageID) error {
 	userID := cdssdk.UserID(1)
-	nodeIDs, err := ctx.Cmdline.Svc.PackageSvc().GetLoadedNodes(userID, packageID)
+	nodeIDs, err := ctx.Cmdline.Svc.PackageSvc().GetLoadedStorages(userID, packageID)
 	fmt.Printf("nodeIDs: %v\n", nodeIDs)
 	if err != nil {
 		return fmt.Errorf("get package %d loaded nodes failed, err: %w", packageID, err)
@@ -212,8 +212,8 @@ func init() {
 	commands.MustAdd(PackageDeletePackage, "pkg", "delete")
 
 	// 查询package缓存到哪些节点
-	commands.MustAdd(PackageGetCachedNodes, "pkg", "cached")
+	commands.MustAdd(PackageGetCachedStorages, "pkg", "cached")
 
 	// 查询package调度到哪些节点
-	commands.MustAdd(PackageGetLoadedNodes, "pkg", "loaded")
+	commands.MustAdd(PackageGetLoadedStorages, "pkg", "loaded")
 }

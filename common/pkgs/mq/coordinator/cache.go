@@ -42,16 +42,16 @@ var _ = Register(Service.CacheRemovePackage)
 type CacheRemovePackage struct {
 	mq.MessageBodyBase
 	PackageID cdssdk.PackageID `json:"packageID"`
-	NodeID    cdssdk.NodeID    `json:"nodeID"`
+	StorageID cdssdk.StorageID `json:"storageID"`
 }
 type CacheRemovePackageResp struct {
 	mq.MessageBodyBase
 }
 
-func ReqCacheRemoveMovedPackage(packageID cdssdk.PackageID, nodeID cdssdk.NodeID) *CacheRemovePackage {
+func ReqCacheRemoveMovedPackage(packageID cdssdk.PackageID, stgID cdssdk.StorageID) *CacheRemovePackage {
 	return &CacheRemovePackage{
 		PackageID: packageID,
-		NodeID:    nodeID,
+		StorageID: stgID,
 	}
 }
 func RespCacheRemovePackage() *CacheRemovePackageResp {

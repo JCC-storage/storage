@@ -3,7 +3,6 @@ package ioswitch2
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/types"
 )
 
 type From interface {
@@ -58,22 +57,22 @@ func (f *FromDriver) GetDataIndex() int {
 	return f.DataIndex
 }
 
-type FromNode struct {
-	FileHash  types.FileHash
-	Node      cdssdk.Node
+type FromShardstore struct {
+	FileHash  cdssdk.FileHash
+	Hub       cdssdk.Node
 	Storage   cdssdk.Storage
 	DataIndex int
 }
 
-func NewFromNode(fileHash types.FileHash, node cdssdk.Node, storage cdssdk.Storage, dataIndex int) *FromNode {
-	return &FromNode{
+func NewFromShardstore(fileHash cdssdk.FileHash, hub cdssdk.Node, storage cdssdk.Storage, dataIndex int) *FromShardstore {
+	return &FromShardstore{
 		FileHash:  fileHash,
-		Node:      node,
+		Hub:       hub,
 		DataIndex: dataIndex,
 	}
 }
 
-func (f *FromNode) GetDataIndex() int {
+func (f *FromShardstore) GetDataIndex() int {
 	return f.DataIndex
 }
 
@@ -108,35 +107,38 @@ func (t *ToDriver) GetRange() exec.Range {
 	return t.Range
 }
 
-type ToNode struct {
-	Node             cdssdk.Node
+type ToShardStore struct {
+	Hub              cdssdk.Node
+	Storage          cdssdk.Storage
 	DataIndex        int
 	Range            exec.Range
 	FileHashStoreKey string
 }
 
-func NewToNode(node cdssdk.Node, dataIndex int, fileHashStoreKey string) *ToNode {
-	return &ToNode{
-		Node:             node,
+func NewToShardStore(hub cdssdk.Node, stg cdssdk.Storage, dataIndex int, fileHashStoreKey string) *ToShardStore {
+	return &ToShardStore{
+		Hub:              hub,
+		Storage:          stg,
 		DataIndex:        dataIndex,
 		FileHashStoreKey: fileHashStoreKey,
 	}
 }
 
-func NewToNodeWithRange(node cdssdk.Node, dataIndex int, fileHashStoreKey string, rng exec.Range) *ToNode {
-	return &ToNode{
-		Node:             node,
+func NewToShardStoreWithRange(hub cdssdk.Node, stg cdssdk.Storage, dataIndex int, fileHashStoreKey string, rng exec.Range) *ToShardStore {
+	return &ToShardStore{
+		Hub:              hub,
+		Storage:          stg,
 		DataIndex:        dataIndex,
 		FileHashStoreKey: fileHashStoreKey,
 		Range:            rng,
 	}
 }
 
-func (t *ToNode) GetDataIndex() int {
+func (t *ToShardStore) GetDataIndex() int {
 	return t.DataIndex
 }
 
-func (t *ToNode) GetRange() exec.Range {
+func (t *ToShardStore) GetRange() exec.Range {
 	return t.Range
 }
 

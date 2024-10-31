@@ -37,7 +37,7 @@ func (t *AgentCheckState) Execute(execCtx ExecuteContext) {
 	log.Debugf("begin with %v", logger.FormatStruct(t.AgentCheckState))
 	defer log.Debugf("end")
 
-	node, err := execCtx.Args.DB.Node().GetByID(execCtx.Args.DB.SQLCtx(), t.NodeID)
+	node, err := execCtx.Args.DB.Node().GetByID(execCtx.Args.DB.DefCtx(), t.NodeID)
 	if err == sql.ErrNoRows {
 		return
 	}
@@ -61,7 +61,7 @@ func (t *AgentCheckState) Execute(execCtx ExecuteContext) {
 		// 检查上次上报时间，超时的设置为不可用
 		// TODO 没有上报过是否要特殊处理？
 		if node.LastReportTime != nil && time.Since(*node.LastReportTime) > time.Duration(config.Cfg().NodeUnavailableSeconds)*time.Second {
-			err := execCtx.Args.DB.Node().UpdateState(execCtx.Args.DB.SQLCtx(), t.NodeID, consts.NodeStateUnavailable)
+			err := execCtx.Args.DB.Node().UpdateState(execCtx.Args.DB.DefCtx(), t.NodeID, consts.NodeStateUnavailable)
 			if err != nil {
 				log.WithField("NodeID", t.NodeID).Warnf("set node state failed, err: %s", err.Error())
 			}
@@ -70,7 +70,7 @@ func (t *AgentCheckState) Execute(execCtx ExecuteContext) {
 	}
 
 	// TODO 如果以后还有其他的状态，要判断哪些状态下能设置Normal
-	err = execCtx.Args.DB.Node().UpdateState(execCtx.Args.DB.SQLCtx(), t.NodeID, consts.NodeStateNormal)
+	err = execCtx.Args.DB.Node().UpdateState(execCtx.Args.DB.DefCtx(), t.NodeID, consts.NodeStateNormal)
 	if err != nil {
 		log.WithField("NodeID", t.NodeID).Warnf("change node state failed, err: %s", err.Error())
 	}

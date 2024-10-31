@@ -7,19 +7,23 @@ import (
 )
 
 type ObjectBlock struct {
-	ObjectID cdssdk.ObjectID `db:"ObjectID" json:"objectID"`
-	Index    int             `db:"Index" json:"index"`
-	NodeID   cdssdk.NodeID   `db:"NodeID" json:"nodeID"` // 这个块应该在哪个节点上
-	FileHash string          `db:"FileHash" json:"fileHash"`
+	ObjectID  cdssdk.ObjectID  `gorm:"column:ObjectID; primaryKey" json:"objectID"`
+	Index     int              `gorm:"column:Index; primaryKey" json:"index"`
+	StorageID cdssdk.StorageID `gorm:"column:StorageID; primaryKey" json:"storageID"` // 这个块应该在哪个节点上
+	FileHash  cdssdk.FileHash  `gorm:"column:FileHash" json:"fileHash"`
+}
+
+func (ObjectBlock) TableName() string {
+	return "ObjectBlock"
 }
 
 type ObjectDetail struct {
-	Object   cdssdk.Object   `json:"object"`
-	PinnedAt []cdssdk.NodeID `json:"pinnedAt"`
-	Blocks   []ObjectBlock   `json:"blocks"`
+	Object   cdssdk.Object      `json:"object"`
+	PinnedAt []cdssdk.StorageID `json:"pinnedAt"`
+	Blocks   []ObjectBlock      `json:"blocks"`
 }
 
-func NewObjectDetail(object cdssdk.Object, pinnedAt []cdssdk.NodeID, blocks []ObjectBlock) ObjectDetail {
+func NewObjectDetail(object cdssdk.Object, pinnedAt []cdssdk.StorageID, blocks []ObjectBlock) ObjectDetail {
 	return ObjectDetail{
 		Object:   object,
 		PinnedAt: pinnedAt,
@@ -70,10 +74,10 @@ func DetailsFillPinnedAt(objs []ObjectDetail, pinnedAt []cdssdk.PinnedObject) {
 }
 
 type GrouppedObjectBlock struct {
-	ObjectID cdssdk.ObjectID
-	Index    int
-	FileHash string
-	NodeIDs  []cdssdk.NodeID
+	ObjectID   cdssdk.ObjectID
+	Index      int
+	FileHash   cdssdk.FileHash
+	StorageIDs []cdssdk.StorageID
 }
 
 func (o *ObjectDetail) GroupBlocks() []GrouppedObjectBlock {
@@ -87,7 +91,7 @@ func (o *ObjectDetail) GroupBlocks() []GrouppedObjectBlock {
 				FileHash: block.FileHash,
 			}
 		}
-		grp.NodeIDs = append(grp.NodeIDs, block.NodeID)
+		grp.StorageIDs = append(grp.StorageIDs, block.StorageID)
 		grps[block.Index] = grp
 	}
 
@@ -102,21 +106,30 @@ type LocalMachineInfo struct {
 }
 
 type PackageAccessStat struct {
-	PackageID cdssdk.PackageID `db:"PackageID" json:"packageID"`
-	NodeID    cdssdk.NodeID    `db:"NodeID" json:"nodeID"`
-	Amount    float64          `db:"Amount" json:"Amount"`   // 前一日的读取量的滑动平均值
-	Counter   float64          `db:"Counter" json:"counter"` // 当日的读取量
+	PackageID cdssdk.PackageID `gorm:"column:PackageID; primaryKey" json:"packageID"`
+	StorageID cdssdk.StorageID `gorm:"column:StorageID; primaryKey" json:"storageID"`
+	Amount    float64          `gorm:"column:Amount" json:"amount"`   // 前一日的读取量的滑动平均值
+	Counter   float64          `gorm:"column:Counter" json:"counter"` // 当日的读取量
+}
+
+func (PackageAccessStat) TableName() string {
+	return "PackageAccessStat"
 }
 
 type ObjectAccessStat struct {
-	ObjectID cdssdk.ObjectID `db:"ObjectID" json:"objectID"`
-	NodeID   cdssdk.NodeID   `db:"NodeID" json:"nodeID"`
-	Amount   float64         `db:"Amount" json:"Amount"`   // 前一日的读取量的滑动平均值
-	Counter  float64         `db:"Counter" json:"counter"` // 当日的读取量
+	ObjectID  cdssdk.ObjectID  `gorm:"column:ObjectID; primaryKey" json:"objectID"`
+	StorageID cdssdk.StorageID `gorm:"column:StorageID; primaryKey" json:"storageID"`
+	Amount    float64          `gorm:"column:Amount" json:"amount"`   // 前一日的读取量的滑动平均值
+	Counter   float64          `gorm:"column:Counter" json:"counter"` // 当日的读取量
+}
+
+func (ObjectAccessStat) TableName() string {
+	return "ObjectAccessStat"
 }
 
 type StorageDetail struct {
-	Storage cdssdk.Storage        `json:"storage"`
-	Shard   *cdssdk.ShardStorage  `json:"shard"`
-	Shared  *cdssdk.SharedStorage `json:"shared"`
+	Storage   cdssdk.Storage        `json:"storage"`
+	MasterHub *cdssdk.Node          `json:"masterHub"`
+	Shard     *cdssdk.ShardStorage  `json:"shard"`
+	Shared    *cdssdk.SharedStorage `json:"shared"`
 }

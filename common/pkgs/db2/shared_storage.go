@@ -17,3 +17,9 @@ func (*SharedStorageDB) GetByStorageID(ctx SQLContext, stgID cdssdk.StorageID) (
 	err := ctx.Table("SharedStorage").First(&ret, stgID).Error
 	return ret, err
 }
+
+func (*SharedStorageDB) BatchGetByStorageIDs(ctx SQLContext, stgIDs []cdssdk.StorageID) ([]cdssdk.SharedStorage, error) {
+	var ret []cdssdk.SharedStorage
+	err := ctx.Table("SharedStorage").Find(&ret, "StorageID IN (?)", stgIDs).Error
+	return ret, err
+}

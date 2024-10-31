@@ -3,6 +3,7 @@ package mq
 import (
 	"database/sql"
 	"fmt"
+
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 
 	"github.com/samber/lo"
@@ -68,7 +69,8 @@ func (svc *Service) GetPackageObjectDetails(msg *coormq.GetPackageObjectDetails)
 }
 
 func (svc *Service) GetObjectDetails(msg *coormq.GetObjectDetails) (*coormq.GetObjectDetailsResp, *mq.CodeMessage) {
-	details := make([]*stgmod.ObjectDetail, len(msg.ObjectIDs))
+	detailsMp := make(map[cdssdk.ObjectID]*stgmod.ObjectDetail)
+
 	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
 		var err error
 
@@ -79,22 +81,10 @@ func (svc *Service) GetObjectDetails(msg *coormq.GetObjectDetails) (*coormq.GetO
 		if err != nil {
 			return fmt.Errorf("batch get objects: %w", err)
 		}
-
-		objIDIdx := 0
-		objIdx := 0
-		for objIDIdx < len(msg.ObjectIDs) && objIdx < len(objs) {
-			if msg.ObjectIDs[objIDIdx] < objs[objIdx].ObjectID {
-				objIDIdx++
-				continue
+		for _, obj := range objs {
+			detailsMp[obj.ObjectID] = &stgmod.ObjectDetail{
+				Object: obj,
 			}
-
-			// 由于是使用msg.ObjectIDs去查询Object，因此不存在msg.ObjectIDs > Object.ObjectID的情况，
-			// 下面同理
-			obj := stgmod.ObjectDetail{
-				Object: objs[objIDIdx],
-			}
-			details[objIDIdx] = &obj
-			objIdx++
 		}
 
 		// 查询合并
@@ -102,22 +92,9 @@ func (svc *Service) GetObjectDetails(msg *coormq.GetObjectDetails) (*coormq.GetO
 		if err != nil {
 			return fmt.Errorf("batch get object blocks: %w", err)
 		}
-
-		objIDIdx = 0
-		blkIdx := 0
-		for objIDIdx < len(msg.ObjectIDs) && blkIdx < len(blocks) {
-			if details[objIDIdx] == nil {
-				objIDIdx++
-				continue
-			}
-
-			if msg.ObjectIDs[objIDIdx] < blocks[blkIdx].ObjectID {
-				objIDIdx++
-				continue
-			}
-
-			details[objIDIdx].Blocks = append(details[objIDIdx].Blocks, blocks[blkIdx])
-			blkIdx++
+		for _, block := range blocks {
+			d := detailsMp[block.ObjectID]
+			d.Blocks = append(d.Blocks, block)
 		}
 
 		// 查询合并
@@ -125,29 +102,22 @@ func (svc *Service) GetObjectDetails(msg *coormq.GetObjectDetails) (*coormq.GetO
 		if err != nil {
 			return fmt.Errorf("batch get pinned objects: %w", err)
 		}
-
-		objIDIdx = 0
-		pinIdx := 0
-		for objIDIdx < len(msg.ObjectIDs) && pinIdx < len(pinneds) {
-			if details[objIDIdx] == nil {
-				objIDIdx++
-				continue
-			}
-
-			if msg.ObjectIDs[objIDIdx] < pinneds[pinIdx].ObjectID {
-				objIDIdx++
-				continue
-			}
-
-			details[objIDIdx].PinnedAt = append(details[objIDIdx].PinnedAt, pinneds[pinIdx].NodeID)
-			pinIdx++
+		for _, pinned := range pinneds {
+			d := detailsMp[pinned.ObjectID]
+			d.PinnedAt = append(d.PinnedAt, pinned.StorageID)
 		}
+
 		return nil
 	})
 
 	if err != nil {
 		logger.Warn(err.Error())
 		return nil, mq.Failed(errorcode.OperationFailed, "get object details failed")
+	}
+
+	details := make([]*stgmod.ObjectDetail, len(msg.ObjectIDs))
+	for i, objID := range msg.ObjectIDs {
+		details[i] = detailsMp[objID]
 	}
 
 	return mq.ReplyOK(coormq.RespGetObjectDetails(details))

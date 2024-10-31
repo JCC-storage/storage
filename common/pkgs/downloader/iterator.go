@@ -28,8 +28,8 @@ import (
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
-type DownloadNodeInfo struct {
-	Node         cdssdk.Node
+type downloadStorageInfo struct {
+	Storage      stgmod.StorageDetail
 	ObjectPinned bool
 	Blocks       []stgmod.ObjectBlock
 	Distance     float64
@@ -46,8 +46,8 @@ type DownloadObjectIterator struct {
 	currentIndex int
 	inited       bool
 
-	coorCli  *coormq.Client
-	allNodes map[cdssdk.NodeID]cdssdk.Node
+	coorCli     *coormq.Client
+	allStorages map[cdssdk.StorageID]stgmod.StorageDetail
 }
 
 func NewDownloadObjectIterator(downloader *Downloader, downloadObjs []downloadReqeust2) *DownloadObjectIterator {
@@ -82,29 +82,37 @@ func (i *DownloadObjectIterator) init() error {
 	}
 	i.coorCli = coorCli
 
-	allNodeIDs := make(map[cdssdk.NodeID]bool)
+	allStgIDsMp := make(map[cdssdk.StorageID]bool)
 	for _, obj := range i.reqs {
 		if obj.Detail == nil {
 			continue
 		}
 
 		for _, p := range obj.Detail.PinnedAt {
-			allNodeIDs[p] = true
+			allStgIDsMp[p] = true
 		}
 
 		for _, b := range obj.Detail.Blocks {
-			allNodeIDs[b.NodeID] = true
+			allStgIDsMp[b.StorageID] = true
 		}
 	}
 
-	getNodes, err := coorCli.GetNodes(coormq.NewGetNodes(lo.Keys(allNodeIDs)))
+	stgIDs := lo.Keys(allStgIDsMp)
+	getStgs, err := coorCli.GetStorageDetails(coormq.ReqGetStorageDetails(stgIDs))
 	if err != nil {
-		return fmt.Errorf("getting nodes: %w", err)
+		return fmt.Errorf("getting storage details: %w", err)
 	}
 
-	i.allNodes = make(map[cdssdk.NodeID]cdssdk.Node)
-	for _, n := range getNodes.Nodes {
-		i.allNodes[n.NodeID] = n
+	i.allStorages = make(map[cdssdk.StorageID]stgmod.StorageDetail)
+	for idx, s := range getStgs.Storages {
+		if s == nil {
+			return fmt.Errorf("storage %v not found", stgIDs[idx])
+		}
+		if s.Shard == nil {
+			return fmt.Errorf("storage %v has no shard store", stgIDs[idx])
+		}
+
+		i.allStorages[s.Storage.StorageID] = *s
 	}
 
 	return nil
@@ -180,35 +188,35 @@ func (i *DownloadObjectIterator) Close() {
 }
 
 func (iter *DownloadObjectIterator) downloadNoneOrRepObject(obj downloadReqeust2) (io.ReadCloser, error) {
-	allNodes, err := iter.sortDownloadNodes(obj)
+	allStgs, err := iter.sortDownloadStorages(obj)
 	if err != nil {
 		return nil, err
 	}
 
-	bsc, blocks := iter.getMinReadingBlockSolution(allNodes, 1)
-	osc, node := iter.getMinReadingObjectSolution(allNodes, 1)
+	bsc, blocks := iter.getMinReadingBlockSolution(allStgs, 1)
+	osc, stg := iter.getMinReadingObjectSolution(allStgs, 1)
 	if bsc < osc {
-		logger.Debugf("downloading object %v from node %v(%v)", obj.Raw.ObjectID, blocks[0].Node.Name, blocks[0].Node.NodeID)
-		return iter.downloadFromNode(&blocks[0].Node, obj)
+		logger.Debugf("downloading object %v from storage %v", obj.Raw.ObjectID, blocks[0].Storage.Storage)
+		return iter.downloadFromStorage(&blocks[0].Storage, obj)
 	}
 
 	if osc == math.MaxFloat64 {
 		// bsc >= osc，如果osc是MaxFloat64，那么bsc也一定是，也就意味着没有足够块来恢复文件
-		return nil, fmt.Errorf("no node has this object")
+		return nil, fmt.Errorf("no storage has this object")
 	}
 
-	logger.Debugf("downloading object %v from node %v(%v)", obj.Raw.ObjectID, node.Name, node.NodeID)
-	return iter.downloadFromNode(node, obj)
+	logger.Debugf("downloading object %v from storage %v(%v)", obj.Raw.ObjectID, stg)
+	return iter.downloadFromStorage(stg, obj)
 }
 
 func (iter *DownloadObjectIterator) downloadECObject(req downloadReqeust2, ecRed *cdssdk.ECRedundancy) (io.ReadCloser, error) {
-	allNodes, err := iter.sortDownloadNodes(req)
+	allNodes, err := iter.sortDownloadStorages(req)
 	if err != nil {
 		return nil, err
 	}
 
 	bsc, blocks := iter.getMinReadingBlockSolution(allNodes, ecRed.K)
-	osc, node := iter.getMinReadingObjectSolution(allNodes, ecRed.K)
+	osc, stg := iter.getMinReadingObjectSolution(allNodes, ecRed.K)
 
 	if bsc < osc {
 		var logStrs []any = []any{fmt.Sprintf("downloading ec object %v from blocks: ", req.Raw.ObjectID)}
@@ -216,7 +224,7 @@ func (iter *DownloadObjectIterator) downloadECObject(req downloadReqeust2, ecRed
 			if i > 0 {
 				logStrs = append(logStrs, ", ")
 			}
-			logStrs = append(logStrs, fmt.Sprintf("%v@%v(%v)", b.Block.Index, b.Node.Name, b.Node.NodeID))
+			logStrs = append(logStrs, fmt.Sprintf("%v@%v(%v)", b.Block.Index, b.Storage))
 		}
 		logger.Debug(logStrs...)
 
@@ -266,30 +274,30 @@ func (iter *DownloadObjectIterator) downloadECObject(req downloadReqeust2, ecRed
 		return nil, fmt.Errorf("no enough blocks to reconstruct the object %v , want %d, get only %d", req.Raw.ObjectID, ecRed.K, len(blocks))
 	}
 
-	logger.Debugf("downloading ec object %v from node %v(%v)", req.Raw.ObjectID, node.Name, node.NodeID)
-	return iter.downloadFromNode(node, req)
+	logger.Debugf("downloading ec object %v from storage %v(%v)", req.Raw.ObjectID, stg)
+	return iter.downloadFromStorage(stg, req)
 }
 
-func (iter *DownloadObjectIterator) sortDownloadNodes(req downloadReqeust2) ([]*DownloadNodeInfo, error) {
-	var nodeIDs []cdssdk.NodeID
+func (iter *DownloadObjectIterator) sortDownloadStorages(req downloadReqeust2) ([]*downloadStorageInfo, error) {
+	var stgIDs []cdssdk.StorageID
 	for _, id := range req.Detail.PinnedAt {
-		if !lo.Contains(nodeIDs, id) {
-			nodeIDs = append(nodeIDs, id)
+		if !lo.Contains(stgIDs, id) {
+			stgIDs = append(stgIDs, id)
 		}
 	}
 	for _, b := range req.Detail.Blocks {
-		if !lo.Contains(nodeIDs, b.NodeID) {
-			nodeIDs = append(nodeIDs, b.NodeID)
+		if !lo.Contains(stgIDs, b.StorageID) {
+			stgIDs = append(stgIDs, b.StorageID)
 		}
 	}
 
-	downloadNodeMap := make(map[cdssdk.NodeID]*DownloadNodeInfo)
+	downloadNodeMap := make(map[cdssdk.StorageID]*downloadStorageInfo)
 	for _, id := range req.Detail.PinnedAt {
 		node, ok := downloadNodeMap[id]
 		if !ok {
-			mod := iter.allNodes[id]
-			node = &DownloadNodeInfo{
-				Node:         mod,
+			mod := iter.allStorages[id]
+			node = &downloadStorageInfo{
+				Storage:      mod,
 				ObjectPinned: true,
 				Distance:     iter.getNodeDistance(mod),
 			}
@@ -300,34 +308,34 @@ func (iter *DownloadObjectIterator) sortDownloadNodes(req downloadReqeust2) ([]*
 	}
 
 	for _, b := range req.Detail.Blocks {
-		node, ok := downloadNodeMap[b.NodeID]
+		node, ok := downloadNodeMap[b.StorageID]
 		if !ok {
-			mod := iter.allNodes[b.NodeID]
-			node = &DownloadNodeInfo{
-				Node:     mod,
+			mod := iter.allStorages[b.StorageID]
+			node = &downloadStorageInfo{
+				Storage:  mod,
 				Distance: iter.getNodeDistance(mod),
 			}
-			downloadNodeMap[b.NodeID] = node
+			downloadNodeMap[b.StorageID] = node
 		}
 
 		node.Blocks = append(node.Blocks, b)
 	}
 
-	return sort2.Sort(lo.Values(downloadNodeMap), func(left, right *DownloadNodeInfo) int {
+	return sort2.Sort(lo.Values(downloadNodeMap), func(left, right *downloadStorageInfo) int {
 		return sort2.Cmp(left.Distance, right.Distance)
 	}), nil
 }
 
-func (iter *DownloadObjectIterator) getMinReadingBlockSolution(sortedNodes []*DownloadNodeInfo, k int) (float64, []downloadBlock) {
+func (iter *DownloadObjectIterator) getMinReadingBlockSolution(sortedStgs []*downloadStorageInfo, k int) (float64, []downloadBlock) {
 	gotBlocksMap := bitmap.Bitmap64(0)
 	var gotBlocks []downloadBlock
 	dist := float64(0.0)
-	for _, n := range sortedNodes {
+	for _, n := range sortedStgs {
 		for _, b := range n.Blocks {
 			if !gotBlocksMap.Get(b.Index) {
 				gotBlocks = append(gotBlocks, downloadBlock{
-					Node:  n.Node,
-					Block: b,
+					Storage: n.Storage,
+					Block:   b,
 				})
 				gotBlocksMap.Set(b.Index, true)
 				dist += n.Distance
@@ -342,32 +350,32 @@ func (iter *DownloadObjectIterator) getMinReadingBlockSolution(sortedNodes []*Do
 	return math.MaxFloat64, gotBlocks
 }
 
-func (iter *DownloadObjectIterator) getMinReadingObjectSolution(sortedNodes []*DownloadNodeInfo, k int) (float64, *cdssdk.Node) {
+func (iter *DownloadObjectIterator) getMinReadingObjectSolution(sortedStgs []*downloadStorageInfo, k int) (float64, *stgmod.StorageDetail) {
 	dist := math.MaxFloat64
-	var downloadNode *cdssdk.Node
-	for _, n := range sortedNodes {
+	var downloadStg *stgmod.StorageDetail
+	for _, n := range sortedStgs {
 		if n.ObjectPinned && float64(k)*n.Distance < dist {
 			dist = float64(k) * n.Distance
-			node := n.Node
-			downloadNode = &node
+			stg := n.Storage
+			downloadStg = &stg
 		}
 	}
 
-	return dist, downloadNode
+	return dist, downloadStg
 }
 
-func (iter *DownloadObjectIterator) getNodeDistance(node cdssdk.Node) float64 {
+func (iter *DownloadObjectIterator) getNodeDistance(stg stgmod.StorageDetail) float64 {
 	if stgglb.Local.NodeID != nil {
-		if node.NodeID == *stgglb.Local.NodeID {
+		if stg.MasterHub.NodeID == *stgglb.Local.NodeID {
 			return consts.NodeDistanceSameNode
 		}
 	}
 
-	if node.LocationID == stgglb.Local.LocationID {
+	if stg.MasterHub.LocationID == stgglb.Local.LocationID {
 		return consts.NodeDistanceSameLocation
 	}
 
-	c := iter.downloader.conn.Get(node.NodeID)
+	c := iter.downloader.conn.Get(stg.MasterHub.NodeID)
 	if c == nil || c.Delay == nil || *c.Delay > time.Duration(float64(time.Millisecond)*iter.downloader.cfg.HighLatencyNodeMs) {
 		return consts.NodeDistanceHighLatencyNode
 	}
@@ -375,7 +383,7 @@ func (iter *DownloadObjectIterator) getNodeDistance(node cdssdk.Node) float64 {
 	return consts.NodeDistanceOther
 }
 
-func (iter *DownloadObjectIterator) downloadFromNode(node *cdssdk.Node, req downloadReqeust2) (io.ReadCloser, error) {
+func (iter *DownloadObjectIterator) downloadFromStorage(stg *stgmod.StorageDetail, req downloadReqeust2) (io.ReadCloser, error) {
 	var strHandle *exec.DriverReadStream
 	ft := ioswitch2.NewFromTo()
 
@@ -387,7 +395,8 @@ func (iter *DownloadObjectIterator) downloadFromNode(node *cdssdk.Node, req down
 		len := req.Raw.Length
 		toExec.Range.Length = &len
 	}
-	ft.AddFrom(ioswitch2.NewFromNode(req.Detail.Object.FileHash, node, -1)).AddTo(toExec)
+	// TODO FileHash应该是FileHash类型
+	ft.AddFrom(ioswitch2.NewFromShardstore(req.Detail.Object.FileHash, *stg.MasterHub, stg.Storage, -1)).AddTo(toExec)
 	strHandle = handle
 
 	parser := parser.NewParser(cdssdk.DefaultECRedundancy)

@@ -1,5 +1,6 @@
 package db
 
+/*
 import (
 	"database/sql"
 	"errors"
@@ -203,3 +204,4 @@ func (*PackageDB) ChangeState(ctx SQLContext, packageID cdssdk.PackageID, state 
 	_, err := ctx.Exec("update Package set State = ? where PackageID = ?", state, packageID)
 	return err
 }
+*/

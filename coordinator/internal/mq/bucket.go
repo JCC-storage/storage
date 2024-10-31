@@ -2,13 +2,14 @@ package mq
 
 import (
 	"fmt"
+
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/model"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 

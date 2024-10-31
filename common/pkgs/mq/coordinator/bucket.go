@@ -3,7 +3,7 @@ package coordinator
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/model"
 )
 
 type BucketService interface {

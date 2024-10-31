@@ -3,8 +3,9 @@ package mq
 import (
 	"database/sql"
 	"fmt"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 	"sort"
+
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
@@ -147,7 +148,7 @@ func (svc *Service) DeletePackage(msg *coormq.DeletePackage) (*coormq.DeletePack
 	return mq.ReplyOK(coormq.NewDeletePackageResp())
 }
 
-func (svc *Service) GetPackageCachedNodes(msg *coormq.GetPackageCachedNodes) (*coormq.GetPackageCachedNodesResp, *mq.CodeMessage) {
+func (svc *Service) GetPackageCachedStorages(msg *coormq.GetPackageCachedStorages) (*coormq.GetPackageCachedStoragesResp, *mq.CodeMessage) {
 	isAva, err := svc.db2.Package().IsAvailable(svc.db2.DefCtx(), msg.UserID, msg.PackageID)
 	if err != nil {
 		logger.WithField("UserID", msg.UserID).
@@ -172,16 +173,16 @@ func (svc *Service) GetPackageCachedNodes(msg *coormq.GetPackageCachedNodes) (*c
 	}
 
 	var packageSize int64
-	nodeInfoMap := make(map[cdssdk.NodeID]*cdssdk.NodePackageCachingInfo)
+	stgInfoMap := make(map[cdssdk.StorageID]*cdssdk.StoragePackageCachingInfo)
 	for _, obj := range objDetails {
 		// 只要存了文件的一个块，就认为此节点存了整个文件
 		for _, block := range obj.Blocks {
-			info, ok := nodeInfoMap[block.NodeID]
+			info, ok := stgInfoMap[block.StorageID]
 			if !ok {
-				info = &cdssdk.NodePackageCachingInfo{
-					NodeID: block.NodeID,
+				info = &cdssdk.StoragePackageCachingInfo{
+					StorageID: block.StorageID,
 				}
-				nodeInfoMap[block.NodeID] = info
+				stgInfoMap[block.StorageID] = info
 
 			}
 
@@ -190,18 +191,18 @@ func (svc *Service) GetPackageCachedNodes(msg *coormq.GetPackageCachedNodes) (*c
 		}
 	}
 
-	var nodeInfos []cdssdk.NodePackageCachingInfo
-	for _, nodeInfo := range nodeInfoMap {
+	var nodeInfos []cdssdk.StoragePackageCachingInfo
+	for _, nodeInfo := range stgInfoMap {
 		nodeInfos = append(nodeInfos, *nodeInfo)
 	}
 
 	sort.Slice(nodeInfos, func(i, j int) bool {
-		return nodeInfos[i].NodeID < nodeInfos[j].NodeID
+		return nodeInfos[i].StorageID < nodeInfos[j].StorageID
 	})
-	return mq.ReplyOK(coormq.NewGetPackageCachedNodesResp(nodeInfos, packageSize))
+	return mq.ReplyOK(coormq.ReqGetPackageCachedStoragesResp(nodeInfos, packageSize))
 }
 
-func (svc *Service) GetPackageLoadedNodes(msg *coormq.GetPackageLoadedNodes) (*coormq.GetPackageLoadedNodesResp, *mq.CodeMessage) {
+func (svc *Service) GetPackageLoadedStorages(msg *coormq.GetPackageLoadedStorages) (*coormq.GetPackageLoadedStoragesResp, *mq.CodeMessage) {
 	storages, err := svc.db2.StoragePackage().FindPackageStorages(svc.db2.DefCtx(), msg.PackageID)
 	if err != nil {
 		logger.WithField("PackageID", msg.PackageID).
@@ -209,16 +210,16 @@ func (svc *Service) GetPackageLoadedNodes(msg *coormq.GetPackageLoadedNodes) (*c
 		return nil, mq.Failed(errorcode.OperationFailed, "get storages by packageID failed")
 	}
 
-	uniqueNodeIDs := make(map[cdssdk.NodeID]bool)
-	var nodeIDs []cdssdk.NodeID
+	uniqueStgIDs := make(map[cdssdk.StorageID]bool)
+	var stgIDs []cdssdk.StorageID
 	for _, stg := range storages {
-		if !uniqueNodeIDs[stg.NodeID] {
-			uniqueNodeIDs[stg.NodeID] = true
-			nodeIDs = append(nodeIDs, stg.NodeID)
+		if !uniqueStgIDs[stg.StorageID] {
+			uniqueStgIDs[stg.StorageID] = true
+			stgIDs = append(stgIDs, stg.StorageID)
 		}
 	}
 
-	return mq.ReplyOK(coormq.NewGetPackageLoadedNodesResp(nodeIDs))
+	return mq.ReplyOK(coormq.NewGetPackageLoadedStoragesResp(stgIDs))
 }
 
 func (svc *Service) AddAccessStat(msg *coormq.AddAccessStat) {

@@ -95,8 +95,8 @@ func (s *LRCStripIterator) Close() {
 func (s *LRCStripIterator) downloading() {
 	var froms []ioswitchlrc.From
 	for _, b := range s.blocks {
-		node := b.Node
-		froms = append(froms, ioswitchlrc.NewFromNode(b.Block.FileHash, &node, b.Block.Index))
+		stg := b.Storage
+		froms = append(froms, ioswitchlrc.NewFromNode(b.Block.FileHash, *stg.MasterHub, stg.Storage, b.Block.Index))
 	}
 
 	toExec, hd := ioswitchlrc.NewToDriverWithRange(-1, exec.Range{

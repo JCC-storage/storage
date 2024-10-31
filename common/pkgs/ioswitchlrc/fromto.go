@@ -3,7 +3,6 @@ package ioswitchlrc
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/types"
 )
 
 type From interface {
@@ -38,13 +37,13 @@ func (f *FromDriver) GetDataIndex() int {
 }
 
 type FromNode struct {
-	FileHash  types.FileHash
+	FileHash  cdssdk.FileHash
 	Node      cdssdk.Node
 	Storage   cdssdk.Storage
 	DataIndex int
 }
 
-func NewFromNode(fileHash types.FileHash, node cdssdk.Node, storage cdssdk.Storage, dataIndex int) *FromNode {
+func NewFromNode(fileHash cdssdk.FileHash, node cdssdk.Node, storage cdssdk.Storage, dataIndex int) *FromNode {
 	return &FromNode{
 		FileHash:  fileHash,
 		Node:      node,
@@ -88,23 +87,26 @@ func (t *ToDriver) GetRange() exec.Range {
 }
 
 type ToNode struct {
-	Node             cdssdk.Node
+	Hub              cdssdk.Node
+	Storage          cdssdk.Storage
 	DataIndex        int
 	Range            exec.Range
 	FileHashStoreKey string
 }
 
-func NewToNode(node cdssdk.Node, dataIndex int, fileHashStoreKey string) *ToNode {
+func NewToStorage(hub cdssdk.Node, stg cdssdk.Storage, dataIndex int, fileHashStoreKey string) *ToNode {
 	return &ToNode{
-		Node:             node,
+		Hub:              hub,
+		Storage:          stg,
 		DataIndex:        dataIndex,
 		FileHashStoreKey: fileHashStoreKey,
 	}
 }
 
-func NewToNodeWithRange(node cdssdk.Node, dataIndex int, fileHashStoreKey string, rng exec.Range) *ToNode {
+func NewToStorageWithRange(hub cdssdk.Node, stg cdssdk.Storage, dataIndex int, fileHashStoreKey string, rng exec.Range) *ToNode {
 	return &ToNode{
-		Node:             node,
+		Hub:              hub,
+		Storage:          stg,
 		DataIndex:        dataIndex,
 		FileHashStoreKey: fileHashStoreKey,
 		Range:            rng,

@@ -2,14 +2,16 @@ package db2
 
 import (
 	"fmt"
-	"gitlink.org.cn/cloudream/common/utils/sort2"
 	"strings"
 	"time"
+
+	"gitlink.org.cn/cloudream/common/utils/sort2"
+	"gorm.io/gorm/clause"
 
 	"github.com/samber/lo"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/db/model"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/model"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
@@ -101,13 +103,13 @@ func (db *ObjectDB) BatchUpert(ctx SQLContext, objs []cdssdk.Object) error {
 }
 
 func (db *ObjectDB) GetPackageObjects(ctx SQLContext, packageID cdssdk.PackageID) ([]model.Object, error) {
-	var ret []model.TempObject
+	var ret []cdssdk.Object
 	err := ctx.Table("Object").Where("PackageID = ?", packageID).Order("ObjectID ASC").Find(&ret).Error
-	return lo.Map(ret, func(o model.TempObject, idx int) model.Object { return o.ToObject() }), err
+	return ret, err
 }
 
 func (db *ObjectDB) GetPackageObjectDetails(ctx SQLContext, packageID cdssdk.PackageID) ([]stgmod.ObjectDetail, error) {
-	var objs []model.TempObject
+	var objs []cdssdk.Object
 	err := ctx.Table("Object").Where("PackageID = ?", packageID).Order("ObjectID ASC").Find(&objs).Error
 	if err != nil {
 		return nil, fmt.Errorf("getting objects: %w", err)
@@ -140,7 +142,7 @@ func (db *ObjectDB) GetPackageObjectDetails(ctx SQLContext, packageID cdssdk.Pac
 	details := make([]stgmod.ObjectDetail, len(objs))
 	for i, obj := range objs {
 		details[i] = stgmod.ObjectDetail{
-			Object: obj.ToObject(),
+			Object: obj,
 		}
 	}
 
@@ -149,16 +151,11 @@ func (db *ObjectDB) GetPackageObjectDetails(ctx SQLContext, packageID cdssdk.Pac
 	return details, nil
 }
 
-func (db *ObjectDB) GetObjectsIfAnyBlockOnNode(ctx SQLContext, nodeID cdssdk.NodeID) ([]cdssdk.Object, error) {
-	var temps []model.TempObject
-	err := ctx.Table("Object").Where("ObjectID IN (SELECT ObjectID FROM ObjectBlock WHERE NodeID = ?)", nodeID).Order("ObjectID ASC").Find(&temps).Error
+func (db *ObjectDB) GetObjectsIfAnyBlockOnStorage(ctx SQLContext, stgID cdssdk.StorageID) ([]cdssdk.Object, error) {
+	var objs []cdssdk.Object
+	err := ctx.Table("Object").Where("ObjectID IN (SELECT ObjectID FROM ObjectBlock WHERE StorageID = ?)", stgID).Order("ObjectID ASC").Find(&objs).Error
 	if err != nil {
 		return nil, fmt.Errorf("getting objects: %w", err)
-	}
-
-	objs := make([]cdssdk.Object, len(temps))
-	for i := range temps {
-		objs[i] = temps[i].ToObject()
 	}
 
 	return objs, nil
@@ -224,10 +221,10 @@ func (db *ObjectDB) BatchAdd(ctx SQLContext, packageID cdssdk.PackageID, adds []
 	objBlocks := make([]stgmod.ObjectBlock, len(adds))
 	for i, add := range adds {
 		objBlocks[i] = stgmod.ObjectBlock{
-			ObjectID: addedObjIDs[i],
-			Index:    0,
-			NodeID:   add.NodeID,
-			FileHash: add.FileHash,
+			ObjectID:  addedObjIDs[i],
+			Index:     0,
+			StorageID: add.StorageID,
+			FileHash:  add.FileHash,
 		}
 	}
 	if err := ctx.Table("ObjectBlock").Create(&objBlocks).Error; err != nil {
@@ -239,7 +236,7 @@ func (db *ObjectDB) BatchAdd(ctx SQLContext, packageID cdssdk.PackageID, adds []
 	for _, add := range adds {
 		caches = append(caches, model.Cache{
 			FileHash:   add.FileHash,
-			NodeID:     add.NodeID,
+			StorageID:  add.StorageID,
 			CreateTime: time.Now(),
 			Priority:   0,
 		})
@@ -270,10 +267,10 @@ func (db *ObjectDB) BatchUpdateRedundancy(ctx SQLContext, objs []coormq.Updating
 	}
 
 	// 目前只能使用这种方式来同时更新大量数据
-	err := BatchNamedExec(ctx,
-		"insert into Object(ObjectID, PackageID, Path, Size, FileHash, Redundancy, CreateTime, UpdateTime)"+
-			" values(:ObjectID, :PackageID, :Path, :Size, :FileHash, :Redundancy, :CreateTime, :UpdateTime) as new"+
-			" on duplicate key update Redundancy=new.Redundancy", 8, dummyObjs, nil)
+	err := ctx.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "ObjectID"}},
+		DoUpdates: clause.AssignmentColumns([]string{"Redundancy", "UpdateTime"})},
+	).Create(&dummyObjs).Error
 	if err != nil {
 		return fmt.Errorf("batch update object redundancy: %w", err)
 	}
@@ -304,7 +301,7 @@ func (db *ObjectDB) BatchUpdateRedundancy(ctx SQLContext, objs []coormq.Updating
 		for _, blk := range obj.Blocks {
 			caches = append(caches, model.Cache{
 				FileHash:   blk.FileHash,
-				NodeID:     blk.NodeID,
+				StorageID:  blk.StorageID,
 				CreateTime: time.Now(),
 				Priority:   0,
 			})

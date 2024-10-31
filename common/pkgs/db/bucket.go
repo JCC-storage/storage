@@ -1,5 +1,6 @@
 package db
 
+/*
 import (
 	"database/sql"
 	"errors"
@@ -136,3 +137,4 @@ func (db *BucketDB) Delete(ctx SQLContext, bucketID cdssdk.BucketID) error {
 	}
 	return nil
 }
+*/

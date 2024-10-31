@@ -14,9 +14,9 @@ func (db *DB) PackageAccessStat() *PackageAccessStatDB {
 	return &PackageAccessStatDB{db}
 }
 
-func (*PackageAccessStatDB) Get(ctx SQLContext, pkgID cdssdk.PackageID, nodeID cdssdk.NodeID) (stgmod.PackageAccessStat, error) {
+func (*PackageAccessStatDB) Get(ctx SQLContext, pkgID cdssdk.PackageID, stgID cdssdk.StorageID) (stgmod.PackageAccessStat, error) {
 	var ret stgmod.PackageAccessStat
-	err := ctx.Table("PackageAccessStat").Where("PackageID = ? AND NodeID = ?", pkgID, nodeID).First(&ret).Error
+	err := ctx.Table("PackageAccessStat").Where("PackageID = ? AND StorageID = ?", pkgID, stgID).First(&ret).Error
 	return ret, err
 }
 
@@ -41,8 +41,8 @@ func (*PackageAccessStatDB) BatchAddCounter(ctx SQLContext, entries []coormq.Add
 		return nil
 	}
 
-	sql := "INSERT INTO PackageAccessStat(PackageID, NodeID, Counter, Amount) " +
-		"VALUES(:PackageID, :NodeID, :Counter, 0) ON DUPLICATE KEY UPDATE Counter = Counter + VALUES(Counter)"
+	sql := "INSERT INTO PackageAccessStat(PackageID, StorageID, Counter, Amount) " +
+		"VALUES(:PackageID, :StorageID, :Counter, 0) ON DUPLICATE KEY UPDATE Counter = Counter + VALUES(Counter)"
 
 	return ctx.Exec(sql, entries).Error
 }

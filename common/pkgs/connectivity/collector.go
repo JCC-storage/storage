@@ -172,11 +172,27 @@ func (r *Collector) testing() {
 func (r *Collector) ping(node cdssdk.Node) Connectivity {
 	log := logger.WithType[Collector]("").WithField("NodeID", node.NodeID)
 
-	ip := node.ExternalIP
-	port := node.ExternalGRPCPort
-	if node.LocationID == stgglb.Local.LocationID {
-		ip = node.LocalIP
-		port = node.LocalGRPCPort
+	var ip string
+	var port int
+	switch addr := node.Address.(type) {
+	case *cdssdk.GRPCAddressInfo:
+		if node.LocationID == stgglb.Local.LocationID {
+			ip = addr.LocalIP
+			port = addr.LocalGRPCPort
+		} else {
+			ip = addr.ExternalIP
+			port = addr.ExternalGRPCPort
+		}
+	default:
+		// TODO 增加对HTTP模式的agent的支持
+
+		log.Warnf("unsupported address type: %v", addr)
+
+		return Connectivity{
+			ToNodeID: node.NodeID,
+			Delay:    nil,
+			TestTime: time.Now(),
+		}
 	}
 
 	agtCli, err := stgglb.AgentRPCPool.Acquire(ip, port)

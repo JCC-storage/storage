@@ -8,31 +8,31 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock/lockprovider"
 )
 
-type IPFSLockReqBuilder struct {
+type ShardStoreLockReqBuilder struct {
 	*LockRequestBuilder
 }
 
-func (b *LockRequestBuilder) IPFS() *IPFSLockReqBuilder {
-	return &IPFSLockReqBuilder{LockRequestBuilder: b}
+func (b *LockRequestBuilder) Shard() *ShardStoreLockReqBuilder {
+	return &ShardStoreLockReqBuilder{LockRequestBuilder: b}
 }
-func (b *IPFSLockReqBuilder) Buzy(nodeID cdssdk.NodeID) *IPFSLockReqBuilder {
+func (b *ShardStoreLockReqBuilder) Buzy(stgID cdssdk.StorageID) *ShardStoreLockReqBuilder {
 	b.locks = append(b.locks, distlock.Lock{
-		Path:   b.makePath(nodeID),
+		Path:   b.makePath(stgID),
 		Name:   lockprovider.IPFSBuzyLock,
 		Target: *lockprovider.NewStringLockTarget(),
 	})
 	return b
 }
 
-func (b *IPFSLockReqBuilder) GC(nodeID cdssdk.NodeID) *IPFSLockReqBuilder {
+func (b *ShardStoreLockReqBuilder) GC(stgID cdssdk.StorageID) *ShardStoreLockReqBuilder {
 	b.locks = append(b.locks, distlock.Lock{
-		Path:   b.makePath(nodeID),
+		Path:   b.makePath(stgID),
 		Name:   lockprovider.IPFSGCLock,
 		Target: *lockprovider.NewStringLockTarget(),
 	})
 	return b
 }
 
-func (b *IPFSLockReqBuilder) makePath(nodeID cdssdk.NodeID) []string {
+func (b *ShardStoreLockReqBuilder) makePath(nodeID cdssdk.StorageID) []string {
 	return []string{lockprovider.IPFSLockPathPrefix, strconv.FormatInt(int64(nodeID), 10)}
 }

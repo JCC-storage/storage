@@ -28,6 +28,13 @@ func (*NodeDB) GetByID(ctx SQLContext, nodeID cdssdk.NodeID) (cdssdk.Node, error
 	return ret, err
 }
 
+func (*NodeDB) BatchGetByID(ctx SQLContext, nodeIDs []cdssdk.NodeID) ([]cdssdk.Node, error) {
+	var ret []cdssdk.Node
+	err := ctx.Table("node").Where("NodeID IN (?)", nodeIDs).Find(&ret).Error
+
+	return ret, err
+}
+
 // GetUserNodes 根据用户id查询可用node
 func (*NodeDB) GetUserNodes(ctx SQLContext, userID cdssdk.UserID) ([]cdssdk.Node, error) {
 	var nodes []cdssdk.Node

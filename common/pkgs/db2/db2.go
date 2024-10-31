@@ -3,7 +3,7 @@ package db2
 import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/sirupsen/logrus"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/db/config"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/config"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )

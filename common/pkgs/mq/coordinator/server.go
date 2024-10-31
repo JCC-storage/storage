@@ -54,7 +54,7 @@ func (s *Server) Stop() {
 }
 
 func (s *Server) Start(cfg mymq.Config) *sync2.UnboundChannel[mq.RabbitMQLogEvent] {
-	return s.rabbitSvr.Start(cfg)
+	return s.rabbitSvr.Start()
 }
 
 func (s *Server) OnError(callback func(error)) {
