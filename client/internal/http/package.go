@@ -134,14 +134,14 @@ func (s *PackageService) ListBucketPackages(ctx *gin.Context) {
 func (s *PackageService) GetCachedStorages(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Package.GetCachedStorages")
 
-	var req cdsapi.PackageGetCachedNodesReq
+	var req cdsapi.PackageGetCachedStoragesReq
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.Warnf("binding query: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
 		return
 	}
 
-	resp, err := s.svc.PackageSvc().GetCachedNodes(req.UserID, req.PackageID)
+	resp, err := s.svc.PackageSvc().GetCachedStorages(req.UserID, req.PackageID)
 	if err != nil {
 		log.Warnf("get package cached nodes failed: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get package cached nodes failed"))

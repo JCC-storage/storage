@@ -1,5 +1,6 @@
 package db
 
+/*
 import (
 	"fmt"
 
@@ -35,3 +36,4 @@ func (db *LocationDB) FindLocationByExternalIP(ctx SQLContext, ip string) (model
 
 	return loc, nil
 }
+*/

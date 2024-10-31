@@ -1,5 +1,6 @@
 package db
 
+/*
 type UserBucketDB struct {
 	*DB
 }
@@ -12,3 +13,4 @@ func (*UserBucketDB) Create(ctx SQLContext, userID int64, bucketID int64) error 
 	_, err := ctx.Exec("insert into UserBucket(UserID,BucketID) values(?,?)", userID, bucketID)
 	return err
 }
+*/

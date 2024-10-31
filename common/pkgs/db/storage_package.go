@@ -1,5 +1,6 @@
 package db
 
+/*
 import (
 	"fmt"
 
@@ -115,3 +116,4 @@ func (*StoragePackageDB) FindPackageStorages(ctx SQLContext, packageID cdssdk.Pa
 	)
 	return ret, err
 }
+*/

@@ -1,5 +1,6 @@
 package db
 
+/*
 import (
 	"context"
 	"database/sql"
@@ -64,3 +65,4 @@ func (db *DB) DoTx(isolation sql.IsolationLevel, fn func(tx *sqlx.Tx) error) err
 func (db *DB) SQLCtx() SQLContext {
 	return db.d
 }
+*/

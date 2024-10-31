@@ -1,5 +1,6 @@
 package db
 
+/*
 import (
 	"github.com/jmoiron/sqlx"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
@@ -119,3 +120,4 @@ func (*ObjectAccessStatDB) DeleteInPackage(ctx SQLContext, packageID cdssdk.Pack
 	_, err := ctx.Exec("delete ObjectAccessStat from ObjectAccessStat inner join Object on ObjectAccessStat.ObjectID = Object.ObjectID where PackageID = ?", packageID)
 	return err
 }
+*/
