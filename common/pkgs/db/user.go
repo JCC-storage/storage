@@ -1,5 +1,6 @@
 package db
 
+/*
 import (
 	"github.com/jmoiron/sqlx"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
@@ -19,3 +20,4 @@ func (db *UserDB) GetByID(ctx SQLContext, userID cdssdk.UserID) (model.User, err
 	err := sqlx.Get(ctx, &ret, "select * from User where UserID = ?", userID)
 	return ret, err
 }
+*/

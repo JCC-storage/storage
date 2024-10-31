@@ -1,5 +1,6 @@
 package db
 
+/*
 import (
 	"database/sql"
 	"strconv"
@@ -134,3 +135,4 @@ func splitConcatedFileHash(idStr string) []string {
 	idStrs := strings.Split(idStr, ",")
 	return idStrs
 }
+*/

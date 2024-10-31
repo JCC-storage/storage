@@ -1,5 +1,6 @@
 package db
 
+/*
 import (
 	"time"
 
@@ -121,3 +122,4 @@ func (*CacheDB) FindCachingFileUserNodes(ctx SQLContext, userID cdssdk.NodeID, f
 			" UserNode.UserID = ? and UserNode.NodeID = Node.NodeID", fileHash, userID)
 	return x, err
 }
+*/

@@ -1,5 +1,6 @@
 package db
 
+/*
 import (
 	"github.com/jmoiron/sqlx"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
@@ -38,3 +39,4 @@ func (db *NodeConnectivityDB) BatchUpdateOrCreate(ctx SQLContext, cons []model.N
 		"insert into NodeConnectivity(FromNodeID, ToNodeID, Delay, TestTime) values(:FromNodeID, :ToNodeID, :Delay, :TestTime) as new"+
 			" on duplicate key update Delay = new.Delay, TestTime = new.TestTime", 4, cons, nil)
 }
+*/

@@ -1,5 +1,6 @@
 package db
 
+/*
 import (
 	"database/sql"
 
@@ -73,3 +74,4 @@ func BatchNamedQuery[T any](ctx SQLContext, sql string, argCnt int, arr []T, cal
 	}
 	return nil
 }
+*/

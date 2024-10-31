@@ -3,9 +3,12 @@ package coordinator
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 )
 
 type NodeService interface {
+	GetHubConfig(msg *GetHubConfig) (*GetHubConfigResp, *mq.CodeMessage)
+
 	GetUserNodes(msg *GetUserNodes) (*GetUserNodesResp, *mq.CodeMessage)
 
 	GetNodes(msg *GetNodes) (*GetNodesResp, *mq.CodeMessage)
@@ -13,6 +16,33 @@ type NodeService interface {
 	GetNodeConnectivities(msg *GetNodeConnectivities) (*GetNodeConnectivitiesResp, *mq.CodeMessage)
 
 	UpdateNodeConnectivities(msg *UpdateNodeConnectivities) (*UpdateNodeConnectivitiesResp, *mq.CodeMessage)
+}
+
+var _ = Register(Service.GetHubConfig)
+
+type GetHubConfig struct {
+	mq.MessageBodyBase
+	HubID cdssdk.NodeID `json:"hubID"`
+}
+type GetHubConfigResp struct {
+	mq.MessageBodyBase
+	Hub      cdssdk.Node            `json:"hub"`
+	Storages []stgmod.StorageDetail `json:"storages"`
+}
+
+func ReqGetHubConfig(hubID cdssdk.NodeID) *GetHubConfig {
+	return &GetHubConfig{
+		HubID: hubID,
+	}
+}
+func RespGetHubConfig(hub cdssdk.Node, storages []stgmod.StorageDetail) *GetHubConfigResp {
+	return &GetHubConfigResp{
+		Hub:      hub,
+		Storages: storages,
+	}
+}
+func (client *Client) GetHubConfig(msg *GetHubConfig) (*GetHubConfigResp, error) {
+	return mq.Request(Service.GetHubConfig, client.rabbitCli, msg)
 }
 
 // 查询用户可用的节点

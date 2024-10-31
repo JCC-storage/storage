@@ -10,8 +10,8 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/io2"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/pool"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/types"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/mgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
 func init() {
@@ -40,14 +40,14 @@ func (o *ShardRead) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 		Debugf("reading from shard store")
 	defer logger.Debugf("reading from shard store finished")
 
-	pool, err := exec.ValueByType[*pool.ShardStorePool](ctx)
+	stgMgr, err := exec.ValueByType[*mgr.Manager](ctx)
 	if err != nil {
-		return fmt.Errorf("getting shard store pool: %w", err)
+		return fmt.Errorf("getting storage manager: %w", err)
 	}
 
-	store := pool.Get(o.StorageID)
-	if store == nil {
-		return fmt.Errorf("shard store %v not found", o.StorageID)
+	store, err := stgMgr.GetShardStore(o.StorageID)
+	if err != nil {
+		return fmt.Errorf("getting shard store of storage %v: %w", o.StorageID, err)
 	}
 
 	file, err := store.Open(o.Open)
@@ -82,14 +82,14 @@ func (o *ShardWrite) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 		Debugf("writting file to shard store")
 	defer logger.Debugf("write to shard store finished")
 
-	pool, err := exec.ValueByType[*pool.ShardStorePool](ctx)
+	stgMgr, err := exec.ValueByType[*mgr.Manager](ctx)
 	if err != nil {
-		return fmt.Errorf("getting shard store pool: %w", err)
+		return fmt.Errorf("getting storage manager: %w", err)
 	}
 
-	store := pool.Get(o.StorageID)
-	if store == nil {
-		return fmt.Errorf("shard store %v not found", o.StorageID)
+	store, err := stgMgr.GetShardStore(o.StorageID)
+	if err != nil {
+		return fmt.Errorf("getting shard store of storage %v: %w", o.StorageID, err)
 	}
 
 	input, err := exec.BindVar[*exec.StreamValue](e, ctx.Context, o.Input)

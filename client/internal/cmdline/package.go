@@ -173,7 +173,7 @@ func PackageDeletePackage(ctx CommandContext, packageID cdssdk.PackageID) error 
 //	error - 操作过程中发生的任何错误。
 func PackageGetCachedStorages(ctx CommandContext, packageID cdssdk.PackageID) error {
 	userID := cdssdk.UserID(1)
-	resp, err := ctx.Cmdline.Svc.PackageSvc().GetCachedNodes(userID, packageID)
+	resp, err := ctx.Cmdline.Svc.PackageSvc().GetCachedStorages(userID, packageID)
 	fmt.Printf("resp: %v\n", resp)
 	if err != nil {
 		return fmt.Errorf("get package %d cached nodes failed, err: %w", packageID, err)

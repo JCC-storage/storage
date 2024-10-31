@@ -1,13 +1,37 @@
-package main
+package cmd
 
-import "gitlink.org.cn/cloudream/storage/agent/internal/cmd"
+import (
+	"fmt"
+	"net"
+	"os"
+	"time"
 
-func main() {
-<<<<<<< HEAD
-	// TODO 放到配置里读取
-	AgentIpList = []string{"pcm01", "pcm1", "pcm2"}
+	"gitlink.org.cn/cloudream/storage/agent/internal/http"
 
-	err := config.Init()
+	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
+	"gitlink.org.cn/cloudream/common/pkgs/logger"
+	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/storage/agent/internal/config"
+	"gitlink.org.cn/cloudream/storage/agent/internal/task"
+	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/accessstat"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
+	agtrpc "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/mgr"
+
+	"google.golang.org/grpc"
+
+	agtmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/agent"
+	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
+
+	grpcsvc "gitlink.org.cn/cloudream/storage/agent/internal/grpc"
+	cmdsvc "gitlink.org.cn/cloudream/storage/agent/internal/mq"
+)
+
+func serve(configPath string) {
+	err := config.Init(configPath)
 	if err != nil {
 		fmt.Printf("init config failed, err: %s", err.Error())
 		os.Exit(1)
@@ -23,17 +47,24 @@ func main() {
 	stgglb.InitMQPool(&config.Cfg().RabbitMQ)
 	stgglb.InitAgentRPCPool(&agtrpc.PoolConfig{})
 
+	hubCfg := downloadHubConfig()
+
+	stgMgr := mgr.NewManager()
+	for _, stg := range hubCfg.Storages {
+		err := stgMgr.InitStorage(stg)
+		if err != nil {
+			fmt.Printf("init storage %v: %v", stg, err)
+			os.Exit(1)
+		}
+	}
+
 	sw := exec.NewWorker()
 
-	svc := http.NewService(&sw)
+	httpSvr, err := http.NewServer(config.Cfg().ListenAddr, http.NewService(&sw))
 	if err != nil {
-		logger.Fatalf("new http service failed, err: %s", err.Error())
+		logger.Fatalf("new http server failed, err: %s", err.Error())
 	}
-	server, err := http.NewServer(config.Cfg().ListenAddr, svc)
-	err = server.Serve()
-	if err != nil {
-		logger.Fatalf("http server stopped with error: %s", err.Error())
-	}
+	go serveHTTP(httpSvr)
 
 	// 启动网络连通性检测，并就地检测一次
 	conCol := connectivity.NewCollector(&config.Cfg().Connectivity, func(collector *connectivity.Collector) {
@@ -76,9 +107,6 @@ func main() {
 	})
 	go serveAccessStat(acStat)
 
-	// TODO2 根据配置实例化Store并加入到Pool中
-	shardStorePool := pool.New()
-
 	distlock, err := distlock.NewService(&config.Cfg().DistLock)
 	if err != nil {
 		logger.Fatalf("new ipfs failed, err: %s", err.Error())
@@ -86,11 +114,11 @@ func main() {
 
 	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol)
 
-	taskMgr := task.NewManager(distlock, &conCol, &dlder, acStat, shardStorePool)
+	taskMgr := task.NewManager(distlock, &conCol, &dlder, acStat, stgMgr)
 
 	// 启动命令服务器
 	// TODO 需要设计AgentID持久化机制
-	agtSvr, err := agtmq.NewServer(cmdsvc.NewService(&taskMgr, shardStorePool), config.Cfg().ID, &config.Cfg().RabbitMQ)
+	agtSvr, err := agtmq.NewServer(cmdsvc.NewService(&taskMgr, stgMgr), config.Cfg().ID, &config.Cfg().RabbitMQ)
 	if err != nil {
 		logger.Fatalf("new agent server failed, err: %s", err.Error())
 	}
@@ -115,31 +143,32 @@ func main() {
 	<-foever
 }
 
-func serveAgentServer(server *agtmq.Server) {
-	logger.Info("start serving command server")
+func downloadHubConfig() coormq.GetHubConfigResp {
+	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
+	if err != nil {
+		logger.Errorf("new coordinator client: %v", err)
+		os.Exit(1)
+	}
+	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-	ch := server.Start()
-	if ch == nil {
-		logger.Errorf("RabbitMQ logEvent is nil")
+	cfgResp, err := coorCli.GetHubConfig(coormq.ReqGetHubConfig(cdssdk.NodeID(config.Cfg().ID)))
+	if err != nil {
+		logger.Errorf("getting hub config: %v", err)
 		os.Exit(1)
 	}
 
-	for {
-		val, err := ch.Receive()
-		if err != nil {
-			logger.Errorf("command server stopped with error: %s", err.Error())
-			break
-		}
+	return *cfgResp
+}
 
-		switch val := val.(type) {
-		case error:
-			logger.Errorf("rabbitmq connect with error: %v", val)
-		case int:
-			if val == 1 {
-				break
-			}
-		}
+func serveAgentServer(server *agtmq.Server) {
+	logger.Info("start serving command server")
+
+	err := server.Start()
+
+	if err != nil {
+		logger.Errorf("command server stopped with error: %s", err.Error())
 	}
+
 	logger.Info("command server stopped")
 
 	// TODO 仅简单结束了程序
@@ -156,6 +185,21 @@ func serveGRPC(s *grpc.Server, lis net.Listener) {
 	}
 
 	logger.Info("grpc stopped")
+
+	// TODO 仅简单结束了程序
+	os.Exit(1)
+}
+
+func serveHTTP(server *http.Server) {
+	logger.Info("start serving http")
+
+	err := server.Serve()
+
+	if err != nil {
+		logger.Errorf("http stopped with error: %s", err.Error())
+	}
+
+	logger.Info("http stopped")
 
 	// TODO 仅简单结束了程序
 	os.Exit(1)
@@ -198,7 +242,4 @@ loop:
 
 	// TODO 仅简单结束了程序
 	os.Exit(1)
-=======
-	cmd.RootCmd.Execute()
->>>>>>> 3fe245a05a09f784fe0081982bca46f964279b4e
 }

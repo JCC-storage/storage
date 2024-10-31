@@ -12,9 +12,9 @@ import (
 )
 
 func (svc *Service) CheckCache(msg *agtmq.CheckCache) (*agtmq.CheckCacheResp, *mq.CodeMessage) {
-	store := svc.shardStorePool.Get(msg.StorageID)
-	if store == nil {
-		return nil, mq.Failed(errorcode.OperationFailed, fmt.Sprintf("storage %v has no shard store", msg.StorageID))
+	store, err := svc.stgMgr.GetShardStore(msg.StorageID)
+	if err != nil {
+		return nil, mq.Failed(errorcode.OperationFailed, fmt.Sprintf("get shard store of storage %v: %v", msg.StorageID, err))
 	}
 
 	infos, err := store.ListAll()
@@ -31,12 +31,12 @@ func (svc *Service) CheckCache(msg *agtmq.CheckCache) (*agtmq.CheckCacheResp, *m
 }
 
 func (svc *Service) CacheGC(msg *agtmq.CacheGC) (*agtmq.CacheGCResp, *mq.CodeMessage) {
-	store := svc.shardStorePool.Get(msg.StorageID)
-	if store == nil {
-		return nil, mq.Failed(errorcode.OperationFailed, fmt.Sprintf("storage %v has no shard store", msg.StorageID))
+	store, err := svc.stgMgr.GetShardStore(msg.StorageID)
+	if err != nil {
+		return nil, mq.Failed(errorcode.OperationFailed, fmt.Sprintf("get shard store of storage %v: %v", msg.StorageID, err))
 	}
 
-	err := store.Purge(msg.Avaiables)
+	err = store.Purge(msg.Avaiables)
 	if err != nil {
 		return nil, mq.Failed(errorcode.OperationFailed, fmt.Sprintf("purging cache: %v", err))
 	}

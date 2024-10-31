@@ -8,12 +8,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"gitlink.org.cn/cloudream/common/pkgs/async"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/io2"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/storages/utils"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/types"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/utils"
 )
 
 const (
@@ -21,33 +20,35 @@ const (
 	BlocksDir = "blocks"
 )
 
-type Local struct {
+type ShardStore struct {
 	cfg cdssdk.LocalShardStorage
 }
 
-func New(stg cdssdk.Storage, cfg cdssdk.LocalShardStorage) (*Local, error) {
+func NewShardStore(stg cdssdk.Storage, cfg cdssdk.LocalShardStorage) (*ShardStore, error) {
 	_, ok := stg.Address.(*cdssdk.LocalStorageAddress)
 	if !ok {
 		return nil, fmt.Errorf("storage address(%T) is not local", stg)
 	}
 
-	return &Local{
+	return &ShardStore{
 		cfg: cfg,
 	}, nil
 }
 
-func (s *Local) Start() *async.UnboundChannel[types.StoreEvent] {
-	// TODO 暂时没有需要后台执行的任务
-	return async.NewUnboundChannel[types.StoreEvent]()
+func (s *ShardStore) Start(ch *types.StorageEventChan) {
+
 }
 
-func (s *Local) New() types.Writer {
+func (s *ShardStore) Stop() {
+}
+
+func (s *ShardStore) New() types.ShardWriter {
 	file, err := os.CreateTemp(filepath.Join(s.cfg.Root, "tmp"), "tmp-*")
 	if err != nil {
-		return utils.ErrorWriter(err)
+		return utils.ErrorShardWriter(err)
 	}
 
-	return &Writer{
+	return &ShardWriter{
 		path:   filepath.Join(s.cfg.Root, "tmp", file.Name()),
 		file:   file,
 		hasher: sha256.New(),
@@ -56,7 +57,7 @@ func (s *Local) New() types.Writer {
 }
 
 // 使用F函数创建Option对象
-func (s *Local) Open(opt types.OpenOption) (io.ReadCloser, error) {
+func (s *ShardStore) Open(opt types.OpenOption) (io.ReadCloser, error) {
 	fileName := string(opt.FileHash)
 	if len(fileName) < 2 {
 		return nil, fmt.Errorf("invalid file name")
@@ -83,7 +84,7 @@ func (s *Local) Open(opt types.OpenOption) (io.ReadCloser, error) {
 	return file, nil
 }
 
-func (s *Local) ListAll() ([]types.FileInfo, error) {
+func (s *ShardStore) ListAll() ([]types.FileInfo, error) {
 	var infos []types.FileInfo
 
 	blockDir := filepath.Join(s.cfg.Root, BlocksDir)
@@ -113,7 +114,7 @@ func (s *Local) ListAll() ([]types.FileInfo, error) {
 	return infos, nil
 }
 
-func (s *Local) Purge(removes []cdssdk.FileHash) error {
+func (s *ShardStore) Purge(removes []cdssdk.FileHash) error {
 	for _, hash := range removes {
 		fileName := string(hash)
 
@@ -128,19 +129,19 @@ func (s *Local) Purge(removes []cdssdk.FileHash) error {
 	return nil
 }
 
-func (s *Local) Stats() types.Stats {
+func (s *ShardStore) Stats() types.Stats {
 	// TODO 统计本地存储的相关信息
 	return types.Stats{
 		Status: types.StatusOK,
 	}
 }
 
-func (s *Local) onWritterAbort(w *Writer) {
+func (s *ShardStore) onWritterAbort(w *ShardWriter) {
 	logger.Debugf("writting file %v aborted", w.path)
 	s.removeTempFile(w.path)
 }
 
-func (s *Local) onWritterFinish(w *Writer, hash cdssdk.FileHash) (types.FileInfo, error) {
+func (s *ShardStore) onWritterFinish(w *ShardWriter, hash cdssdk.FileHash) (types.FileInfo, error) {
 	logger.Debugf("write file %v finished, size: %v, hash: %v", w.path, w.size, hash)
 
 	blockDir := filepath.Join(s.cfg.Root, BlocksDir, string(hash)[:2])
@@ -166,7 +167,7 @@ func (s *Local) onWritterFinish(w *Writer, hash cdssdk.FileHash) (types.FileInfo
 	}, nil
 }
 
-func (s *Local) removeTempFile(path string) {
+func (s *ShardStore) removeTempFile(path string) {
 	err := os.Remove(path)
 	if err != nil {
 		logger.Warnf("removing temp file %v: %v", path, err)

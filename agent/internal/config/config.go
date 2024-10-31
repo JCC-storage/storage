@@ -3,6 +3,7 @@ package config
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/distlock"
 	log "gitlink.org.cn/cloudream/common/pkgs/logger"
+	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	c "gitlink.org.cn/cloudream/common/utils/config"
 	stgmodels "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
@@ -12,7 +13,7 @@ import (
 )
 
 type Config struct {
-	ID           int64                      `json:"id"`
+	ID           cdssdk.NodeID              `json:"id"`
 	ListenAddr   string                     `json:"listenAddr"`
 	Local        stgmodels.LocalMachineInfo `json:"local"`
 	GRPC         *grpc.Config               `json:"grpc"`
@@ -25,8 +26,12 @@ type Config struct {
 
 var cfg Config
 
-func Init() error {
-	return c.DefaultLoad("agent", &cfg)
+func Init(path string) error {
+	if path == "" {
+		return c.DefaultLoad("agent", &cfg)
+	}
+
+	return c.Load(path, &cfg)
 }
 
 func Cfg() *Config {

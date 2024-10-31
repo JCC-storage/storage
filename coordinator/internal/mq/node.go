@@ -2,6 +2,8 @@ package mq
 
 import (
 	"fmt"
+
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
@@ -10,6 +12,60 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
+
+func (svc *Service) GetHubConfig(msg *coormq.GetHubConfig) (*coormq.GetHubConfigResp, *mq.CodeMessage) {
+	log := logger.WithField("HubID", msg.HubID)
+
+	hub, err := svc.db2.Node().GetByID(svc.db2.DefCtx(), msg.HubID)
+	if err != nil {
+		log.Warnf("getting hub: %v", err)
+		return nil, mq.Failed(errorcode.OperationFailed, fmt.Sprintf("getting hub: %v", err))
+	}
+
+	detailsMap := make(map[cdssdk.StorageID]*stgmod.StorageDetail)
+
+	stgs, err := svc.db2.Storage().GetHubStorages(svc.db2.DefCtx(), msg.HubID)
+	if err != nil {
+		log.Warnf("getting hub storages: %v", err)
+		return nil, mq.Failed(errorcode.OperationFailed, fmt.Sprintf("getting hub storages: %v", err))
+	}
+
+	var stgIDs []cdssdk.StorageID
+	for _, stg := range stgs {
+		detailsMap[stg.StorageID] = &stgmod.StorageDetail{
+			Storage:   stg,
+			MasterHub: &hub,
+		}
+		stgIDs = append(stgIDs, stg.StorageID)
+	}
+
+	shards, err := svc.db2.ShardStorage().BatchGetByStorageIDs(svc.db2.DefCtx(), stgIDs)
+	if err != nil {
+		log.Warnf("getting shard storages: %v", err)
+		return nil, mq.Failed(errorcode.OperationFailed, fmt.Sprintf("getting shard storages: %v", err))
+	}
+	for _, shard := range shards {
+		sh := shard
+		detailsMap[shard.StorageID].Shard = &sh
+	}
+
+	shareds, err := svc.db2.SharedStorage().BatchGetByStorageIDs(svc.db2.DefCtx(), stgIDs)
+	if err != nil {
+		log.Warnf("getting shared storages: %v", err)
+		return nil, mq.Failed(errorcode.OperationFailed, fmt.Sprintf("getting shared storages: %v", err))
+	}
+	for _, shared := range shareds {
+		sh := shared
+		detailsMap[shared.StorageID].Shared = &sh
+	}
+
+	var details []stgmod.StorageDetail
+	for _, detail := range detailsMap {
+		details = append(details, *detail)
+	}
+
+	return mq.ReplyOK(coormq.RespGetHubConfig(hub, details))
+}
 
 func (svc *Service) GetUserNodes(msg *coormq.GetUserNodes) (*coormq.GetUserNodesResp, *mq.CodeMessage) {
 	nodes, err := svc.db2.Node().GetUserNodes(svc.db2.DefCtx(), msg.UserID)

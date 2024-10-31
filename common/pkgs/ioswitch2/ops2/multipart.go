@@ -2,10 +2,12 @@ package ops2
 
 import (
 	"encoding/json"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/mgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/dag"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
-	"gitlink.org.cn/cloudream/common/sdks/cloudstorage"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 )
 
@@ -30,9 +32,9 @@ type MultipartManage struct {
 }
 
 func (o *MultipartManage) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
+	manager, err2 := exec.ValueByType[*mgr.Manager](ctx)
 
-	var oss cloudstorage.ObjectStorage
-
+	var oss stgmod.ObjectStorage
 	switch addr := o.Address.(type) {
 	case *cdssdk.LocalStorageAddress:
 		err := json.Unmarshal([]byte(addr.String()), &oss)
@@ -41,7 +43,7 @@ func (o *MultipartManage) Execute(ctx *exec.ExecContext, e *exec.Executor) error
 		}
 	}
 
-	client, err := cloudstorage.NewObjectStorageClient(oss)
+	client, err := types.NewObjectStorageClient(oss)
 	if err != nil {
 		return err
 	}
@@ -96,7 +98,7 @@ type MultipartUpload struct {
 func (o *MultipartUpload) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 	value, err2 := exec.BindVar[*InitUploadValue](e, ctx.Context, o.UploadArgs)
 
-	var oss cloudstorage.ObjectStorage
+	var oss stgmod.ObjectStorage
 	switch addr := o.Address.(type) {
 	case *cdssdk.LocalStorageAddress:
 		err := json.Unmarshal([]byte(addr.String()), &oss)
@@ -105,7 +107,7 @@ func (o *MultipartUpload) Execute(ctx *exec.ExecContext, e *exec.Executor) error
 		}
 	}
 
-	client, err := cloudstorage.NewObjectStorageClient(oss)
+	client, err := types.NewObjectStorageClient(oss)
 	if err != nil {
 		return err
 	}

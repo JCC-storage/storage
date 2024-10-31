@@ -1,5 +1,6 @@
 package db
 
+/*
 import (
 	"github.com/jmoiron/sqlx"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
@@ -82,3 +83,4 @@ func (*PackageAccessStatDB) DeleteByPackageID(ctx SQLContext, pkgID cdssdk.Packa
 	_, err := ctx.Exec("delete from PackageAccessStat where PackageID=?", pkgID)
 	return err
 }
+*/

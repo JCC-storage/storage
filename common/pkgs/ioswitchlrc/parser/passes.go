@@ -10,7 +10,7 @@ import (
 	"gitlink.org.cn/cloudream/common/utils/math2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc/ops2"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/types"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
 // 计算输入流的打开范围。会把流的范围按条带大小取整

@@ -106,8 +106,8 @@ func (svc *PackageService) DeletePackage(userID cdssdk.UserID, packageID cdssdk.
 	return nil
 }
 
-// GetCachedNodes 获取指定包的缓存节点信息
-func (svc *PackageService) GetCachedNodes(userID cdssdk.UserID, packageID cdssdk.PackageID) (cdssdk.PackageCachingInfo, error) {
+// GetCachedStorages 获取指定包的缓存节点信息
+func (svc *PackageService) GetCachedStorages(userID cdssdk.UserID, packageID cdssdk.PackageID) (cdssdk.PackageCachingInfo, error) {
 	// 从协调器MQ池中获取客户端
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {

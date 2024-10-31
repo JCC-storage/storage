@@ -8,19 +8,19 @@ import (
 	"strings"
 
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/types"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
-type Writer struct {
+type ShardWriter struct {
 	path   string
 	file   *os.File
 	hasher hash.Hash
 	size   int64
 	closed bool
-	owner  *Local
+	owner  *ShardStore
 }
 
-func (w *Writer) Write(data []byte) (int, error) {
+func (w *ShardWriter) Write(data []byte) (int, error) {
 	n, err := w.file.Write(data)
 	if err != nil {
 		return 0, err
@@ -32,7 +32,7 @@ func (w *Writer) Write(data []byte) (int, error) {
 }
 
 // 取消写入
-func (w *Writer) Abort() error {
+func (w *ShardWriter) Abort() error {
 	if w.closed {
 		return nil
 	}
@@ -44,7 +44,7 @@ func (w *Writer) Abort() error {
 }
 
 // 结束写入，获得文件哈希值
-func (w *Writer) Finish() (types.FileInfo, error) {
+func (w *ShardWriter) Finish() (types.FileInfo, error) {
 	if w.closed {
 		return types.FileInfo{}, fmt.Errorf("stream closed")
 	}

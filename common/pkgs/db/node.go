@@ -1,5 +1,6 @@
 package db
 
+/*
 import (
 	"time"
 
@@ -39,3 +40,4 @@ func (db *NodeDB) UpdateState(ctx SQLContext, nodeID cdssdk.NodeID, state string
 	_, err := ctx.Exec("update Node set State = ?, LastReportTime = ? where NodeID = ?", state, time.Now(), nodeID)
 	return err
 }
+*/
