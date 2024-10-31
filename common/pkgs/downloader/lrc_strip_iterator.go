@@ -14,6 +14,7 @@ import (
 )
 
 type LRCStripIterator struct {
+	downloder           *Downloader
 	object              cdssdk.Object
 	blocks              []downloadBlock
 	red                 *cdssdk.LRCRedundancy
@@ -25,12 +26,13 @@ type LRCStripIterator struct {
 	inited              bool
 }
 
-func NewLRCStripIterator(object cdssdk.Object, blocks []downloadBlock, red *cdssdk.LRCRedundancy, beginStripIndex int64, cache *StripCache, maxPrefetch int) *LRCStripIterator {
+func NewLRCStripIterator(downloder *Downloader, object cdssdk.Object, blocks []downloadBlock, red *cdssdk.LRCRedundancy, beginStripIndex int64, cache *StripCache, maxPrefetch int) *LRCStripIterator {
 	if maxPrefetch <= 0 {
 		maxPrefetch = 1
 	}
 
 	iter := &LRCStripIterator{
+		downloder:       downloder,
 		object:          object,
 		blocks:          blocks,
 		red:             red,
@@ -110,8 +112,8 @@ func (s *LRCStripIterator) downloading() {
 		return
 	}
 
-	// TODO2 注入依赖
 	exeCtx := exec.NewExecContext()
+	exec.SetValueByType(exeCtx, s.downloder.stgMgr)
 
 	exec := plans.Execute(exeCtx)
 

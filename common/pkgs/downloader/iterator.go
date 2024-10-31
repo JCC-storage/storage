@@ -205,7 +205,7 @@ func (iter *DownloadObjectIterator) downloadNoneOrRepObject(obj downloadReqeust2
 		return nil, fmt.Errorf("no storage has this object")
 	}
 
-	logger.Debugf("downloading object %v from storage %v(%v)", obj.Raw.ObjectID, stg)
+	logger.Debugf("downloading object %v from storage %v", obj.Raw.ObjectID, stg)
 	return iter.downloadFromStorage(stg, obj)
 }
 
@@ -224,7 +224,7 @@ func (iter *DownloadObjectIterator) downloadECObject(req downloadReqeust2, ecRed
 			if i > 0 {
 				logStrs = append(logStrs, ", ")
 			}
-			logStrs = append(logStrs, fmt.Sprintf("%v@%v(%v)", b.Block.Index, b.Storage))
+			logStrs = append(logStrs, fmt.Sprintf("%v@%v", b.Block.Index, b.Storage))
 		}
 		logger.Debug(logStrs...)
 
@@ -237,7 +237,7 @@ func (iter *DownloadObjectIterator) downloadECObject(req downloadReqeust2, ecRed
 			}
 
 			firstStripIndex := readPos / ecRed.StripSize()
-			stripIter := NewStripIterator(req.Detail.Object, blocks, ecRed, firstStripIndex, iter.downloader.strips, iter.downloader.cfg.ECStripPrefetchCount)
+			stripIter := NewStripIterator(iter.downloader, req.Detail.Object, blocks, ecRed, firstStripIndex, iter.downloader.strips, iter.downloader.cfg.ECStripPrefetchCount)
 			defer stripIter.Close()
 
 			for totalReadLen > 0 {
@@ -274,7 +274,7 @@ func (iter *DownloadObjectIterator) downloadECObject(req downloadReqeust2, ecRed
 		return nil, fmt.Errorf("no enough blocks to reconstruct the object %v , want %d, get only %d", req.Raw.ObjectID, ecRed.K, len(blocks))
 	}
 
-	logger.Debugf("downloading ec object %v from storage %v(%v)", req.Raw.ObjectID, stg)
+	logger.Debugf("downloading ec object %v from storage %v", req.Raw.ObjectID, stg)
 	return iter.downloadFromStorage(stg, req)
 }
 
@@ -395,7 +395,7 @@ func (iter *DownloadObjectIterator) downloadFromStorage(stg *stgmod.StorageDetai
 		len := req.Raw.Length
 		toExec.Range.Length = &len
 	}
-	// TODO FileHash应该是FileHash类型
+
 	ft.AddFrom(ioswitch2.NewFromShardstore(req.Detail.Object.FileHash, *stg.MasterHub, stg.Storage, -1)).AddTo(toExec)
 	strHandle = handle
 
@@ -405,9 +405,8 @@ func (iter *DownloadObjectIterator) downloadFromStorage(stg *stgmod.StorageDetai
 		return nil, fmt.Errorf("parsing plan: %w", err)
 	}
 
-	// TODO2 注入依赖
 	exeCtx := exec.NewExecContext()
-
+	exec.SetValueByType(exeCtx, iter.downloader.stgMgr)
 	exec := plans.Execute(exeCtx)
 	go exec.Wait(context.TODO())
 

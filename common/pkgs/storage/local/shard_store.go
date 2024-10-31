@@ -36,10 +36,11 @@ func NewShardStore(stg cdssdk.Storage, cfg cdssdk.LocalShardStorage) (*ShardStor
 }
 
 func (s *ShardStore) Start(ch *types.StorageEventChan) {
-
+	logger.Infof("local shard store start, root: %v, max size: %v", s.cfg.Root, s.cfg.MaxSize)
 }
 
 func (s *ShardStore) Stop() {
+	logger.Infof("local shard store stop")
 }
 
 func (s *ShardStore) New() types.ShardWriter {

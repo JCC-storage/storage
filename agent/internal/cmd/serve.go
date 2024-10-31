@@ -47,8 +47,10 @@ func serve(configPath string) {
 	stgglb.InitMQPool(&config.Cfg().RabbitMQ)
 	stgglb.InitAgentRPCPool(&agtrpc.PoolConfig{})
 
+	// 获取Hub配置
 	hubCfg := downloadHubConfig()
 
+	// 初始化存储服务管理器
 	stgMgr := mgr.NewManager()
 	for _, stg := range hubCfg.Storages {
 		err := stgMgr.InitStorage(stg)
@@ -58,9 +60,11 @@ func serve(configPath string) {
 		}
 	}
 
-	sw := exec.NewWorker()
+	// 初始化执行器
+	worker := exec.NewWorker()
 
-	httpSvr, err := http.NewServer(config.Cfg().ListenAddr, http.NewService(&sw))
+	// 初始化HTTP服务
+	httpSvr, err := http.NewServer(config.Cfg().ListenAddr, http.NewService(&worker, stgMgr))
 	if err != nil {
 		logger.Fatalf("new http server failed, err: %s", err.Error())
 	}
@@ -101,19 +105,23 @@ func serve(configPath string) {
 	})
 	conCol.CollectInPlace()
 
+	// 启动访问统计服务
 	acStat := accessstat.NewAccessStat(accessstat.Config{
 		// TODO 考虑放到配置里
 		ReportInterval: time.Second * 10,
 	})
 	go serveAccessStat(acStat)
 
+	// 初始化分布式锁服务
 	distlock, err := distlock.NewService(&config.Cfg().DistLock)
 	if err != nil {
 		logger.Fatalf("new ipfs failed, err: %s", err.Error())
 	}
 
-	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol)
+	// 初始化下载器
+	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol, stgMgr)
 
+	// 初始化任务管理器
 	taskMgr := task.NewManager(distlock, &conCol, &dlder, acStat, stgMgr)
 
 	// 启动命令服务器
@@ -127,14 +135,14 @@ func serve(configPath string) {
 	})
 	go serveAgentServer(agtSvr)
 
-	//面向客户端收发数据
+	// 启动GRPC服务
 	listenAddr := config.Cfg().GRPC.MakeListenAddress()
 	lis, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		logger.Fatalf("listen on %s failed, err: %s", listenAddr, err.Error())
 	}
 	s := grpc.NewServer()
-	agtrpc.RegisterAgentServer(s, grpcsvc.NewService(&sw))
+	agtrpc.RegisterAgentServer(s, grpcsvc.NewService(&worker, stgMgr))
 	go serveGRPC(s, lis)
 
 	go serveDistLock(distlock)

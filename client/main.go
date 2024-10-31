@@ -19,6 +19,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/mgr"
 )
 
 func main() {
@@ -85,9 +86,11 @@ func main() {
 	})
 	go serveAccessStat(acStat)
 
-	taskMgr := task.NewManager(distlockSvc, &conCol)
+	stgMgr := mgr.NewManager()
 
-	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol)
+	taskMgr := task.NewManager(distlockSvc, &conCol, stgMgr)
+
+	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol, stgMgr)
 
 	svc, err := services.NewService(distlockSvc, &taskMgr, &dlder, acStat)
 	if err != nil {
