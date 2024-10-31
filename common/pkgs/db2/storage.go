@@ -76,3 +76,9 @@ func (db *StorageDB) GetUserStorageByName(ctx SQLContext, userID cdssdk.UserID, 
 
 	return stg, err
 }
+
+func (db *StorageDB) GetHubStorages(ctx SQLContext, hubID cdssdk.NodeID) ([]model.Storage, error) {
+	var stgs []model.Storage
+	err := ctx.Table("Storage").Select("Storage.*").Find(&stgs, "NodeID = ?", hubID).Error
+	return stgs, err
+}

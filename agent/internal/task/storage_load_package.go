@@ -94,9 +94,9 @@ func (t *StorageLoadPackage) do(task *task.Task[TaskContext], ctx TaskContext) e
 		return fmt.Errorf("getting package object details: %w", err)
 	}
 
-	shardstore := ctx.shardStorePool.Get(t.storageID)
-	if shardstore == nil {
-		return fmt.Errorf("shard store %v not found on this hub", t.storageID)
+	shardstore, err := ctx.stgMgr.GetShardStore(t.storageID)
+	if err != nil {
+		return fmt.Errorf("get shard store of storage %v: %w", t.storageID, err)
 	}
 
 	mutex, err := reqbuilder.NewBuilder().

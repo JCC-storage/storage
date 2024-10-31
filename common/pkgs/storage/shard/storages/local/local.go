@@ -8,12 +8,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"gitlink.org.cn/cloudream/common/pkgs/async"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/io2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/storages/utils"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/types"
+	stypes "gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
 const (
@@ -36,9 +36,11 @@ func New(stg cdssdk.Storage, cfg cdssdk.LocalShardStorage) (*Local, error) {
 	}, nil
 }
 
-func (s *Local) Start() *async.UnboundChannel[types.StoreEvent] {
-	// TODO 暂时没有需要后台执行的任务
-	return async.NewUnboundChannel[types.StoreEvent]()
+func (s *Local) Start(ch *stypes.StorageEventChan) {
+
+}
+
+func (s *Local) Stop() {
 }
 
 func (s *Local) New() types.Writer {

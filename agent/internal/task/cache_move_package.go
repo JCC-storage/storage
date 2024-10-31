@@ -40,9 +40,9 @@ func (t *CacheMovePackage) do(ctx TaskContext) error {
 	log.Debugf("begin with %v", logger.FormatStruct(t))
 	defer log.Debugf("end")
 
-	store := ctx.shardStorePool.Get(t.storageID)
-	if store == nil {
-		return fmt.Errorf("storage has no shard store")
+	store, err := ctx.stgMgr.GetShardStore(t.storageID)
+	if err != nil {
+		return fmt.Errorf("get shard store of storage %v: %w", t.storageID, err)
 	}
 
 	mutex, err := reqbuilder.NewBuilder().

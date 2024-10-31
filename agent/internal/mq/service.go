@@ -2,17 +2,17 @@ package mq
 
 import (
 	"gitlink.org.cn/cloudream/storage/agent/internal/task"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/pool"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/mgr"
 )
 
 type Service struct {
-	taskManager    *task.Manager
-	shardStorePool *pool.ShardStorePool
+	taskManager *task.Manager
+	stgMgr      *mgr.Manager
 }
 
-func NewService(taskMgr *task.Manager, shardStorePool *pool.ShardStorePool) *Service {
+func NewService(taskMgr *task.Manager, stgMgr *mgr.Manager) *Service {
 	return &Service{
-		taskManager:    taskMgr,
-		shardStorePool: shardStorePool,
+		taskManager: taskMgr,
+		stgMgr:      stgMgr,
 	}
 }

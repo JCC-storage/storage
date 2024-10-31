@@ -2,6 +2,7 @@ package agent
 
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
+	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	mymq "gitlink.org.cn/cloudream/storage/common/pkgs/mq"
 )
 
@@ -18,14 +19,14 @@ type Server struct {
 	rabbitSvr mq.RabbitMQServer
 }
 
-func NewServer(svc Service, id int64, cfg *mymq.Config) (*Server, error) {
+func NewServer(svc Service, id cdssdk.NodeID, cfg *mymq.Config) (*Server, error) {
 	srv := &Server{
 		service: svc,
 	}
 
 	rabbitSvr, err := mq.NewRabbitMQServer(
 		cfg.MakeConnectingURL(),
-		mymq.MakeAgentQueueName(id),
+		mymq.MakeAgentQueueName(int64(id)),
 		func(msg *mq.Message) (*mq.Message, error) {
 			return msgDispatcher.Handle(srv.service, msg)
 		},

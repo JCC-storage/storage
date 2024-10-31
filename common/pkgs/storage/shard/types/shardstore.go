@@ -3,8 +3,8 @@ package types
 import (
 	"io"
 
-	"gitlink.org.cn/cloudream/common/pkgs/async"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
 type Status interface {
@@ -23,8 +23,7 @@ type StoreEvent interface {
 }
 
 type ShardStore interface {
-	// 启动服务
-	Start() *async.UnboundChannel[StoreEvent]
+	types.StorageComponent
 	// 准备写入一个新文件，写入后获得FileHash
 	New() Writer
 	// 使用F函数创建Option对象
