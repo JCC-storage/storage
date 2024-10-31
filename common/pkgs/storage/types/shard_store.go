@@ -1,10 +1,10 @@
 package types
 
 import (
+	"fmt"
 	"io"
 
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
 type Status interface {
@@ -23,9 +23,9 @@ type StoreEvent interface {
 }
 
 type ShardStore interface {
-	types.StorageComponent
+	StorageComponent
 	// 准备写入一个新文件，写入后获得FileHash
-	New() Writer
+	New() ShardWriter
 	// 使用F函数创建Option对象
 	Open(opt OpenOption) (io.ReadCloser, error)
 	// 获取所有文件信息，尽量保证操作是原子的
@@ -61,11 +61,62 @@ type Stats struct {
 	Description string
 }
 
-type Writer interface {
+type ShardWriter interface {
 	io.Writer
 	// 取消写入。要求允许在调用了Finish之后再调用此函数，且此时不应该有任何影响。
 	// 方便defer机制
 	Abort() error
 	// 结束写入，获得文件哈希值
 	Finish() (FileInfo, error)
+}
+
+type OpenOption struct {
+	FileHash cdssdk.FileHash
+	Offset   int64
+	Length   int64
+}
+
+func NewOpen(fileHash cdssdk.FileHash) OpenOption {
+	return OpenOption{
+		FileHash: fileHash,
+		Offset:   0,
+		Length:   -1,
+	}
+}
+
+func (o *OpenOption) WithLength(len int64) OpenOption {
+	o.Length = len
+	return *o
+}
+
+// [start, end]，即包含end
+func (o *OpenOption) WithRange(start int64, end int64) OpenOption {
+	o.Offset = start
+	o.Length = end - start + 1
+	return *o
+}
+
+func (o *OpenOption) WithNullableLength(offset int64, length *int64) {
+	o.Offset = offset
+	if length != nil {
+		o.Length = *length
+	}
+}
+
+func (o *OpenOption) String() string {
+	rangeStart := ""
+	if o.Offset > 0 {
+		rangeStart = fmt.Sprintf("%d", o.Offset)
+	}
+
+	rangeEnd := ""
+	if o.Length >= 0 {
+		rangeEnd = fmt.Sprintf("%d", o.Offset+o.Length-1)
+	}
+
+	if rangeStart == "" && rangeEnd == "" {
+		return string(o.FileHash)
+	}
+
+	return fmt.Sprintf("%s[%s:%s]", string(o.FileHash), rangeStart, rangeEnd)
 }

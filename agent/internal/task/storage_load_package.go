@@ -22,7 +22,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock/reqbuilder"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ec"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/types"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 	"gitlink.org.cn/cloudream/storage/common/utils"
 )
 

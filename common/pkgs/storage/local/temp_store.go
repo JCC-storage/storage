@@ -1,4 +1,4 @@
-package tempstore
+package local
 
 import cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 

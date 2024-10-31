@@ -9,9 +9,7 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/reflect2"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shard/types"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/shared"
-	stypes "gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
 var ErrStorageNotFound = errors.New("storage not found")
@@ -22,20 +20,20 @@ var ErrStorageExists = errors.New("storage already exists")
 
 type storage struct {
 	Shard      types.ShardStore
-	Shared     shared.SharedStore
-	Components []stypes.StorageComponent
+	Shared     types.SharedStore
+	Components []types.StorageComponent
 }
 
 type Manager struct {
 	storages  map[cdssdk.StorageID]*storage
 	lock      sync.Mutex
-	eventChan *stypes.StorageEventChan
+	eventChan *types.StorageEventChan
 }
 
 func NewManager() *Manager {
 	return &Manager{
 		storages:  make(map[cdssdk.StorageID]*storage),
-		eventChan: async.NewUnboundChannel[stypes.StorageEvent](),
+		eventChan: async.NewUnboundChannel[types.StorageEvent](),
 	}
 }
 
@@ -108,7 +106,7 @@ func (m *Manager) GetShardStore(stgID cdssdk.StorageID) (types.ShardStore, error
 }
 
 // 查找指定Storage的SharedStore组件
-func (m *Manager) GetSharedStore(stgID cdssdk.StorageID) (shared.SharedStore, error) {
+func (m *Manager) GetSharedStore(stgID cdssdk.StorageID) (types.SharedStore, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -125,7 +123,7 @@ func (m *Manager) GetSharedStore(stgID cdssdk.StorageID) (shared.SharedStore, er
 }
 
 // 查找指定Storage的指定类型的组件，可以是ShardStore、SharedStore、或者其他自定义的组件
-func (m *Manager) GetComponent(stgID cdssdk.StorageID, typ reflect.Type) (stypes.StorageComponent, error) {
+func (m *Manager) GetComponent(stgID cdssdk.StorageID, typ reflect.Type) (types.StorageComponent, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -141,7 +139,7 @@ func (m *Manager) GetComponent(stgID cdssdk.StorageID, typ reflect.Type) (stypes
 		}
 
 		return stg.Shard, nil
-	case reflect2.TypeOf[shared.SharedStore]():
+	case reflect2.TypeOf[types.SharedStore]():
 		if stg.Shared == nil {
 			return nil, ErrComponentNotFound
 		}
@@ -158,7 +156,7 @@ func (m *Manager) GetComponent(stgID cdssdk.StorageID, typ reflect.Type) (stypes
 	}
 }
 
-func GetComponent[T stypes.StorageComponent](mgr *Manager, stgID cdssdk.StorageID) (T, error) {
+func GetComponent[T types.StorageComponent](mgr *Manager, stgID cdssdk.StorageID) (T, error) {
 	ret, err := mgr.GetComponent(stgID, reflect2.TypeOf[T]())
 	if err != nil {
 		var def T
