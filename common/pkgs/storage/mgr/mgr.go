@@ -21,6 +21,7 @@ var ErrStorageExists = errors.New("storage already exists")
 type storage struct {
 	Shard      types.ShardStore
 	Shared     types.SharedStore
+	Temp       types.TempStore
 	Components []types.StorageComponent
 }
 
@@ -120,6 +121,10 @@ func (m *Manager) GetSharedStore(stgID cdssdk.StorageID) (types.SharedStore, err
 	}
 
 	return stg.Shared, nil
+}
+
+func (m *Manager) GetTempStore(stgID cdssdk.StorageID) (types.TempStore, error) {
+	return nil, nil
 }
 
 // 查找指定Storage的指定类型的组件，可以是ShardStore、SharedStore、或者其他自定义的组件
