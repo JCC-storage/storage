@@ -7,10 +7,10 @@ import (
 )
 
 type ObjectBlock struct {
-	ObjectID  cdssdk.ObjectID  `gorm:"column:ObjectID; primaryKey" json:"objectID"`
-	Index     int              `gorm:"column:Index; primaryKey" json:"index"`
-	StorageID cdssdk.StorageID `gorm:"column:StorageID; primaryKey" json:"storageID"` // 这个块应该在哪个节点上
-	FileHash  cdssdk.FileHash  `gorm:"column:FileHash" json:"fileHash"`
+	ObjectID  cdssdk.ObjectID  `gorm:"column:ObjectID; primaryKey; type:bigint" json:"objectID"`
+	Index     int              `gorm:"column:Index; primaryKey; type:int" json:"index"`
+	StorageID cdssdk.StorageID `gorm:"column:StorageID; primaryKey; type:bigint" json:"storageID"` // 这个块应该在哪个节点上
+	FileHash  cdssdk.FileHash  `gorm:"column:FileHash; type:char(64); not null" json:"fileHash"`
 }
 
 func (ObjectBlock) TableName() string {
@@ -106,10 +106,10 @@ type LocalMachineInfo struct {
 }
 
 type PackageAccessStat struct {
-	PackageID cdssdk.PackageID `gorm:"column:PackageID; primaryKey" json:"packageID"`
-	StorageID cdssdk.StorageID `gorm:"column:StorageID; primaryKey" json:"storageID"`
-	Amount    float64          `gorm:"column:Amount" json:"amount"`   // 前一日的读取量的滑动平均值
-	Counter   float64          `gorm:"column:Counter" json:"counter"` // 当日的读取量
+	PackageID cdssdk.PackageID `gorm:"column:PackageID; primaryKey; type:bigint" json:"packageID"`
+	StorageID cdssdk.StorageID `gorm:"column:StorageID; primaryKey; type:bigint" json:"storageID"`
+	Amount    float64          `gorm:"column:Amount; type:double" json:"amount"`   // 前一日的读取量的滑动平均值
+	Counter   float64          `gorm:"column:Counter; type:double" json:"counter"` // 当日的读取量
 }
 
 func (PackageAccessStat) TableName() string {
@@ -117,10 +117,10 @@ func (PackageAccessStat) TableName() string {
 }
 
 type ObjectAccessStat struct {
-	ObjectID  cdssdk.ObjectID  `gorm:"column:ObjectID; primaryKey" json:"objectID"`
-	StorageID cdssdk.StorageID `gorm:"column:StorageID; primaryKey" json:"storageID"`
-	Amount    float64          `gorm:"column:Amount" json:"amount"`   // 前一日的读取量的滑动平均值
-	Counter   float64          `gorm:"column:Counter" json:"counter"` // 当日的读取量
+	ObjectID  cdssdk.ObjectID  `gorm:"column:ObjectID; primaryKey; type:bigint" json:"objectID"`
+	StorageID cdssdk.StorageID `gorm:"column:StorageID; primaryKey; type:bigint" json:"storageID"`
+	Amount    float64          `gorm:"column:Amount; type:float; not null" json:"amount"`   // 前一日的读取量的滑动平均值
+	Counter   float64          `gorm:"column:Counter; type:float; not null" json:"counter"` // 当日的读取量
 }
 
 func (ObjectAccessStat) TableName() string {
