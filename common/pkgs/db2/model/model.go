@@ -14,8 +14,8 @@ import (
 type Storage = cdssdk.Storage
 
 type User struct {
-	UserID   cdssdk.UserID `gorm:"column:UserID" json:"userID"`
-	Password string        `gorm:"column:Password" json:"password"`
+	UserID   cdssdk.UserID `gorm:"column:UserID; primaryKey; type:bigint" json:"userID"`
+	Password string        `gorm:"column:Password; type:varchar(255); not null" json:"password"`
 }
 
 func (User) TableName() string {
@@ -23,8 +23,8 @@ func (User) TableName() string {
 }
 
 type UserBucket struct {
-	UserID   cdssdk.UserID   `gorm:"column:UserID; primaryKey" json:"userID"`
-	BucketID cdssdk.BucketID `gorm:"column:BucketID; primaryKey" json:"bucketID"`
+	UserID   cdssdk.UserID   `gorm:"column:UserID; primaryKey; type:bigint" json:"userID"`
+	BucketID cdssdk.BucketID `gorm:"column:BucketID; primaryKey; type:bigint" json:"bucketID"`
 }
 
 func (UserBucket) TableName() string {
@@ -32,8 +32,8 @@ func (UserBucket) TableName() string {
 }
 
 type UserNode struct {
-	UserID cdssdk.UserID `gorm:"column:UserID; primaryKey" json:"userID"`
-	NodeID cdssdk.NodeID `gorm:"column:NodeID; primaryKey" json:"nodeID"`
+	UserID cdssdk.UserID `gorm:"column:UserID; primaryKey; type:bigint" json:"userID"`
+	NodeID cdssdk.NodeID `gorm:"column:NodeID; primaryKey; type:bigint" json:"nodeID"`
 }
 
 func (UserNode) TableName() string {
@@ -41,8 +41,8 @@ func (UserNode) TableName() string {
 }
 
 type UserStorage struct {
-	UserID    cdssdk.UserID    `gorm:"column:UserID; primaryKey" json:"userID"`
-	StorageID cdssdk.StorageID `gorm:"column:StorageID; primaryKey" json:"storageID"`
+	UserID    cdssdk.UserID    `gorm:"column:UserID; primaryKey; type:bigint" json:"userID"`
+	StorageID cdssdk.StorageID `gorm:"column:StorageID; primaryKey; type:bigint" json:"storageID"`
 }
 
 func (UserStorage) TableName() string {
@@ -92,10 +92,10 @@ func (o *RedundancyWarpper) Scan(src interface{}) error {
 type ObjectBlock = stgmod.ObjectBlock
 
 type Cache struct {
-	FileHash   cdssdk.FileHash  `gorm:"column:FileHash; primaryKey" json:"fileHash"`
-	StorageID  cdssdk.StorageID `gorm:"column:StorageID; primaryKey" json:"storageID"`
-	CreateTime time.Time        `gorm:"column:CreateTime" json:"createTime"`
-	Priority   int              `gorm:"column:Priority" json:"priority"`
+	FileHash   cdssdk.FileHash  `gorm:"column:FileHash; primaryKey; type: char(64)" json:"fileHash"`
+	StorageID  cdssdk.StorageID `gorm:"column:StorageID; primaryKey; type: bigint" json:"storageID"`
+	CreateTime time.Time        `gorm:"column:CreateTime; type:datetime" json:"createTime"`
+	Priority   int              `gorm:"column:Priority; type:int" json:"priority"`
 }
 
 func (Cache) TableName() string {
@@ -110,10 +110,10 @@ const (
 
 // Storage当前加载的Package
 type StoragePackage struct {
-	StorageID cdssdk.StorageID `gorm:"column:StorageID; primaryKey" json:"storageID"`
-	PackageID cdssdk.PackageID `gorm:"column:PackageID; primaryKey" json:"packageID"`
-	UserID    cdssdk.UserID    `gorm:"column:UserID; primaryKey" json:"userID"`
-	State     string           `gorm:"column:State" json:"state"`
+	StorageID cdssdk.StorageID `gorm:"column:StorageID; primaryKey; type:bigint" json:"storageID"`
+	PackageID cdssdk.PackageID `gorm:"column:PackageID; primaryKey; type:bigint" json:"packageID"`
+	UserID    cdssdk.UserID    `gorm:"column:UserID; primaryKey; type:bigint" json:"userID"`
+	State     string           `gorm:"column:State; type:varchar(255); not null" json:"state"`
 }
 
 func (StoragePackage) TableName() string {
@@ -121,8 +121,8 @@ func (StoragePackage) TableName() string {
 }
 
 type Location struct {
-	LocationID cdssdk.LocationID `gorm:"column:LocationID; primaryKey; autoIncrement" json:"locationID"`
-	Name       string            `gorm:"column:Name" json:"name"`
+	LocationID cdssdk.LocationID `gorm:"column:LocationID; primaryKey; type:bigint; autoIncrement" json:"locationID"`
+	Name       string            `gorm:"column:Name; type:varchar(255); not null" json:"name"`
 }
 
 func (Location) TableName() string {
