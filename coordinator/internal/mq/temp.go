@@ -2,6 +2,7 @@ package mq
 
 import (
 	"fmt"
+
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
@@ -9,7 +10,6 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 

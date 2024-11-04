@@ -3,6 +3,7 @@ package agent
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/utils/sync2"
 	mymq "gitlink.org.cn/cloudream/storage/common/pkgs/mq"
 )
 
@@ -30,7 +31,7 @@ func NewServer(svc Service, id cdssdk.NodeID, cfg *mymq.Config) (*Server, error)
 		func(msg *mq.Message) (*mq.Message, error) {
 			return msgDispatcher.Handle(srv.service, msg)
 		},
-		cfg.RabbitMQParam,
+		cfg.Param,
 	)
 	if err != nil {
 		return nil, err
@@ -45,7 +46,7 @@ func (s *Server) Stop() {
 	s.rabbitSvr.Close()
 }
 
-func (s *Server) Start() *sync2.UnboundChannel[mq.RabbitMQLogEvent] {
+func (s *Server) Start() *sync2.UnboundChannel[mq.RabbitMQServerEvent] {
 	return s.rabbitSvr.Start()
 }
 

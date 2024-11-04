@@ -2,15 +2,16 @@ package mq
 
 import (
 	"fmt"
+
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 )
 
 type Config struct {
-	Address       string           `json:"address"`
-	Account       string           `json:"account"`
-	Password      string           `json:"password"`
-	VHost         string           `json:"vhost"`
-	RabbitMQParam mq.RabbitMQParam `json:"param"`
+	Address  string           `json:"address"`
+	Account  string           `json:"account"`
+	Password string           `json:"password"`
+	VHost    string           `json:"vhost"`
+	Param    mq.RabbitMQParam `json:"param"`
 }
 
 func (cfg *Config) MakeConnectingURL() string {

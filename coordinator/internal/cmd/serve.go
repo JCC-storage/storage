@@ -2,14 +2,16 @@ package cmd
 
 import (
 	"fmt"
-	stgmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq"
 	"os"
 
+	stgmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq"
+
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
+	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 	"gitlink.org.cn/cloudream/storage/coordinator/internal/config"
-	"gitlink.org.cn/cloudream/storage/coordinator/internal/mq"
+	mymq "gitlink.org.cn/cloudream/storage/coordinator/internal/mq"
 )
 
 func serve(configPath string) {
@@ -30,7 +32,7 @@ func serve(configPath string) {
 		logger.Fatalf("new db2 failed, err: %s", err.Error())
 	}
 
-	coorSvr, err := coormq.NewServer(mq.NewService(db2), &config.Cfg().RabbitMQ)
+	coorSvr, err := coormq.NewServer(mymq.NewService(db2), &config.Cfg().RabbitMQ)
 	if err != nil {
 		logger.Fatalf("new coordinator server failed, err: %s", err.Error())
 	}
@@ -55,6 +57,7 @@ func serveCoorServer(server *coormq.Server, cfg stgmq.Config) {
 		os.Exit(1)
 	}
 
+loop:
 	for {
 		val, err := ch.Receive()
 		if err != nil {
@@ -65,8 +68,13 @@ func serveCoorServer(server *coormq.Server, cfg stgmq.Config) {
 		switch val := val.(type) {
 		case error:
 			logger.Errorf("rabbitmq connect with error: %v", val)
-		case int:
-			break
+		case mq.ServerExit:
+			if val.Error != nil {
+				logger.Errorf("rabbitmq server exit with error: %v", val.Error)
+			} else {
+				logger.Info("rabbitmq server exit")
+			}
+			break loop
 		}
 	}
 	logger.Info("command server stopped")

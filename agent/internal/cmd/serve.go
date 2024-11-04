@@ -10,6 +10,7 @@ import (
 
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
+	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/storage/agent/internal/config"
 	"gitlink.org.cn/cloudream/storage/agent/internal/task"
@@ -171,12 +172,27 @@ func downloadHubConfig() coormq.GetHubConfigResp {
 func serveAgentServer(server *agtmq.Server) {
 	logger.Info("start serving command server")
 
-	err := server.Start()
+	ch := server.Start()
+loop:
+	for {
+		val, err := ch.Receive()
+		if err != nil {
+			logger.Errorf("command server stopped with error: %s", err.Error())
+			break
+		}
 
-	if err != nil {
-		logger.Errorf("command server stopped with error: %s", err.Error())
+		switch val := val.(type) {
+		case error:
+			logger.Errorf("rabbitmq connect with error: %v", val)
+		case mq.ServerExit:
+			if val.Error != nil {
+				logger.Errorf("rabbitmq server exit with error: %v", val.Error)
+			} else {
+				logger.Info("rabbitmq server exit")
+			}
+			break loop
+		}
 	}
-
 	logger.Info("command server stopped")
 
 	// TODO 仅简单结束了程序

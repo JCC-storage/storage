@@ -26,7 +26,7 @@ func NewServer(svc Service, cfg *mymq.Config) (*Server, error) {
 		func(msg *mq.Message) (*mq.Message, error) {
 			return msgDispatcher.Handle(srv.service, msg)
 		},
-		cfg.RabbitMQParam,
+		cfg.Param,
 	)
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func (s *Server) Stop() {
 	s.rabbitSvr.Close()
 }
 
-func (s *Server) Start() *sync2.UnboundChannel[mq.RabbitMQLogEvent] {
+func (s *Server) Start() *sync2.UnboundChannel[mq.RabbitMQServerEvent] {
 	return s.rabbitSvr.Start()
 }
 
