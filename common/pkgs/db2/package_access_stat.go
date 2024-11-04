@@ -4,6 +4,8 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type PackageAccessStatDB struct {
@@ -41,10 +43,12 @@ func (*PackageAccessStatDB) BatchAddCounter(ctx SQLContext, entries []coormq.Add
 		return nil
 	}
 
-	sql := "INSERT INTO PackageAccessStat(PackageID, StorageID, Counter, Amount) " +
-		"VALUES(:PackageID, :StorageID, :Counter, 0) ON DUPLICATE KEY UPDATE Counter = Counter + VALUES(Counter)"
-
-	return ctx.Exec(sql, entries).Error
+	return ctx.Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "PackageID"}, {Name: "StorageID"}},
+		DoUpdates: clause.Assignments(map[string]any{
+			"Counter": gorm.Expr("Counter + values(Counter)"),
+		}),
+	}).Table("PackageAccessStat").Create(&entries).Error
 }
 
 func (*PackageAccessStatDB) BatchUpdateAmount(ctx SQLContext, pkgIDs []cdssdk.PackageID, historyWeight float64) error {

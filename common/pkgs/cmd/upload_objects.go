@@ -100,7 +100,7 @@ func (t *UploadObjects) Execute(ctx *UploadObjectsContext) (*UploadObjectsResult
 	}
 
 	if len(userStgs) == 0 {
-		return nil, fmt.Errorf("user no available nodes")
+		return nil, fmt.Errorf("user no available storages")
 	}
 
 	// 给上传节点的IPFS加锁

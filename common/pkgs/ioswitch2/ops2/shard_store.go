@@ -164,6 +164,7 @@ type ShardWriteNode struct {
 
 func (b *GraphNodeBuilder) NewShardWrite(stgID cdssdk.StorageID, fileHashStoreKey string) *ShardWriteNode {
 	node := &ShardWriteNode{
+		StorageID:        stgID,
 		FileHashStoreKey: fileHashStoreKey,
 	}
 	b.AddNode(node)
@@ -172,7 +173,7 @@ func (b *GraphNodeBuilder) NewShardWrite(stgID cdssdk.StorageID, fileHashStoreKe
 
 func (t *ShardWriteNode) SetInput(input *dag.Var) {
 	t.InputStreams().EnsureSize(1)
-	input.Connect(t, 0)
+	input.StreamTo(t, 0)
 	t.OutputValues().SetupNew(t, t.Graph().NewVar())
 }
 

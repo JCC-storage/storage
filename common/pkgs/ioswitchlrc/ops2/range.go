@@ -88,7 +88,7 @@ func (b *GraphNodeBuilder) NewRange() *RangeNode {
 
 func (t *RangeNode) RangeStream(input *dag.Var, rng exec.Range) *dag.Var {
 	t.InputStreams().EnsureSize(1)
-	input.Connect(t, 0)
+	input.StreamTo(t, 0)
 	t.Range = rng
 	output := t.Graph().NewVar()
 	t.OutputStreams().Setup(t, output, 0)

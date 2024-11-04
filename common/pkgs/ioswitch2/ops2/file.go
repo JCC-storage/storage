@@ -133,7 +133,7 @@ func (t *FileWriteNode) Input() dag.Slot {
 
 func (t *FileWriteNode) SetInput(str *dag.Var) {
 	t.InputStreams().EnsureSize(1)
-	str.Connect(t, 0)
+	str.StreamTo(t, 0)
 }
 
 func (t *FileWriteNode) GenerateOp() (exec.Op, error) {

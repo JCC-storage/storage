@@ -171,7 +171,7 @@ func (b *GraphNodeBuilder) NewShardWrite(fileHashStoreKey string) *ShardWriteNod
 
 func (t *ShardWriteNode) SetInput(input *dag.Var) {
 	t.InputStreams().EnsureSize(1)
-	input.Connect(t, 0)
+	input.StreamTo(t, 0)
 	t.OutputValues().SetupNew(t, t.Graph().NewVar())
 }
 

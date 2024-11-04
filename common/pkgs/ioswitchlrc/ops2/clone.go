@@ -83,7 +83,7 @@ func (b *GraphNodeBuilder) NewCloneStream() *CloneStreamType {
 
 func (t *CloneStreamType) SetInput(raw *dag.Var) {
 	t.InputStreams().EnsureSize(1)
-	raw.Connect(t, 0)
+	raw.StreamTo(t, 0)
 }
 
 func (t *CloneStreamType) NewOutput() *dag.Var {
@@ -117,7 +117,7 @@ func (b *GraphNodeBuilder) NewCloneValue() *CloneVarType {
 
 func (t *CloneVarType) SetInput(raw *dag.Var) {
 	t.InputValues().EnsureSize(1)
-	raw.Connect(t, 0)
+	raw.ValueTo(t, 0)
 }
 
 func (t *CloneVarType) NewOutput() *dag.Var {

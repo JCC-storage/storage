@@ -43,7 +43,7 @@ func (db *StorageDB) GetUserStorages(ctx SQLContext, userID cdssdk.UserID) ([]mo
 
 func (db *StorageDB) BatchGetAllStorageIDs(ctx SQLContext, start int, count int) ([]cdssdk.StorageID, error) {
 	var ret []cdssdk.StorageID
-	err := ctx.Table("Storage").Select("StorageID").Find(ret).Limit(count).Offset(start).Error
+	err := ctx.Table("Storage").Select("StorageID").Find(&ret).Limit(count).Offset(start).Error
 	return ret, err
 }
 
@@ -79,6 +79,6 @@ func (db *StorageDB) GetUserStorageByName(ctx SQLContext, userID cdssdk.UserID, 
 
 func (db *StorageDB) GetHubStorages(ctx SQLContext, hubID cdssdk.NodeID) ([]model.Storage, error) {
 	var stgs []model.Storage
-	err := ctx.Table("Storage").Select("Storage.*").Find(&stgs, "NodeID = ?", hubID).Error
+	err := ctx.Table("Storage").Select("Storage.*").Find(&stgs, "MasterHub = ?", hubID).Error
 	return stgs, err
 }

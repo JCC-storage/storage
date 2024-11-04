@@ -116,7 +116,7 @@ func (b *GraphNodeBuilder) NewChunkedSplit(chunkSize int) *ChunkedSplitNode {
 
 func (t *ChunkedSplitNode) Split(input *dag.Var, cnt int) {
 	t.InputStreams().EnsureSize(1)
-	input.Connect(t, 0)
+	input.StreamTo(t, 0)
 	t.OutputStreams().Resize(cnt)
 	for i := 0; i < cnt; i++ {
 		t.OutputStreams().Setup(t, t.Graph().NewVar(), i)
@@ -136,11 +136,11 @@ func (t *ChunkedSplitNode) Clear() {
 		return
 	}
 
-	t.InputStreams().Get(0).Disconnect(t, 0)
+	t.InputStreams().Get(0).StreamNotTo(t, 0)
 	t.InputStreams().Resize(0)
 
 	for _, out := range t.OutputStreams().RawArray() {
-		out.DisconnectAll()
+		out.NoInputAllStream()
 	}
 	t.OutputStreams().Resize(0)
 }
@@ -176,7 +176,7 @@ func (b *GraphNodeBuilder) NewChunkedJoin(chunkSize int) *ChunkedJoinNode {
 
 func (t *ChunkedJoinNode) AddInput(str *dag.Var) {
 	idx := t.InputStreams().EnlargeOne()
-	str.Connect(t, idx)
+	str.StreamTo(t, idx)
 }
 
 func (t *ChunkedJoinNode) Joined() *dag.Var {
@@ -185,7 +185,7 @@ func (t *ChunkedJoinNode) Joined() *dag.Var {
 
 func (t *ChunkedJoinNode) RemoveAllInputs() {
 	for i, in := range t.InputStreams().RawArray() {
-		in.Disconnect(t, i)
+		in.StreamNotTo(t, i)
 	}
 	t.InputStreams().Resize(0)
 }

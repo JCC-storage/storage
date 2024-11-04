@@ -72,6 +72,7 @@ func buildFromNode(ctx *GenerateContext, f ioswitchlrc.From) (ops2.FromNode, err
 			t.Open.WithNullableLength(blkRange.Offset, blkRange.Length)
 		}
 
+		// TODO2 支持HTTP协议
 		t.Env().ToEnvWorker(&ioswitchlrc.AgentWorker{Node: f.Node, Address: *f.Node.Address.(*cdssdk.GRPCAddressInfo)})
 		t.Env().Pinned = true
 
@@ -101,7 +102,17 @@ func buildToNode(ctx *GenerateContext, t ioswitchlrc.To) (ops2.ToNode, error) {
 	switch t := t.(type) {
 	case *ioswitchlrc.ToNode:
 		n := ctx.DAG.NewShardWrite(t.FileHashStoreKey)
-		n.Env().ToEnvWorker(&ioswitchlrc.AgentWorker{Node: t.Hub})
+		switch addr := t.Hub.Address.(type) {
+		// case *cdssdk.HttpAddressInfo:
+		// n.Env().ToEnvWorker(&ioswitchlrc.HttpHubWorker{Node: t.Hub})
+		// TODO2 支持HTTP协议
+		case *cdssdk.GRPCAddressInfo:
+			n.Env().ToEnvWorker(&ioswitchlrc.AgentWorker{Node: t.Hub, Address: *addr})
+
+		default:
+			return nil, fmt.Errorf("unsupported node address type %T", addr)
+		}
+
 		n.Env().Pinned = true
 
 		return n, nil
@@ -227,7 +238,7 @@ func generateRange(ctx *GenerateContext) {
 				Offset: toRng.Offset - ctx.StreamRange.Offset,
 				Length: toRng.Length,
 			})
-			toInput.Var.Disconnect(toNode, toInput.Index)
+			toInput.Var.StreamNotTo(toNode, toInput.Index)
 			toNode.SetInput(rnged)
 
 		} else {
@@ -243,7 +254,7 @@ func generateRange(ctx *GenerateContext) {
 				Offset: toRng.Offset - blkStart,
 				Length: toRng.Length,
 			})
-			toInput.Var.Disconnect(toNode, toInput.Index)
+			toInput.Var.StreamNotTo(toNode, toInput.Index)
 			toNode.SetInput(rnged)
 		}
 	}
@@ -260,7 +271,7 @@ func generateClone(ctx *GenerateContext) {
 			t := ctx.DAG.NewCloneStream()
 			*t.Env() = *node.Env()
 			for _, to := range out.To().RawArray() {
-				t.NewOutput().Connect(to.Node, to.SlotIndex)
+				t.NewOutput().StreamTo(to.Node, to.SlotIndex)
 			}
 			out.To().Resize(0)
 			t.SetInput(out)
@@ -274,7 +285,7 @@ func generateClone(ctx *GenerateContext) {
 			t := ctx.DAG.NewCloneValue()
 			*t.Env() = *node.Env()
 			for _, to := range out.To().RawArray() {
-				t.NewOutput().Connect(to.Node, to.SlotIndex)
+				t.NewOutput().ValueTo(to.Node, to.SlotIndex)
 			}
 			out.To().Resize(0)
 			t.SetInput(out)

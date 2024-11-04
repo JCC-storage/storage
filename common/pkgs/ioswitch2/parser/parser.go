@@ -282,7 +282,18 @@ func (p *DefaultParser) buildToNode(ctx *ParseContext, t ioswitch2.To) (ops2.ToN
 	switch t := t.(type) {
 	case *ioswitch2.ToShardStore:
 		n := ctx.DAG.NewShardWrite(t.Storage.StorageID, t.FileHashStoreKey)
-		n.Env().ToEnvWorker(&ioswitch2.AgentWorker{Node: t.Hub})
+
+		switch addr := t.Hub.Address.(type) {
+		case *cdssdk.HttpAddressInfo:
+			n.Env().ToEnvWorker(&ioswitch2.HttpHubWorker{Node: t.Hub})
+
+		case *cdssdk.GRPCAddressInfo:
+			n.Env().ToEnvWorker(&ioswitch2.AgentWorker{Node: t.Hub, Address: *addr})
+
+		default:
+			return nil, fmt.Errorf("unsupported node address type %T", addr)
+		}
+
 		n.Env().Pinned = true
 
 		return n, nil
@@ -404,9 +415,9 @@ func (p *DefaultParser) omitSplitJoin(ctx *ParseContext) bool {
 		// F->Split->Join->T 变换为：F->T
 		splitInput := splitNode.InputStreams().Get(0)
 		for _, to := range joinNode.Joined().To().RawArray() {
-			splitInput.Connect(to.Node, to.SlotIndex)
+			splitInput.StreamTo(to.Node, to.SlotIndex)
 		}
-		splitInput.Disconnect(splitNode, 0)
+		splitInput.StreamNotTo(splitNode, 0)
 
 		// 并删除这两个指令
 		ctx.DAG.RemoveNode(joinNode)
@@ -528,7 +539,7 @@ func (p *DefaultParser) generateRange(ctx *ParseContext) {
 				Offset: toRng.Offset - ctx.StreamRange.Offset,
 				Length: toRng.Length,
 			})
-			toInput.Var.Disconnect(toNode, toInput.Index)
+			toInput.Var.StreamNotTo(toNode, toInput.Index)
 			toNode.SetInput(rnged)
 
 		} else {
@@ -544,7 +555,7 @@ func (p *DefaultParser) generateRange(ctx *ParseContext) {
 				Offset: toRng.Offset - blkStart,
 				Length: toRng.Length,
 			})
-			toInput.Var.Disconnect(toNode, toInput.Index)
+			toInput.Var.StreamNotTo(toNode, toInput.Index)
 			toNode.SetInput(rnged)
 		}
 	}
@@ -561,7 +572,7 @@ func (p *DefaultParser) generateClone(ctx *ParseContext) {
 			c := ctx.DAG.NewCloneStream()
 			*c.Env() = *node.Env()
 			for _, to := range out.To().RawArray() {
-				c.NewOutput().Connect(to.Node, to.SlotIndex)
+				c.NewOutput().StreamTo(to.Node, to.SlotIndex)
 			}
 			out.To().Resize(0)
 			c.SetInput(out)
@@ -575,7 +586,7 @@ func (p *DefaultParser) generateClone(ctx *ParseContext) {
 			t := ctx.DAG.NewCloneValue()
 			*t.Env() = *node.Env()
 			for _, to := range out.To().RawArray() {
-				t.NewOutput().Connect(to.Node, to.SlotIndex)
+				t.NewOutput().ValueTo(to.Node, to.SlotIndex)
 			}
 			out.To().Resize(0)
 			t.SetInput(out)

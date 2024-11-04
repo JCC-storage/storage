@@ -1,5 +1,6 @@
 package ops2
 
+/*
 import (
 	"fmt"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/dag"
@@ -186,3 +187,4 @@ func (t MultipartUploadNode) GenerateOp() (exec.Op, error) {
 		PartSize:    t.PartSize,
 	}, nil
 }
+*/

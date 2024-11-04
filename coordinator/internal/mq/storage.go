@@ -51,6 +51,18 @@ func (svc *Service) GetStorageDetails(msg *coormq.GetStorageDetails) (*coormq.Ge
 		for _, hub := range masterHubs {
 			masterHubMap[hub.NodeID] = hub
 		}
+		for _, stg := range stgsMp {
+			if stg.Storage.MasterHub != 0 {
+				hub, ok := masterHubMap[stg.Storage.MasterHub]
+				if !ok {
+					logger.Warnf("master hub %v of storage %v not found, this storage will not be add to result", stg.Storage.MasterHub, stg.Storage)
+					delete(stgsMp, stg.Storage.StorageID)
+					continue
+				}
+
+				stg.MasterHub = &hub
+			}
+		}
 
 		// 获取分片存储
 		shards, err := svc.db2.ShardStorage().BatchGetByStorageIDs(tx, msg.StorageIDs)
@@ -58,14 +70,12 @@ func (svc *Service) GetStorageDetails(msg *coormq.GetStorageDetails) (*coormq.Ge
 			return fmt.Errorf("getting shard storage: %w", err)
 		}
 		for _, shard := range shards {
-			stgsMp[shard.StorageID].Shard = &shard
-		}
-
-		for _, stg := range stgsMp {
-			if stg.Shard != nil {
-				hub := masterHubMap[stg.MasterHub.NodeID]
-				stg.MasterHub = &hub
+			stg := stgsMp[shard.StorageID]
+			if stg == nil {
+				continue
 			}
+
+			stg.Shard = &shard
 		}
 
 		// 获取共享存储的相关信息
@@ -74,7 +84,12 @@ func (svc *Service) GetStorageDetails(msg *coormq.GetStorageDetails) (*coormq.Ge
 			return fmt.Errorf("getting shared storage: %w", err)
 		}
 		for _, shared := range shareds {
-			stgsMp[shared.StorageID].Shared = &shared
+			stg := stgsMp[shared.StorageID]
+			if stg == nil {
+				continue
+			}
+
+			stg.Shared = &shared
 		}
 
 		return nil
@@ -118,6 +133,18 @@ func (svc *Service) GetUserStorageDetails(msg *coormq.GetUserStorageDetails) (*c
 		for _, hub := range masterHubs {
 			masterHubMap[hub.NodeID] = hub
 		}
+		for _, stg := range stgsMp {
+			if stg.Storage.MasterHub != 0 {
+				hub, ok := masterHubMap[stg.Storage.MasterHub]
+				if !ok {
+					logger.Warnf("master hub %v of storage %v not found, this storage will not be add to result", stg.Storage.MasterHub, stg.Storage)
+					delete(stgsMp, stg.Storage.StorageID)
+					continue
+				}
+
+				stg.MasterHub = &hub
+			}
+		}
 
 		stgIDs := lo.Map(stgs, func(stg cdssdk.Storage, i int) cdssdk.StorageID { return stg.StorageID })
 
@@ -127,13 +154,12 @@ func (svc *Service) GetUserStorageDetails(msg *coormq.GetUserStorageDetails) (*c
 			return fmt.Errorf("getting shard storage: %w", err)
 		}
 		for _, shard := range shards {
-			stgsMp[shard.StorageID].Shard = &shard
-		}
-		for _, stg := range stgsMp {
-			if stg.Shard != nil {
-				hub := masterHubMap[stg.MasterHub.NodeID]
-				stg.MasterHub = &hub
+			stg := stgsMp[shard.StorageID]
+			if stg == nil {
+				continue
 			}
+
+			stg.Shard = &shard
 		}
 
 		// 获取共享存储的相关信息
@@ -142,7 +168,12 @@ func (svc *Service) GetUserStorageDetails(msg *coormq.GetUserStorageDetails) (*c
 			return fmt.Errorf("getting shared storage: %w", err)
 		}
 		for _, shared := range shareds {
-			stgsMp[shared.StorageID].Shared = &shared
+			stg := stgsMp[shared.StorageID]
+			if stg == nil {
+				continue
+			}
+
+			stg.Shared = &shared
 		}
 
 		return nil

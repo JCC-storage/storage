@@ -222,12 +222,12 @@ func (b *GraphNodeBuilder) NewECMultiply(ec cdssdk.ECRedundancy) *ECMultiplyNode
 func (t *ECMultiplyNode) AddInput(str *dag.Var, dataIndex int) {
 	t.InputIndexes = append(t.InputIndexes, dataIndex)
 	idx := t.InputStreams().EnlargeOne()
-	str.Connect(t, idx)
+	str.StreamTo(t, idx)
 }
 
 func (t *ECMultiplyNode) RemoveAllInputs() {
 	for i, in := range t.InputStreams().RawArray() {
-		in.Disconnect(t, i)
+		in.StreamNotTo(t, i)
 	}
 	t.InputStreams().Resize(0)
 	t.InputIndexes = nil

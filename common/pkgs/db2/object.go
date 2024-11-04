@@ -8,7 +8,6 @@ import (
 	"gitlink.org.cn/cloudream/common/utils/sort2"
 	"gorm.io/gorm/clause"
 
-	"github.com/samber/lo"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/model"
@@ -24,9 +23,9 @@ func (db *DB) Object() *ObjectDB {
 }
 
 func (db *ObjectDB) GetByID(ctx SQLContext, objectID cdssdk.ObjectID) (model.Object, error) {
-	var ret model.TempObject
+	var ret cdssdk.Object
 	err := ctx.Table("Object").Where("ObjectID = ?", objectID).First(&ret).Error
-	return ret.ToObject(), err
+	return ret, err
 }
 
 func (db *ObjectDB) BatchTestObjectID(ctx SQLContext, objectIDs []cdssdk.ObjectID) (map[cdssdk.ObjectID]bool, error) {
@@ -53,13 +52,13 @@ func (db *ObjectDB) BatchGet(ctx SQLContext, objectIDs []cdssdk.ObjectID) ([]mod
 		return nil, nil
 	}
 
-	var objs []model.TempObject
+	var objs []cdssdk.Object
 	err := ctx.Table("Object").Where("ObjectID IN ?", objectIDs).Order("ObjectID ASC").Find(&objs).Error
 	if err != nil {
 		return nil, err
 	}
 
-	return lo.Map(objs, func(o model.TempObject, idx int) cdssdk.Object { return o.ToObject() }), nil
+	return objs, nil
 }
 
 func (db *ObjectDB) BatchGetByPackagePath(ctx SQLContext, pkgID cdssdk.PackageID, pathes []string) ([]cdssdk.Object, error) {
@@ -67,13 +66,13 @@ func (db *ObjectDB) BatchGetByPackagePath(ctx SQLContext, pkgID cdssdk.PackageID
 		return nil, nil
 	}
 
-	var objs []model.TempObject
+	var objs []cdssdk.Object
 	err := ctx.Table("Object").Where("PackageID = ? AND Path IN ?", pkgID, pathes).Find(&objs).Error
 	if err != nil {
 		return nil, err
 	}
 
-	return lo.Map(objs, func(o model.TempObject, idx int) cdssdk.Object { return o.ToObject() }), nil
+	return objs, nil
 }
 
 func (db *ObjectDB) Create(ctx SQLContext, obj cdssdk.Object) (cdssdk.ObjectID, error) {
@@ -233,13 +232,13 @@ func (db *ObjectDB) BatchAdd(ctx SQLContext, packageID cdssdk.PackageID, adds []
 
 	// 创建 Cache
 	caches := make([]model.Cache, len(adds))
-	for _, add := range adds {
-		caches = append(caches, model.Cache{
+	for i, add := range adds {
+		caches[i] = model.Cache{
 			FileHash:   add.FileHash,
 			StorageID:  add.StorageID,
 			CreateTime: time.Now(),
 			Priority:   0,
-		})
+		}
 	}
 	if err := ctx.Table("Cache").Create(&caches).Error; err != nil {
 		return nil, fmt.Errorf("batch create caches: %w", err)
@@ -335,9 +334,9 @@ func (db *ObjectDB) BatchDelete(ctx SQLContext, ids []cdssdk.ObjectID) error {
 		return nil
 	}
 
-	return ctx.Table("Object").Where("ObjectID IN ?", ids).Delete(&model.TempObject{}).Error
+	return ctx.Table("Object").Where("ObjectID IN ?", ids).Delete(&cdssdk.Object{}).Error
 }
 
 func (db *ObjectDB) DeleteInPackage(ctx SQLContext, packageID cdssdk.PackageID) error {
-	return ctx.Table("Object").Where("PackageID = ?", packageID).Delete(&model.TempObject{}).Error
+	return ctx.Table("Object").Where("PackageID = ?", packageID).Delete(&cdssdk.Object{}).Error
 }

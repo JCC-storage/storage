@@ -91,22 +91,22 @@ func (db *BucketDB) Create(ctx SQLContext, userID cdssdk.UserID, bucketName stri
 		Where("UserBucket.UserID = ? AND Bucket.Name = ?", userID, bucketName).
 		Scan(&bucketID).Error
 
-	if err == nil {
-		return 0, fmt.Errorf("bucket name exists")
-	}
-
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
+	if err != nil {
 		return 0, err
 	}
 
+	if bucketID > 0 {
+		return 0, fmt.Errorf("bucket name exists")
+	}
+
 	newBucket := cdssdk.Bucket{Name: bucketName, CreatorID: userID}
-	if err := ctx.Create(&newBucket).Error; err != nil {
+	if err := ctx.Table("Bucket").Create(&newBucket).Error; err != nil {
 		return 0, fmt.Errorf("insert bucket failed, err: %w", err)
 	}
 
-	err = ctx.Exec("insert into UserBucket(UserID,BucketID) values(?,?)", userID, bucketID).Error
-	if err := ctx.Create(&newBucket).Error; err != nil {
-		return 0, fmt.Errorf("insert bucket failed, err: %w", err)
+	err = ctx.Table("UserBucket").Create(&model.UserBucket{UserID: userID, BucketID: newBucket.BucketID}).Error
+	if err != nil {
+		return 0, fmt.Errorf("insert user bucket: %w", err)
 	}
 
 	return newBucket.BucketID, nil

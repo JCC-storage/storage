@@ -131,12 +131,12 @@ func (b *GraphNodeBuilder) NewLRCConstructAny(lrc cdssdk.LRCRedundancy) *LRCCons
 func (t *LRCConstructAnyNode) AddInput(str *dag.Var, dataIndex int) {
 	t.InputIndexes = append(t.InputIndexes, dataIndex)
 	idx := t.InputStreams().EnlargeOne()
-	str.Connect(t, idx)
+	str.StreamTo(t, idx)
 }
 
 func (t *LRCConstructAnyNode) RemoveAllInputs() {
 	for i, in := range t.InputStreams().RawArray() {
-		in.Disconnect(t, i)
+		in.StreamNotTo(t, i)
 	}
 	t.InputStreams().Resize(0)
 	t.InputIndexes = nil
@@ -191,7 +191,7 @@ func (t *LRCConstructGroupNode) SetupForTarget(blockIdx int, inputs []*dag.Var) 
 	t.InputStreams().Resize(0)
 	for _, in := range inputs {
 		idx := t.InputStreams().EnlargeOne()
-		in.Connect(t, idx)
+		in.StreamTo(t, idx)
 	}
 
 	output := t.Graph().NewVar()

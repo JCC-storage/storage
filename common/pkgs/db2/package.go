@@ -116,21 +116,21 @@ func (db *PackageDB) Create(ctx SQLContext, bucketID cdssdk.BucketID, name strin
 	err := ctx.Table("Package").
 		Select("PackageID").
 		Where("Name = ? AND BucketID = ?", name, bucketID).
-		First(&packageID).Error
+		Scan(&packageID).Error
 
-	if err == nil {
-		return 0, fmt.Errorf("package with given Name and BucketID already exists")
+	if err != nil {
+		return 0, err
 	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return 0, fmt.Errorf("query Package by PackageName and BucketID failed, err: %w", err)
+	if packageID != 0 {
+		return 0, errors.New("package already exists")
 	}
 
-	newPackage := model.Package{Name: name, BucketID: bucketID, State: cdssdk.PackageStateNormal}
+	newPackage := cdssdk.Package{Name: name, BucketID: bucketID, State: cdssdk.PackageStateNormal}
 	if err := ctx.Create(&newPackage).Error; err != nil {
 		return 0, fmt.Errorf("insert package failed, err: %w", err)
 	}
 
-	return cdssdk.PackageID(newPackage.PackageID), nil
+	return newPackage.PackageID, nil
 }
 
 // SoftDelete 设置一个对象被删除，并将相关数据删除

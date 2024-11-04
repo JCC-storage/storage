@@ -18,7 +18,7 @@ import (
 func init() {
 	var nodeID int64
 	cmd := &cobra.Command{
-		Use:   "put",
+		Use:   "put [local] [remote]",
 		Short: "Upload files to CDS",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if err := cobra.ExactArgs(2)(cmd, args); err != nil {
