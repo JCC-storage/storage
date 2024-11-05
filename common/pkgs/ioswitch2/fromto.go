@@ -68,6 +68,7 @@ func NewFromShardstore(fileHash cdssdk.FileHash, hub cdssdk.Node, storage cdssdk
 	return &FromShardstore{
 		FileHash:  fileHash,
 		Hub:       hub,
+		Storage:   storage,
 		DataIndex: dataIndex,
 	}
 }

@@ -2,10 +2,8 @@ package db2
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
-	"gitlink.org.cn/cloudream/common/utils/sort2"
 	"gorm.io/gorm/clause"
 
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
@@ -81,6 +79,15 @@ func (db *ObjectDB) Create(ctx SQLContext, obj cdssdk.Object) (cdssdk.ObjectID, 
 		return 0, fmt.Errorf("insert object failed, err: %w", err)
 	}
 	return obj.ObjectID, nil
+}
+
+// 批量创建对象，创建完成后会填充ObjectID。
+func (db *ObjectDB) BatchCreate(ctx SQLContext, objs *[]cdssdk.Object) error {
+	if len(*objs) == 0 {
+		return nil
+	}
+
+	return ctx.Table("Object").Create(objs).Error
 }
 
 func (db *ObjectDB) BatchUpsertByPackagePath(ctx SQLContext, objs []cdssdk.Object) error {
@@ -165,68 +172,98 @@ func (db *ObjectDB) BatchAdd(ctx SQLContext, packageID cdssdk.PackageID, adds []
 		return nil, nil
 	}
 
-	objs := make([]cdssdk.Object, 0, len(adds))
-	for _, add := range adds {
-		objs = append(objs, cdssdk.Object{
-			PackageID:  packageID,
-			Path:       add.Path,
-			Size:       add.Size,
-			FileHash:   add.FileHash,
-			Redundancy: cdssdk.NewNoneRedundancy(), // 首次上传默认使用不分块的none模式
-			CreateTime: add.UploadTime,
-			UpdateTime: add.UploadTime,
-		})
-	}
-
-	err := db.BatchUpsertByPackagePath(ctx, objs)
-	if err != nil {
-		return nil, fmt.Errorf("batch create or update objects: %w", err)
-	}
-
 	// 收集所有路径
 	pathes := make([]string, 0, len(adds))
 	for _, add := range adds {
 		pathes = append(pathes, add.Path)
 	}
 
-	// 批量获取对象
-	addedObjs := []cdssdk.Object{}
-	err = ctx.Table("Object").Where("PackageID = ? AND Path IN ?", packageID, pathes).Find(&addedObjs).Error
+	// 先查询要更新的对象，不存在也没关系
+	existsObjs, err := db.BatchGetByPackagePath(ctx, packageID, pathes)
 	if err != nil {
-		return nil, fmt.Errorf("batch get object ids: %w", err)
+		return nil, fmt.Errorf("batch get object by path: %w", err)
 	}
 
-	// 对添加的对象和获取的对象进行排序
-	adds = sort2.Sort(adds, func(l, r coormq.AddObjectEntry) int { return strings.Compare(l.Path, r.Path) })
-	addedObjs = sort2.Sort(addedObjs, func(l, r cdssdk.Object) int { return strings.Compare(l.Path, r.Path) })
-
-	// 收集对象 ID
-	addedObjIDs := make([]cdssdk.ObjectID, len(addedObjs))
-	for i := range addedObjs {
-		addedObjIDs[i] = addedObjs[i].ObjectID
+	existsObjsMap := make(map[string]cdssdk.Object)
+	for _, obj := range existsObjs {
+		existsObjsMap[obj.Path] = obj
 	}
 
-	// 批量删除 ObjectBlock
-	if err := ctx.Table("ObjectBlock").Where("ObjectID IN ?", addedObjIDs).Delete(&stgmod.ObjectBlock{}).Error; err != nil {
-		return nil, fmt.Errorf("batch delete object blocks: %w", err)
+	var updatingObjs []cdssdk.Object
+	var addingObjs []cdssdk.Object
+	for i := range adds {
+		o := cdssdk.Object{
+			PackageID:  packageID,
+			Path:       adds[i].Path,
+			Size:       adds[i].Size,
+			FileHash:   adds[i].FileHash,
+			Redundancy: cdssdk.NewNoneRedundancy(), // 首次上传默认使用不分块的none模式
+			CreateTime: adds[i].UploadTime,
+			UpdateTime: adds[i].UploadTime,
+		}
+
+		e, ok := existsObjsMap[adds[i].Path]
+		if ok {
+			o.ObjectID = e.ObjectID
+			o.CreateTime = e.CreateTime
+			updatingObjs = append(updatingObjs, o)
+
+		} else {
+			addingObjs = append(addingObjs, o)
+		}
 	}
 
-	// 批量删除 PinnedObject
-	if err := ctx.Table("PinnedObject").Where("ObjectID IN ?", addedObjIDs).Delete(&cdssdk.PinnedObject{}).Error; err != nil {
-		return nil, fmt.Errorf("batch delete pinned objects: %w", err)
+	// 先进行更新
+	err = db.BatchUpert(ctx, updatingObjs)
+	if err != nil {
+		return nil, fmt.Errorf("batch update objects: %w", err)
+	}
+
+	// 再执行插入，Create函数插入后会填充ObjectID
+	err = db.BatchCreate(ctx, &addingObjs)
+	if err != nil {
+		return nil, fmt.Errorf("batch create objects: %w", err)
+	}
+
+	// 按照add参数的顺序返回结果
+	affectedObjsMp := make(map[string]cdssdk.Object)
+	for _, o := range updatingObjs {
+		affectedObjsMp[o.Path] = o
+	}
+	for _, o := range addingObjs {
+		affectedObjsMp[o.Path] = o
+	}
+	affectedObjs := make([]cdssdk.Object, 0, len(affectedObjsMp))
+	affectedObjIDs := make([]cdssdk.ObjectID, 0, len(affectedObjsMp))
+	for i := range adds {
+		obj := affectedObjsMp[adds[i].Path]
+		affectedObjs = append(affectedObjs, obj)
+		affectedObjIDs = append(affectedObjIDs, obj.ObjectID)
+	}
+
+	if len(affectedObjIDs) > 0 {
+		// 批量删除 ObjectBlock
+		if err := ctx.Table("ObjectBlock").Where("ObjectID IN ?", affectedObjIDs).Delete(&stgmod.ObjectBlock{}).Error; err != nil {
+			return nil, fmt.Errorf("batch delete object blocks: %w", err)
+		}
+
+		// 批量删除 PinnedObject
+		if err := ctx.Table("PinnedObject").Where("ObjectID IN ?", affectedObjIDs).Delete(&cdssdk.PinnedObject{}).Error; err != nil {
+			return nil, fmt.Errorf("batch delete pinned objects: %w", err)
+		}
 	}
 
 	// 创建 ObjectBlock
 	objBlocks := make([]stgmod.ObjectBlock, len(adds))
 	for i, add := range adds {
 		objBlocks[i] = stgmod.ObjectBlock{
-			ObjectID:  addedObjIDs[i],
+			ObjectID:  affectedObjIDs[i],
 			Index:     0,
 			StorageID: add.StorageID,
 			FileHash:  add.FileHash,
 		}
 	}
-	if err := ctx.Table("ObjectBlock").Create(&objBlocks).Error; err != nil {
+	if err := db.ObjectBlock().BatchCreate(ctx, objBlocks); err != nil {
 		return nil, fmt.Errorf("batch create object blocks: %w", err)
 	}
 
@@ -240,11 +277,11 @@ func (db *ObjectDB) BatchAdd(ctx SQLContext, packageID cdssdk.PackageID, adds []
 			Priority:   0,
 		}
 	}
-	if err := ctx.Table("Cache").Create(&caches).Error; err != nil {
+	if err := db.Cache().BatchCreate(ctx, caches); err != nil {
 		return nil, fmt.Errorf("batch create caches: %w", err)
 	}
 
-	return addedObjs, nil
+	return affectedObjs, nil
 }
 
 func (db *ObjectDB) BatchUpdateRedundancy(ctx SQLContext, objs []coormq.UpdatingObjectRedundancy) error {

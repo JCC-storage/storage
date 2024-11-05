@@ -6,6 +6,7 @@ import (
 
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
+	"gorm.io/gorm/clause"
 )
 
 type ObjectBlockDB struct {
@@ -42,7 +43,7 @@ func (db *ObjectBlockDB) BatchCreate(ctx SQLContext, blocks []stgmod.ObjectBlock
 		return nil
 	}
 
-	return ctx.Table("ObjectBlock").Create(&blocks).Error
+	return ctx.Clauses(clause.Insert{Modifier: "ignore"}).Create(&blocks).Error
 }
 
 func (db *ObjectBlockDB) DeleteByObjectID(ctx SQLContext, objectID cdssdk.ObjectID) error {

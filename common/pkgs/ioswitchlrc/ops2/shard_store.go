@@ -36,7 +36,7 @@ type ShardRead struct {
 
 func (o *ShardRead) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 	logger.
-		WithField("Open", o.Open).
+		WithField("Open", o.Open.String()).
 		Debugf("reading from shard store")
 	defer logger.Debugf("reading from shard store finished")
 

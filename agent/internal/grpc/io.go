@@ -20,8 +20,8 @@ func (s *Service) ExecuteIOPlan(ctx context.Context, req *agtrpc.ExecuteIOPlanRe
 		return nil, fmt.Errorf("deserializing plan: %w", err)
 	}
 
-	logger.WithField("PlanID", plan.ID).Infof("begin execute io plan")
-	defer logger.WithField("PlanID", plan.ID).Infof("plan finished")
+	log := logger.WithField("PlanID", plan.ID)
+	log.Infof("begin execute io plan")
 
 	sw := exec.NewExecutor(plan)
 
@@ -32,9 +32,11 @@ func (s *Service) ExecuteIOPlan(ctx context.Context, req *agtrpc.ExecuteIOPlanRe
 	exec.SetValueByType(execCtx, s.stgMgr)
 	_, err = sw.Run(execCtx)
 	if err != nil {
+		log.Warnf("running io plan: %v", err)
 		return nil, fmt.Errorf("running io plan: %w", err)
 	}
 
+	log.Infof("plan finished")
 	return &agtrpc.ExecuteIOPlanResp{}, nil
 }
 

@@ -75,7 +75,7 @@ func (s *ShardStore) Open(opt types.OpenOption) (io.ReadCloser, error) {
 		return nil, fmt.Errorf("invalid file name")
 	}
 
-	filePath := filepath.Join(s.cfg.Root, BlocksDir, fileName)
+	filePath := filepath.Join(s.cfg.Root, BlocksDir, fileName[:2], fileName)
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -117,7 +117,7 @@ func (s *ShardStore) ListAll() ([]types.FileInfo, error) {
 		// TODO 简单检查一下文件名是否合法
 
 		infos = append(infos, types.FileInfo{
-			Hash:        cdssdk.FileHash(info.Name()),
+			Hash:        cdssdk.FileHash(filepath.Base(info.Name())),
 			Size:        info.Size(),
 			Description: filepath.Join(blockDir, path),
 		})
@@ -193,5 +193,5 @@ func (s *ShardStore) removeTempFile(path string) {
 }
 
 func (s *ShardStore) getLogger() logger.Logger {
-	return logger.WithField("Svc", SvcName).WithField("Storage", s.stg)
+	return logger.WithField("S", SvcName).WithField("Storage", s.stg.String())
 }
