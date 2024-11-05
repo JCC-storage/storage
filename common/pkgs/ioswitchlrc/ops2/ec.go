@@ -42,7 +42,7 @@ func (o *GalMultiply) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 	outputVars := make([]*exec.StreamValue, len(o.Outputs))
 	for i := range o.Outputs {
 		rd, wr := io.Pipe()
-		outputVars[i].Stream = rd
+		outputVars[i] = &exec.StreamValue{Stream: rd}
 		outputWrs[i] = wr
 	}
 

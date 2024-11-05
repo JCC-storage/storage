@@ -90,22 +90,30 @@ func (db *ObjectDB) BatchCreate(ctx SQLContext, objs *[]cdssdk.Object) error {
 	return ctx.Table("Object").Create(objs).Error
 }
 
-func (db *ObjectDB) BatchUpsertByPackagePath(ctx SQLContext, objs []cdssdk.Object) error {
+// 批量更新对象所有属性，objs中的对象必须包含ObjectID
+func (db *ObjectDB) BatchUpdate(ctx SQLContext, objs []cdssdk.Object) error {
 	if len(objs) == 0 {
 		return nil
 	}
 
-	// 使用 GORM 的 Save 方法，插入或更新对象
-	return ctx.Table("Object").Save(&objs).Error
+	return ctx.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "ObjectID"}},
+		UpdateAll: true,
+	}).Create(objs).Error
 }
 
-func (db *ObjectDB) BatchUpert(ctx SQLContext, objs []cdssdk.Object) error {
+// 批量更新对象指定属性，objs中的对象只需设置需要更新的属性即可，但：
+//  1. 必须包含ObjectID
+//  2. 日期类型属性不能设置为0值
+func (db *ObjectDB) BatchUpdateColumns(ctx SQLContext, objs []cdssdk.Object, columns []string) error {
 	if len(objs) == 0 {
 		return nil
 	}
 
-	// 直接更新或插入
-	return ctx.Table("Object").Save(&objs).Error
+	return ctx.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "ObjectID"}},
+		DoUpdates: clause.AssignmentColumns(columns),
+	}).Create(objs).Error
 }
 
 func (db *ObjectDB) GetPackageObjects(ctx SQLContext, packageID cdssdk.PackageID) ([]model.Object, error) {
@@ -214,7 +222,7 @@ func (db *ObjectDB) BatchAdd(ctx SQLContext, packageID cdssdk.PackageID, adds []
 	}
 
 	// 先进行更新
-	err = db.BatchUpert(ctx, updatingObjs)
+	err = db.BatchUpdate(ctx, updatingObjs)
 	if err != nil {
 		return nil, fmt.Errorf("batch update objects: %w", err)
 	}
@@ -297,16 +305,12 @@ func (db *ObjectDB) BatchUpdateRedundancy(ctx SQLContext, objs []coormq.Updating
 		dummyObjs = append(dummyObjs, cdssdk.Object{
 			ObjectID:   obj.ObjectID,
 			Redundancy: obj.Redundancy,
-			CreateTime: nowTime,
+			CreateTime: nowTime, // 实际不会更新，只因为不能是0值
 			UpdateTime: nowTime,
 		})
 	}
 
-	// 目前只能使用这种方式来同时更新大量数据
-	err := ctx.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "ObjectID"}},
-		DoUpdates: clause.AssignmentColumns([]string{"Redundancy", "UpdateTime"})},
-	).Create(&dummyObjs).Error
+	err := db.Object().BatchUpdateColumns(ctx, dummyObjs, []string{"Redundancy", "UpdateTime"})
 	if err != nil {
 		return fmt.Errorf("batch update object redundancy: %w", err)
 	}
@@ -338,7 +342,7 @@ func (db *ObjectDB) BatchUpdateRedundancy(ctx SQLContext, objs []coormq.Updating
 			caches = append(caches, model.Cache{
 				FileHash:   blk.FileHash,
 				StorageID:  blk.StorageID,
-				CreateTime: time.Now(),
+				CreateTime: nowTime,
 				Priority:   0,
 			})
 		}
@@ -354,7 +358,7 @@ func (db *ObjectDB) BatchUpdateRedundancy(ctx SQLContext, objs []coormq.Updating
 			pinneds = append(pinneds, cdssdk.PinnedObject{
 				ObjectID:   obj.ObjectID,
 				StorageID:  p,
-				CreateTime: time.Now(),
+				CreateTime: nowTime,
 			})
 		}
 	}

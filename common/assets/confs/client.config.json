@@ -21,7 +21,6 @@
             "retryInterval": 5000
         }
     },
-    "ipfs": null,
     "distlock": {
         "etcdAddress": "127.0.0.1:2379",
         "etcdUsername": "",
@@ -37,5 +36,6 @@
         "maxStripCacheCount": 100,
         "highLatencyNode": 35,
         "ecStripPrefetchCount": 1
-    }
+    },
+    "storageID": 0
 }

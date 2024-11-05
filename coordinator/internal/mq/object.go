@@ -167,7 +167,7 @@ func (svc *Service) UpdateObjectInfos(msg *coormq.UpdateObjectInfos) (*coormq.Up
 			avaiUpdatings[i].ApplyTo(&newObjs[i])
 		}
 
-		err = svc.db2.Object().BatchUpsertByPackagePath(tx, newObjs)
+		err = svc.db2.Object().BatchUpdate(tx, newObjs)
 		if err != nil {
 			return fmt.Errorf("batch create or update: %w", err)
 		}
@@ -226,6 +226,7 @@ func (svc *Service) MoveObjects(msg *coormq.MoveObjects) (*coormq.MoveObjectsRes
 			oldObjIDs[i] = obj.ObjectID
 		}
 
+		// 找出仍在数据库的Object
 		avaiMovings, notExistsObjs := pickByObjectIDs(msg.Movings, oldObjIDs, func(obj cdsapi.MovingObject) cdssdk.ObjectID { return obj.ObjectID })
 		if len(notExistsObjs) > 0 {
 			// TODO 部分对象已经不存在
@@ -248,20 +249,20 @@ func (svc *Service) MoveObjects(msg *coormq.MoveObjects) (*coormq.MoveObjectsRes
 
 		var newObjs []cdssdk.Object
 		// 对于PackageID发生变化的对象，需要检查目标Package内是否存在同Path的对象
-		ensuredObjs, err := svc.ensurePackageChangedObjects(tx, msg.UserID, pkgIDChangedObjs)
+		checkedObjs, err := svc.checkPackageChangedObjects(tx, msg.UserID, pkgIDChangedObjs)
 		if err != nil {
 			return err
 		}
-		newObjs = append(newObjs, ensuredObjs...)
+		newObjs = append(newObjs, checkedObjs...)
 
 		// 对于只有Path发生变化的对象，则检查同Package内有没有同Path的对象
-		ensuredObjs, err = svc.ensurePathChangedObjects(tx, msg.UserID, pathChangedObjs)
+		checkedObjs, err = svc.checkPathChangedObjects(tx, msg.UserID, pathChangedObjs)
 		if err != nil {
 			return err
 		}
-		newObjs = append(newObjs, ensuredObjs...)
+		newObjs = append(newObjs, checkedObjs...)
 
-		err = svc.db2.Object().BatchUpert(tx, newObjs)
+		err = svc.db2.Object().BatchUpdate(tx, newObjs)
 		if err != nil {
 			return fmt.Errorf("batch create or update: %w", err)
 		}
@@ -277,7 +278,7 @@ func (svc *Service) MoveObjects(msg *coormq.MoveObjects) (*coormq.MoveObjectsRes
 	return mq.ReplyOK(coormq.RespMoveObjects(sucs))
 }
 
-func (svc *Service) ensurePackageChangedObjects(tx db2.SQLContext, userID cdssdk.UserID, objs []cdssdk.Object) ([]cdssdk.Object, error) {
+func (svc *Service) checkPackageChangedObjects(tx db2.SQLContext, userID cdssdk.UserID, objs []cdssdk.Object) ([]cdssdk.Object, error) {
 	if len(objs) == 0 {
 		return nil, nil
 	}
@@ -338,7 +339,7 @@ func (svc *Service) ensurePackageChangedObjects(tx db2.SQLContext, userID cdssdk
 	return willUpdateObjs, nil
 }
 
-func (svc *Service) ensurePathChangedObjects(tx db2.SQLContext, userID cdssdk.UserID, objs []cdssdk.Object) ([]cdssdk.Object, error) {
+func (svc *Service) checkPathChangedObjects(tx db2.SQLContext, userID cdssdk.UserID, objs []cdssdk.Object) ([]cdssdk.Object, error) {
 	if len(objs) == 0 {
 		return nil, nil
 	}

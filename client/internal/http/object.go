@@ -12,7 +12,7 @@ import (
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
-	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
+	"gitlink.org.cn/cloudream/storage/client/internal/config"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 )
 
@@ -125,8 +125,8 @@ func (s *ObjectService) Download(ctx *gin.Context) {
 	}
 
 	// TODO 当client不在某个代理节点上时如何处理？
-	if stgglb.Local.NodeID != nil {
-		s.svc.AccessStat.AddAccessCounter(file.Object.ObjectID, file.Object.PackageID, *stgglb.Local.NodeID, float64(n)/float64(file.Object.Size))
+	if config.Cfg().StorageID > 0 {
+		s.svc.AccessStat.AddAccessCounter(file.Object.ObjectID, file.Object.PackageID, config.Cfg().StorageID, float64(n)/float64(file.Object.Size))
 	}
 }
 

@@ -26,14 +26,14 @@ func NewAccessStat(cfg Config) *AccessStat {
 	}
 }
 
-func (p *AccessStat) AddAccessCounter(objID cdssdk.ObjectID, pkgID cdssdk.PackageID, nodeID cdssdk.NodeID, value float64) {
+func (p *AccessStat) AddAccessCounter(objID cdssdk.ObjectID, pkgID cdssdk.PackageID, stgID cdssdk.StorageID, value float64) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
 	p.stats = append(p.stats, coormq.AddAccessStatEntry{
 		ObjectID:  objID,
 		PackageID: pkgID,
-		NodeID:    nodeID,
+		StorageID: stgID,
 		Counter:   value,
 	})
 }

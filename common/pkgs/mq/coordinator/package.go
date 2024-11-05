@@ -166,8 +166,8 @@ var _ = Register(Service.DeletePackage)
 
 type DeletePackage struct {
 	mq.MessageBodyBase
-	UserID    cdssdk.UserID    `db:"userID"`
-	PackageID cdssdk.PackageID `db:"packageID"`
+	UserID    cdssdk.UserID    `json:"userID"`
+	PackageID cdssdk.PackageID `json:"packageID"`
 }
 type DeletePackageResp struct {
 	mq.MessageBodyBase

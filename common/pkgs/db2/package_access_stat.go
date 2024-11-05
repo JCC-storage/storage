@@ -43,12 +43,21 @@ func (*PackageAccessStatDB) BatchAddCounter(ctx SQLContext, entries []coormq.Add
 		return nil
 	}
 
+	accs := make([]stgmod.PackageAccessStat, len(entries))
+	for i, e := range entries {
+		accs[i] = stgmod.PackageAccessStat{
+			PackageID: e.PackageID,
+			StorageID: e.StorageID,
+			Counter:   e.Counter,
+		}
+	}
+
 	return ctx.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "PackageID"}, {Name: "StorageID"}},
 		DoUpdates: clause.Assignments(map[string]any{
 			"Counter": gorm.Expr("Counter + values(Counter)"),
 		}),
-	}).Table("PackageAccessStat").Create(&entries).Error
+	}).Table("PackageAccessStat").Create(&accs).Error
 }
 
 func (*PackageAccessStatDB) BatchUpdateAmount(ctx SQLContext, pkgIDs []cdssdk.PackageID, historyWeight float64) error {

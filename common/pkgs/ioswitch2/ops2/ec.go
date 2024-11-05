@@ -132,7 +132,7 @@ func (o *ECMultiply) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 
 	for i := range o.Outputs {
 		rd, wr := io.Pipe()
-		outputVars[i].Stream = rd
+		outputVars[i] = &exec.StreamValue{Stream: rd}
 		outputWrs[i] = wr
 	}
 

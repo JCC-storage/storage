@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
@@ -23,8 +24,9 @@ const (
 )
 
 type ShardStore struct {
-	stg cdssdk.Storage
-	cfg cdssdk.LocalShardStorage
+	stg  cdssdk.Storage
+	cfg  cdssdk.LocalShardStorage
+	lock sync.Mutex
 }
 
 func NewShardStore(stg cdssdk.Storage, cfg cdssdk.LocalShardStorage) (*ShardStore, error) {
@@ -48,6 +50,9 @@ func (s *ShardStore) Stop() {
 }
 
 func (s *ShardStore) New() types.ShardWriter {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	tmpDir := filepath.Join(s.cfg.Root, TempDir)
 
 	err := os.MkdirAll(tmpDir, 0755)
@@ -70,6 +75,9 @@ func (s *ShardStore) New() types.ShardWriter {
 
 // 使用F函数创建Option对象
 func (s *ShardStore) Open(opt types.OpenOption) (io.ReadCloser, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	fileName := string(opt.FileHash)
 	if len(fileName) < 2 {
 		return nil, fmt.Errorf("invalid file name")
@@ -97,6 +105,9 @@ func (s *ShardStore) Open(opt types.OpenOption) (io.ReadCloser, error) {
 }
 
 func (s *ShardStore) ListAll() ([]types.FileInfo, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	var infos []types.FileInfo
 
 	blockDir := filepath.Join(s.cfg.Root, BlocksDir)
@@ -109,11 +120,10 @@ func (s *ShardStore) ListAll() ([]types.FileInfo, error) {
 			return nil
 		}
 
-		info, ok := d.(fs.FileInfo)
-		if !ok {
-			return nil
+		info, err := d.Info()
+		if err != nil {
+			return err
 		}
-
 		// TODO 简单检查一下文件名是否合法
 
 		infos = append(infos, types.FileInfo{
@@ -131,6 +141,11 @@ func (s *ShardStore) ListAll() ([]types.FileInfo, error) {
 }
 
 func (s *ShardStore) Purge(removes []cdssdk.FileHash) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	cnt := 0
+
 	for _, hash := range removes {
 		fileName := string(hash)
 
@@ -138,8 +153,12 @@ func (s *ShardStore) Purge(removes []cdssdk.FileHash) error {
 		err := os.Remove(path)
 		if err != nil {
 			s.getLogger().Warnf("remove file %v: %v", path, err)
+		} else {
+			cnt++
 		}
 	}
+
+	s.getLogger().Infof("purge %d files", cnt)
 
 	// TODO 无法保证原子性，所以删除失败只打日志
 	return nil
@@ -153,11 +172,17 @@ func (s *ShardStore) Stats() types.Stats {
 }
 
 func (s *ShardStore) onWritterAbort(w *ShardWriter) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	s.getLogger().Debugf("writting file %v aborted", w.path)
 	s.removeTempFile(w.path)
 }
 
 func (s *ShardStore) onWritterFinish(w *ShardWriter, hash cdssdk.FileHash) (types.FileInfo, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	log := s.getLogger()
 
 	log.Debugf("write file %v finished, size: %v, hash: %v", w.path, w.size, hash)
@@ -170,12 +195,20 @@ func (s *ShardStore) onWritterFinish(w *ShardWriter, hash cdssdk.FileHash) (type
 		return types.FileInfo{}, fmt.Errorf("making block dir: %w", err)
 	}
 
-	name := filepath.Join(blockDir, string(hash))
-	err = os.Rename(w.path, name)
-	if err != nil {
+	newPath := filepath.Join(blockDir, string(hash))
+	_, err = os.Stat(newPath)
+	if os.IsNotExist(err) {
+		err = os.Rename(w.path, newPath)
+		if err != nil {
+			s.removeTempFile(w.path)
+			log.Warnf("rename %v to %v: %v", w.path, newPath, err)
+			return types.FileInfo{}, fmt.Errorf("rename file: %w", err)
+		}
+
+	} else if err != nil {
 		s.removeTempFile(w.path)
-		log.Warnf("rename %v to %v: %v", w.path, name, err)
-		return types.FileInfo{}, fmt.Errorf("rename file: %w", err)
+		log.Warnf("get file %v stat: %v", newPath, err)
+		return types.FileInfo{}, fmt.Errorf("get file stat: %w", err)
 	}
 
 	return types.FileInfo{

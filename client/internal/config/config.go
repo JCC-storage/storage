@@ -3,6 +3,7 @@ package config
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/distlock"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
+	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/config"
 	stgmodels "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
@@ -19,6 +20,7 @@ type Config struct {
 	DistLock     distlock.Config            `json:"distlock"`
 	Connectivity connectivity.Config        `json:"connectivity"`
 	Downloader   downloader.Config          `json:"downloader"`
+	StorageID    cdssdk.StorageID           `json:"storageID"` // TODO 进行访问量统计时，当前客户端所属的存储ID。临时解决方案。
 }
 
 var cfg Config

@@ -120,8 +120,8 @@ type UpdateObjectRedundancyResp struct {
 	mq.MessageBodyBase
 }
 type UpdatingObjectRedundancy struct {
-	ObjectID   cdssdk.ObjectID      `json:"objectID" db:"ObjectID"`
-	Redundancy cdssdk.Redundancy    `json:"redundancy" db:"Redundancy"`
+	ObjectID   cdssdk.ObjectID      `json:"objectID"`
+	Redundancy cdssdk.Redundancy    `json:"redundancy"`
 	PinnedAt   []cdssdk.StorageID   `json:"pinnedAt"`
 	Blocks     []stgmod.ObjectBlock `json:"blocks"`
 }
@@ -231,10 +231,10 @@ type AddAccessStat struct {
 }
 
 type AddAccessStatEntry struct {
-	ObjectID  cdssdk.ObjectID  `json:"objectID" db:"ObjectID"`
-	PackageID cdssdk.PackageID `json:"packageID" db:"PackageID"`
-	NodeID    cdssdk.NodeID    `json:"nodeID" db:"NodeID"`
-	Counter   float64          `json:"counter" db:"Counter"`
+	ObjectID  cdssdk.ObjectID  `json:"objectID"`
+	PackageID cdssdk.PackageID `json:"packageID"`
+	StorageID cdssdk.StorageID `json:"storageID"`
+	Counter   float64          `json:"counter"`
 }
 
 func ReqAddAccessStat(entries []AddAccessStatEntry) *AddAccessStat {

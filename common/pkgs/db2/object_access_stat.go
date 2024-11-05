@@ -4,6 +4,7 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -61,11 +62,19 @@ func (*ObjectAccessStatDB) BatchAddCounter(ctx SQLContext, entries []coormq.AddA
 	}
 
 	for _, entry := range entries {
+		acc := stgmod.ObjectAccessStat{
+			ObjectID:  entry.ObjectID,
+			StorageID: entry.StorageID,
+			Counter:   entry.Counter,
+		}
+
 		err := ctx.Table("ObjectAccessStat").
 			Clauses(clause.OnConflict{
-				UpdateAll: true,
-			}).
-			Create(&entry).Error
+				Columns: []clause.Column{{Name: "ObjectID"}, {Name: "StorageID"}},
+				DoUpdates: clause.Assignments(map[string]any{
+					"Counter": gorm.Expr("Counter + values(Counter)"),
+				}),
+			}).Create(&acc).Error
 		if err != nil {
 			return err
 		}
