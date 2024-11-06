@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/samber/lo"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
@@ -34,62 +33,17 @@ func (svc *Service) GetStorageDetails(msg *coormq.GetStorageDetails) (*coormq.Ge
 		if err != nil && err != gorm.ErrRecordNotFound {
 			return fmt.Errorf("getting storage: %w", err)
 		}
-		var masterHubIDs []cdssdk.NodeID
-		for _, stg := range stgs {
-			stgsMp[stg.StorageID] = &stgmod.StorageDetail{
+
+		details := make([]stgmod.StorageDetail, len(stgs))
+		for i, stg := range stgs {
+			details[i] = stgmod.StorageDetail{
 				Storage: stg,
 			}
-			masterHubIDs = append(masterHubIDs, stg.MasterHub)
+			stgsMp[stg.StorageID] = &details[i]
 		}
-
-		// 获取监护Hub信息
-		masterHubs, err := svc.db2.Node().BatchGetByID(tx, masterHubIDs)
-		if err != nil && err != gorm.ErrRecordNotFound {
-			return fmt.Errorf("getting master hub: %w", err)
-		}
-		masterHubMap := make(map[cdssdk.NodeID]cdssdk.Node)
-		for _, hub := range masterHubs {
-			masterHubMap[hub.NodeID] = hub
-		}
-		for _, stg := range stgsMp {
-			if stg.Storage.MasterHub != 0 {
-				hub, ok := masterHubMap[stg.Storage.MasterHub]
-				if !ok {
-					logger.Warnf("master hub %v of storage %v not found, this storage will not be add to result", stg.Storage.MasterHub, stg.Storage)
-					delete(stgsMp, stg.Storage.StorageID)
-					continue
-				}
-
-				stg.MasterHub = &hub
-			}
-		}
-
-		// 获取分片存储
-		shards, err := svc.db2.ShardStorage().BatchGetByStorageIDs(tx, msg.StorageIDs)
-		if err != nil && err != gorm.ErrRecordNotFound {
-			return fmt.Errorf("getting shard storage: %w", err)
-		}
-		for _, shard := range shards {
-			stg := stgsMp[shard.StorageID]
-			if stg == nil {
-				continue
-			}
-
-			stg.Shard = &shard
-		}
-
-		// 获取共享存储的相关信息
-		shareds, err := svc.db2.SharedStorage().BatchGetByStorageIDs(tx, msg.StorageIDs)
-		if err != nil && err != gorm.ErrRecordNotFound {
-			return fmt.Errorf("getting shared storage: %w", err)
-		}
-		for _, shared := range shareds {
-			stg := stgsMp[shared.StorageID]
-			if stg == nil {
-				continue
-			}
-
-			stg.Shared = &shared
+		err = svc.db2.Storage().FillDetails(tx, details)
+		if err != nil {
+			return err
 		}
 
 		return nil
@@ -109,80 +63,26 @@ func (svc *Service) GetStorageDetails(msg *coormq.GetStorageDetails) (*coormq.Ge
 }
 
 func (svc *Service) GetUserStorageDetails(msg *coormq.GetUserStorageDetails) (*coormq.GetUserStorageDetailsResp, *mq.CodeMessage) {
-	stgsMp := make(map[cdssdk.StorageID]*stgmod.StorageDetail)
+	var ret []stgmod.StorageDetail
 
 	svc.db2.DoTx(func(tx db2.SQLContext) error {
 		stgs, err := svc.db2.Storage().GetUserStorages(tx, msg.UserID)
 		if err != nil && err != gorm.ErrRecordNotFound {
 			return fmt.Errorf("getting user storages: %w", err)
 		}
-		var masterHubIDs []cdssdk.NodeID
+
 		for _, stg := range stgs {
-			stgsMp[stg.StorageID] = &stgmod.StorageDetail{
+			ret = append(ret, stgmod.StorageDetail{
 				Storage: stg,
-			}
-			masterHubIDs = append(masterHubIDs, stg.MasterHub)
+			})
 		}
-
-		// 监护Hub的信息
-		masterHubs, err := svc.db2.Node().BatchGetByID(tx, masterHubIDs)
-		if err != nil && err != gorm.ErrRecordNotFound {
-			return fmt.Errorf("getting master hub: %w", err)
-		}
-		masterHubMap := make(map[cdssdk.NodeID]cdssdk.Node)
-		for _, hub := range masterHubs {
-			masterHubMap[hub.NodeID] = hub
-		}
-		for _, stg := range stgsMp {
-			if stg.Storage.MasterHub != 0 {
-				hub, ok := masterHubMap[stg.Storage.MasterHub]
-				if !ok {
-					logger.Warnf("master hub %v of storage %v not found, this storage will not be add to result", stg.Storage.MasterHub, stg.Storage)
-					delete(stgsMp, stg.Storage.StorageID)
-					continue
-				}
-
-				stg.MasterHub = &hub
-			}
-		}
-
-		stgIDs := lo.Map(stgs, func(stg cdssdk.Storage, i int) cdssdk.StorageID { return stg.StorageID })
-
-		// 获取分片存储信息
-		shards, err := svc.db2.ShardStorage().BatchGetByStorageIDs(tx, stgIDs)
-		if err != nil && err != gorm.ErrRecordNotFound {
-			return fmt.Errorf("getting shard storage: %w", err)
-		}
-		for _, shard := range shards {
-			stg := stgsMp[shard.StorageID]
-			if stg == nil {
-				continue
-			}
-
-			stg.Shard = &shard
-		}
-
-		// 获取共享存储的相关信息
-		shareds, err := svc.db2.SharedStorage().BatchGetByStorageIDs(tx, stgIDs)
-		if err != nil && err != gorm.ErrRecordNotFound {
-			return fmt.Errorf("getting shared storage: %w", err)
-		}
-		for _, shared := range shareds {
-			stg := stgsMp[shared.StorageID]
-			if stg == nil {
-				continue
-			}
-
-			stg.Shared = &shared
+		err = svc.db2.Storage().FillDetails(tx, ret)
+		if err != nil {
+			return err
 		}
 
 		return nil
 	})
-
-	var ret []stgmod.StorageDetail
-	for _, id := range stgsMp {
-		ret = append(ret, *id)
-	}
 
 	return mq.ReplyOK(coormq.RespGetUserStorageDetails(ret))
 }

@@ -3,8 +3,11 @@ package db2
 import (
 	"fmt"
 
+	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/model"
+	"gorm.io/gorm"
 )
 
 type StorageDB struct {
@@ -81,4 +84,68 @@ func (db *StorageDB) GetHubStorages(ctx SQLContext, hubID cdssdk.NodeID) ([]mode
 	var stgs []model.Storage
 	err := ctx.Table("Storage").Select("Storage.*").Find(&stgs, "MasterHub = ?", hubID).Error
 	return stgs, err
+}
+
+func (db *StorageDB) FillDetails(ctx SQLContext, details []stgmod.StorageDetail) error {
+	stgsMp := make(map[cdssdk.StorageID]*stgmod.StorageDetail)
+	stgIDs := make([]cdssdk.StorageID, 0, len(details))
+	var masterHubIDs []cdssdk.NodeID
+	for _, d := range details {
+		d2 := d
+		stgsMp[d.Storage.StorageID] = &d2
+		stgIDs = append(stgIDs, d.Storage.StorageID)
+		masterHubIDs = append(masterHubIDs, d.Storage.MasterHub)
+	}
+
+	// 获取监护Hub信息
+	masterHubs, err := db.Node().BatchGetByID(ctx, masterHubIDs)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return fmt.Errorf("getting master hub: %w", err)
+	}
+	masterHubMap := make(map[cdssdk.NodeID]cdssdk.Node)
+	for _, hub := range masterHubs {
+		masterHubMap[hub.NodeID] = hub
+	}
+	for _, stg := range stgsMp {
+		if stg.Storage.MasterHub != 0 {
+			hub, ok := masterHubMap[stg.Storage.MasterHub]
+			if !ok {
+				logger.Warnf("master hub %v of storage %v not found, this storage will not be add to result", stg.Storage.MasterHub, stg.Storage)
+				delete(stgsMp, stg.Storage.StorageID)
+				continue
+			}
+
+			stg.MasterHub = &hub
+		}
+	}
+
+	// 获取分片存储
+	shards, err := db.ShardStorage().BatchGetByStorageIDs(ctx, stgIDs)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return fmt.Errorf("getting shard storage: %w", err)
+	}
+	for _, shard := range shards {
+		stg := stgsMp[shard.StorageID]
+		if stg == nil {
+			continue
+		}
+
+		stg.Shard = &shard
+	}
+
+	// 获取共享存储的相关信息
+	shareds, err := db.SharedStorage().BatchGetByStorageIDs(ctx, stgIDs)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return fmt.Errorf("getting shared storage: %w", err)
+	}
+	for _, shared := range shareds {
+		stg := stgsMp[shared.StorageID]
+		if stg == nil {
+			continue
+		}
+
+		stg.Shared = &shared
+	}
+
+	return nil
 }

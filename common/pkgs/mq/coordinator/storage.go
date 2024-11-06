@@ -69,6 +69,19 @@ func RespGetStorageDetails(stgs []*stgmod.StorageDetail) *GetStorageDetailsResp 
 		Storages: stgs,
 	}
 }
+
+func (r *GetStorageDetailsResp) ToMap() map[cdssdk.StorageID]stgmod.StorageDetail {
+	m := make(map[cdssdk.StorageID]stgmod.StorageDetail)
+	for _, stg := range r.Storages {
+		if stg == nil {
+			continue
+		}
+
+		m[stg.Storage.StorageID] = *stg
+	}
+	return m
+}
+
 func (client *Client) GetStorageDetails(msg *GetStorageDetails) (*GetStorageDetailsResp, error) {
 	return mq.Request(Service.GetStorageDetails, client.rabbitCli, msg)
 }
