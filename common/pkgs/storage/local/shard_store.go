@@ -83,7 +83,7 @@ func (s *ShardStore) Open(opt types.OpenOption) (io.ReadCloser, error) {
 		return nil, fmt.Errorf("invalid file name")
 	}
 
-	filePath := filepath.Join(s.cfg.Root, BlocksDir, fileName[:2], fileName)
+	filePath := s.getFilePathFromHash(cdssdk.FileHash(fileName))
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -102,6 +102,23 @@ func (s *ShardStore) Open(opt types.OpenOption) (io.ReadCloser, error) {
 	}
 
 	return file, nil
+}
+
+func (s *ShardStore) Info(hash cdssdk.FileHash) (types.FileInfo, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	filePath := s.getFilePathFromHash(hash)
+	info, err := os.Stat(filePath)
+	if err != nil {
+		return types.FileInfo{}, err
+	}
+
+	return types.FileInfo{
+		Hash:        hash,
+		Size:        info.Size(),
+		Description: filePath,
+	}, nil
 }
 
 func (s *ShardStore) ListAll() ([]types.FileInfo, error) {
@@ -187,7 +204,7 @@ func (s *ShardStore) onWritterFinish(w *ShardWriter, hash cdssdk.FileHash) (type
 
 	log.Debugf("write file %v finished, size: %v, hash: %v", w.path, w.size, hash)
 
-	blockDir := filepath.Join(s.cfg.Root, BlocksDir, string(hash)[:2])
+	blockDir := s.getFileDirFromHash(hash)
 	err := os.MkdirAll(blockDir, 0755)
 	if err != nil {
 		s.removeTempFile(w.path)
@@ -227,4 +244,12 @@ func (s *ShardStore) removeTempFile(path string) {
 
 func (s *ShardStore) getLogger() logger.Logger {
 	return logger.WithField("S", SvcName).WithField("Storage", s.stg.String())
+}
+
+func (s *ShardStore) getFileDirFromHash(hash cdssdk.FileHash) string {
+	return filepath.Join(s.cfg.Root, BlocksDir, string(hash)[:2])
+}
+
+func (s *ShardStore) getFilePathFromHash(hash cdssdk.FileHash) string {
+	return filepath.Join(s.cfg.Root, BlocksDir, string(hash)[:2], string(hash))
 }

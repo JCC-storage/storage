@@ -28,6 +28,8 @@ type ShardStore interface {
 	New() ShardWriter
 	// 使用F函数创建Option对象
 	Open(opt OpenOption) (io.ReadCloser, error)
+	// 获得指定文件信息
+	Info(fileHash cdssdk.FileHash) (FileInfo, error)
 	// 获取所有文件信息，尽量保证操作是原子的
 	ListAll() ([]FileInfo, error)
 	// 删除指定的文件
