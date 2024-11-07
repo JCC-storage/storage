@@ -14,6 +14,7 @@ import (
 
 var _ = serder.UseTypeUnionExternallyTagged(types.Ref(types.NewTypeUnion[exec.WorkerInfo](
 	(*AgentWorker)(nil),
+	(*HttpHubWorker)(nil),
 )))
 
 type AgentWorker struct {

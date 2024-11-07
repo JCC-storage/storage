@@ -90,11 +90,10 @@ func (db *StorageDB) FillDetails(ctx SQLContext, details []stgmod.StorageDetail)
 	stgsMp := make(map[cdssdk.StorageID]*stgmod.StorageDetail)
 	stgIDs := make([]cdssdk.StorageID, 0, len(details))
 	var masterHubIDs []cdssdk.NodeID
-	for _, d := range details {
-		d2 := d
-		stgsMp[d.Storage.StorageID] = &d2
-		stgIDs = append(stgIDs, d.Storage.StorageID)
-		masterHubIDs = append(masterHubIDs, d.Storage.MasterHub)
+	for i := range details {
+		stgsMp[details[i].Storage.StorageID] = &details[i]
+		stgIDs = append(stgIDs, details[i].Storage.StorageID)
+		masterHubIDs = append(masterHubIDs, details[i].Storage.MasterHub)
 	}
 
 	// 获取监护Hub信息

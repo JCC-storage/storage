@@ -6,15 +6,9 @@ import (
 	"strconv"
 
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
-	"gitlink.org.cn/cloudream/common/pkgs/types"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
-	"gitlink.org.cn/cloudream/common/utils/serder"
 )
-
-var _ = serder.UseTypeUnionExternallyTagged(types.Ref(types.NewTypeUnion[exec.WorkerInfo](
-	(*HttpHubWorker)(nil),
-)))
 
 type HttpHubWorker struct {
 	Node cdssdk.Node

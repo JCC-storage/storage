@@ -104,13 +104,13 @@ func (t *UploadObjects) Execute(ctx *UploadObjectsContext) (*UploadObjectsResult
 	}
 
 	// 给上传节点的IPFS加锁
-	ipfsReqBlder := reqbuilder.NewBuilder()
+	lockBlder := reqbuilder.NewBuilder()
 	for _, us := range userStgs {
-		ipfsReqBlder.Shard().Buzy(us.Storage.Storage.StorageID)
+		lockBlder.Shard().Buzy(us.Storage.Storage.StorageID)
 	}
 	// TODO 考虑加Object的Create锁
 	// 防止上传的副本被清除
-	ipfsMutex, err := ipfsReqBlder.MutexLock(ctx.Distlock)
+	ipfsMutex, err := lockBlder.MutexLock(ctx.Distlock)
 	if err != nil {
 		return nil, fmt.Errorf("acquire locks failed, err: %w", err)
 	}
