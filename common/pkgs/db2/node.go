@@ -17,20 +17,20 @@ func (db *DB) Node() *NodeDB {
 func (*NodeDB) GetAllNodes(ctx SQLContext) ([]cdssdk.Node, error) {
 	var ret []cdssdk.Node
 
-	err := ctx.Table("node").Find(&ret).Error
+	err := ctx.Table("Node").Find(&ret).Error
 	return ret, err
 }
 
 func (*NodeDB) GetByID(ctx SQLContext, nodeID cdssdk.NodeID) (cdssdk.Node, error) {
 	var ret cdssdk.Node
-	err := ctx.Table("node").Where("NodeID = ?", nodeID).Find(&ret).Error
+	err := ctx.Table("Node").Where("NodeID = ?", nodeID).Find(&ret).Error
 
 	return ret, err
 }
 
 func (*NodeDB) BatchGetByID(ctx SQLContext, nodeIDs []cdssdk.NodeID) ([]cdssdk.Node, error) {
 	var ret []cdssdk.Node
-	err := ctx.Table("node").Where("NodeID IN (?)", nodeIDs).Find(&ret).Error
+	err := ctx.Table("Node").Where("NodeID IN (?)", nodeIDs).Find(&ret).Error
 
 	return ret, err
 }
