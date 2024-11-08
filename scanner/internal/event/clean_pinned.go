@@ -21,8 +21,8 @@ import (
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock/reqbuilder"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/ops2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/parser"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc/ops2"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 	scevt "gitlink.org.cn/cloudream/storage/common/pkgs/mq/scanner/event"
 )

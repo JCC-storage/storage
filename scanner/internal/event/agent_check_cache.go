@@ -52,20 +52,20 @@ func (t *AgentCheckCache) Execute(execCtx ExecuteContext) {
 
 	stg, err := execCtx.Args.DB.Storage().GetByID(execCtx.Args.DB.DefCtx(), t.StorageID)
 	if err != nil {
-		log.WithField("NodeID", t.StorageID).Warnf("getting shard storage by storage id: %s", err.Error())
+		log.WithField("StorageID", t.StorageID).Warnf("getting shard storage by storage id: %s", err.Error())
 		return
 	}
 
 	agtCli, err := stgglb.AgentMQPool.Acquire(stg.MasterHub)
 	if err != nil {
-		log.WithField("NodeID", t.StorageID).Warnf("create agent client failed, err: %s", err.Error())
+		log.WithField("StorageID", t.StorageID).Warnf("create agent client failed, err: %s", err.Error())
 		return
 	}
 	defer stgglb.AgentMQPool.Release(agtCli)
 
 	checkResp, err := agtCli.CheckCache(agtmq.NewCheckCache(t.StorageID), mq.RequestOption{Timeout: time.Minute})
 	if err != nil {
-		log.WithField("NodeID", t.StorageID).Warnf("checking ipfs: %s", err.Error())
+		log.WithField("StorageID", t.StorageID).Warnf("checking shard store: %s", err.Error())
 		return
 	}
 
@@ -88,7 +88,7 @@ func (t *AgentCheckCache) checkCache(execCtx ExecuteContext, tx db2.SQLContext, 
 
 	caches, err := execCtx.Args.DB.Cache().GetByStorageID(tx, t.StorageID)
 	if err != nil {
-		log.WithField("NodeID", t.StorageID).Warnf("getting caches by node id: %s", err.Error())
+		log.WithField("StorageID", t.StorageID).Warnf("getting caches by storage id: %s", err.Error())
 		return
 	}
 
@@ -109,14 +109,14 @@ func (t *AgentCheckCache) checkCache(execCtx ExecuteContext, tx db2.SQLContext, 
 	if len(rms) > 0 {
 		err = execCtx.Args.DB.Cache().StorageBatchDelete(tx, t.StorageID, rms)
 		if err != nil {
-			log.Warnf("batch delete node caches: %w", err.Error())
+			log.Warnf("batch delete storage caches: %w", err.Error())
 		}
 	}
 
 	if len(realFileHashesCp) > 0 {
 		err = execCtx.Args.DB.Cache().BatchCreateOnSameStorage(tx, lo.Keys(realFileHashesCp), t.StorageID, 0)
 		if err != nil {
-			log.Warnf("batch create node caches: %w", err)
+			log.Warnf("batch create storage caches: %w", err)
 			return
 		}
 	}
@@ -128,7 +128,7 @@ func (t *AgentCheckCache) checkPinnedObject(execCtx ExecuteContext, tx db2.SQLCo
 
 	objs, err := execCtx.Args.DB.PinnedObject().GetObjectsByStorageID(tx, t.StorageID)
 	if err != nil {
-		log.WithField("NodeID", t.StorageID).Warnf("getting pinned objects by node id: %s", err.Error())
+		log.WithField("StorageID", t.StorageID).Warnf("getting pinned objects by storage id: %s", err.Error())
 		return
 	}
 
@@ -143,7 +143,7 @@ func (t *AgentCheckCache) checkPinnedObject(execCtx ExecuteContext, tx db2.SQLCo
 	if len(rms) > 0 {
 		err = execCtx.Args.DB.PinnedObject().StorageBatchDelete(tx, t.StorageID, rms)
 		if err != nil {
-			log.Warnf("batch delete node pinned objects: %s", err.Error())
+			log.Warnf("batch delete storage pinned objects: %s", err.Error())
 		}
 	}
 }
@@ -154,7 +154,7 @@ func (t *AgentCheckCache) checkObjectBlock(execCtx ExecuteContext, tx db2.SQLCon
 
 	blocks, err := execCtx.Args.DB.ObjectBlock().GetByStorageID(tx, t.StorageID)
 	if err != nil {
-		log.WithField("NodeID", t.StorageID).Warnf("getting object blocks by node id: %s", err.Error())
+		log.WithField("StorageID", t.StorageID).Warnf("getting object blocks by storage id: %s", err.Error())
 		return
 	}
 
@@ -169,7 +169,7 @@ func (t *AgentCheckCache) checkObjectBlock(execCtx ExecuteContext, tx db2.SQLCon
 	if len(rms) > 0 {
 		err = execCtx.Args.DB.ObjectBlock().StorageBatchDelete(tx, t.StorageID, rms)
 		if err != nil {
-			log.Warnf("batch delete node object blocks: %s", err.Error())
+			log.Warnf("batch delete storage object blocks: %s", err.Error())
 		}
 	}
 }
