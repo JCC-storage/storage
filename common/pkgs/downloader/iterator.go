@@ -274,7 +274,7 @@ func (iter *DownloadObjectIterator) downloadECObject(req downloadReqeust2, ecRed
 		return nil, fmt.Errorf("no enough blocks to reconstruct the object %v , want %d, get only %d", req.Raw.ObjectID, ecRed.K, len(blocks))
 	}
 
-	logger.Debugf("downloading ec object %v from storage %v", req.Raw.ObjectID, stg)
+	logger.Debugf("downloading ec object %v from storage %v", req.Raw.ObjectID, stg.Storage.String())
 	return iter.downloadFromStorage(stg, req)
 }
 
