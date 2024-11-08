@@ -119,11 +119,11 @@ func (t *CleanPinned) Execute(execCtx ExecuteContext) {
 
 	// 对于rep对象，统计出所有对象块分布最多的两个节点，用这两个节点代表所有rep对象块的分布，去进行退火算法
 	var repObjectsUpdating []coormq.UpdatingObjectRedundancy
-	repMostNodeIDs := t.summaryRepObjectBlockNodes(repObjects)
+	repMostHubIDs := t.summaryRepObjectBlockNodes(repObjects)
 	solu := t.startAnnealing(allStgInfos, readerStgIDs, annealingObject{
 		totalBlockCount: 1,
 		minBlockCnt:     1,
-		pinnedAt:        repMostNodeIDs,
+		pinnedAt:        repMostHubIDs,
 		blocks:          nil,
 	})
 	for _, obj := range repObjects {
@@ -184,18 +184,18 @@ func (t *CleanPinned) summaryRepObjectBlockNodes(objs []stgmod.ObjectDetail) []c
 			cacheBlockStgs[block.StorageID] = true
 		}
 
-		for _, nodeID := range obj.PinnedAt {
-			if cacheBlockStgs[nodeID] {
+		for _, hubID := range obj.PinnedAt {
+			if cacheBlockStgs[hubID] {
 				continue
 			}
 
-			if _, ok := stgBlocksMap[nodeID]; !ok {
-				stgBlocksMap[nodeID] = &stgBlocks{
-					StorageID: nodeID,
+			if _, ok := stgBlocksMap[hubID]; !ok {
+				stgBlocksMap[hubID] = &stgBlocks{
+					StorageID: hubID,
 					Count:     0,
 				}
 			}
-			stgBlocksMap[nodeID].Count++
+			stgBlocksMap[hubID].Count++
 		}
 	}
 
@@ -278,22 +278,22 @@ func newCombinatorialTree(stgBlocksMaps map[cdssdk.StorageID]*bitmap.Bitmap64) c
 		tree.localStgIDToStgID = append(tree.localStgIDToStgID, id)
 	}
 
-	tree.nodes[0].localNodeID = -1
+	tree.nodes[0].localHubID = -1
 	index := 1
 	tree.initNode(0, &tree.nodes[0], &index)
 
 	return tree
 }
 
-func (t *combinatorialTree) initNode(minAvaiLocalNodeID int, parent *combinatorialTreeNode, index *int) {
-	for i := minAvaiLocalNodeID; i < len(t.stgIDToLocalStgID); i++ {
+func (t *combinatorialTree) initNode(minAvaiLocalHubID int, parent *combinatorialTreeNode, index *int) {
+	for i := minAvaiLocalHubID; i < len(t.stgIDToLocalStgID); i++ {
 		curIndex := *index
 		*index++
 		bitMp := t.blocksMaps[i]
 		bitMp.Or(&parent.blocksBitmap)
 
 		t.nodes[curIndex] = combinatorialTreeNode{
-			localNodeID:  i,
+			localHubID:   i,
 			parent:       parent,
 			blocksBitmap: bitMp,
 		}
@@ -339,7 +339,7 @@ func (t *combinatorialTree) UpdateBitmap(stgID cdssdk.StorageID, mp bitmap.Bitma
 			index := d + i
 			node := &t.nodes[index]
 
-			newMp := t.blocksMaps[node.localNodeID]
+			newMp := t.blocksMaps[node.localHubID]
 			newMp.Or(&node.parent.blocksBitmap)
 			node.blocksBitmap = newMp
 			if newMp.Weight() >= k {
@@ -350,7 +350,7 @@ func (t *combinatorialTree) UpdateBitmap(stgID cdssdk.StorageID, mp bitmap.Bitma
 				curNode := &t.nodes[index]
 				parentNode := t.nodes[parentIndex]
 
-				newMp := t.blocksMaps[curNode.localNodeID]
+				newMp := t.blocksMaps[curNode.localHubID]
 				newMp.Or(&parentNode.blocksBitmap)
 				curNode.blocksBitmap = newMp
 				if newMp.Weight() >= k {
@@ -377,7 +377,7 @@ func (t *combinatorialTree) FindKBlocksMaxDepth(k int) int {
 		// 由于遍历时采用的是深度优先的算法，因此遍历到这个叶子节点时，叶子节点再加一个节点的组合已经在前面搜索过，
 		// 所以用当前叶子节点深度+1来作为当前分支的结果就可以，即使当前情况下增加任意一个节点依然不够K块，
 		// 可以使用同样的思路去递推到当前叶子节点增加两个块的情况。
-		if t.nodes[index].localNodeID == len(t.stgIDToLocalStgID)-1 {
+		if t.nodes[index].localHubID == len(t.stgIDToLocalStgID)-1 {
 			if maxDepth < depth+1 {
 				maxDepth = depth + 1
 			}
@@ -409,7 +409,7 @@ func (t *combinatorialTree) iterChildren(index int, do func(index int, parentInd
 	childIndex := index + 1
 	curDepth := t.GetDepth(index)
 
-	childCounts := len(t.stgIDToLocalStgID) - 1 - curNode.localNodeID
+	childCounts := len(t.stgIDToLocalStgID) - 1 - curNode.localHubID
 	if childCounts == 0 {
 		return
 	}
@@ -438,7 +438,7 @@ func (t *combinatorialTree) itering(index int, parentIndex int, depth int, do fu
 	curNode := &t.nodes[index]
 	childIndex := index + 1
 
-	childCounts := len(t.stgIDToLocalStgID) - 1 - curNode.localNodeID
+	childCounts := len(t.stgIDToLocalStgID) - 1 - curNode.localHubID
 	if childCounts == 0 {
 		return iterActionNone
 	}
@@ -458,7 +458,7 @@ func (t *combinatorialTree) itering(index int, parentIndex int, depth int, do fu
 }
 
 type combinatorialTreeNode struct {
-	localNodeID  int
+	localHubID   int
 	parent       *combinatorialTreeNode
 	blocksBitmap bitmap.Bitmap64 // 选择了这个中心之后，所有中心一共包含多少种块
 }
@@ -614,19 +614,19 @@ func (t *CleanPinned) sortNodeByReaderDistance(state *annealingState) {
 				// 同节点时距离视为0.1
 				nodeDists = append(nodeDists, stgDist{
 					StorageID: n,
-					Distance:  consts.NodeDistanceSameNode,
+					Distance:  consts.StorageDistanceSameStorage,
 				})
 			} else if state.allStgInfos[r].MasterHub.LocationID == state.allStgInfos[n].MasterHub.LocationID {
 				// 同地区时距离视为1
 				nodeDists = append(nodeDists, stgDist{
 					StorageID: n,
-					Distance:  consts.NodeDistanceSameLocation,
+					Distance:  consts.StorageDistanceSameLocation,
 				})
 			} else {
 				// 不同地区时距离视为5
 				nodeDists = append(nodeDists, stgDist{
 					StorageID: n,
-					Distance:  consts.NodeDistanceOther,
+					Distance:  consts.StorageDistanceOther,
 				})
 			}
 		}
@@ -724,7 +724,7 @@ func (t *CleanPinned) alwaysAccept(curTemp float64, dScore float64, coolingRate 
 	return v > rand.Float64()
 }
 
-func (t *CleanPinned) makePlansForRepObject(allStgInfos map[cdssdk.StorageID]*stgmod.StorageDetail, solu annealingSolution, obj stgmod.ObjectDetail, planBld *exec.PlanBuilder, planningNodeIDs map[cdssdk.StorageID]bool) coormq.UpdatingObjectRedundancy {
+func (t *CleanPinned) makePlansForRepObject(allStgInfos map[cdssdk.StorageID]*stgmod.StorageDetail, solu annealingSolution, obj stgmod.ObjectDetail, planBld *exec.PlanBuilder, planningHubIDs map[cdssdk.StorageID]bool) coormq.UpdatingObjectRedundancy {
 	entry := coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
 		Redundancy: obj.Object.Redundancy,
@@ -751,7 +751,7 @@ func (t *CleanPinned) makePlansForRepObject(allStgInfos map[cdssdk.StorageID]*st
 					// TODO 错误处理
 					continue
 				}
-				planningNodeIDs[solu.blockList[i].StorageID] = true
+				planningHubIDs[solu.blockList[i].StorageID] = true
 			}
 			entry.Blocks = append(entry.Blocks, stgmod.ObjectBlock{
 				ObjectID:  obj.Object.ObjectID,
@@ -765,7 +765,7 @@ func (t *CleanPinned) makePlansForRepObject(allStgInfos map[cdssdk.StorageID]*st
 	return entry
 }
 
-func (t *CleanPinned) makePlansForECObject(allStgInfos map[cdssdk.StorageID]*stgmod.StorageDetail, solu annealingSolution, obj stgmod.ObjectDetail, planBld *exec.PlanBuilder, planningNodeIDs map[cdssdk.StorageID]bool) coormq.UpdatingObjectRedundancy {
+func (t *CleanPinned) makePlansForECObject(allStgInfos map[cdssdk.StorageID]*stgmod.StorageDetail, solu annealingSolution, obj stgmod.ObjectDetail, planBld *exec.PlanBuilder, planningHubIDs map[cdssdk.StorageID]bool) coormq.UpdatingObjectRedundancy {
 	entry := coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
 		Redundancy: obj.Object.Redundancy,
@@ -812,7 +812,7 @@ func (t *CleanPinned) makePlansForECObject(allStgInfos map[cdssdk.StorageID]*stg
 			continue
 		}
 
-		planningNodeIDs[id] = true
+		planningHubIDs[id] = true
 	}
 	return entry
 }

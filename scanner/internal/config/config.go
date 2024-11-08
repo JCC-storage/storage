@@ -11,7 +11,7 @@ import (
 type Config struct {
 	AccessStatHistoryAmount float64         `json:"accessStatHistoryAmount"`
 	ECFileSizeThreshold     int64           `json:"ecFileSizeThreshold"`
-	NodeUnavailableSeconds  int             `json:"nodeUnavailableSeconds"` // 如果节点上次上报时间超过这个值，则认为节点已经不可用
+	HubUnavailableSeconds   int             `json:"hubUnavailableSeconds"` // 如果节点上次上报时间超过这个值，则认为节点已经不可用
 	Logger                  log.Config      `json:"logger"`
 	DB                      db.Config       `json:"db"`
 	RabbitMQ                stgmq.Config    `json:"rabbitMQ"`

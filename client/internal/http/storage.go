@@ -32,7 +32,7 @@ func (s *StorageService) LoadPackage(ctx *gin.Context) {
 		return
 	}
 
-	nodeID, taskID, err := s.svc.StorageSvc().StartStorageLoadPackage(req.UserID, req.PackageID, req.StorageID)
+	hubID, taskID, err := s.svc.StorageSvc().StartStorageLoadPackage(req.UserID, req.PackageID, req.StorageID)
 	if err != nil {
 		log.Warnf("start storage load package: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("start loading: %v", err)))
@@ -40,7 +40,7 @@ func (s *StorageService) LoadPackage(ctx *gin.Context) {
 	}
 
 	for {
-		complete, ret, err := s.svc.StorageSvc().WaitStorageLoadPackage(nodeID, taskID, time.Second*10)
+		complete, ret, err := s.svc.StorageSvc().WaitStorageLoadPackage(hubID, taskID, time.Second*10)
 		if complete {
 			if err != nil {
 				log.Warnf("loading complete with: %s", err.Error())
@@ -75,8 +75,8 @@ func (s *StorageService) CreatePackage(ctx *gin.Context) {
 		return
 	}
 
-	nodeID, taskID, err := s.svc.StorageSvc().StartStorageCreatePackage(
-		req.UserID, req.BucketID, req.Name, req.StorageID, req.Path, req.NodeAffinity)
+	hubID, taskID, err := s.svc.StorageSvc().StartStorageCreatePackage(
+		req.UserID, req.BucketID, req.Name, req.StorageID, req.Path, req.StorageAffinity)
 	if err != nil {
 		log.Warnf("start storage create package: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "storage create package failed"))
@@ -84,7 +84,7 @@ func (s *StorageService) CreatePackage(ctx *gin.Context) {
 	}
 
 	for {
-		complete, packageID, err := s.svc.StorageSvc().WaitStorageCreatePackage(nodeID, taskID, time.Second*10)
+		complete, packageID, err := s.svc.StorageSvc().WaitStorageCreatePackage(hubID, taskID, time.Second*10)
 		if complete {
 			if err != nil {
 				log.Warnf("creating complete with: %s", err.Error())

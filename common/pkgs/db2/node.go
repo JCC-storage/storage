@@ -6,52 +6,52 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 )
 
-type NodeDB struct {
+type HubDB struct {
 	*DB
 }
 
-func (db *DB) Node() *NodeDB {
-	return &NodeDB{DB: db}
+func (db *DB) Hub() *HubDB {
+	return &HubDB{DB: db}
 }
 
-func (*NodeDB) GetAllNodes(ctx SQLContext) ([]cdssdk.Node, error) {
-	var ret []cdssdk.Node
+func (*HubDB) GetAllHubs(ctx SQLContext) ([]cdssdk.Hub, error) {
+	var ret []cdssdk.Hub
 
-	err := ctx.Table("Node").Find(&ret).Error
+	err := ctx.Table("Hub").Find(&ret).Error
 	return ret, err
 }
 
-func (*NodeDB) GetByID(ctx SQLContext, nodeID cdssdk.NodeID) (cdssdk.Node, error) {
-	var ret cdssdk.Node
-	err := ctx.Table("Node").Where("NodeID = ?", nodeID).Find(&ret).Error
-
-	return ret, err
-}
-
-func (*NodeDB) BatchGetByID(ctx SQLContext, nodeIDs []cdssdk.NodeID) ([]cdssdk.Node, error) {
-	var ret []cdssdk.Node
-	err := ctx.Table("Node").Where("NodeID IN (?)", nodeIDs).Find(&ret).Error
+func (*HubDB) GetByID(ctx SQLContext, hubID cdssdk.HubID) (cdssdk.Hub, error) {
+	var ret cdssdk.Hub
+	err := ctx.Table("Hub").Where("HubID = ?", hubID).Find(&ret).Error
 
 	return ret, err
 }
 
-// GetUserNodes 根据用户id查询可用node
-func (*NodeDB) GetUserNodes(ctx SQLContext, userID cdssdk.UserID) ([]cdssdk.Node, error) {
-	var nodes []cdssdk.Node
+func (*HubDB) BatchGetByID(ctx SQLContext, hubIDs []cdssdk.HubID) ([]cdssdk.Hub, error) {
+	var ret []cdssdk.Hub
+	err := ctx.Table("Hub").Where("HubID IN (?)", hubIDs).Find(&ret).Error
+
+	return ret, err
+}
+
+// GetUserHubs 根据用户id查询可用hub
+func (*HubDB) GetUserHubs(ctx SQLContext, userID cdssdk.UserID) ([]cdssdk.Hub, error) {
+	var hubs []cdssdk.Hub
 	err := ctx.
-		Table("Node").
-		Select("Node.*").
-		Joins("JOIN UserNode ON UserNode.NodeID = Node.NodeID").
-		Where("UserNode.UserID = ?", userID).
-		Find(&nodes).Error
-	return nodes, err
+		Table("Hub").
+		Select("Hub.*").
+		Joins("JOIN UserHub ON UserHub.HubID = Hub.HubID").
+		Where("UserHub.UserID = ?", userID).
+		Find(&hubs).Error
+	return hubs, err
 }
 
 // UpdateState 更新状态，并且设置上次上报时间为现在
-func (*NodeDB) UpdateState(ctx SQLContext, nodeID cdssdk.NodeID, state string) error {
+func (*HubDB) UpdateState(ctx SQLContext, hubID cdssdk.HubID, state string) error {
 	err := ctx.
-		Model(&cdssdk.Node{}).
-		Where("NodeID = ?", nodeID).
+		Model(&cdssdk.Hub{}).
+		Where("HubID = ?", hubID).
 		Updates(map[string]interface{}{
 			"State":          state,
 			"LastReportTime": time.Now(),

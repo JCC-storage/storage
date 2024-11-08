@@ -6,32 +6,32 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type NodeConnectivityDB struct {
+type HubConnectivityDB struct {
 	*DB
 }
 
-func (db *DB) NodeConnectivity() *NodeConnectivityDB {
-	return &NodeConnectivityDB{DB: db}
+func (db *DB) HubConnectivity() *HubConnectivityDB {
+	return &HubConnectivityDB{DB: db}
 }
 
-func (db *NodeConnectivityDB) BatchGetByFromNode(ctx SQLContext, fromNodeIDs []cdssdk.NodeID) ([]model.NodeConnectivity, error) {
-	if len(fromNodeIDs) == 0 {
+func (db *HubConnectivityDB) BatchGetByFromHub(ctx SQLContext, fromHubIDs []cdssdk.HubID) ([]model.HubConnectivity, error) {
+	if len(fromHubIDs) == 0 {
 		return nil, nil
 	}
 
-	var ret []model.NodeConnectivity
+	var ret []model.HubConnectivity
 
-	err := ctx.Table("NodeConnectivity").Where("FromNodeID IN (?)", fromNodeIDs).Find(&ret).Error
+	err := ctx.Table("HubConnectivity").Where("FromHubID IN (?)", fromHubIDs).Find(&ret).Error
 	return ret, err
 }
 
-func (db *NodeConnectivityDB) BatchUpdateOrCreate(ctx SQLContext, cons []model.NodeConnectivity) error {
+func (db *HubConnectivityDB) BatchUpdateOrCreate(ctx SQLContext, cons []model.HubConnectivity) error {
 	if len(cons) == 0 {
 		return nil
 	}
 
 	// 使用 GORM 的批量插入或更新
-	return ctx.Table("NodeConnectivity").Clauses(clause.OnConflict{
+	return ctx.Table("HubConnectivity").Clauses(clause.OnConflict{
 		UpdateAll: true,
 	}).Create(&cons).Error
 }

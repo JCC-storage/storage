@@ -4,12 +4,12 @@ import cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 
 type AgentCheckState struct {
 	EventBase
-	NodeID cdssdk.NodeID `json:"nodeID"`
+	HubID cdssdk.HubID `json:"hubID"`
 }
 
-func NewAgentCheckState(nodeID cdssdk.NodeID) *AgentCheckState {
+func NewAgentCheckState(hubID cdssdk.HubID) *AgentCheckState {
 	return &AgentCheckState{
-		NodeID: nodeID,
+		HubID: hubID,
 	}
 }
 

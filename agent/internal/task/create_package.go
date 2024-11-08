@@ -23,12 +23,12 @@ type CreatePackageResult struct {
 // CreatePackage 定义创建包的任务结构
 // 包含用户ID、存储桶ID、包名称、上传对象的迭代器、节点亲和性以及任务结果
 type CreatePackage struct {
-	userID       cdssdk.UserID
-	bucketID     cdssdk.BucketID
-	name         string
-	objIter      iterator.UploadingObjectIterator
-	nodeAffinity *cdssdk.NodeID
-	Result       CreatePackageResult
+	userID      cdssdk.UserID
+	bucketID    cdssdk.BucketID
+	name        string
+	objIter     iterator.UploadingObjectIterator
+	stgAffinity cdssdk.StorageID
+	Result      CreatePackageResult
 }
 
 // NewCreatePackage 创建一个新的CreatePackage实例
@@ -36,15 +36,15 @@ type CreatePackage struct {
 // bucketID: 存储桶ID
 // name: 包名称
 // objIter: 上传对象的迭代器
-// nodeAffinity: 节点亲和性，指定包应该创建在哪个节点上（可选）
+// stgAffinity: 节点亲和性，指定包应该创建在哪个节点上（可选）
 // 返回CreatePackage实例的指针
-func NewCreatePackage(userID cdssdk.UserID, bucketID cdssdk.BucketID, name string, objIter iterator.UploadingObjectIterator, nodeAffinity *cdssdk.NodeID) *CreatePackage {
+func NewCreatePackage(userID cdssdk.UserID, bucketID cdssdk.BucketID, name string, objIter iterator.UploadingObjectIterator, stgAffinity cdssdk.StorageID) *CreatePackage {
 	return &CreatePackage{
-		userID:       userID,
-		bucketID:     bucketID,
-		name:         name,
-		objIter:      objIter,
-		nodeAffinity: nodeAffinity,
+		userID:      userID,
+		bucketID:    bucketID,
+		name:        name,
+		objIter:     objIter,
+		stgAffinity: stgAffinity,
 	}
 }
 
@@ -84,7 +84,7 @@ func (t *CreatePackage) Execute(task *task.Task[TaskContext], ctx TaskContext, c
 		return
 	}
 
-	uploadRet, err := cmd.NewUploadObjects(t.userID, createResp.Package.PackageID, t.objIter, t.nodeAffinity).Execute(&cmd.UploadObjectsContext{
+	uploadRet, err := cmd.NewUploadObjects(t.userID, createResp.Package.PackageID, t.objIter, t.stgAffinity).Execute(&cmd.UploadObjectsContext{
 		Distlock:     ctx.distlock,
 		Connectivity: ctx.connectivity,
 		StgMgr:       ctx.stgMgr,

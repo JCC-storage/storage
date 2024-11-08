@@ -213,10 +213,10 @@ func ReqGetPackageCachedStorages(userID cdssdk.UserID, packageID cdssdk.PackageI
 	}
 }
 
-func ReqGetPackageCachedStoragesResp(nodeInfos []cdssdk.StoragePackageCachingInfo, packageSize int64) *GetPackageCachedStoragesResp {
+func ReqGetPackageCachedStoragesResp(stgInfos []cdssdk.StoragePackageCachingInfo, packageSize int64) *GetPackageCachedStoragesResp {
 	return &GetPackageCachedStoragesResp{
 		PackageCachingInfo: cdssdk.PackageCachingInfo{
-			StorageInfos: nodeInfos,
+			StorageInfos: stgInfos,
 			PackageSize:  packageSize,
 		},
 	}

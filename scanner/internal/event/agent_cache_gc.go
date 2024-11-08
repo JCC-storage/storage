@@ -67,21 +67,21 @@ func (t *AgentCacheGC) Execute(execCtx ExecuteContext) {
 
 	// 收集需要进行垃圾回收的文件哈希值
 	var allFileHashes []cdssdk.FileHash
-	var masterHub cdssdk.Node
+	var masterHub cdssdk.Hub
 	err = execCtx.Args.DB.DoTx(func(tx db2.SQLContext) error {
 		stg, err := execCtx.Args.DB.Storage().GetByID(tx, t.StorageID)
 		if err != nil {
 			return fmt.Errorf("getting storage by id: %w", err)
 		}
 
-		masterHub, err = execCtx.Args.DB.Node().GetByID(tx, stg.MasterHub)
+		masterHub, err = execCtx.Args.DB.Hub().GetByID(tx, stg.MasterHub)
 		if err != nil {
 			return fmt.Errorf("getting master hub by id: %w", err)
 		}
 
 		blocks, err := execCtx.Args.DB.ObjectBlock().GetByStorageID(tx, t.StorageID)
 		if err != nil {
-			return fmt.Errorf("getting object blocks by node id: %w", err)
+			return fmt.Errorf("getting object blocks by hub id: %w", err)
 		}
 		for _, c := range blocks {
 			allFileHashes = append(allFileHashes, c.FileHash)
@@ -89,7 +89,7 @@ func (t *AgentCacheGC) Execute(execCtx ExecuteContext) {
 
 		objs, err := execCtx.Args.DB.PinnedObject().GetObjectsByStorageID(tx, t.StorageID)
 		if err != nil {
-			return fmt.Errorf("getting pinned objects by node id: %w", err)
+			return fmt.Errorf("getting pinned objects by hub id: %w", err)
 		}
 		for _, o := range objs {
 			allFileHashes = append(allFileHashes, o.FileHash)
@@ -98,14 +98,14 @@ func (t *AgentCacheGC) Execute(execCtx ExecuteContext) {
 		return nil
 	})
 	if err != nil {
-		log.WithField("NodeID", t.StorageID).Warn(err.Error())
+		log.WithField("HubID", t.StorageID).Warn(err.Error())
 		return
 	}
 
 	// 获取与节点通信的代理客户端
-	agtCli, err := stgglb.AgentMQPool.Acquire(masterHub.NodeID)
+	agtCli, err := stgglb.AgentMQPool.Acquire(masterHub.HubID)
 	if err != nil {
-		log.WithField("NodeID", t.StorageID).Warnf("create agent client failed, err: %s", err.Error())
+		log.WithField("HubID", t.StorageID).Warnf("create agent client failed, err: %s", err.Error())
 		return
 	}
 	defer stgglb.AgentMQPool.Release(agtCli)
@@ -113,7 +113,7 @@ func (t *AgentCacheGC) Execute(execCtx ExecuteContext) {
 	// 向代理发送垃圾回收请求
 	_, err = agtCli.CacheGC(agtmq.ReqCacheGC(t.StorageID, allFileHashes), mq.RequestOption{Timeout: time.Minute})
 	if err != nil {
-		log.WithField("NodeID", t.StorageID).Warnf("ipfs gc: %s", err.Error())
+		log.WithField("HubID", t.StorageID).Warnf("ipfs gc: %s", err.Error())
 		return
 	}
 }

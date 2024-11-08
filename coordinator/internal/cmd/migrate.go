@@ -44,8 +44,8 @@ func migrate(configPath string) {
 	migrateOne(db, cdssdk.Bucket{})
 	migrateOne(db, model.Cache{})
 	migrateOne(db, model.Location{})
-	migrateOne(db, model.NodeConnectivity{})
-	migrateOne(db, cdssdk.Node{})
+	migrateOne(db, model.HubConnectivity{})
+	migrateOne(db, cdssdk.Hub{})
 	migrateOne(db, stgmod.ObjectAccessStat{})
 	migrateOne(db, stgmod.ObjectBlock{})
 	migrateOne(db, cdssdk.Object{})
@@ -59,7 +59,7 @@ func migrate(configPath string) {
 	migrateOne(db, model.UserStorage{})
 	migrateOne(db, model.UserBucket{})
 	migrateOne(db, model.User{})
-	migrateOne(db, model.UserNode{})
+	migrateOne(db, model.UserHub{})
 
 	fmt.Println("migrate success")
 }

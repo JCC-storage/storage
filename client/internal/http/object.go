@@ -45,7 +45,7 @@ func (s *ObjectService) Upload(ctx *gin.Context) {
 
 	objIter := mapMultiPartFileToUploadingObject(req.Files)
 
-	taskID, err := s.svc.ObjectSvc().StartUploading(req.Info.UserID, req.Info.PackageID, objIter, req.Info.NodeAffinity)
+	taskID, err := s.svc.ObjectSvc().StartUploading(req.Info.UserID, req.Info.PackageID, objIter, req.Info.StorageAffinity)
 
 	if err != nil {
 		log.Warnf("start uploading object task: %s", err.Error())

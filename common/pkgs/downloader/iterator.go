@@ -210,13 +210,13 @@ func (iter *DownloadObjectIterator) downloadNoneOrRepObject(obj downloadReqeust2
 }
 
 func (iter *DownloadObjectIterator) downloadECObject(req downloadReqeust2, ecRed *cdssdk.ECRedundancy) (io.ReadCloser, error) {
-	allNodes, err := iter.sortDownloadStorages(req)
+	allStorages, err := iter.sortDownloadStorages(req)
 	if err != nil {
 		return nil, err
 	}
 
-	bsc, blocks := iter.getMinReadingBlockSolution(allNodes, ecRed.K)
-	osc, stg := iter.getMinReadingObjectSolution(allNodes, ecRed.K)
+	bsc, blocks := iter.getMinReadingBlockSolution(allStorages, ecRed.K)
+	osc, stg := iter.getMinReadingObjectSolution(allStorages, ecRed.K)
 
 	if bsc < osc {
 		var logStrs []any = []any{fmt.Sprintf("downloading ec object %v from blocks: ", req.Raw.ObjectID)}
@@ -291,37 +291,37 @@ func (iter *DownloadObjectIterator) sortDownloadStorages(req downloadReqeust2) (
 		}
 	}
 
-	downloadNodeMap := make(map[cdssdk.StorageID]*downloadStorageInfo)
+	downloadStorageMap := make(map[cdssdk.StorageID]*downloadStorageInfo)
 	for _, id := range req.Detail.PinnedAt {
-		node, ok := downloadNodeMap[id]
+		storage, ok := downloadStorageMap[id]
 		if !ok {
 			mod := iter.allStorages[id]
-			node = &downloadStorageInfo{
+			storage = &downloadStorageInfo{
 				Storage:      mod,
 				ObjectPinned: true,
-				Distance:     iter.getNodeDistance(mod),
+				Distance:     iter.getStorageDistance(mod),
 			}
-			downloadNodeMap[id] = node
+			downloadStorageMap[id] = storage
 		}
 
-		node.ObjectPinned = true
+		storage.ObjectPinned = true
 	}
 
 	for _, b := range req.Detail.Blocks {
-		node, ok := downloadNodeMap[b.StorageID]
+		storage, ok := downloadStorageMap[b.StorageID]
 		if !ok {
 			mod := iter.allStorages[b.StorageID]
-			node = &downloadStorageInfo{
+			storage = &downloadStorageInfo{
 				Storage:  mod,
-				Distance: iter.getNodeDistance(mod),
+				Distance: iter.getStorageDistance(mod),
 			}
-			downloadNodeMap[b.StorageID] = node
+			downloadStorageMap[b.StorageID] = storage
 		}
 
-		node.Blocks = append(node.Blocks, b)
+		storage.Blocks = append(storage.Blocks, b)
 	}
 
-	return sort2.Sort(lo.Values(downloadNodeMap), func(left, right *downloadStorageInfo) int {
+	return sort2.Sort(lo.Values(downloadStorageMap), func(left, right *downloadStorageInfo) int {
 		return sort2.Cmp(left.Distance, right.Distance)
 	}), nil
 }
@@ -364,23 +364,23 @@ func (iter *DownloadObjectIterator) getMinReadingObjectSolution(sortedStgs []*do
 	return dist, downloadStg
 }
 
-func (iter *DownloadObjectIterator) getNodeDistance(stg stgmod.StorageDetail) float64 {
-	if stgglb.Local.NodeID != nil {
-		if stg.MasterHub.NodeID == *stgglb.Local.NodeID {
-			return consts.NodeDistanceSameNode
+func (iter *DownloadObjectIterator) getStorageDistance(stg stgmod.StorageDetail) float64 {
+	if stgglb.Local.HubID != nil {
+		if stg.MasterHub.HubID == *stgglb.Local.HubID {
+			return consts.StorageDistanceSameStorage
 		}
 	}
 
 	if stg.MasterHub.LocationID == stgglb.Local.LocationID {
-		return consts.NodeDistanceSameLocation
+		return consts.StorageDistanceSameLocation
 	}
 
-	c := iter.downloader.conn.Get(stg.MasterHub.NodeID)
-	if c == nil || c.Delay == nil || *c.Delay > time.Duration(float64(time.Millisecond)*iter.downloader.cfg.HighLatencyNodeMs) {
-		return consts.NodeDistanceHighLatencyNode
+	c := iter.downloader.conn.Get(stg.MasterHub.HubID)
+	if c == nil || c.Delay == nil || *c.Delay > time.Duration(float64(time.Millisecond)*iter.downloader.cfg.HighLatencyHubMs) {
+		return consts.HubDistanceHighLatencyHub
 	}
 
-	return consts.NodeDistanceOther
+	return consts.StorageDistanceOther
 }
 
 func (iter *DownloadObjectIterator) downloadFromStorage(stg *stgmod.StorageDetail, req downloadReqeust2) (io.ReadCloser, error) {

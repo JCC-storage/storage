@@ -73,7 +73,7 @@ func buildFromNode(ctx *GenerateContext, f ioswitchlrc.From) (ops2.FromNode, err
 		}
 
 		// TODO2 支持HTTP协议
-		t.Env().ToEnvWorker(&ioswitchlrc.AgentWorker{Node: f.Node, Address: *f.Node.Address.(*cdssdk.GRPCAddressInfo)})
+		t.Env().ToEnvWorker(&ioswitchlrc.AgentWorker{Hub: f.Hub, Address: *f.Hub.Address.(*cdssdk.GRPCAddressInfo)})
 		t.Env().Pinned = true
 
 		return t, nil
@@ -107,7 +107,7 @@ func buildToNode(ctx *GenerateContext, t ioswitchlrc.To) (ops2.ToNode, error) {
 		// n.Env().ToEnvWorker(&ioswitchlrc.HttpHubWorker{Node: t.Hub})
 		// TODO2 支持HTTP协议
 		case *cdssdk.GRPCAddressInfo:
-			n.Env().ToEnvWorker(&ioswitchlrc.AgentWorker{Node: t.Hub, Address: *addr})
+			n.Env().ToEnvWorker(&ioswitchlrc.AgentWorker{Hub: t.Hub, Address: *addr})
 
 		default:
 			return nil, fmt.Errorf("unsupported node address type %T", addr)

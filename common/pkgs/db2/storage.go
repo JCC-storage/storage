@@ -80,7 +80,7 @@ func (db *StorageDB) GetUserStorageByName(ctx SQLContext, userID cdssdk.UserID, 
 	return stg, err
 }
 
-func (db *StorageDB) GetHubStorages(ctx SQLContext, hubID cdssdk.NodeID) ([]model.Storage, error) {
+func (db *StorageDB) GetHubStorages(ctx SQLContext, hubID cdssdk.HubID) ([]model.Storage, error) {
 	var stgs []model.Storage
 	err := ctx.Table("Storage").Select("Storage.*").Find(&stgs, "MasterHub = ?", hubID).Error
 	return stgs, err
@@ -89,7 +89,7 @@ func (db *StorageDB) GetHubStorages(ctx SQLContext, hubID cdssdk.NodeID) ([]mode
 func (db *StorageDB) FillDetails(ctx SQLContext, details []stgmod.StorageDetail) error {
 	stgsMp := make(map[cdssdk.StorageID]*stgmod.StorageDetail)
 	stgIDs := make([]cdssdk.StorageID, 0, len(details))
-	var masterHubIDs []cdssdk.NodeID
+	var masterHubIDs []cdssdk.HubID
 	for i := range details {
 		stgsMp[details[i].Storage.StorageID] = &details[i]
 		stgIDs = append(stgIDs, details[i].Storage.StorageID)
@@ -97,13 +97,13 @@ func (db *StorageDB) FillDetails(ctx SQLContext, details []stgmod.StorageDetail)
 	}
 
 	// 获取监护Hub信息
-	masterHubs, err := db.Node().BatchGetByID(ctx, masterHubIDs)
+	masterHubs, err := db.Hub().BatchGetByID(ctx, masterHubIDs)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return fmt.Errorf("getting master hub: %w", err)
 	}
-	masterHubMap := make(map[cdssdk.NodeID]cdssdk.Node)
+	masterHubMap := make(map[cdssdk.HubID]cdssdk.Hub)
 	for _, hub := range masterHubs {
-		masterHubMap[hub.NodeID] = hub
+		masterHubMap[hub.HubID] = hub
 	}
 	for _, stg := range stgsMp {
 		if stg.Storage.MasterHub != 0 {

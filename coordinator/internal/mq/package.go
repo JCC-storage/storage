@@ -191,15 +191,15 @@ func (svc *Service) GetPackageCachedStorages(msg *coormq.GetPackageCachedStorage
 		}
 	}
 
-	var nodeInfos []cdssdk.StoragePackageCachingInfo
-	for _, nodeInfo := range stgInfoMap {
-		nodeInfos = append(nodeInfos, *nodeInfo)
+	var stgInfos []cdssdk.StoragePackageCachingInfo
+	for _, stgInfo := range stgInfoMap {
+		stgInfos = append(stgInfos, *stgInfo)
 	}
 
-	sort.Slice(nodeInfos, func(i, j int) bool {
-		return nodeInfos[i].StorageID < nodeInfos[j].StorageID
+	sort.Slice(stgInfos, func(i, j int) bool {
+		return stgInfos[i].StorageID < stgInfos[j].StorageID
 	})
-	return mq.ReplyOK(coormq.ReqGetPackageCachedStoragesResp(nodeInfos, packageSize))
+	return mq.ReplyOK(coormq.ReqGetPackageCachedStoragesResp(stgInfos, packageSize))
 }
 
 func (svc *Service) GetPackageLoadedStorages(msg *coormq.GetPackageLoadedStorages) (*coormq.GetPackageLoadedStoragesResp, *mq.CodeMessage) {

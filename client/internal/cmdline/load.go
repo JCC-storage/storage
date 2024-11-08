@@ -68,14 +68,14 @@ func loadByID(cmdCtx *CommandContext, pkgID cdssdk.PackageID, stgID cdssdk.Stora
 	userID := cdssdk.UserID(1)
 	startTime := time.Now()
 
-	nodeID, taskID, err := cmdCtx.Cmdline.Svc.StorageSvc().StartStorageLoadPackage(userID, pkgID, stgID)
+	hubID, taskID, err := cmdCtx.Cmdline.Svc.StorageSvc().StartStorageLoadPackage(userID, pkgID, stgID)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
 	for {
-		complete, fullPath, err := cmdCtx.Cmdline.Svc.StorageSvc().WaitStorageLoadPackage(nodeID, taskID, time.Second*10)
+		complete, fullPath, err := cmdCtx.Cmdline.Svc.StorageSvc().WaitStorageLoadPackage(hubID, taskID, time.Second*10)
 		if err != nil {
 			fmt.Println(err)
 			return

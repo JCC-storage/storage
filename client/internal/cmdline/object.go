@@ -15,9 +15,9 @@ import (
 // ctx: 命令上下文，提供必要的服务和环境配置。
 // packageID: 上传套餐的唯一标识。
 // rootPath: 本地文件系统中待上传文件的根目录。
-// nodeAffinity: 偏好的节点ID列表，上传任务可能会分配到这些节点上。
+// storageAffinity: 偏好的节点ID列表，上传任务可能会分配到这些节点上。
 // 返回值: 执行过程中遇到的任何错误。
-var _ = MustAddCmd(func(ctx CommandContext, packageID cdssdk.PackageID, rootPath string, nodeAffinity []cdssdk.NodeID) error {
+var _ = MustAddCmd(func(ctx CommandContext, packageID cdssdk.PackageID, rootPath string, storageAffinity []cdssdk.StorageID) error {
 	// 记录函数开始时间，用于计算执行时间。
 	startTime := time.Now()
 	defer func() {
@@ -48,16 +48,15 @@ var _ = MustAddCmd(func(ctx CommandContext, packageID cdssdk.PackageID, rootPath
 	}
 
 	// 根据节点亲和性列表设置首选上传节点。
-	var nodeAff *cdssdk.NodeID
-	if len(nodeAffinity) > 0 {
-		n := cdssdk.NodeID(nodeAffinity[0])
-		nodeAff = &n
+	var storageAff cdssdk.StorageID
+	if len(storageAffinity) > 0 {
+		storageAff = storageAffinity[0]
 	}
 
 	// 创建上传对象迭代器。
 	objIter := iterator.NewUploadingObjectIterator(rootPath, uploadFilePathes)
 	// 开始上传任务。
-	taskID, err := ctx.Cmdline.Svc.ObjectSvc().StartUploading(userID, packageID, objIter, nodeAff)
+	taskID, err := ctx.Cmdline.Svc.ObjectSvc().StartUploading(userID, packageID, objIter, storageAff)
 	if err != nil {
 		// 上传任务启动失败处理。
 		return fmt.Errorf("update objects to package %d failed, err: %w", packageID, err)

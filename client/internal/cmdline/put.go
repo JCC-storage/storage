@@ -16,7 +16,7 @@ import (
 )
 
 func init() {
-	var nodeID int64
+	var stgID int64
 	cmd := &cobra.Command{
 		Use:   "put [local] [remote]",
 		Short: "Upload files to CDS",
@@ -90,14 +90,13 @@ func init() {
 				return
 			}
 
-			var nodeAff *cdssdk.NodeID
-			if nodeID != 0 {
-				id := cdssdk.NodeID(nodeID)
-				nodeAff = &id
+			var storageAff cdssdk.StorageID
+			if stgID != 0 {
+				storageAff = cdssdk.StorageID(stgID)
 			}
 
 			objIter := iterator.NewUploadingObjectIterator(local, uploadFilePathes)
-			taskID, err := cmdCtx.Cmdline.Svc.ObjectSvc().StartUploading(userID, pkg.PackageID, objIter, nodeAff)
+			taskID, err := cmdCtx.Cmdline.Svc.ObjectSvc().StartUploading(userID, pkg.PackageID, objIter, storageAff)
 			if err != nil {
 				fmt.Printf("start uploading objects: %v\n", err)
 				return
@@ -118,7 +117,7 @@ func init() {
 			fmt.Printf("Put %v files (%v) to %s in %v.\n", fileCount, bytesize.ByteSize(totalSize), remote, time.Since(startTime))
 		},
 	}
-	cmd.Flags().Int64VarP(&nodeID, "node", "n", 0, "node affinity")
+	cmd.Flags().Int64VarP(&stgID, "storage", "s", 0, "storage affinity")
 
 	rootCmd.AddCommand(cmd)
 }

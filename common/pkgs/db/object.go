@@ -175,9 +175,9 @@ func (db *ObjectDB) GetPackageObjectDetails(ctx SQLContext, packageID cdssdk.Pac
 	return details, nil
 }
 
-func (*ObjectDB) GetObjectsIfAnyBlockOnNode(ctx SQLContext, nodeID cdssdk.NodeID) ([]cdssdk.Object, error) {
+func (*ObjectDB) GetObjectsIfAnyBlockOnNode(ctx SQLContext, hubID cdssdk.HubID) ([]cdssdk.Object, error) {
 	var temps []model.TempObject
-	err := sqlx.Select(ctx, &temps, "select * from Object where ObjectID in (select ObjectID from ObjectBlock where NodeID = ?) order by ObjectID asc", nodeID)
+	err := sqlx.Select(ctx, &temps, "select * from Object where ObjectID in (select ObjectID from ObjectBlock where HubID = ?) order by ObjectID asc", hubID)
 	if err != nil {
 		return nil, fmt.Errorf("getting objects: %w", err)
 	}
@@ -247,7 +247,7 @@ func (db *ObjectDB) BatchAdd(ctx SQLContext, packageID cdssdk.PackageID, adds []
 		objBlocks = append(objBlocks, stgmod.ObjectBlock{
 			ObjectID: addedObjIDs[i],
 			Index:    0,
-			NodeID:   add.NodeID,
+			HubID:   add.HubID,
 			FileHash: add.FileHash,
 		})
 	}
@@ -260,7 +260,7 @@ func (db *ObjectDB) BatchAdd(ctx SQLContext, packageID cdssdk.PackageID, adds []
 	for _, add := range adds {
 		caches = append(caches, model.Cache{
 			FileHash:   add.FileHash,
-			NodeID:     add.NodeID,
+			HubID:     add.HubID,
 			CreateTime: time.Now(),
 			Priority:   0,
 		})
@@ -326,7 +326,7 @@ func (db *ObjectDB) BatchUpdateRedundancy(ctx SQLContext, objs []coormq.Updating
 		for _, blk := range obj.Blocks {
 			caches = append(caches, model.Cache{
 				FileHash:   blk.FileHash,
-				NodeID:     blk.NodeID,
+				HubID:     blk.HubID,
 				CreateTime: time.Now(),
 				Priority:   0,
 			})

@@ -8,10 +8,10 @@ import (
 )
 
 const (
-	IPFSLockPathPrefix  = "IPFS"
-	IPFSNodeIDPathIndex = 1
-	IPFSBuzyLock        = "Buzy"
-	IPFSGCLock          = "GC"
+	IPFSLockPathPrefix = "IPFS"
+	IPFSHubIDPathIndex = 1
+	IPFSBuzyLock       = "Buzy"
+	IPFSGCLock         = "GC"
 )
 
 type IPFSLock struct {
@@ -28,7 +28,7 @@ func NewIPFSLock() *IPFSLock {
 
 // CanLock 判断这个锁能否锁定成功
 func (l *IPFSLock) CanLock(lock distlock.Lock) error {
-	nodeLock, ok := l.nodeLocks[lock.Path[IPFSNodeIDPathIndex]]
+	nodeLock, ok := l.nodeLocks[lock.Path[IPFSHubIDPathIndex]]
 	if !ok {
 		// 不能直接返回nil，因为如果锁数据的格式不对，也不能获取锁。
 		// 这里使用一个空Provider来进行检查。
@@ -40,12 +40,12 @@ func (l *IPFSLock) CanLock(lock distlock.Lock) error {
 
 // 锁定。在内部可以不用判断能否加锁，外部需要保证调用此函数前调用了CanLock进行检查
 func (l *IPFSLock) Lock(reqID string, lock distlock.Lock) error {
-	nodeID := lock.Path[IPFSNodeIDPathIndex]
+	hubID := lock.Path[IPFSHubIDPathIndex]
 
-	nodeLock, ok := l.nodeLocks[nodeID]
+	nodeLock, ok := l.nodeLocks[hubID]
 	if !ok {
 		nodeLock = NewIPFSNodeLock()
-		l.nodeLocks[nodeID] = nodeLock
+		l.nodeLocks[hubID] = nodeLock
 	}
 
 	return nodeLock.Lock(reqID, lock)
@@ -53,9 +53,9 @@ func (l *IPFSLock) Lock(reqID string, lock distlock.Lock) error {
 
 // 解锁
 func (l *IPFSLock) Unlock(reqID string, lock distlock.Lock) error {
-	nodeID := lock.Path[IPFSNodeIDPathIndex]
+	hubID := lock.Path[IPFSHubIDPathIndex]
 
-	nodeLock, ok := l.nodeLocks[nodeID]
+	nodeLock, ok := l.nodeLocks[hubID]
 	if !ok {
 		return nil
 	}

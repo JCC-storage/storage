@@ -21,7 +21,7 @@ func newTreeTest(nodeBlocksMap []bitmap.Bitmap64) combinatorialTree {
 		tree.localStgIDToStgID = append(tree.localStgIDToStgID, cdssdk.StorageID(id))
 	}
 
-	tree.nodes[0].localNodeID = -1
+	tree.nodes[0].localHubID = -1
 	index := 1
 	tree.initNode(0, &tree.nodes[0], &index)
 
@@ -111,7 +111,7 @@ func Test_newCombinatorialTree(t *testing.T) {
 			var localIDs []int
 			var bitmaps []int
 			for _, n := range t.nodes {
-				localIDs = append(localIDs, n.localNodeID)
+				localIDs = append(localIDs, n.localHubID)
 				bitmaps = append(bitmaps, int(n.blocksBitmap))
 			}
 
@@ -125,7 +125,7 @@ func Test_UpdateBitmap(t *testing.T) {
 	testcases := []struct {
 		title                   string
 		nodeBlocks              []bitmap.Bitmap64
-		updatedNodeID           cdssdk.StorageID
+		updatedHubID            cdssdk.StorageID
 		updatedBitmap           bitmap.Bitmap64
 		k                       int
 		expectedTreeNodeBitmaps []int
@@ -134,7 +134,7 @@ func Test_UpdateBitmap(t *testing.T) {
 		{
 			title:                   "4个节点，更新但值不变",
 			nodeBlocks:              []bitmap.Bitmap64{1, 2, 4, 8},
-			updatedNodeID:           cdssdk.StorageID(0),
+			updatedHubID:            cdssdk.StorageID(0),
 			updatedBitmap:           bitmap.Bitmap64(1),
 			k:                       4,
 			expectedTreeNodeBitmaps: []int{0, 1, 3, 7, 15, 11, 5, 13, 9, 2, 6, 14, 10, 4, 12, 8},
@@ -143,7 +143,7 @@ func Test_UpdateBitmap(t *testing.T) {
 		{
 			title:                   "4个节点，更新0",
 			nodeBlocks:              []bitmap.Bitmap64{1, 2, 4, 8},
-			updatedNodeID:           cdssdk.StorageID(0),
+			updatedHubID:            cdssdk.StorageID(0),
 			updatedBitmap:           bitmap.Bitmap64(2),
 			k:                       4,
 			expectedTreeNodeBitmaps: []int{0, 2, 2, 6, 14, 10, 6, 14, 10, 2, 6, 14, 10, 4, 12, 8},
@@ -152,7 +152,7 @@ func Test_UpdateBitmap(t *testing.T) {
 		{
 			title:                   "4个节点，更新1",
 			nodeBlocks:              []bitmap.Bitmap64{1, 2, 4, 8},
-			updatedNodeID:           cdssdk.StorageID(1),
+			updatedHubID:            cdssdk.StorageID(1),
 			updatedBitmap:           bitmap.Bitmap64(1),
 			k:                       4,
 			expectedTreeNodeBitmaps: []int{0, 1, 1, 5, 13, 9, 5, 13, 9, 1, 5, 13, 9, 4, 12, 8},
@@ -161,7 +161,7 @@ func Test_UpdateBitmap(t *testing.T) {
 		{
 			title:                   "4个节点，更新2",
 			nodeBlocks:              []bitmap.Bitmap64{1, 2, 4, 8},
-			updatedNodeID:           cdssdk.StorageID(2),
+			updatedHubID:            cdssdk.StorageID(2),
 			updatedBitmap:           bitmap.Bitmap64(1),
 			k:                       4,
 			expectedTreeNodeBitmaps: []int{0, 1, 3, 3, 11, 11, 1, 9, 9, 2, 3, 11, 10, 1, 9, 8},
@@ -170,7 +170,7 @@ func Test_UpdateBitmap(t *testing.T) {
 		{
 			title:                   "4个节点，更新3",
 			nodeBlocks:              []bitmap.Bitmap64{1, 2, 4, 8},
-			updatedNodeID:           cdssdk.StorageID(3),
+			updatedHubID:            cdssdk.StorageID(3),
 			updatedBitmap:           bitmap.Bitmap64(1),
 			k:                       4,
 			expectedTreeNodeBitmaps: []int{0, 1, 3, 7, 7, 3, 5, 5, 1, 2, 6, 7, 3, 4, 5, 1},
@@ -179,7 +179,7 @@ func Test_UpdateBitmap(t *testing.T) {
 		{
 			title:                   "4个节点，k<4，更新0，0之前没有k个块，现在拥有",
 			nodeBlocks:              []bitmap.Bitmap64{1, 2, 4, 8},
-			updatedNodeID:           cdssdk.StorageID(0),
+			updatedHubID:            cdssdk.StorageID(0),
 			updatedBitmap:           bitmap.Bitmap64(3),
 			k:                       2,
 			expectedTreeNodeBitmaps: []int{0, 3, 3, 7, 15, 11, 5, 13, 9, 2, 6, 14, 10, 4, 12, 8},
@@ -187,7 +187,7 @@ func Test_UpdateBitmap(t *testing.T) {
 		{
 			title:                   "4个节点，k<4，更新0，0之前有k个块，现在没有",
 			nodeBlocks:              []bitmap.Bitmap64{3, 4, 0, 0},
-			updatedNodeID:           cdssdk.StorageID(0),
+			updatedHubID:            cdssdk.StorageID(0),
 			updatedBitmap:           bitmap.Bitmap64(0),
 			k:                       2,
 			expectedTreeNodeBitmaps: []int{0, 0, 4, 4, 4, 4, 0, 0, 0, 4, 4, 4, 4, 0, 0, 0},
@@ -197,7 +197,7 @@ func Test_UpdateBitmap(t *testing.T) {
 	for _, test := range testcases {
 		Convey(test.title, t, func() {
 			t := newTreeTest(test.nodeBlocks)
-			t.UpdateBitmap(test.updatedNodeID, test.updatedBitmap, test.k)
+			t.UpdateBitmap(test.updatedHubID, test.updatedBitmap, test.k)
 
 			var bitmaps []int
 			for _, n := range t.nodes {

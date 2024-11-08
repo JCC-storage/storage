@@ -123,43 +123,43 @@ func (s *TempService) GetObjectDetail(ctx *gin.Context) {
 		return
 	}
 
-	loadedNodeIDs, err := s.svc.PackageSvc().GetLoadedNodes(1, details.Object.PackageID)
+	loadedHubIDs, err := s.svc.PackageSvc().GetLoadedNodes(1, details.Object.PackageID)
 	if err != nil {
 		log.Warnf("getting loaded nodes: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get loaded nodes failed"))
 		return
 	}
 
-	var allNodeIDs []cdssdk.NodeID
-	allNodeIDs = append(allNodeIDs, details.PinnedAt...)
+	var allHubIDs []cdssdk.HubID
+	allHubIDs = append(allHubIDs, details.PinnedAt...)
 	for _, b := range details.Blocks {
-		allNodeIDs = append(allNodeIDs, b.StorageID)
+		allHubIDs = append(allHubIDs, b.StorageID)
 	}
-	allNodeIDs = append(allNodeIDs, loadedNodeIDs...)
+	allHubIDs = append(allHubIDs, loadedHubIDs...)
 
-	allNodeIDs = lo.Uniq(allNodeIDs)
+	allHubIDs = lo.Uniq(allHubIDs)
 
-	getNodes, err := s.svc.NodeSvc().GetNodes(allNodeIDs)
+	getNodes, err := s.svc.NodeSvc().GetNodes(allHubIDs)
 	if err != nil {
 		log.Warnf("getting nodes: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get nodes failed"))
 		return
 	}
 
-	allNodes := make(map[cdssdk.NodeID]*cdssdk.Node)
+	allNodes := make(map[cdssdk.HubID]*cdssdk.Node)
 	for _, n := range getNodes {
 		n2 := n
-		allNodes[n.NodeID] = &n2
+		allNodes[n.HubID] = &n2
 	}
 
 	var blocks []ObjectBlockDetail
 
-	for _, nodeID := range details.PinnedAt {
+	for _, hubID := range details.PinnedAt {
 		blocks = append(blocks, ObjectBlockDetail{
 			Type:         "Rep",
 			FileHash:     details.Object.FileHash,
 			LocationType: "Agent",
-			LocationName: allNodes[nodeID].Name,
+			LocationName: allNodes[hubID].Name,
 		})
 	}
 
@@ -198,12 +198,12 @@ func (s *TempService) GetObjectDetail(ctx *gin.Context) {
 		}
 	}
 
-	for _, nodeID := range loadedNodeIDs {
+	for _, hubID := range loadedHubIDs {
 		blocks = append(blocks, ObjectBlockDetail{
 			Type:         "Rep",
 			FileHash:     details.Object.FileHash,
 			LocationType: "Storage",
-			LocationName: allNodes[nodeID].Name,
+			LocationName: allNodes[hubID].Name,
 		})
 	}
 
@@ -258,9 +258,9 @@ func (s *TempService) GetDatabaseAll(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get nodes failed"))
 		return
 	}
-	allNodes := make(map[cdssdk.NodeID]cdssdk.Node)
+	allNodes := make(map[cdssdk.HubID]cdssdk.Node)
 	for _, n := range nodes {
-		allNodes[n.NodeID] = n
+		allNodes[n.HubID] = n
 	}
 
 	bkts := make(map[cdssdk.BucketID]*BucketDetail)
@@ -290,8 +290,8 @@ func (s *TempService) GetDatabaseAll(ctx *gin.Context) {
 			return
 		}
 
-		for _, nodeID := range loaded {
-			p.Loaded = append(p.Loaded, allNodes[nodeID])
+		for _, hubID := range loaded {
+			p.Loaded = append(p.Loaded, allNodes[hubID])
 		}
 
 		pkgs[pkg.PackageID] = &p
@@ -310,13 +310,13 @@ func (s *TempService) GetDatabaseAll(ctx *gin.Context) {
 	for _, obj := range db.Objects {
 		bkts[pkgs[obj.Object.PackageID].Package.BucketID].ObjectCount++
 
-		for _, nodeID := range obj.PinnedAt {
+		for _, hubID := range obj.PinnedAt {
 			blocks = append(blocks, ObjectBlockDetail{
 				ObjectID:     obj.Object.ObjectID,
 				Type:         "Rep",
 				FileHash:     obj.Object.FileHash,
 				LocationType: "Agent",
-				LocationName: allNodes[nodeID].Name,
+				LocationName: allNodes[hubID].Name,
 			})
 		}
 
@@ -364,7 +364,7 @@ func (s *TempService) GetDatabaseAll(ctx *gin.Context) {
 				Type:         "Rep",
 				FileHash:     obj.Object.FileHash,
 				LocationType: "Storage",
-				LocationName: allNodes[node.NodeID].Name,
+				LocationName: allNodes[node.HubID].Name,
 			})
 		}
 

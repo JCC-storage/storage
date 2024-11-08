@@ -143,8 +143,8 @@ func (s *PackageService) GetCachedStorages(ctx *gin.Context) {
 
 	resp, err := s.svc.PackageSvc().GetCachedStorages(req.UserID, req.PackageID)
 	if err != nil {
-		log.Warnf("get package cached nodes failed: %s", err.Error())
-		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get package cached nodes failed"))
+		log.Warnf("get package cached storages failed: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get package cached storages failed"))
 		return
 	}
 
@@ -164,8 +164,8 @@ func (s *PackageService) GetLoadedStorages(ctx *gin.Context) {
 
 	stgIDs, err := s.svc.PackageSvc().GetLoadedStorages(req.UserID, req.PackageID)
 	if err != nil {
-		log.Warnf("get package loaded nodes failed: %s", err.Error())
-		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get package loaded nodes failed"))
+		log.Warnf("get package loaded storages failed: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get package loaded storages failed"))
 		return
 	}
 

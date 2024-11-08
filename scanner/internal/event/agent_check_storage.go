@@ -53,15 +53,15 @@ func (t *AgentCheckStorage) Execute(execCtx ExecuteContext) {
 		return
 	}
 
-	node, err := execCtx.Args.DB.Node().GetByID(execCtx.Args.DB.DefCtx(), stg.MasterHub)
+	hub, err := execCtx.Args.DB.Hub().GetByID(execCtx.Args.DB.DefCtx(), stg.MasterHub)
 	if err != nil {
 		if err != sql.ErrNoRows {
-			log.WithField("StorageID", t.StorageID).Warnf("get storage node failed, err: %s", err.Error())
+			log.WithField("StorageID", t.StorageID).Warnf("get storage hub failed, err: %s", err.Error())
 		}
 		return
 	}
 
-	if node.State != consts.NodeStateNormal {
+	if hub.State != consts.HubStateNormal {
 		return
 	}
 

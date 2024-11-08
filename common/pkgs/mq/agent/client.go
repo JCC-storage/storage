@@ -10,10 +10,10 @@ import (
 
 type Client struct {
 	rabbitCli *mq.RabbitMQTransport
-	id        cdssdk.NodeID
+	id        cdssdk.HubID
 }
 
-func NewClient(id cdssdk.NodeID, cfg *stgmq.Config) (*Client, error) {
+func NewClient(id cdssdk.HubID, cfg *stgmq.Config) (*Client, error) {
 	rabbitCli, err := mq.NewRabbitMQTransport(cfg.MakeConnectingURL(), stgmq.MakeAgentQueueName(int64(id)), "")
 	if err != nil {
 		return nil, err
@@ -30,23 +30,23 @@ func (c *Client) Close() {
 }
 
 type Pool interface {
-	Acquire(id cdssdk.NodeID) (*Client, error)
+	Acquire(id cdssdk.HubID) (*Client, error)
 	Release(cli *Client)
 }
 
 type pool struct {
 	mqcfg   *stgmq.Config
-	shareds map[cdssdk.NodeID]*Client
+	shareds map[cdssdk.HubID]*Client
 	lock    sync.Mutex
 }
 
 func NewPool(mqcfg *stgmq.Config) Pool {
 	return &pool{
 		mqcfg:   mqcfg,
-		shareds: make(map[cdssdk.NodeID]*Client),
+		shareds: make(map[cdssdk.HubID]*Client),
 	}
 }
-func (p *pool) Acquire(id cdssdk.NodeID) (*Client, error) {
+func (p *pool) Acquire(id cdssdk.HubID) (*Client, error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 

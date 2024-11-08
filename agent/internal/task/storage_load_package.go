@@ -182,7 +182,7 @@ func (t *StorageLoadPackage) downloadOne(coorCli *coormq.Client, shardStore type
 
 func (t *StorageLoadPackage) downloadNoneOrRepObject(shardStore types.ShardStore, obj stgmod.ObjectDetail) (io.ReadCloser, error) {
 	if len(obj.Blocks) == 0 && len(obj.PinnedAt) == 0 {
-		return nil, fmt.Errorf("no node has this object")
+		return nil, fmt.Errorf("no storage has this object")
 	}
 
 	file, err := shardStore.Open(types.NewOpen(obj.Object.FileHash))
@@ -194,12 +194,12 @@ func (t *StorageLoadPackage) downloadNoneOrRepObject(shardStore types.ShardStore
 }
 
 func (t *StorageLoadPackage) downloadECObject(coorCli *coormq.Client, shardStore types.ShardStore, obj stgmod.ObjectDetail, ecRed *cdssdk.ECRedundancy) (io.ReadCloser, []stgmod.ObjectBlock, error) {
-	allNodes, err := t.sortDownloadNodes(coorCli, obj)
+	allStorages, err := t.sortDownloadStorages(coorCli, obj)
 	if err != nil {
 		return nil, nil, err
 	}
-	bsc, blocks := t.getMinReadingBlockSolution(allNodes, ecRed.K)
-	osc, _ := t.getMinReadingObjectSolution(allNodes, ecRed.K)
+	bsc, blocks := t.getMinReadingBlockSolution(allStorages, ecRed.K)
+	osc, _ := t.getMinReadingObjectSolution(allStorages, ecRed.K)
 	if bsc < osc {
 		var fileStrs []io.ReadCloser
 
@@ -251,7 +251,7 @@ type downloadStorageInfo struct {
 	Distance     float64
 }
 
-func (t *StorageLoadPackage) sortDownloadNodes(coorCli *coormq.Client, obj stgmod.ObjectDetail) ([]*downloadStorageInfo, error) {
+func (t *StorageLoadPackage) sortDownloadStorages(coorCli *coormq.Client, obj stgmod.ObjectDetail) ([]*downloadStorageInfo, error) {
 	var stgIDs []cdssdk.StorageID
 	for _, id := range obj.PinnedAt {
 		if !lo.Contains(stgIDs, id) {
@@ -273,37 +273,37 @@ func (t *StorageLoadPackage) sortDownloadNodes(coorCli *coormq.Client, obj stgmo
 		allStgs[stg.Storage.StorageID] = *stg
 	}
 
-	downloadNodeMap := make(map[cdssdk.StorageID]*downloadStorageInfo)
+	downloadStorageMap := make(map[cdssdk.StorageID]*downloadStorageInfo)
 	for _, id := range obj.PinnedAt {
-		node, ok := downloadNodeMap[id]
+		storage, ok := downloadStorageMap[id]
 		if !ok {
 			mod := allStgs[id]
-			node = &downloadStorageInfo{
+			storage = &downloadStorageInfo{
 				Storage:      mod,
 				ObjectPinned: true,
-				Distance:     t.getNodeDistance(mod),
+				Distance:     t.getStorageDistance(mod),
 			}
-			downloadNodeMap[id] = node
+			downloadStorageMap[id] = storage
 		}
 
-		node.ObjectPinned = true
+		storage.ObjectPinned = true
 	}
 
 	for _, b := range obj.Blocks {
-		node, ok := downloadNodeMap[b.StorageID]
+		storage, ok := downloadStorageMap[b.StorageID]
 		if !ok {
 			mod := allStgs[b.StorageID]
-			node = &downloadStorageInfo{
+			storage = &downloadStorageInfo{
 				Storage:  mod,
-				Distance: t.getNodeDistance(mod),
+				Distance: t.getStorageDistance(mod),
 			}
-			downloadNodeMap[b.StorageID] = node
+			downloadStorageMap[b.StorageID] = storage
 		}
 
-		node.Blocks = append(node.Blocks, b)
+		storage.Blocks = append(storage.Blocks, b)
 	}
 
-	return sort2.Sort(lo.Values(downloadNodeMap), func(left, right *downloadStorageInfo) int {
+	return sort2.Sort(lo.Values(downloadStorageMap), func(left, right *downloadStorageInfo) int {
 		return sort2.Cmp(left.Distance, right.Distance)
 	}), nil
 }
@@ -313,11 +313,11 @@ type downloadBlock struct {
 	Block   stgmod.ObjectBlock
 }
 
-func (t *StorageLoadPackage) getMinReadingBlockSolution(sortedNodes []*downloadStorageInfo, k int) (float64, []downloadBlock) {
+func (t *StorageLoadPackage) getMinReadingBlockSolution(sortedStorages []*downloadStorageInfo, k int) (float64, []downloadBlock) {
 	gotBlocksMap := bitmap.Bitmap64(0)
 	var gotBlocks []downloadBlock
 	dist := float64(0.0)
-	for _, n := range sortedNodes {
+	for _, n := range sortedStorages {
 		for _, b := range n.Blocks {
 			if !gotBlocksMap.Get(b.Index) {
 				gotBlocks = append(gotBlocks, downloadBlock{
@@ -337,10 +337,10 @@ func (t *StorageLoadPackage) getMinReadingBlockSolution(sortedNodes []*downloadS
 	return math.MaxFloat64, gotBlocks
 }
 
-func (t *StorageLoadPackage) getMinReadingObjectSolution(sortedNodes []*downloadStorageInfo, k int) (float64, *stgmod.StorageDetail) {
+func (t *StorageLoadPackage) getMinReadingObjectSolution(sortedStorages []*downloadStorageInfo, k int) (float64, *stgmod.StorageDetail) {
 	dist := math.MaxFloat64
 	var downloadStg *stgmod.StorageDetail
-	for _, n := range sortedNodes {
+	for _, n := range sortedStorages {
 		if n.ObjectPinned && float64(k)*n.Distance < dist {
 			dist = float64(k) * n.Distance
 			stg := n.Storage
@@ -351,16 +351,16 @@ func (t *StorageLoadPackage) getMinReadingObjectSolution(sortedNodes []*download
 	return dist, downloadStg
 }
 
-func (t *StorageLoadPackage) getNodeDistance(stg stgmod.StorageDetail) float64 {
-	if stgglb.Local.NodeID != nil {
-		if stg.MasterHub.NodeID == *stgglb.Local.NodeID {
-			return consts.NodeDistanceSameNode
+func (t *StorageLoadPackage) getStorageDistance(stg stgmod.StorageDetail) float64 {
+	if stgglb.Local.HubID != nil {
+		if stg.MasterHub.HubID == *stgglb.Local.HubID {
+			return consts.StorageDistanceSameStorage
 		}
 	}
 
 	if stg.MasterHub.LocationID == stgglb.Local.LocationID {
-		return consts.NodeDistanceSameLocation
+		return consts.StorageDistanceSameLocation
 	}
 
-	return consts.NodeDistanceOther
+	return consts.StorageDistanceOther
 }

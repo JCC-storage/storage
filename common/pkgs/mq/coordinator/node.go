@@ -6,36 +6,36 @@ import (
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 )
 
-type NodeService interface {
+type HubService interface {
 	GetHubConfig(msg *GetHubConfig) (*GetHubConfigResp, *mq.CodeMessage)
 
-	GetUserNodes(msg *GetUserNodes) (*GetUserNodesResp, *mq.CodeMessage)
+	GetUserHubs(msg *GetUserHubs) (*GetUserHubsResp, *mq.CodeMessage)
 
-	GetNodes(msg *GetNodes) (*GetNodesResp, *mq.CodeMessage)
+	GetHubs(msg *GetHubs) (*GetHubsResp, *mq.CodeMessage)
 
-	GetNodeConnectivities(msg *GetNodeConnectivities) (*GetNodeConnectivitiesResp, *mq.CodeMessage)
+	GetHubConnectivities(msg *GetHubConnectivities) (*GetHubConnectivitiesResp, *mq.CodeMessage)
 
-	UpdateNodeConnectivities(msg *UpdateNodeConnectivities) (*UpdateNodeConnectivitiesResp, *mq.CodeMessage)
+	UpdateHubConnectivities(msg *UpdateHubConnectivities) (*UpdateHubConnectivitiesResp, *mq.CodeMessage)
 }
 
 var _ = Register(Service.GetHubConfig)
 
 type GetHubConfig struct {
 	mq.MessageBodyBase
-	HubID cdssdk.NodeID `json:"hubID"`
+	HubID cdssdk.HubID `json:"hubID"`
 }
 type GetHubConfigResp struct {
 	mq.MessageBodyBase
-	Hub      cdssdk.Node            `json:"hub"`
+	Hub      cdssdk.Hub             `json:"hub"`
 	Storages []stgmod.StorageDetail `json:"storages"`
 }
 
-func ReqGetHubConfig(hubID cdssdk.NodeID) *GetHubConfig {
+func ReqGetHubConfig(hubID cdssdk.HubID) *GetHubConfig {
 	return &GetHubConfig{
 		HubID: hubID,
 	}
 }
-func RespGetHubConfig(hub cdssdk.Node, storages []stgmod.StorageDetail) *GetHubConfigResp {
+func RespGetHubConfig(hub cdssdk.Hub, storages []stgmod.StorageDetail) *GetHubConfigResp {
 	return &GetHubConfigResp{
 		Hub:      hub,
 		Storages: storages,
@@ -46,111 +46,111 @@ func (client *Client) GetHubConfig(msg *GetHubConfig) (*GetHubConfigResp, error)
 }
 
 // 查询用户可用的节点
-var _ = Register(Service.GetUserNodes)
+var _ = Register(Service.GetUserHubs)
 
-type GetUserNodes struct {
+type GetUserHubs struct {
 	mq.MessageBodyBase
 	UserID cdssdk.UserID `json:"userID"`
 }
-type GetUserNodesResp struct {
+type GetUserHubsResp struct {
 	mq.MessageBodyBase
-	Nodes []cdssdk.Node `json:"nodes"`
+	Hubs []cdssdk.Hub `json:"hubs"`
 }
 
-func NewGetUserNodes(userID cdssdk.UserID) *GetUserNodes {
-	return &GetUserNodes{
+func NewGetUserHubs(userID cdssdk.UserID) *GetUserHubs {
+	return &GetUserHubs{
 		UserID: userID,
 	}
 }
-func NewGetUserNodesResp(nodes []cdssdk.Node) *GetUserNodesResp {
-	return &GetUserNodesResp{
-		Nodes: nodes,
+func NewGetUserHubsResp(hubs []cdssdk.Hub) *GetUserHubsResp {
+	return &GetUserHubsResp{
+		Hubs: hubs,
 	}
 }
-func (client *Client) GetUserNodes(msg *GetUserNodes) (*GetUserNodesResp, error) {
-	return mq.Request(Service.GetUserNodes, client.rabbitCli, msg)
+func (client *Client) GetUserHubs(msg *GetUserHubs) (*GetUserHubsResp, error) {
+	return mq.Request(Service.GetUserHubs, client.rabbitCli, msg)
 }
 
-// 获取指定节点的信息。如果NodeIDs为nil，则返回所有Node
-var _ = Register(Service.GetNodes)
+// 获取指定节点的信息。如果HubIDs为nil，则返回所有Hub
+var _ = Register(Service.GetHubs)
 
-type GetNodes struct {
+type GetHubs struct {
 	mq.MessageBodyBase
-	NodeIDs []cdssdk.NodeID `json:"nodeIDs"`
+	HubIDs []cdssdk.HubID `json:"hubIDs"`
 }
-type GetNodesResp struct {
+type GetHubsResp struct {
 	mq.MessageBodyBase
-	Nodes []cdssdk.Node `json:"nodes"`
+	Hubs []cdssdk.Hub `json:"hubs"`
 }
 
-func NewGetNodes(nodeIDs []cdssdk.NodeID) *GetNodes {
-	return &GetNodes{
-		NodeIDs: nodeIDs,
+func NewGetHubs(hubIDs []cdssdk.HubID) *GetHubs {
+	return &GetHubs{
+		HubIDs: hubIDs,
 	}
 }
-func NewGetNodesResp(nodes []cdssdk.Node) *GetNodesResp {
-	return &GetNodesResp{
-		Nodes: nodes,
+func NewGetHubsResp(hubs []cdssdk.Hub) *GetHubsResp {
+	return &GetHubsResp{
+		Hubs: hubs,
 	}
 }
-func (r *GetNodesResp) GetNode(id cdssdk.NodeID) *cdssdk.Node {
-	for _, n := range r.Nodes {
-		if n.NodeID == id {
+func (r *GetHubsResp) GetHub(id cdssdk.HubID) *cdssdk.Hub {
+	for _, n := range r.Hubs {
+		if n.HubID == id {
 			return &n
 		}
 	}
 
 	return nil
 }
-func (client *Client) GetNodes(msg *GetNodes) (*GetNodesResp, error) {
-	return mq.Request(Service.GetNodes, client.rabbitCli, msg)
+func (client *Client) GetHubs(msg *GetHubs) (*GetHubsResp, error) {
+	return mq.Request(Service.GetHubs, client.rabbitCli, msg)
 }
 
 // 获取节点连通性信息
-var _ = Register(Service.GetNodeConnectivities)
+var _ = Register(Service.GetHubConnectivities)
 
-type GetNodeConnectivities struct {
+type GetHubConnectivities struct {
 	mq.MessageBodyBase
-	NodeIDs []cdssdk.NodeID `json:"nodeIDs"`
+	HubIDs []cdssdk.HubID `json:"hubIDs"`
 }
-type GetNodeConnectivitiesResp struct {
+type GetHubConnectivitiesResp struct {
 	mq.MessageBodyBase
-	Connectivities []cdssdk.NodeConnectivity `json:"nodes"`
+	Connectivities []cdssdk.HubConnectivity `json:"hubs"`
 }
 
-func ReqGetNodeConnectivities(nodeIDs []cdssdk.NodeID) *GetNodeConnectivities {
-	return &GetNodeConnectivities{
-		NodeIDs: nodeIDs,
+func ReqGetHubConnectivities(hubIDs []cdssdk.HubID) *GetHubConnectivities {
+	return &GetHubConnectivities{
+		HubIDs: hubIDs,
 	}
 }
-func RespGetNodeConnectivities(cons []cdssdk.NodeConnectivity) *GetNodeConnectivitiesResp {
-	return &GetNodeConnectivitiesResp{
+func RespGetHubConnectivities(cons []cdssdk.HubConnectivity) *GetHubConnectivitiesResp {
+	return &GetHubConnectivitiesResp{
 		Connectivities: cons,
 	}
 }
-func (client *Client) GetNodeConnectivities(msg *GetNodeConnectivities) (*GetNodeConnectivitiesResp, error) {
-	return mq.Request(Service.GetNodeConnectivities, client.rabbitCli, msg)
+func (client *Client) GetHubConnectivities(msg *GetHubConnectivities) (*GetHubConnectivitiesResp, error) {
+	return mq.Request(Service.GetHubConnectivities, client.rabbitCli, msg)
 }
 
 // 批量更新节点连通性信息
-var _ = Register(Service.UpdateNodeConnectivities)
+var _ = Register(Service.UpdateHubConnectivities)
 
-type UpdateNodeConnectivities struct {
+type UpdateHubConnectivities struct {
 	mq.MessageBodyBase
-	Connectivities []cdssdk.NodeConnectivity `json:"connectivities"`
+	Connectivities []cdssdk.HubConnectivity `json:"connectivities"`
 }
-type UpdateNodeConnectivitiesResp struct {
+type UpdateHubConnectivitiesResp struct {
 	mq.MessageBodyBase
 }
 
-func ReqUpdateNodeConnectivities(cons []cdssdk.NodeConnectivity) *UpdateNodeConnectivities {
-	return &UpdateNodeConnectivities{
+func ReqUpdateHubConnectivities(cons []cdssdk.HubConnectivity) *UpdateHubConnectivities {
+	return &UpdateHubConnectivities{
 		Connectivities: cons,
 	}
 }
-func RespUpdateNodeConnectivities() *UpdateNodeConnectivitiesResp {
-	return &UpdateNodeConnectivitiesResp{}
+func RespUpdateHubConnectivities() *UpdateHubConnectivitiesResp {
+	return &UpdateHubConnectivitiesResp{}
 }
-func (client *Client) UpdateNodeConnectivities(msg *UpdateNodeConnectivities) (*UpdateNodeConnectivitiesResp, error) {
-	return mq.Request(Service.UpdateNodeConnectivities, client.rabbitCli, msg)
+func (client *Client) UpdateHubConnectivities(msg *UpdateHubConnectivities) (*UpdateHubConnectivitiesResp, error) {
+	return mq.Request(Service.UpdateHubConnectivities, client.rabbitCli, msg)
 }

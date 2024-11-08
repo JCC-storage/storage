@@ -12,7 +12,7 @@ import (
 )
 
 type Connectivity struct {
-	ToNodeID cdssdk.NodeID
+	ToHubID  cdssdk.HubID
 	Delay    *time.Duration
 	TestTime time.Time
 }
@@ -22,7 +22,7 @@ type Collector struct {
 	onCollected    func(collector *Collector)
 	collectNow     chan any
 	close          chan any
-	connectivities map[cdssdk.NodeID]Connectivity
+	connectivities map[cdssdk.HubID]Connectivity
 	lock           *sync.RWMutex
 }
 
@@ -31,7 +31,7 @@ func NewCollector(cfg *Config, onCollected func(collector *Collector)) Collector
 		cfg:            cfg,
 		collectNow:     make(chan any),
 		close:          make(chan any),
-		connectivities: make(map[cdssdk.NodeID]Connectivity),
+		connectivities: make(map[cdssdk.HubID]Connectivity),
 		lock:           &sync.RWMutex{},
 		onCollected:    onCollected,
 	}
@@ -39,7 +39,7 @@ func NewCollector(cfg *Config, onCollected func(collector *Collector)) Collector
 	return rpt
 }
 
-func NewCollectorWithInitData(cfg *Config, onCollected func(collector *Collector), initData map[cdssdk.NodeID]Connectivity) Collector {
+func NewCollectorWithInitData(cfg *Config, onCollected func(collector *Collector), initData map[cdssdk.HubID]Connectivity) Collector {
 	rpt := Collector{
 		cfg:            cfg,
 		collectNow:     make(chan any),
@@ -52,22 +52,22 @@ func NewCollectorWithInitData(cfg *Config, onCollected func(collector *Collector
 	return rpt
 }
 
-func (r *Collector) Get(nodeID cdssdk.NodeID) *Connectivity {
+func (r *Collector) Get(hubID cdssdk.HubID) *Connectivity {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
-	con, ok := r.connectivities[nodeID]
+	con, ok := r.connectivities[hubID]
 	if ok {
 		return &con
 	}
 
 	return nil
 }
-func (r *Collector) GetAll() map[cdssdk.NodeID]Connectivity {
+func (r *Collector) GetAll() map[cdssdk.HubID]Connectivity {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
-	ret := make(map[cdssdk.NodeID]Connectivity)
+	ret := make(map[cdssdk.HubID]Connectivity)
 	for k, v := range r.connectivities {
 		ret[k] = v
 	}
@@ -136,31 +136,31 @@ func (r *Collector) testing() {
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-	getNodeResp, err := coorCli.GetNodes(coormq.NewGetNodes(nil))
+	getHubResp, err := coorCli.GetHubs(coormq.NewGetHubs(nil))
 	if err != nil {
 		return
 	}
 
 	wg := sync.WaitGroup{}
-	cons := make([]Connectivity, len(getNodeResp.Nodes))
-	for i, node := range getNodeResp.Nodes {
+	cons := make([]Connectivity, len(getHubResp.Hubs))
+	for i, hub := range getHubResp.Hubs {
 		tmpIdx := i
-		tmpNode := node
+		tmpHub := hub
 
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			cons[tmpIdx] = r.ping(tmpNode)
+			cons[tmpIdx] = r.ping(tmpHub)
 		}()
 	}
 
 	wg.Wait()
 
 	r.lock.Lock()
-	// 删除所有node的记录，然后重建，避免node数量变化时导致残余数据
-	r.connectivities = make(map[cdssdk.NodeID]Connectivity)
+	// 删除所有hub的记录，然后重建，避免hub数量变化时导致残余数据
+	r.connectivities = make(map[cdssdk.HubID]Connectivity)
 	for _, con := range cons {
-		r.connectivities[con.ToNodeID] = con
+		r.connectivities[con.ToHubID] = con
 	}
 	r.lock.Unlock()
 
@@ -169,14 +169,14 @@ func (r *Collector) testing() {
 	}
 }
 
-func (r *Collector) ping(node cdssdk.Node) Connectivity {
-	log := logger.WithType[Collector]("").WithField("NodeID", node.NodeID)
+func (r *Collector) ping(hub cdssdk.Hub) Connectivity {
+	log := logger.WithType[Collector]("").WithField("HubID", hub.HubID)
 
 	var ip string
 	var port int
-	switch addr := node.Address.(type) {
+	switch addr := hub.Address.(type) {
 	case *cdssdk.GRPCAddressInfo:
-		if node.LocationID == stgglb.Local.LocationID {
+		if hub.LocationID == stgglb.Local.LocationID {
 			ip = addr.LocalIP
 			port = addr.LocalGRPCPort
 		} else {
@@ -189,7 +189,7 @@ func (r *Collector) ping(node cdssdk.Node) Connectivity {
 		log.Warnf("unsupported address type: %v", addr)
 
 		return Connectivity{
-			ToNodeID: node.NodeID,
+			ToHubID:  hub.HubID,
 			Delay:    nil,
 			TestTime: time.Now(),
 		}
@@ -199,7 +199,7 @@ func (r *Collector) ping(node cdssdk.Node) Connectivity {
 	if err != nil {
 		log.Warnf("new agent %v:%v rpc client: %w", ip, port, err)
 		return Connectivity{
-			ToNodeID: node.NodeID,
+			ToHubID:  hub.HubID,
 			Delay:    nil,
 			TestTime: time.Now(),
 		}
@@ -211,7 +211,7 @@ func (r *Collector) ping(node cdssdk.Node) Connectivity {
 	if err != nil {
 		log.Warnf("pre ping: %v", err)
 		return Connectivity{
-			ToNodeID: node.NodeID,
+			ToHubID:  hub.HubID,
 			Delay:    nil,
 			TestTime: time.Now(),
 		}
@@ -225,7 +225,7 @@ func (r *Collector) ping(node cdssdk.Node) Connectivity {
 		if err != nil {
 			log.Warnf("ping: %v", err)
 			return Connectivity{
-				ToNodeID: node.NodeID,
+				ToHubID:  hub.HubID,
 				Delay:    nil,
 				TestTime: time.Now(),
 			}
@@ -240,7 +240,7 @@ func (r *Collector) ping(node cdssdk.Node) Connectivity {
 	delay := avgDelay / 3
 
 	return Connectivity{
-		ToNodeID: node.NodeID,
+		ToHubID:  hub.HubID,
 		Delay:    &delay,
 		TestTime: time.Now(),
 	}

@@ -18,12 +18,12 @@ func Test_IPFSLock(t *testing.T) {
 			title: "同节点，同一个Buzy锁",
 			initLocks: []distlock.Lock{
 				{
-					Path: []string{IPFSLockPathPrefix, "node1"},
+					Path: []string{IPFSLockPathPrefix, "hub1"},
 					Name: IPFSBuzyLock,
 				},
 			},
 			doLock: distlock.Lock{
-				Path: []string{IPFSLockPathPrefix, "node1"},
+				Path: []string{IPFSLockPathPrefix, "hub1"},
 				Name: IPFSBuzyLock,
 			},
 			wantOK: true,
@@ -32,12 +32,12 @@ func Test_IPFSLock(t *testing.T) {
 			title: "同节点，同一个GC锁",
 			initLocks: []distlock.Lock{
 				{
-					Path: []string{IPFSLockPathPrefix, "node1"},
+					Path: []string{IPFSLockPathPrefix, "hub1"},
 					Name: IPFSGCLock,
 				},
 			},
 			doLock: distlock.Lock{
-				Path: []string{IPFSLockPathPrefix, "node1"},
+				Path: []string{IPFSLockPathPrefix, "hub1"},
 				Name: IPFSGCLock,
 			},
 			wantOK: true,
@@ -46,13 +46,13 @@ func Test_IPFSLock(t *testing.T) {
 			title: "同时设置Buzy和GC",
 			initLocks: []distlock.Lock{
 				{
-					Path:   []string{IPFSLockPathPrefix, "node1"},
+					Path:   []string{IPFSLockPathPrefix, "hub1"},
 					Name:   IPFSBuzyLock,
 					Target: *NewStringLockTarget(),
 				},
 			},
 			doLock: distlock.Lock{
-				Path:   []string{IPFSLockPathPrefix, "node1"},
+				Path:   []string{IPFSLockPathPrefix, "hub1"},
 				Name:   IPFSGCLock,
 				Target: *NewStringLockTarget(),
 			},
@@ -81,7 +81,7 @@ func Test_IPFSLock(t *testing.T) {
 		ipfsLock := NewIPFSLock()
 
 		lock := distlock.Lock{
-			Path: []string{IPFSLockPathPrefix, "node1"},
+			Path: []string{IPFSLockPathPrefix, "hub1"},
 			Name: IPFSBuzyLock,
 		}
 
@@ -93,7 +93,7 @@ func Test_IPFSLock(t *testing.T) {
 		ipfsLock.Unlock("req1", lock)
 
 		lock = distlock.Lock{
-			Path: []string{IPFSLockPathPrefix, "node1"},
+			Path: []string{IPFSLockPathPrefix, "hub1"},
 			Name: IPFSGCLock,
 		}
 		err = ipfsLock.CanLock(lock)

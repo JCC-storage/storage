@@ -11,11 +11,11 @@ import (
 )
 
 type HttpHubWorker struct {
-	Node cdssdk.Node
+	Hub cdssdk.Hub
 }
 
 func (w *HttpHubWorker) NewClient() (exec.WorkerClient, error) {
-	addressInfo := w.Node.Address.(*cdssdk.HttpAddressInfo)
+	addressInfo := w.Hub.Address.(*cdssdk.HttpAddressInfo)
 	baseUrl := "http://" + addressInfo.ExternalIP + ":" + strconv.Itoa(addressInfo.Port)
 	config := cdsapi.Config{
 		URL: baseUrl,
@@ -31,7 +31,7 @@ func (w *HttpHubWorker) NewClient() (exec.WorkerClient, error) {
 }
 
 func (w *HttpHubWorker) String() string {
-	return w.Node.String()
+	return w.Hub.String()
 }
 
 func (w *HttpHubWorker) Equals(worker exec.WorkerInfo) bool {
@@ -40,7 +40,7 @@ func (w *HttpHubWorker) Equals(worker exec.WorkerInfo) bool {
 		return false
 	}
 
-	return w.Node.NodeID == aw.Node.NodeID
+	return w.Hub.HubID == aw.Hub.HubID
 }
 
 type HttpHubWorkerClient struct {

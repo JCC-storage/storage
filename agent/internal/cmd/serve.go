@@ -83,7 +83,7 @@ func serve(configPath string) {
 		defer stgglb.CoordinatorMQPool.Release(coorCli)
 
 		cons := collector.GetAll()
-		nodeCons := make([]cdssdk.NodeConnectivity, 0, len(cons))
+		hubCons := make([]cdssdk.HubConnectivity, 0, len(cons))
 		for _, con := range cons {
 			var delay *float32
 			if con.Delay != nil {
@@ -91,17 +91,17 @@ func serve(configPath string) {
 				delay = &v
 			}
 
-			nodeCons = append(nodeCons, cdssdk.NodeConnectivity{
-				FromNodeID: *stgglb.Local.NodeID,
-				ToNodeID:   con.ToNodeID,
-				Delay:      delay,
-				TestTime:   con.TestTime,
+			hubCons = append(hubCons, cdssdk.HubConnectivity{
+				FromHubID: *stgglb.Local.HubID,
+				ToHubID:   con.ToHubID,
+				Delay:     delay,
+				TestTime:  con.TestTime,
 			})
 		}
 
-		_, err = coorCli.UpdateNodeConnectivities(coormq.ReqUpdateNodeConnectivities(nodeCons))
+		_, err = coorCli.UpdateHubConnectivities(coormq.ReqUpdateHubConnectivities(hubCons))
 		if err != nil {
-			log.Warnf("update node connectivities: %v", err)
+			log.Warnf("update hub connectivities: %v", err)
 		}
 	})
 	conCol.CollectInPlace()
@@ -160,7 +160,7 @@ func downloadHubConfig() coormq.GetHubConfigResp {
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-	cfgResp, err := coorCli.GetHubConfig(coormq.ReqGetHubConfig(cdssdk.NodeID(config.Cfg().ID)))
+	cfgResp, err := coorCli.GetHubConfig(coormq.ReqGetHubConfig(cdssdk.HubID(config.Cfg().ID)))
 	if err != nil {
 		logger.Errorf("getting hub config: %v", err)
 		os.Exit(1)

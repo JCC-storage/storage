@@ -16,7 +16,7 @@ import (
 func (svc *Service) GetHubConfig(msg *coormq.GetHubConfig) (*coormq.GetHubConfigResp, *mq.CodeMessage) {
 	log := logger.WithField("HubID", msg.HubID)
 
-	hub, err := svc.db2.Node().GetByID(svc.db2.DefCtx(), msg.HubID)
+	hub, err := svc.db2.Hub().GetByID(svc.db2.DefCtx(), msg.HubID)
 	if err != nil {
 		log.Warnf("getting hub: %v", err)
 		return nil, mq.Failed(errorcode.OperationFailed, fmt.Sprintf("getting hub: %v", err))
@@ -67,78 +67,78 @@ func (svc *Service) GetHubConfig(msg *coormq.GetHubConfig) (*coormq.GetHubConfig
 	return mq.ReplyOK(coormq.RespGetHubConfig(hub, details))
 }
 
-func (svc *Service) GetUserNodes(msg *coormq.GetUserNodes) (*coormq.GetUserNodesResp, *mq.CodeMessage) {
-	nodes, err := svc.db2.Node().GetUserNodes(svc.db2.DefCtx(), msg.UserID)
+func (svc *Service) GetUserHubs(msg *coormq.GetUserHubs) (*coormq.GetUserHubsResp, *mq.CodeMessage) {
+	hubs, err := svc.db2.Hub().GetUserHubs(svc.db2.DefCtx(), msg.UserID)
 	if err != nil {
 		logger.WithField("UserID", msg.UserID).
-			Warnf("query user nodes failed, err: %s", err.Error())
-		return nil, mq.Failed(errorcode.OperationFailed, "query user nodes failed")
+			Warnf("query user hubs failed, err: %s", err.Error())
+		return nil, mq.Failed(errorcode.OperationFailed, "query user hubs failed")
 	}
 
-	return mq.ReplyOK(coormq.NewGetUserNodesResp(nodes))
+	return mq.ReplyOK(coormq.NewGetUserHubsResp(hubs))
 }
 
-func (svc *Service) GetNodes(msg *coormq.GetNodes) (*coormq.GetNodesResp, *mq.CodeMessage) {
-	var nodes []cdssdk.Node
+func (svc *Service) GetHubs(msg *coormq.GetHubs) (*coormq.GetHubsResp, *mq.CodeMessage) {
+	var hubs []cdssdk.Hub
 
-	if msg.NodeIDs == nil {
+	if msg.HubIDs == nil {
 		var err error
-		nodes, err = svc.db2.Node().GetAllNodes(svc.db2.DefCtx())
+		hubs, err = svc.db2.Hub().GetAllHubs(svc.db2.DefCtx())
 		if err != nil {
-			logger.Warnf("getting all nodes: %s", err.Error())
-			return nil, mq.Failed(errorcode.OperationFailed, "get all node failed")
+			logger.Warnf("getting all hubs: %s", err.Error())
+			return nil, mq.Failed(errorcode.OperationFailed, "get all hub failed")
 		}
 
 	} else {
 		// 可以不用事务
-		for _, id := range msg.NodeIDs {
-			node, err := svc.db2.Node().GetByID(svc.db2.DefCtx(), id)
+		for _, id := range msg.HubIDs {
+			hub, err := svc.db2.Hub().GetByID(svc.db2.DefCtx(), id)
 			if err != nil {
-				logger.WithField("NodeID", id).
-					Warnf("query node failed, err: %s", err.Error())
-				return nil, mq.Failed(errorcode.OperationFailed, "query node failed")
+				logger.WithField("HubID", id).
+					Warnf("query hub failed, err: %s", err.Error())
+				return nil, mq.Failed(errorcode.OperationFailed, "query hub failed")
 			}
 
-			nodes = append(nodes, node)
+			hubs = append(hubs, hub)
 		}
 	}
 
-	return mq.ReplyOK(coormq.NewGetNodesResp(nodes))
+	return mq.ReplyOK(coormq.NewGetHubsResp(hubs))
 }
 
-func (svc *Service) GetNodeConnectivities(msg *coormq.GetNodeConnectivities) (*coormq.GetNodeConnectivitiesResp, *mq.CodeMessage) {
-	cons, err := svc.db2.NodeConnectivity().BatchGetByFromNode(svc.db2.DefCtx(), msg.NodeIDs)
+func (svc *Service) GetHubConnectivities(msg *coormq.GetHubConnectivities) (*coormq.GetHubConnectivitiesResp, *mq.CodeMessage) {
+	cons, err := svc.db2.HubConnectivity().BatchGetByFromHub(svc.db2.DefCtx(), msg.HubIDs)
 	if err != nil {
-		logger.Warnf("batch get node connectivities by from node: %s", err.Error())
-		return nil, mq.Failed(errorcode.OperationFailed, "batch get node connectivities by from node failed")
+		logger.Warnf("batch get hub connectivities by from hub: %s", err.Error())
+		return nil, mq.Failed(errorcode.OperationFailed, "batch get hub connectivities by from hub failed")
 	}
 
-	return mq.ReplyOK(coormq.RespGetNodeConnectivities(cons))
+	return mq.ReplyOK(coormq.RespGetHubConnectivities(cons))
 }
 
-func (svc *Service) UpdateNodeConnectivities(msg *coormq.UpdateNodeConnectivities) (*coormq.UpdateNodeConnectivitiesResp, *mq.CodeMessage) {
+func (svc *Service) UpdateHubConnectivities(msg *coormq.UpdateHubConnectivities) (*coormq.UpdateHubConnectivitiesResp, *mq.CodeMessage) {
 	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
 		// 只有发起节点和目的节点都存在，才能插入这条记录到数据库
-		allNodes, err := svc.db2.Node().GetAllNodes(tx)
+		allHubs, err := svc.db2.Hub().GetAllHubs(tx)
 		if err != nil {
-			return fmt.Errorf("getting all nodes: %w", err)
+			return fmt.Errorf("getting all hubs: %w", err)
 		}
 
-		allNodeID := make(map[cdssdk.NodeID]bool)
-		for _, node := range allNodes {
-			allNodeID[node.NodeID] = true
+		allHubID := make(map[cdssdk.HubID]bool)
+		for _, hub := range allHubs {
+			allHubID[hub.HubID] = true
 		}
 
-		var avaiCons []cdssdk.NodeConnectivity
+		var avaiCons []cdssdk.HubConnectivity
 		for _, con := range msg.Connectivities {
-			if allNodeID[con.FromNodeID] && allNodeID[con.ToNodeID] {
+			if allHubID[con.FromHubID] && allHubID[con.ToHubID] {
 				avaiCons = append(avaiCons, con)
 			}
 		}
 
-		err = svc.db2.NodeConnectivity().BatchUpdateOrCreate(tx, avaiCons)
+		err = svc.db2.HubConnectivity().BatchUpdateOrCreate(tx, avaiCons)
 		if err != nil {
-			return fmt.Errorf("batch update or create node connectivities: %s", err)
+			return fmt.Errorf("batch update or create hub connectivities: %s", err)
 		}
 
 		return nil
@@ -148,5 +148,5 @@ func (svc *Service) UpdateNodeConnectivities(msg *coormq.UpdateNodeConnectivitie
 		return nil, mq.Failed(errorcode.OperationFailed, err.Error())
 	}
 
-	return mq.ReplyOK(coormq.RespUpdateNodeConnectivities())
+	return mq.ReplyOK(coormq.RespUpdateHubConnectivities())
 }

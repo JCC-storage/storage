@@ -1,7 +1,7 @@
 {
     "id": 1,
     "local": {
-        "nodeID": 1,
+        "hubID": 1,
         "localIP": "127.0.0.1",
         "externalIP": "127.0.0.1",
         "locationID": 1

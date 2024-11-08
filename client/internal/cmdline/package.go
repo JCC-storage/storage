@@ -176,7 +176,7 @@ func PackageGetCachedStorages(ctx CommandContext, packageID cdssdk.PackageID) er
 	resp, err := ctx.Cmdline.Svc.PackageSvc().GetCachedStorages(userID, packageID)
 	fmt.Printf("resp: %v\n", resp)
 	if err != nil {
-		return fmt.Errorf("get package %d cached nodes failed, err: %w", packageID, err)
+		return fmt.Errorf("get package %d cached storages failed, err: %w", packageID, err)
 	}
 	return nil
 }
@@ -193,10 +193,10 @@ func PackageGetCachedStorages(ctx CommandContext, packageID cdssdk.PackageID) er
 //	error - 操作过程中发生的任何错误。
 func PackageGetLoadedStorages(ctx CommandContext, packageID cdssdk.PackageID) error {
 	userID := cdssdk.UserID(1)
-	nodeIDs, err := ctx.Cmdline.Svc.PackageSvc().GetLoadedStorages(userID, packageID)
-	fmt.Printf("nodeIDs: %v\n", nodeIDs)
+	hubIDs, err := ctx.Cmdline.Svc.PackageSvc().GetLoadedStorages(userID, packageID)
+	fmt.Printf("hubIDs: %v\n", hubIDs)
 	if err != nil {
-		return fmt.Errorf("get package %d loaded nodes failed, err: %w", packageID, err)
+		return fmt.Errorf("get package %d loaded storages failed, err: %w", packageID, err)
 	}
 	return nil
 }

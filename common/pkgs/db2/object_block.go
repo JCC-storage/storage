@@ -88,14 +88,14 @@ func (db *ObjectBlockDB) CountBlockWithHash(ctx SQLContext, fileHash string) (in
 
 // 按逗号切割字符串，并将每一个部分解析为一个int64的ID。
 // 注：需要外部保证分隔的每一个部分都是正确的10进制数字格式
-func splitConcatedNodeID(idStr string) []cdssdk.NodeID {
+func splitConcatedHubID(idStr string) []cdssdk.HubID {
 	idStrs := strings.Split(idStr, ",")
-	ids := make([]cdssdk.NodeID, 0, len(idStrs))
+	ids := make([]cdssdk.HubID, 0, len(idStrs))
 
 	for _, str := range idStrs {
 		// 假设传入的ID是正确的数字格式
 		id, _ := strconv.ParseInt(str, 10, 64)
-		ids = append(ids, cdssdk.NodeID(id))
+		ids = append(ids, cdssdk.HubID(id))
 	}
 
 	return ids

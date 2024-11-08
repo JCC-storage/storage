@@ -254,7 +254,7 @@ func (svc *Service) StartStorageCreatePackage(msg *agtmq.StartStorageCreatePacka
 	}
 
 	objIter := iterator.NewUploadingObjectIterator(fullPath, uploadFilePathes)
-	tsk := svc.taskManager.StartNew(mytask.NewCreatePackage(msg.UserID, msg.BucketID, msg.Name, objIter, msg.NodeAffinity))
+	tsk := svc.taskManager.StartNew(mytask.NewCreatePackage(msg.UserID, msg.BucketID, msg.Name, objIter, msg.StorageAffinity))
 	return mq.ReplyOK(agtmq.NewStartStorageCreatePackageResp(tsk.ID()))
 }
 

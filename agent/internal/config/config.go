@@ -13,7 +13,7 @@ import (
 )
 
 type Config struct {
-	ID           cdssdk.NodeID              `json:"id"`
+	ID           cdssdk.HubID               `json:"id"`
 	ListenAddr   string                     `json:"listenAddr"`
 	Local        stgmodels.LocalMachineInfo `json:"local"`
 	GRPC         *grpc.Config               `json:"grpc"`

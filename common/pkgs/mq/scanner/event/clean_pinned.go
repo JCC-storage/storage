@@ -4,7 +4,7 @@ import cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 
 type CleanPinned struct {
 	EventBase
-	PackageID cdssdk.PackageID `json:"nodeID"`
+	PackageID cdssdk.PackageID `json:"hubID"`
 }
 
 func NewCleanPinned(packageID cdssdk.PackageID) *CleanPinned {

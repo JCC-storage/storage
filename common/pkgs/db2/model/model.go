@@ -28,13 +28,13 @@ func (UserBucket) TableName() string {
 	return "UserBucket"
 }
 
-type UserNode struct {
+type UserHub struct {
 	UserID cdssdk.UserID `gorm:"column:UserID; primaryKey; type:bigint" json:"userID"`
-	NodeID cdssdk.NodeID `gorm:"column:NodeID; primaryKey; type:bigint" json:"nodeID"`
+	HubID  cdssdk.HubID  `gorm:"column:HubID; primaryKey; type:bigint" json:"hubID"`
 }
 
-func (UserNode) TableName() string {
-	return "UserNode"
+func (UserHub) TableName() string {
+	return "UserHub"
 }
 
 type UserStorage struct {
@@ -52,7 +52,7 @@ type Package = cdssdk.Package
 
 type Object = cdssdk.Object
 
-type NodeConnectivity = cdssdk.NodeConnectivity
+type HubConnectivity = cdssdk.HubConnectivity
 
 type ObjectBlock = stgmod.ObjectBlock
 

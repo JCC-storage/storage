@@ -14,7 +14,7 @@ type Service interface {
 
 	CacheService
 
-	NodeService
+	HubService
 
 	ObjectService
 

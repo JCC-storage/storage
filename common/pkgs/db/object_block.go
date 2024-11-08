@@ -19,9 +19,9 @@ func (db *DB) ObjectBlock() *ObjectBlockDB {
 	return &ObjectBlockDB{DB: db}
 }
 
-func (db *ObjectBlockDB) GetByNodeID(ctx SQLContext, nodeID cdssdk.NodeID) ([]stgmod.ObjectBlock, error) {
+func (db *ObjectBlockDB) GetByHubID(ctx SQLContext, hubID cdssdk.HubID) ([]stgmod.ObjectBlock, error) {
 	var rets []stgmod.ObjectBlock
-	err := sqlx.Select(ctx, &rets, "select * from ObjectBlock where NodeID = ?", nodeID)
+	err := sqlx.Select(ctx, &rets, "select * from ObjectBlock where HubID = ?", hubID)
 	return rets, err
 }
 
@@ -45,8 +45,8 @@ func (db *ObjectBlockDB) BatchGetByObjectID(ctx SQLContext, objectIDs []cdssdk.O
 	return blocks, nil
 }
 
-func (db *ObjectBlockDB) Create(ctx SQLContext, objectID cdssdk.ObjectID, index int, nodeID cdssdk.NodeID, fileHash string) error {
-	_, err := ctx.Exec("insert into ObjectBlock values(?,?,?,?)", objectID, index, nodeID, fileHash)
+func (db *ObjectBlockDB) Create(ctx SQLContext, objectID cdssdk.ObjectID, index int, hubID cdssdk.HubID, fileHash string) error {
+	_, err := ctx.Exec("insert into ObjectBlock values(?,?,?,?)", objectID, index, hubID, fileHash)
 	return err
 }
 
@@ -56,7 +56,7 @@ func (db *ObjectBlockDB) BatchCreate(ctx SQLContext, blocks []stgmod.ObjectBlock
 	}
 
 	return BatchNamedExec(ctx,
-		"insert ignore into ObjectBlock(ObjectID, `Index`, NodeID, FileHash) values(:ObjectID, :Index, :NodeID, :FileHash)",
+		"insert ignore into ObjectBlock(ObjectID, `Index`, HubID, FileHash) values(:ObjectID, :Index, :HubID, :FileHash)",
 		4,
 		blocks,
 		nil,
@@ -87,12 +87,12 @@ func (db *ObjectBlockDB) DeleteInPackage(ctx SQLContext, packageID cdssdk.Packag
 	return err
 }
 
-func (db *ObjectBlockDB) NodeBatchDelete(ctx SQLContext, nodeID cdssdk.NodeID, fileHashes []string) error {
+func (db *ObjectBlockDB) NodeBatchDelete(ctx SQLContext, hubID cdssdk.HubID, fileHashes []string) error {
 	if len(fileHashes) == 0 {
 		return nil
 	}
 
-	query, args, err := sqlx.In("delete from ObjectBlock where NodeID = ? and FileHash in (?)", nodeID, fileHashes)
+	query, args, err := sqlx.In("delete from ObjectBlock where HubID = ? and FileHash in (?)", hubID, fileHashes)
 	if err != nil {
 		return err
 	}
@@ -117,14 +117,14 @@ func (db *ObjectBlockDB) CountBlockWithHash(ctx SQLContext, fileHash string) (in
 
 // 按逗号切割字符串，并将每一个部分解析为一个int64的ID。
 // 注：需要外部保证分隔的每一个部分都是正确的10进制数字格式
-func splitConcatedNodeID(idStr string) []cdssdk.NodeID {
+func splitConcatedHubID(idStr string) []cdssdk.HubID {
 	idStrs := strings.Split(idStr, ",")
-	ids := make([]cdssdk.NodeID, 0, len(idStrs))
+	ids := make([]cdssdk.HubID, 0, len(idStrs))
 
 	for _, str := range idStrs {
 		// 假设传入的ID是正确的数字格式
 		id, _ := strconv.ParseInt(str, 10, 64)
-		ids = append(ids, cdssdk.NodeID(id))
+		ids = append(ids, cdssdk.HubID(id))
 	}
 
 	return ids

@@ -3,13 +3,13 @@ package consts
 const (
 	StorageDirectoryStateOK = "OK"
 
-	NodeStateNormal      = "Normal"
-	NodeStateUnavailable = "Unavailable"
+	HubStateNormal      = "Normal"
+	HubStateUnavailable = "Unavailable"
 )
 
 const (
-	NodeDistanceSameNode        = 0.1
-	NodeDistanceSameLocation    = 1
-	NodeDistanceOther           = 5
-	NodeDistanceHighLatencyNode = 10
+	StorageDistanceSameStorage  = 0.1
+	StorageDistanceSameLocation = 1
+	StorageDistanceOther        = 5
+	HubDistanceHighLatencyHub   = 10
 )

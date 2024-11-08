@@ -33,6 +33,6 @@ func (b *ShardStoreLockReqBuilder) GC(stgID cdssdk.StorageID) *ShardStoreLockReq
 	return b
 }
 
-func (b *ShardStoreLockReqBuilder) makePath(nodeID cdssdk.StorageID) []string {
-	return []string{lockprovider.IPFSLockPathPrefix, strconv.FormatInt(int64(nodeID), 10)}
+func (b *ShardStoreLockReqBuilder) makePath(hubID cdssdk.StorageID) []string {
+	return []string{lockprovider.IPFSLockPathPrefix, strconv.FormatInt(int64(hubID), 10)}
 }

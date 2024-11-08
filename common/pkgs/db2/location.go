@@ -22,9 +22,9 @@ func (*LocationDB) GetByID(ctx SQLContext, id int64) (model.Location, error) {
 
 func (db *LocationDB) FindLocationByExternalIP(ctx SQLContext, ip string) (model.Location, error) {
 	var locID int64
-	err := ctx.Table("Node").Select("LocationID").Where("ExternalIP = ?", ip).Scan(&locID).Error
+	err := ctx.Table("Hub").Select("LocationID").Where("ExternalIP = ?", ip).Scan(&locID).Error
 	if err != nil {
-		return model.Location{}, fmt.Errorf("finding node by external ip: %w", err)
+		return model.Location{}, fmt.Errorf("finding hub by external ip: %w", err)
 	}
 
 	loc, err := db.GetByID(ctx, locID)

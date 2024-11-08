@@ -18,14 +18,14 @@ func (e *CheckAgentState) Execute(ctx ExecuteContext) {
 	log.Debugf("begin")
 	defer log.Debugf("end")
 
-	nodes, err := ctx.Args.DB.Node().GetAllNodes(ctx.Args.DB.DefCtx())
+	hubs, err := ctx.Args.DB.Hub().GetAllHubs(ctx.Args.DB.DefCtx())
 	if err != nil {
-		log.Warnf("get all nodes failed, err: %s", err.Error())
+		log.Warnf("get all hubs failed, err: %s", err.Error())
 		return
 	}
 
-	for _, node := range nodes {
-		ctx.Args.EventExecutor.Post(event.NewAgentCheckState(scevt.NewAgentCheckState(node.NodeID)), event.ExecuteOption{
+	for _, hub := range hubs {
+		ctx.Args.EventExecutor.Post(event.NewAgentCheckState(scevt.NewAgentCheckState(hub.HubID)), event.ExecuteOption{
 			IsEmergency: true,
 			DontMerge:   true,
 		})

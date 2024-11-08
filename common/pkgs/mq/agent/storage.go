@@ -145,26 +145,26 @@ var _ = Register(Service.StartStorageCreatePackage)
 
 type StartStorageCreatePackage struct {
 	mq.MessageBodyBase
-	UserID       cdssdk.UserID    `json:"userID"`
-	BucketID     cdssdk.BucketID  `json:"bucketID"`
-	Name         string           `json:"name"`
-	StorageID    cdssdk.StorageID `json:"storageID"`
-	Path         string           `json:"path"`
-	NodeAffinity *cdssdk.NodeID   `json:"nodeAffinity"`
+	UserID          cdssdk.UserID    `json:"userID"`
+	BucketID        cdssdk.BucketID  `json:"bucketID"`
+	Name            string           `json:"name"`
+	StorageID       cdssdk.StorageID `json:"storageID"`
+	Path            string           `json:"path"`
+	StorageAffinity cdssdk.StorageID `json:"storageAffinity"`
 }
 type StartStorageCreatePackageResp struct {
 	mq.MessageBodyBase
 	TaskID string `json:"taskID"`
 }
 
-func NewStartStorageCreatePackage(userID cdssdk.UserID, bucketID cdssdk.BucketID, name string, storageID cdssdk.StorageID, path string, nodeAffinity *cdssdk.NodeID) *StartStorageCreatePackage {
+func NewStartStorageCreatePackage(userID cdssdk.UserID, bucketID cdssdk.BucketID, name string, storageID cdssdk.StorageID, path string, stgAffinity cdssdk.StorageID) *StartStorageCreatePackage {
 	return &StartStorageCreatePackage{
-		UserID:       userID,
-		BucketID:     bucketID,
-		Name:         name,
-		StorageID:    storageID,
-		Path:         path,
-		NodeAffinity: nodeAffinity,
+		UserID:          userID,
+		BucketID:        bucketID,
+		Name:            name,
+		StorageID:       storageID,
+		Path:            path,
+		StorageAffinity: stgAffinity,
 	}
 }
 func NewStartStorageCreatePackageResp(taskID string) *StartStorageCreatePackageResp {

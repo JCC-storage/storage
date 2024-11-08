@@ -8,10 +8,10 @@ import (
 )
 
 const (
-	StorageLockPathPrefix  = "Storage"
-	StorageNodeIDPathIndex = 1
-	StorageBuzyLock        = "Buzy"
-	StorageGCLock          = "GC"
+	StorageLockPathPrefix = "Storage"
+	StorageHubIDPathIndex = 1
+	StorageBuzyLock       = "Buzy"
+	StorageGCLock         = "GC"
 )
 
 type StorageLock struct {
@@ -28,7 +28,7 @@ func NewStorageLock() *StorageLock {
 
 // CanLock 判断这个锁能否锁定成功
 func (l *StorageLock) CanLock(lock distlock.Lock) error {
-	nodeLock, ok := l.nodeLocks[lock.Path[StorageNodeIDPathIndex]]
+	nodeLock, ok := l.nodeLocks[lock.Path[StorageHubIDPathIndex]]
 	if !ok {
 		// 不能直接返回nil，因为如果锁数据的格式不对，也不能获取锁。
 		// 这里使用一个空Provider来进行检查。
@@ -40,12 +40,12 @@ func (l *StorageLock) CanLock(lock distlock.Lock) error {
 
 // 锁定。在内部可以不用判断能否加锁，外部需要保证调用此函数前调用了CanLock进行检查
 func (l *StorageLock) Lock(reqID string, lock distlock.Lock) error {
-	nodeID := lock.Path[StorageNodeIDPathIndex]
+	hubID := lock.Path[StorageHubIDPathIndex]
 
-	nodeLock, ok := l.nodeLocks[nodeID]
+	nodeLock, ok := l.nodeLocks[hubID]
 	if !ok {
 		nodeLock = NewStorageNodeLock()
-		l.nodeLocks[nodeID] = nodeLock
+		l.nodeLocks[hubID] = nodeLock
 	}
 
 	return nodeLock.Lock(reqID, lock)
@@ -53,9 +53,9 @@ func (l *StorageLock) Lock(reqID string, lock distlock.Lock) error {
 
 // 解锁
 func (l *StorageLock) Unlock(reqID string, lock distlock.Lock) error {
-	nodeID := lock.Path[StorageNodeIDPathIndex]
+	hubID := lock.Path[StorageHubIDPathIndex]
 
-	nodeLock, ok := l.nodeLocks[nodeID]
+	nodeLock, ok := l.nodeLocks[hubID]
 	if !ok {
 		return nil
 	}

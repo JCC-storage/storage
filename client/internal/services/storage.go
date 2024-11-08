@@ -50,7 +50,7 @@ func (svc *StorageService) GetByName(userID cdssdk.UserID, name string) (*model.
 	return &getResp.Storage, nil
 }
 
-func (svc *StorageService) StartStorageLoadPackage(userID cdssdk.UserID, packageID cdssdk.PackageID, storageID cdssdk.StorageID) (cdssdk.NodeID, string, error) {
+func (svc *StorageService) StartStorageLoadPackage(userID cdssdk.UserID, packageID cdssdk.PackageID, storageID cdssdk.StorageID) (cdssdk.HubID, string, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return 0, "", fmt.Errorf("new coordinator client: %w", err)
@@ -66,7 +66,7 @@ func (svc *StorageService) StartStorageLoadPackage(userID cdssdk.UserID, package
 		return 0, "", fmt.Errorf("shard storage is not enabled")
 	}
 
-	agentCli, err := stgglb.AgentMQPool.Acquire(stgResp.Storages[0].MasterHub.NodeID)
+	agentCli, err := stgglb.AgentMQPool.Acquire(stgResp.Storages[0].MasterHub.HubID)
 	if err != nil {
 		return 0, "", fmt.Errorf("new agent client: %w", err)
 	}
@@ -77,7 +77,7 @@ func (svc *StorageService) StartStorageLoadPackage(userID cdssdk.UserID, package
 		return 0, "", fmt.Errorf("start storage load package: %w", err)
 	}
 
-	return stgResp.Storages[0].MasterHub.NodeID, startResp.TaskID, nil
+	return stgResp.Storages[0].MasterHub.HubID, startResp.TaskID, nil
 }
 
 type StorageLoadPackageResult struct {
@@ -86,8 +86,8 @@ type StorageLoadPackageResult struct {
 	RemoteBase  string
 }
 
-func (svc *StorageService) WaitStorageLoadPackage(nodeID cdssdk.NodeID, taskID string, waitTimeout time.Duration) (bool, *StorageLoadPackageResult, error) {
-	agentCli, err := stgglb.AgentMQPool.Acquire(nodeID)
+func (svc *StorageService) WaitStorageLoadPackage(hubID cdssdk.HubID, taskID string, waitTimeout time.Duration) (bool, *StorageLoadPackageResult, error) {
+	agentCli, err := stgglb.AgentMQPool.Acquire(hubID)
 	if err != nil {
 		// TODO 失败是否要当做任务已经结束？
 		return true, nil, fmt.Errorf("new agent client: %w", err)
@@ -121,7 +121,7 @@ func (svc *StorageService) DeleteStoragePackage(userID int64, packageID int64, s
 }
 
 // 请求节点启动从Storage中上传文件的任务。会返回节点ID和任务ID
-func (svc *StorageService) StartStorageCreatePackage(userID cdssdk.UserID, bucketID cdssdk.BucketID, name string, storageID cdssdk.StorageID, path string, nodeAffinity *cdssdk.NodeID) (cdssdk.NodeID, string, error) {
+func (svc *StorageService) StartStorageCreatePackage(userID cdssdk.UserID, bucketID cdssdk.BucketID, name string, storageID cdssdk.StorageID, path string, storageAffinity cdssdk.StorageID) (cdssdk.HubID, string, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return 0, "", fmt.Errorf("new coordinator client: %w", err)
@@ -137,22 +137,22 @@ func (svc *StorageService) StartStorageCreatePackage(userID cdssdk.UserID, bucke
 		return 0, "", fmt.Errorf("shard storage is not enabled")
 	}
 
-	agentCli, err := stgglb.AgentMQPool.Acquire(stgResp.Storages[0].MasterHub.NodeID)
+	agentCli, err := stgglb.AgentMQPool.Acquire(stgResp.Storages[0].MasterHub.HubID)
 	if err != nil {
 		return 0, "", fmt.Errorf("new agent client: %w", err)
 	}
 	defer stgglb.AgentMQPool.Release(agentCli)
 
-	startResp, err := agentCli.StartStorageCreatePackage(agtmq.NewStartStorageCreatePackage(userID, bucketID, name, storageID, path, nodeAffinity))
+	startResp, err := agentCli.StartStorageCreatePackage(agtmq.NewStartStorageCreatePackage(userID, bucketID, name, storageID, path, storageAffinity))
 	if err != nil {
 		return 0, "", fmt.Errorf("start storage upload package: %w", err)
 	}
 
-	return stgResp.Storages[0].MasterHub.NodeID, startResp.TaskID, nil
+	return stgResp.Storages[0].MasterHub.HubID, startResp.TaskID, nil
 }
 
-func (svc *StorageService) WaitStorageCreatePackage(nodeID cdssdk.NodeID, taskID string, waitTimeout time.Duration) (bool, cdssdk.PackageID, error) {
-	agentCli, err := stgglb.AgentMQPool.Acquire(nodeID)
+func (svc *StorageService) WaitStorageCreatePackage(hubID cdssdk.HubID, taskID string, waitTimeout time.Duration) (bool, cdssdk.PackageID, error) {
+	agentCli, err := stgglb.AgentMQPool.Acquire(hubID)
 	if err != nil {
 		// TODO 失败是否要当做任务已经结束？
 		return true, 0, fmt.Errorf("new agent client: %w", err)

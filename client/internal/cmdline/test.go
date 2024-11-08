@@ -31,7 +31,7 @@ func init() {
 			}
 			defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-			nodes, err := coorCli.GetNodes(coormq.NewGetNodes([]cdssdk.NodeID{1, 2}))
+			nodes, err := coorCli.GetNodes(coormq.NewGetNodes([]cdssdk.HubID{1, 2}))
 			if err != nil {
 				panic(err)
 			}
@@ -131,7 +131,7 @@ func init() {
 			}
 			defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-			nodes, err := coorCli.GetNodes(coormq.NewGetNodes([]cdssdk.NodeID{1, 2}))
+			nodes, err := coorCli.GetNodes(coormq.NewGetNodes([]cdssdk.HubID{1, 2}))
 			if err != nil {
 				panic(err)
 			}
@@ -173,7 +173,7 @@ func init() {
 			}
 			defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-			nodes, err := coorCli.GetNodes(coormq.NewGetNodes([]cdssdk.NodeID{1, 2}))
+			nodes, err := coorCli.GetNodes(coormq.NewGetNodes([]cdssdk.HubID{1, 2}))
 			if err != nil {
 				panic(err)
 			}
@@ -215,7 +215,7 @@ func init() {
 			}
 			defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-			nodes, err := coorCli.GetNodes(coormq.NewGetNodes([]cdssdk.NodeID{1, 2}))
+			nodes, err := coorCli.GetNodes(coormq.NewGetNodes([]cdssdk.HubID{1, 2}))
 			if err != nil {
 				panic(err)
 			}

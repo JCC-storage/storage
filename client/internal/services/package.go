@@ -118,7 +118,7 @@ func (svc *PackageService) GetCachedStorages(userID cdssdk.UserID, packageID cds
 	// 向协调器请求获取包的缓存节点信息
 	resp, err := coorCli.GetPackageCachedStorages(coormq.ReqGetPackageCachedStorages(userID, packageID))
 	if err != nil {
-		return cdssdk.PackageCachingInfo{}, fmt.Errorf("get package cached nodes: %w", err)
+		return cdssdk.PackageCachingInfo{}, fmt.Errorf("get package cached storages: %w", err)
 	}
 
 	// 构造并返回缓存信息
@@ -141,7 +141,7 @@ func (svc *PackageService) GetLoadedStorages(userID cdssdk.UserID, packageID cds
 	// 向协调器请求获取加载指定包的节点ID列表
 	resp, err := coorCli.GetPackageLoadedStorages(coormq.ReqGetPackageLoadedStorages(userID, packageID))
 	if err != nil {
-		return nil, fmt.Errorf("get package loaded nodes: %w", err)
+		return nil, fmt.Errorf("get package loaded storages: %w", err)
 	}
 	return resp.StorageIDs, nil
 }

@@ -10,37 +10,37 @@ import (
 	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 )
 
-type NodeService struct {
+type HubService struct {
 	*Server
 }
 
-func (s *Server) NodeSvc() *NodeService {
-	return &NodeService{
+func (s *Server) HubSvc() *HubService {
+	return &HubService{
 		Server: s,
 	}
 }
 
-type GetNodesReq struct {
-	NodeIDs *[]cdssdk.NodeID `form:"nodeIDs" binding:"required"`
+type GetHubsReq struct {
+	HubIDs *[]cdssdk.HubID `form:"hubIDs" binding:"required"`
 }
-type GetNodesResp = cdsapi.NodeGetNodesResp
+type GetHubsResp = cdsapi.HubGetHubsResp
 
-func (s *ObjectService) GetNodes(ctx *gin.Context) {
-	log := logger.WithField("HTTP", "Node.GetNodes")
+func (s *ObjectService) GetHubs(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Hub.GetHubs")
 
-	var req GetNodesReq
+	var req GetHubsReq
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
 		return
 	}
 
-	nodes, err := s.svc.NodeSvc().GetNodes(*req.NodeIDs)
+	hubs, err := s.svc.HubSvc().GetHubs(*req.HubIDs)
 	if err != nil {
-		log.Warnf("getting nodes: %s", err.Error())
-		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get nodes failed"))
+		log.Warnf("getting hubs: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get hubs failed"))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(GetNodesResp{Nodes: nodes}))
+	ctx.JSON(http.StatusOK, OK(GetHubsResp{Hubs: hubs}))
 }

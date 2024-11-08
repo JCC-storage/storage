@@ -40,32 +40,32 @@ func main() {
 	stgglb.InitAgentRPCPool(&config.Cfg().AgentGRPC)
 
 	var conCol connectivity.Collector
-	if config.Cfg().Local.NodeID != nil {
-		//如果client与某个node处于同一台机器，则使用这个node的连通性信息
+	if config.Cfg().Local.HubID != nil {
+		//如果client与某个hub处于同一台机器，则使用这个hub的连通性信息
 		coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 		if err != nil {
 			logger.Warnf("acquire coordinator mq failed, err: %s", err.Error())
 			os.Exit(1)
 		}
-		getCons, err := coorCli.GetNodeConnectivities(coormq.ReqGetNodeConnectivities([]cdssdk.NodeID{*config.Cfg().Local.NodeID}))
+		getCons, err := coorCli.GetHubConnectivities(coormq.ReqGetHubConnectivities([]cdssdk.HubID{*config.Cfg().Local.HubID}))
 		if err != nil {
-			logger.Warnf("get node connectivities failed, err: %s", err.Error())
+			logger.Warnf("get hub connectivities failed, err: %s", err.Error())
 			os.Exit(1)
 		}
-		consMap := make(map[cdssdk.NodeID]connectivity.Connectivity)
+		consMap := make(map[cdssdk.HubID]connectivity.Connectivity)
 		for _, con := range getCons.Connectivities {
 			var delay *time.Duration
 			if con.Delay != nil {
 				d := time.Duration(*con.Delay * float32(time.Millisecond))
 				delay = &d
 			}
-			consMap[con.FromNodeID] = connectivity.Connectivity{
-				ToNodeID: con.ToNodeID,
-				Delay:    delay,
+			consMap[con.FromHubID] = connectivity.Connectivity{
+				ToHubID: con.ToHubID,
+				Delay:   delay,
 			}
 		}
 		conCol = connectivity.NewCollectorWithInitData(&config.Cfg().Connectivity, nil, consMap)
-		logger.Info("use local node connectivities")
+		logger.Info("use local hub connectivities")
 
 	} else {
 		// 否则需要就地收集连通性信息

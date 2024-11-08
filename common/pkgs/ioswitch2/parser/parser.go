@@ -245,11 +245,11 @@ func (p *DefaultParser) buildFromNode(ctx *ParseContext, f ioswitch2.From) (ops2
 
 		switch addr := f.Hub.Address.(type) {
 		case *cdssdk.HttpAddressInfo:
-			t.Env().ToEnvWorker(&ioswitch2.HttpHubWorker{Node: f.Hub})
+			t.Env().ToEnvWorker(&ioswitch2.HttpHubWorker{Hub: f.Hub})
 			t.Env().Pinned = true
 
 		case *cdssdk.GRPCAddressInfo:
-			t.Env().ToEnvWorker(&ioswitch2.AgentWorker{Node: f.Hub, Address: *addr})
+			t.Env().ToEnvWorker(&ioswitch2.AgentWorker{Hub: f.Hub, Address: *addr})
 			t.Env().Pinned = true
 
 		default:
@@ -285,10 +285,10 @@ func (p *DefaultParser) buildToNode(ctx *ParseContext, t ioswitch2.To) (ops2.ToN
 
 		switch addr := t.Hub.Address.(type) {
 		case *cdssdk.HttpAddressInfo:
-			n.Env().ToEnvWorker(&ioswitch2.HttpHubWorker{Node: t.Hub})
+			n.Env().ToEnvWorker(&ioswitch2.HttpHubWorker{Hub: t.Hub})
 
 		case *cdssdk.GRPCAddressInfo:
-			n.Env().ToEnvWorker(&ioswitch2.AgentWorker{Node: t.Hub, Address: *addr})
+			n.Env().ToEnvWorker(&ioswitch2.AgentWorker{Hub: t.Hub, Address: *addr})
 
 		default:
 			return nil, fmt.Errorf("unsupported node address type %T", addr)

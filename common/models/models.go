@@ -99,7 +99,7 @@ func (o *ObjectDetail) GroupBlocks() []GrouppedObjectBlock {
 }
 
 type LocalMachineInfo struct {
-	NodeID     *cdssdk.NodeID    `json:"nodeID"`
+	HubID      *cdssdk.HubID     `json:"hubID"`
 	ExternalIP string            `json:"externalIP"`
 	LocalIP    string            `json:"localIP"`
 	LocationID cdssdk.LocationID `json:"locationID"`
@@ -129,7 +129,7 @@ func (ObjectAccessStat) TableName() string {
 
 type StorageDetail struct {
 	Storage   cdssdk.Storage        `json:"storage"`
-	MasterHub *cdssdk.Node          `json:"masterHub"`
+	MasterHub *cdssdk.Hub           `json:"masterHub"`
 	Shard     *cdssdk.ShardStorage  `json:"shard"`
 	Shared    *cdssdk.SharedStorage `json:"shared"`
 }

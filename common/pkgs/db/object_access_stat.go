@@ -16,9 +16,9 @@ func (db *DB) ObjectAccessStat() *ObjectAccessStatDB {
 	return &ObjectAccessStatDB{db}
 }
 
-func (*ObjectAccessStatDB) Get(ctx SQLContext, objID cdssdk.ObjectID, nodeID cdssdk.NodeID) (stgmod.ObjectAccessStat, error) {
+func (*ObjectAccessStatDB) Get(ctx SQLContext, objID cdssdk.ObjectID, hubID cdssdk.HubID) (stgmod.ObjectAccessStat, error) {
 	var ret stgmod.ObjectAccessStat
-	err := sqlx.Get(ctx, &ret, "select * from ObjectAccessStat where ObjectID=? and NodeID=?", objID, nodeID)
+	err := sqlx.Get(ctx, &ret, "select * from ObjectAccessStat where ObjectID=? and HubID=?", objID, hubID)
 	return ret, err
 }
 
@@ -43,13 +43,13 @@ func (*ObjectAccessStatDB) BatchGetByObjectID(ctx SQLContext, objIDs []cdssdk.Ob
 	return ret, err
 }
 
-func (*ObjectAccessStatDB) BatchGetByObjectIDOnNode(ctx SQLContext, objIDs []cdssdk.ObjectID, nodeID cdssdk.NodeID) ([]stgmod.ObjectAccessStat, error) {
+func (*ObjectAccessStatDB) BatchGetByObjectIDOnNode(ctx SQLContext, objIDs []cdssdk.ObjectID, hubID cdssdk.HubID) ([]stgmod.ObjectAccessStat, error) {
 	if len(objIDs) == 0 {
 		return nil, nil
 	}
 
 	var ret []stgmod.ObjectAccessStat
-	stmt, args, err := sqlx.In("select * from ObjectAccessStat where ObjectID in (?) and NodeID=?", objIDs, nodeID)
+	stmt, args, err := sqlx.In("select * from ObjectAccessStat where ObjectID in (?) and HubID=?", objIDs, hubID)
 	if err != nil {
 		return ret, err
 	}
@@ -63,8 +63,8 @@ func (*ObjectAccessStatDB) BatchAddCounter(ctx SQLContext, entries []coormq.AddA
 		return nil
 	}
 
-	sql := "insert into ObjectAccessStat(ObjectID, NodeID, Counter, Amount) " +
-		" values(:ObjectID, :NodeID, :Counter, 0) as new" +
+	sql := "insert into ObjectAccessStat(ObjectID, HubID, Counter, Amount) " +
+		" values(:ObjectID, :HubID, :Counter, 0) as new" +
 		" on duplicate key update ObjectAccessStat.Counter=ObjectAccessStat.Counter+new.Counter"
 	err := BatchNamedExec(ctx, sql, 4, entries, nil)
 	return err

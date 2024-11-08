@@ -25,11 +25,11 @@ func (e *BatchAllAgentCheckCache) Execute(ctx ExecuteContext) {
 	if e.stgIDs == nil || len(e.stgIDs) == 0 {
 		ids, err := ctx.Args.DB.Storage().GetAllIDs(ctx.Args.DB.DefCtx())
 		if err != nil {
-			log.Warnf("get all nodes failed, err: %s", err.Error())
+			log.Warnf("get all storages failed, err: %s", err.Error())
 			return
 		}
 
-		log.Debugf("new check start, get all nodes")
+		log.Debugf("new check start, get all storages")
 		e.stgIDs = ids
 	}
 

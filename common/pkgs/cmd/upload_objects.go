@@ -28,10 +28,10 @@ import (
 )
 
 type UploadObjects struct {
-	userID       cdssdk.UserID
-	packageID    cdssdk.PackageID
-	objectIter   iterator.UploadingObjectIterator
-	nodeAffinity *cdssdk.NodeID
+	userID      cdssdk.UserID
+	packageID   cdssdk.PackageID
+	objectIter  iterator.UploadingObjectIterator
+	stgAffinity cdssdk.StorageID
 }
 
 type UploadObjectsResult struct {
@@ -56,12 +56,12 @@ type UploadObjectsContext struct {
 	StgMgr       *mgr.Manager
 }
 
-func NewUploadObjects(userID cdssdk.UserID, packageID cdssdk.PackageID, objIter iterator.UploadingObjectIterator, nodeAffinity *cdssdk.NodeID) *UploadObjects {
+func NewUploadObjects(userID cdssdk.UserID, packageID cdssdk.PackageID, objIter iterator.UploadingObjectIterator, stgAffinity cdssdk.StorageID) *UploadObjects {
 	return &UploadObjects{
-		userID:       userID,
-		packageID:    packageID,
-		objectIter:   objIter,
-		nodeAffinity: nodeAffinity,
+		userID:      userID,
+		packageID:   packageID,
+		objectIter:  objIter,
+		stgAffinity: stgAffinity,
 	}
 }
 
@@ -75,7 +75,7 @@ func (t *UploadObjects) Execute(ctx *UploadObjectsContext) (*UploadObjectsResult
 
 	getUserStgsResp, err := coorCli.GetUserStorageDetails(coormq.ReqGetUserStorageDetails(t.userID))
 	if err != nil {
-		return nil, fmt.Errorf("getting user nodes: %w", err)
+		return nil, fmt.Errorf("getting user storages: %w", err)
 	}
 
 	cons := ctx.Connectivity.GetAll()
@@ -87,7 +87,7 @@ func (t *UploadObjects) Execute(ctx *UploadObjectsContext) (*UploadObjectsResult
 
 		delay := time.Duration(math.MaxInt64)
 
-		con, ok := cons[stg.MasterHub.NodeID]
+		con, ok := cons[stg.MasterHub.HubID]
 		if ok && con.Delay != nil {
 			delay = *con.Delay
 		}
@@ -116,7 +116,7 @@ func (t *UploadObjects) Execute(ctx *UploadObjectsContext) (*UploadObjectsResult
 	}
 	defer ipfsMutex.Unlock()
 
-	rets, err := uploadAndUpdatePackage(ctx, t.packageID, t.objectIter, userStgs, t.nodeAffinity)
+	rets, err := uploadAndUpdatePackage(ctx, t.packageID, t.objectIter, userStgs, t.stgAffinity)
 	if err != nil {
 		return nil, err
 	}
@@ -126,30 +126,30 @@ func (t *UploadObjects) Execute(ctx *UploadObjectsContext) (*UploadObjectsResult
 	}, nil
 }
 
-// chooseUploadNode 选择一个上传文件的节点
+// chooseUploadStorage 选择一个上传文件的节点
 // 1. 选择设置了亲和性的节点
 // 2. 从与当前客户端相同地域的节点中随机选一个
 // 3. 没有的话从所有节点选择延迟最低的节点
-func chooseUploadNode(nodes []UploadStorageInfo, nodeAffinity *cdssdk.NodeID) UploadStorageInfo {
-	if nodeAffinity != nil {
-		aff, ok := lo.Find(nodes, func(node UploadStorageInfo) bool { return node.Storage.MasterHub.NodeID == *nodeAffinity })
+func chooseUploadStorage(storages []UploadStorageInfo, stgAffinity cdssdk.StorageID) UploadStorageInfo {
+	if stgAffinity > 0 {
+		aff, ok := lo.Find(storages, func(storage UploadStorageInfo) bool { return storage.Storage.Storage.StorageID == stgAffinity })
 		if ok {
 			return aff
 		}
 	}
 
-	sameLocationNodes := lo.Filter(nodes, func(e UploadStorageInfo, i int) bool { return e.IsSameLocation })
-	if len(sameLocationNodes) > 0 {
-		return sameLocationNodes[rand.Intn(len(sameLocationNodes))]
+	sameLocationStorages := lo.Filter(storages, func(e UploadStorageInfo, i int) bool { return e.IsSameLocation })
+	if len(sameLocationStorages) > 0 {
+		return sameLocationStorages[rand.Intn(len(sameLocationStorages))]
 	}
 
 	// 选择延迟最低的节点
-	nodes = sort2.Sort(nodes, func(e1, e2 UploadStorageInfo) int { return sort2.Cmp(e1.Delay, e2.Delay) })
+	storages = sort2.Sort(storages, func(e1, e2 UploadStorageInfo) int { return sort2.Cmp(e1.Delay, e2.Delay) })
 
-	return nodes[0]
+	return storages[0]
 }
 
-func uploadAndUpdatePackage(ctx *UploadObjectsContext, packageID cdssdk.PackageID, objectIter iterator.UploadingObjectIterator, userNodes []UploadStorageInfo, nodeAffinity *cdssdk.NodeID) ([]ObjectUploadResult, error) {
+func uploadAndUpdatePackage(ctx *UploadObjectsContext, packageID cdssdk.PackageID, objectIter iterator.UploadingObjectIterator, userStorages []UploadStorageInfo, stgAffinity cdssdk.StorageID) ([]ObjectUploadResult, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
@@ -157,7 +157,7 @@ func uploadAndUpdatePackage(ctx *UploadObjectsContext, packageID cdssdk.PackageI
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
 	// 为所有文件选择相同的上传节点
-	uploadNode := chooseUploadNode(userNodes, nodeAffinity)
+	uploadStorage := chooseUploadStorage(userStorages, stgAffinity)
 
 	var uploadRets []ObjectUploadResult
 	//上传文件夹
@@ -174,7 +174,7 @@ func uploadAndUpdatePackage(ctx *UploadObjectsContext, packageID cdssdk.PackageI
 			defer objInfo.File.Close()
 
 			uploadTime := time.Now()
-			fileHash, err := uploadFile(ctx, objInfo.File, uploadNode)
+			fileHash, err := uploadFile(ctx, objInfo.File, uploadStorage)
 			if err != nil {
 				return fmt.Errorf("uploading file: %w", err)
 			}
@@ -184,7 +184,7 @@ func uploadAndUpdatePackage(ctx *UploadObjectsContext, packageID cdssdk.PackageI
 				Error: err,
 			})
 
-			adds = append(adds, coormq.NewAddObjectEntry(objInfo.Path, objInfo.Size, fileHash, uploadTime, uploadNode.Storage.Storage.StorageID))
+			adds = append(adds, coormq.NewAddObjectEntry(objInfo.Path, objInfo.Size, fileHash, uploadTime, uploadStorage.Storage.Storage.StorageID))
 			return nil
 		}()
 		if err != nil {

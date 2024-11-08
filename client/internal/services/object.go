@@ -29,10 +29,10 @@ func (svc *Service) ObjectSvc() *ObjectService {
 // userID: 用户ID。
 // packageID: 套件ID。
 // objIter: 正在上传的对象迭代器。
-// nodeAffinity: 节点亲和性，指定对象上传的首选节点。
+// storageAffinity: 节点亲和性，指定对象上传的首选节点。
 // 返回值: 任务ID和错误信息。
-func (svc *ObjectService) StartUploading(userID cdssdk.UserID, packageID cdssdk.PackageID, objIter iterator.UploadingObjectIterator, nodeAffinity *cdssdk.NodeID) (string, error) {
-	tsk := svc.TaskMgr.StartNew(mytask.NewUploadObjects(userID, packageID, objIter, nodeAffinity))
+func (svc *ObjectService) StartUploading(userID cdssdk.UserID, packageID cdssdk.PackageID, objIter iterator.UploadingObjectIterator, storageAffinity cdssdk.StorageID) (string, error) {
+	tsk := svc.TaskMgr.StartNew(mytask.NewUploadObjects(userID, packageID, objIter, storageAffinity))
 	return tsk.ID(), nil
 }
 

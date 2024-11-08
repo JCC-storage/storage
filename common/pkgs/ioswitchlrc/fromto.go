@@ -38,15 +38,15 @@ func (f *FromDriver) GetDataIndex() int {
 
 type FromNode struct {
 	FileHash  cdssdk.FileHash
-	Node      cdssdk.Node
+	Hub       cdssdk.Hub
 	Storage   cdssdk.Storage
 	DataIndex int
 }
 
-func NewFromNode(fileHash cdssdk.FileHash, node cdssdk.Node, storage cdssdk.Storage, dataIndex int) *FromNode {
+func NewFromStorage(fileHash cdssdk.FileHash, hub cdssdk.Hub, storage cdssdk.Storage, dataIndex int) *FromNode {
 	return &FromNode{
 		FileHash:  fileHash,
-		Node:      node,
+		Hub:       hub,
 		DataIndex: dataIndex,
 	}
 }
@@ -87,14 +87,14 @@ func (t *ToDriver) GetRange() exec.Range {
 }
 
 type ToNode struct {
-	Hub              cdssdk.Node
+	Hub              cdssdk.Hub
 	Storage          cdssdk.Storage
 	DataIndex        int
 	Range            exec.Range
 	FileHashStoreKey string
 }
 
-func NewToStorage(hub cdssdk.Node, stg cdssdk.Storage, dataIndex int, fileHashStoreKey string) *ToNode {
+func NewToStorage(hub cdssdk.Hub, stg cdssdk.Storage, dataIndex int, fileHashStoreKey string) *ToNode {
 	return &ToNode{
 		Hub:              hub,
 		Storage:          stg,
@@ -103,7 +103,7 @@ func NewToStorage(hub cdssdk.Node, stg cdssdk.Storage, dataIndex int, fileHashSt
 	}
 }
 
-func NewToStorageWithRange(hub cdssdk.Node, stg cdssdk.Storage, dataIndex int, fileHashStoreKey string, rng exec.Range) *ToNode {
+func NewToStorageWithRange(hub cdssdk.Hub, stg cdssdk.Storage, dataIndex int, fileHashStoreKey string, rng exec.Range) *ToNode {
 	return &ToNode{
 		Hub:              hub,
 		Storage:          stg,

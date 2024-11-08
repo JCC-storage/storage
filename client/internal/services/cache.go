@@ -19,7 +19,7 @@ func (svc *Service) CacheSvc() *CacheService {
 	return &CacheService{Service: svc}
 }
 
-func (svc *CacheService) StartCacheMovePackage(userID cdssdk.UserID, packageID cdssdk.PackageID, stgID cdssdk.StorageID) (cdssdk.NodeID, string, error) {
+func (svc *CacheService) StartCacheMovePackage(userID cdssdk.UserID, packageID cdssdk.PackageID, stgID cdssdk.StorageID) (cdssdk.HubID, string, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return 0, "", fmt.Errorf("new coordinator client: %w", err)
@@ -35,7 +35,7 @@ func (svc *CacheService) StartCacheMovePackage(userID cdssdk.UserID, packageID c
 		return 0, "", fmt.Errorf("shard storage is not enabled")
 	}
 
-	agentCli, err := stgglb.AgentMQPool.Acquire(getStg.Storages[0].MasterHub.NodeID)
+	agentCli, err := stgglb.AgentMQPool.Acquire(getStg.Storages[0].MasterHub.HubID)
 	if err != nil {
 		return 0, "", fmt.Errorf("new agent client: %w", err)
 	}
@@ -46,10 +46,10 @@ func (svc *CacheService) StartCacheMovePackage(userID cdssdk.UserID, packageID c
 		return 0, "", fmt.Errorf("start cache move package: %w", err)
 	}
 
-	return getStg.Storages[0].MasterHub.NodeID, startResp.TaskID, nil
+	return getStg.Storages[0].MasterHub.HubID, startResp.TaskID, nil
 }
 
-func (svc *CacheService) WaitCacheMovePackage(hubID cdssdk.NodeID, taskID string, waitTimeout time.Duration) (bool, error) {
+func (svc *CacheService) WaitCacheMovePackage(hubID cdssdk.HubID, taskID string, waitTimeout time.Duration) (bool, error) {
 	agentCli, err := stgglb.AgentMQPool.Acquire(hubID)
 	if err != nil {
 		return true, fmt.Errorf("new agent client: %w", err)

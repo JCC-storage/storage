@@ -24,11 +24,11 @@ type UploadObjects struct {
 // userID: 用户ID，标识发起上传请求的用户。
 // packageID: 包ID，标识被上传的对象所属的包。
 // objectIter: 上传对象迭代器，用于遍历和上传多个对象。
-// nodeAffinity: 节点亲和性，指定上传任务首选的执行节点。
+// storageAffinity: 节点亲和性，指定上传任务首选的执行节点。
 // 返回值为初始化后的UploadObjects指针。
-func NewUploadObjects(userID cdssdk.UserID, packageID cdssdk.PackageID, objectIter iterator.UploadingObjectIterator, nodeAffinity *cdssdk.NodeID) *UploadObjects {
+func NewUploadObjects(userID cdssdk.UserID, packageID cdssdk.PackageID, objectIter iterator.UploadingObjectIterator, storageAffinity cdssdk.StorageID) *UploadObjects {
 	return &UploadObjects{
-		cmd: *cmd.NewUploadObjects(userID, packageID, objectIter, nodeAffinity),
+		cmd: *cmd.NewUploadObjects(userID, packageID, objectIter, storageAffinity),
 	}
 }
 

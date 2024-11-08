@@ -31,7 +31,7 @@ func (svc *Service) CachePackageMoved(msg *coormq.CachePackageMoved) (*coormq.Ca
 		return nil
 	})
 	if err != nil {
-		logger.WithField("PackageID", msg.PackageID).WithField("NodeID", msg.StorageID).Warn(err.Error())
+		logger.WithField("PackageID", msg.PackageID).WithField("HubID", msg.StorageID).Warn(err.Error())
 		return nil, mq.Failed(errorcode.OperationFailed, "create package pinned objects failed")
 	}
 
@@ -52,13 +52,13 @@ func (svc *Service) CacheRemovePackage(msg *coormq.CacheRemovePackage) (*coormq.
 
 		err = svc.db2.PinnedObject().DeleteInPackageAtStorage(tx, msg.PackageID, msg.StorageID)
 		if err != nil {
-			return fmt.Errorf("delete pinned objects in package at node: %w", err)
+			return fmt.Errorf("delete pinned objects in package at storage: %w", err)
 		}
 
 		return nil
 	})
 	if err != nil {
-		logger.WithField("PackageID", msg.PackageID).WithField("NodeID", msg.StorageID).Warn(err.Error())
+		logger.WithField("PackageID", msg.PackageID).WithField("HubID", msg.StorageID).Warn(err.Error())
 		return nil, mq.Failed(errorcode.OperationFailed, "remove pinned package failed")
 	}
 
