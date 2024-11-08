@@ -25,9 +25,9 @@ func ScannerPostEvent(ctx CommandContext, args []string) error {
 }
 
 func init() {
-	parseScannerEventCmdTrie.MustAdd(scevt.NewAgentCacheGC, reflect2.TypeNameOf[scevt.AgentCacheGC]())
+	parseScannerEventCmdTrie.MustAdd(scevt.NewAgentShardStoreGC, reflect2.TypeNameOf[scevt.AgentShardStoreGC]())
 
-	parseScannerEventCmdTrie.MustAdd(scevt.NewAgentCheckCache, reflect2.TypeNameOf[scevt.AgentCheckCache]())
+	parseScannerEventCmdTrie.MustAdd(scevt.NewAgentCheckShardStore, reflect2.TypeNameOf[scevt.AgentCheckShardStore]())
 
 	parseScannerEventCmdTrie.MustAdd(scevt.NewAgentCheckState, reflect2.TypeNameOf[scevt.AgentCheckState]())
 

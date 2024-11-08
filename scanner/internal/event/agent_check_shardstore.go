@@ -14,22 +14,22 @@ import (
 	scevt "gitlink.org.cn/cloudream/storage/common/pkgs/mq/scanner/event"
 )
 
-// AgentCheckCache 代表一个用于处理代理缓存检查事件的结构体
-type AgentCheckCache struct {
-	*scevt.AgentCheckCache
+// AgentCheckShardStore 代表一个用于处理代理缓存检查事件的结构体
+type AgentCheckShardStore struct {
+	*scevt.AgentCheckShardStore
 }
 
-// NewAgentCheckCache 创建一个新的 AgentCheckCache 实例
-func NewAgentCheckCache(evt *scevt.AgentCheckCache) *AgentCheckCache {
-	return &AgentCheckCache{
-		AgentCheckCache: evt,
+// NewAgentCheckShardStore 创建一个新的 AgentCheckCache 实例
+func NewAgentCheckShardStore(evt *scevt.AgentCheckShardStore) *AgentCheckShardStore {
+	return &AgentCheckShardStore{
+		AgentCheckShardStore: evt,
 	}
 }
 
 // TryMerge 尝试合并当前事件与另一个事件
 // 如果另一个事件类型不匹配或节点ID不同，则不进行合并
-func (t *AgentCheckCache) TryMerge(other Event) bool {
-	event, ok := other.(*AgentCheckCache)
+func (t *AgentCheckShardStore) TryMerge(other Event) bool {
+	event, ok := other.(*AgentCheckShardStore)
 	if !ok {
 		return false
 	}
@@ -42,10 +42,10 @@ func (t *AgentCheckCache) TryMerge(other Event) bool {
 }
 
 // Execute 执行缓存检查操作，对比本地缓存与代理返回的缓存信息，更新数据库中的缓存记录
-func (t *AgentCheckCache) Execute(execCtx ExecuteContext) {
-	log := logger.WithType[AgentCheckCache]("Event")
+func (t *AgentCheckShardStore) Execute(execCtx ExecuteContext) {
+	log := logger.WithType[AgentCheckShardStore]("Event")
 	startTime := time.Now()
-	log.Debugf("begin with %v", logger.FormatStruct(t.AgentCheckCache))
+	log.Debugf("begin with %v", logger.FormatStruct(t.AgentCheckShardStore))
 	defer func() {
 		log.Debugf("end, time: %v", time.Since(startTime))
 	}()
@@ -83,8 +83,8 @@ func (t *AgentCheckCache) Execute(execCtx ExecuteContext) {
 }
 
 // checkCache 对比Cache表中的记录，根据实际存在的文件哈希值，进行增加或删除操作
-func (t *AgentCheckCache) checkCache(execCtx ExecuteContext, tx db2.SQLContext, realFileHashes map[cdssdk.FileHash]bool) {
-	log := logger.WithType[AgentCheckCache]("Event")
+func (t *AgentCheckShardStore) checkCache(execCtx ExecuteContext, tx db2.SQLContext, realFileHashes map[cdssdk.FileHash]bool) {
+	log := logger.WithType[AgentCheckShardStore]("Event")
 
 	caches, err := execCtx.Args.DB.Cache().GetByStorageID(tx, t.StorageID)
 	if err != nil {
@@ -123,8 +123,8 @@ func (t *AgentCheckCache) checkCache(execCtx ExecuteContext, tx db2.SQLContext, 
 }
 
 // checkPinnedObject 对比PinnedObject表，若实际文件不存在，则进行删除操作
-func (t *AgentCheckCache) checkPinnedObject(execCtx ExecuteContext, tx db2.SQLContext, realFileHashes map[cdssdk.FileHash]bool) {
-	log := logger.WithType[AgentCheckCache]("Event")
+func (t *AgentCheckShardStore) checkPinnedObject(execCtx ExecuteContext, tx db2.SQLContext, realFileHashes map[cdssdk.FileHash]bool) {
+	log := logger.WithType[AgentCheckShardStore]("Event")
 
 	objs, err := execCtx.Args.DB.PinnedObject().GetObjectsByStorageID(tx, t.StorageID)
 	if err != nil {
@@ -149,8 +149,8 @@ func (t *AgentCheckCache) checkPinnedObject(execCtx ExecuteContext, tx db2.SQLCo
 }
 
 // checkObjectBlock 对比ObjectBlock表，若实际文件不存在，则进行删除操作
-func (t *AgentCheckCache) checkObjectBlock(execCtx ExecuteContext, tx db2.SQLContext, realFileHashes map[cdssdk.FileHash]bool) {
-	log := logger.WithType[AgentCheckCache]("Event")
+func (t *AgentCheckShardStore) checkObjectBlock(execCtx ExecuteContext, tx db2.SQLContext, realFileHashes map[cdssdk.FileHash]bool) {
+	log := logger.WithType[AgentCheckShardStore]("Event")
 
 	blocks, err := execCtx.Args.DB.ObjectBlock().GetByStorageID(tx, t.StorageID)
 	if err != nil {
@@ -176,5 +176,5 @@ func (t *AgentCheckCache) checkObjectBlock(execCtx ExecuteContext, tx db2.SQLCon
 
 // init 注册AgentCheckCache消息转换器
 func init() {
-	RegisterMessageConvertor(NewAgentCheckCache)
+	RegisterMessageConvertor(NewAgentCheckShardStore)
 }

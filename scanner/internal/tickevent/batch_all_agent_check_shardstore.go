@@ -9,20 +9,20 @@ import (
 
 const AGENT_CHECK_CACHE_BATCH_SIZE = 2
 
-type BatchAllAgentCheckCache struct {
+type BatchAllAgentCheckShardStore struct {
 	stgIDs []cdssdk.StorageID
 }
 
-func NewBatchAllAgentCheckCache() *BatchAllAgentCheckCache {
-	return &BatchAllAgentCheckCache{}
+func NewBatchAllAgentCheckShardStore() *BatchAllAgentCheckShardStore {
+	return &BatchAllAgentCheckShardStore{}
 }
 
-func (e *BatchAllAgentCheckCache) Execute(ctx ExecuteContext) {
-	log := logger.WithType[BatchAllAgentCheckCache]("TickEvent")
+func (e *BatchAllAgentCheckShardStore) Execute(ctx ExecuteContext) {
+	log := logger.WithType[BatchAllAgentCheckShardStore]("TickEvent")
 	log.Debugf("begin")
 	defer log.Debugf("end")
 
-	if e.stgIDs == nil || len(e.stgIDs) == 0 {
+	if len(e.stgIDs) == 0 {
 		ids, err := ctx.Args.DB.Storage().GetAllIDs(ctx.Args.DB.DefCtx())
 		if err != nil {
 			log.Warnf("get all storages failed, err: %s", err.Error())
@@ -36,7 +36,7 @@ func (e *BatchAllAgentCheckCache) Execute(ctx ExecuteContext) {
 	checkedCnt := 0
 	for ; checkedCnt < len(e.stgIDs) && checkedCnt < AGENT_CHECK_CACHE_BATCH_SIZE; checkedCnt++ {
 		// nil代表进行全量检查
-		ctx.Args.EventExecutor.Post(event.NewAgentCheckCache(scevt.NewAgentCheckCache(e.stgIDs[checkedCnt])))
+		ctx.Args.EventExecutor.Post(event.NewAgentCheckShardStore(scevt.NewAgentCheckShardStore(e.stgIDs[checkedCnt])))
 	}
 	e.stgIDs = e.stgIDs[checkedCnt:]
 }

@@ -7,7 +7,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/distlock"
 )
 
-func Test_IPFSLock(t *testing.T) {
+func Test_ShardStoreLock(t *testing.T) {
 	cases := []struct {
 		title     string
 		initLocks []distlock.Lock
@@ -18,13 +18,13 @@ func Test_IPFSLock(t *testing.T) {
 			title: "同节点，同一个Buzy锁",
 			initLocks: []distlock.Lock{
 				{
-					Path: []string{IPFSLockPathPrefix, "hub1"},
-					Name: IPFSBuzyLock,
+					Path: []string{ShardStoreLockPathPrefix, "hub1"},
+					Name: ShardStoreBuzyLock,
 				},
 			},
 			doLock: distlock.Lock{
-				Path: []string{IPFSLockPathPrefix, "hub1"},
-				Name: IPFSBuzyLock,
+				Path: []string{ShardStoreLockPathPrefix, "hub1"},
+				Name: ShardStoreBuzyLock,
 			},
 			wantOK: true,
 		},
@@ -32,13 +32,13 @@ func Test_IPFSLock(t *testing.T) {
 			title: "同节点，同一个GC锁",
 			initLocks: []distlock.Lock{
 				{
-					Path: []string{IPFSLockPathPrefix, "hub1"},
-					Name: IPFSGCLock,
+					Path: []string{ShardStoreLockPathPrefix, "hub1"},
+					Name: ShardStoreGCLock,
 				},
 			},
 			doLock: distlock.Lock{
-				Path: []string{IPFSLockPathPrefix, "hub1"},
-				Name: IPFSGCLock,
+				Path: []string{ShardStoreLockPathPrefix, "hub1"},
+				Name: ShardStoreGCLock,
 			},
 			wantOK: true,
 		},
@@ -46,14 +46,14 @@ func Test_IPFSLock(t *testing.T) {
 			title: "同时设置Buzy和GC",
 			initLocks: []distlock.Lock{
 				{
-					Path:   []string{IPFSLockPathPrefix, "hub1"},
-					Name:   IPFSBuzyLock,
+					Path:   []string{ShardStoreLockPathPrefix, "hub1"},
+					Name:   ShardStoreBuzyLock,
 					Target: *NewStringLockTarget(),
 				},
 			},
 			doLock: distlock.Lock{
-				Path:   []string{IPFSLockPathPrefix, "hub1"},
-				Name:   IPFSGCLock,
+				Path:   []string{ShardStoreLockPathPrefix, "hub1"},
+				Name:   ShardStoreGCLock,
 				Target: *NewStringLockTarget(),
 			},
 			wantOK: false,
@@ -62,7 +62,7 @@ func Test_IPFSLock(t *testing.T) {
 
 	for _, ca := range cases {
 		Convey(ca.title, t, func() {
-			ipfsLock := NewIPFSLock()
+			ipfsLock := NewShardStoreLock()
 
 			for _, l := range ca.initLocks {
 				ipfsLock.Lock("req1", l)
@@ -78,11 +78,11 @@ func Test_IPFSLock(t *testing.T) {
 	}
 
 	Convey("解锁", t, func() {
-		ipfsLock := NewIPFSLock()
+		ipfsLock := NewShardStoreLock()
 
 		lock := distlock.Lock{
-			Path: []string{IPFSLockPathPrefix, "hub1"},
-			Name: IPFSBuzyLock,
+			Path: []string{ShardStoreLockPathPrefix, "hub1"},
+			Name: ShardStoreBuzyLock,
 		}
 
 		ipfsLock.Lock("req1", lock)
@@ -93,8 +93,8 @@ func Test_IPFSLock(t *testing.T) {
 		ipfsLock.Unlock("req1", lock)
 
 		lock = distlock.Lock{
-			Path: []string{IPFSLockPathPrefix, "hub1"},
-			Name: IPFSGCLock,
+			Path: []string{ShardStoreLockPathPrefix, "hub1"},
+			Name: ShardStoreGCLock,
 		}
 		err = ipfsLock.CanLock(lock)
 		So(err, ShouldBeNil)

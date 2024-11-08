@@ -15,24 +15,24 @@ import (
 	scevt "gitlink.org.cn/cloudream/storage/common/pkgs/mq/scanner/event"
 )
 
-// AgentCacheGC 类封装了扫描器事件中的AgentCacheGC结构。
-type AgentCacheGC struct {
-	*scevt.AgentCacheGC
+// AgentShardStoreGC 类封装了扫描器事件中的AgentShardStoreGC结构。
+type AgentShardStoreGC struct {
+	*scevt.AgentShardStoreGC
 }
 
-// NewAgentCacheGC 创建一个新的AgentCacheGC实例。
+// NewAgentShardStoreGC 创建一个新的AgentCacheGC实例。
 // evt: 传入的扫描器事件中的AgentCacheGC实例。
-func NewAgentCacheGC(evt *scevt.AgentCacheGC) *AgentCacheGC {
-	return &AgentCacheGC{
-		AgentCacheGC: evt,
+func NewAgentShardStoreGC(evt *scevt.AgentShardStoreGC) *AgentShardStoreGC {
+	return &AgentShardStoreGC{
+		AgentShardStoreGC: evt,
 	}
 }
 
 // TryMerge 尝试合并当前事件与另一个事件。
 // other: 待合并的另一个事件。
 // 返回值表示是否成功合并。
-func (t *AgentCacheGC) TryMerge(other Event) bool {
-	event, ok := other.(*AgentCacheGC)
+func (t *AgentShardStoreGC) TryMerge(other Event) bool {
+	event, ok := other.(*AgentShardStoreGC)
 	if !ok {
 		return false
 	}
@@ -46,10 +46,10 @@ func (t *AgentCacheGC) TryMerge(other Event) bool {
 
 // Execute 执行垃圾回收操作。
 // execCtx: 执行上下文，包含执行所需的各种参数和环境。
-func (t *AgentCacheGC) Execute(execCtx ExecuteContext) {
-	log := logger.WithType[AgentCacheGC]("Event")
+func (t *AgentShardStoreGC) Execute(execCtx ExecuteContext) {
+	log := logger.WithType[AgentShardStoreGC]("Event")
 	startTime := time.Now()
-	log.Debugf("begin with %v", logger.FormatStruct(t.AgentCacheGC))
+	log.Debugf("begin with %v", logger.FormatStruct(t.AgentShardStoreGC))
 	defer func() {
 		log.Debugf("end, time: %v", time.Since(startTime))
 	}()
@@ -120,5 +120,5 @@ func (t *AgentCacheGC) Execute(execCtx ExecuteContext) {
 
 // 注册消息转换器，使系统能够处理AgentCacheGC消息。
 func init() {
-	RegisterMessageConvertor(NewAgentCacheGC)
+	RegisterMessageConvertor(NewAgentShardStoreGC)
 }

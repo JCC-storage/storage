@@ -18,7 +18,7 @@ func (b *LockRequestBuilder) Shard() *ShardStoreLockReqBuilder {
 func (b *ShardStoreLockReqBuilder) Buzy(stgID cdssdk.StorageID) *ShardStoreLockReqBuilder {
 	b.locks = append(b.locks, distlock.Lock{
 		Path:   b.makePath(stgID),
-		Name:   lockprovider.IPFSBuzyLock,
+		Name:   lockprovider.ShardStoreBuzyLock,
 		Target: *lockprovider.NewStringLockTarget(),
 	})
 	return b
@@ -27,12 +27,12 @@ func (b *ShardStoreLockReqBuilder) Buzy(stgID cdssdk.StorageID) *ShardStoreLockR
 func (b *ShardStoreLockReqBuilder) GC(stgID cdssdk.StorageID) *ShardStoreLockReqBuilder {
 	b.locks = append(b.locks, distlock.Lock{
 		Path:   b.makePath(stgID),
-		Name:   lockprovider.IPFSGCLock,
+		Name:   lockprovider.ShardStoreGCLock,
 		Target: *lockprovider.NewStringLockTarget(),
 	})
 	return b
 }
 
 func (b *ShardStoreLockReqBuilder) makePath(hubID cdssdk.StorageID) []string {
-	return []string{lockprovider.IPFSLockPathPrefix, strconv.FormatInt(int64(hubID), 10)}
+	return []string{lockprovider.ShardStoreLockPathPrefix, strconv.FormatInt(int64(hubID), 10)}
 }

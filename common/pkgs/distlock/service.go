@@ -52,7 +52,7 @@ func initMetadataLockProviders() []distlock.PathProvider {
 
 func initIPFSLockProviders() []distlock.PathProvider {
 	return []distlock.PathProvider{
-		distlock.NewPathProvider(lockprovider.NewIPFSLock(), lockprovider.IPFSLockPathPrefix, trie.WORD_ANY),
+		distlock.NewPathProvider(lockprovider.NewShardStoreLock(), lockprovider.ShardStoreLockPathPrefix, trie.WORD_ANY),
 	}
 }
 

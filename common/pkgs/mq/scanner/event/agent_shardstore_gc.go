@@ -2,17 +2,17 @@ package event
 
 import cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 
-type AgentCacheGC struct {
+type AgentShardStoreGC struct {
 	EventBase
 	StorageID cdssdk.StorageID `json:"storageID"`
 }
 
-func NewAgentCacheGC(stgID cdssdk.StorageID) *AgentCacheGC {
-	return &AgentCacheGC{
+func NewAgentShardStoreGC(stgID cdssdk.StorageID) *AgentShardStoreGC {
+	return &AgentShardStoreGC{
 		StorageID: stgID,
 	}
 }
 
 func init() {
-	Register[*AgentCacheGC]()
+	Register[*AgentShardStoreGC]()
 }
