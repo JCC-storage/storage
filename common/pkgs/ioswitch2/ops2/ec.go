@@ -16,99 +16,9 @@ import (
 )
 
 func init() {
-	// exec.UseOp[*ECReconstructAny]()
-	// exec.UseOp[*ECReconstruct]()
 	exec.UseOp[*ECMultiply]()
 }
 
-/*
-	type ECReconstructAny struct {
-		EC                 cdssdk.ECRedundancy `json:"ec"`
-		Inputs             []exec.VarID        `json:"inputs"`
-		Outputs            []exec.VarID        `json:"outputs"`
-		InputBlockIndexes  []int               `json:"inputBlockIndexes"`
-		OutputBlockIndexes []int               `json:"outputBlockIndexes"`
-	}
-
-	func (o *ECReconstructAny) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
-		rs, err := ec.NewStreamRs(o.EC.K, o.EC.N, o.EC.ChunkSize)
-		if err != nil {
-			return fmt.Errorf("new ec: %w", err)
-		}
-
-		err = exec.BindArrayVars(e, ctx.Context, inputs)
-		if err != nil {
-			return err
-		}
-		defer func() {
-			for _, s := range o.Inputs {
-				s.Stream.Close()
-			}
-		}()
-
-		var inputs []io.Reader
-		for _, s := range o.Inputs {
-			inputs = append(inputs, s.Stream)
-		}
-
-		outputs := rs.ReconstructAny(inputs, o.InputBlockIndexes, o.OutputBlockIndexes)
-
-		sem := semaphore.NewWeighted(int64(len(o.Outputs)))
-		for i := range o.Outputs {
-			sem.Acquire(ctx.Context, 1)
-
-			o.Outputs[i].Stream = io2.AfterReadClosedOnce(outputs[i], func(closer io.ReadCloser) {
-				sem.Release(1)
-			})
-		}
-		e.PutVar(o.Outputs)
-
-		return sem.Acquire(ctx.Context, int64(len(o.Outputs)))
-	}
-
-	type ECReconstruct struct {
-		EC                cdssdk.ECRedundancy `json:"ec"`
-		Inputs            []exec.VarID        `json:"inputs"`
-		Outputs           []exec.VarID        `json:"outputs"`
-		InputBlockIndexes []int               `json:"inputBlockIndexes"`
-	}
-
-	func (o *ECReconstruct) Execute(ctx context.Context, e *exec.Executor) error {
-		rs, err := ec.NewStreamRs(o.EC.K, o.EC.N, o.EC.ChunkSize)
-		if err != nil {
-			return fmt.Errorf("new ec: %w", err)
-		}
-
-		err = exec.BindArrayVars(e, ctx, o.Inputs)
-		if err != nil {
-			return err
-		}
-		defer func() {
-			for _, s := range o.Inputs {
-				s.Stream.Close()
-			}
-		}()
-
-		var inputs []io.Reader
-		for _, s := range o.Inputs {
-			inputs = append(inputs, s.Stream)
-		}
-
-		outputs := rs.ReconstructData(inputs, o.InputBlockIndexes)
-
-		sem := semaphore.NewWeighted(int64(len(o.Outputs)))
-		for i := range o.Outputs {
-			sem.Acquire(ctx, 1)
-
-			o.Outputs[i].Stream = io2.AfterReadClosedOnce(outputs[i], func(closer io.ReadCloser) {
-				sem.Release(1)
-			})
-		}
-		e.PutVar(o.Outputs)
-
-		return sem.Acquire(ctx, int64(len(o.Outputs)))
-	}
-*/
 type ECMultiply struct {
 	Coef      [][]byte     `json:"coef"`
 	Inputs    []exec.VarID `json:"inputs"`
