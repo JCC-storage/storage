@@ -48,7 +48,7 @@ func (m *Manager) InitStorage(detail stgmod.StorageDetail) error {
 
 	stg := &storage{}
 
-	if detail.Shard != nil {
+	if detail.Storage.ShardStore != nil {
 		err := createShardStore(detail, m.eventChan, stg)
 		if err != nil {
 			stopStorage(stg)
@@ -56,7 +56,7 @@ func (m *Manager) InitStorage(detail stgmod.StorageDetail) error {
 		}
 	}
 
-	if detail.Shared != nil {
+	if detail.Storage.SharedStore != nil {
 		err := createSharedStore(detail, m.eventChan, stg)
 		if err != nil {
 			stopStorage(stg)

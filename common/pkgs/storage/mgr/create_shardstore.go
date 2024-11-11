@@ -10,7 +10,7 @@ import (
 )
 
 func createShardStore(detail stgmod.StorageDetail, ch *types.StorageEventChan, stg *storage) error {
-	switch confg := detail.Shard.Config.(type) {
+	switch confg := detail.Storage.ShardStore.(type) {
 	case *cdssdk.LocalShardStorage:
 		store, err := local.NewShardStore(detail.Storage, *confg)
 		if err != nil {

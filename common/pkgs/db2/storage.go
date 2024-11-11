@@ -88,11 +88,9 @@ func (db *StorageDB) GetHubStorages(ctx SQLContext, hubID cdssdk.HubID) ([]model
 
 func (db *StorageDB) FillDetails(ctx SQLContext, details []stgmod.StorageDetail) error {
 	stgsMp := make(map[cdssdk.StorageID]*stgmod.StorageDetail)
-	stgIDs := make([]cdssdk.StorageID, 0, len(details))
 	var masterHubIDs []cdssdk.HubID
 	for i := range details {
 		stgsMp[details[i].Storage.StorageID] = &details[i]
-		stgIDs = append(stgIDs, details[i].Storage.StorageID)
 		masterHubIDs = append(masterHubIDs, details[i].Storage.MasterHub)
 	}
 
@@ -116,34 +114,6 @@ func (db *StorageDB) FillDetails(ctx SQLContext, details []stgmod.StorageDetail)
 
 			stg.MasterHub = &hub
 		}
-	}
-
-	// 获取分片存储
-	shards, err := db.ShardStorage().BatchGetByStorageIDs(ctx, stgIDs)
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return fmt.Errorf("getting shard storage: %w", err)
-	}
-	for _, shard := range shards {
-		stg := stgsMp[shard.StorageID]
-		if stg == nil {
-			continue
-		}
-
-		stg.Shard = &shard
-	}
-
-	// 获取共享存储的相关信息
-	shareds, err := db.SharedStorage().BatchGetByStorageIDs(ctx, stgIDs)
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return fmt.Errorf("getting shared storage: %w", err)
-	}
-	for _, shared := range shareds {
-		stg := stgsMp[shared.StorageID]
-		if stg == nil {
-			continue
-		}
-
-		stg.Shared = &shared
 	}
 
 	return nil

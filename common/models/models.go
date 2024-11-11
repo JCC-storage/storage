@@ -128,10 +128,8 @@ func (ObjectAccessStat) TableName() string {
 }
 
 type StorageDetail struct {
-	Storage   cdssdk.Storage        `json:"storage"`
-	MasterHub *cdssdk.Hub           `json:"masterHub"`
-	Shard     *cdssdk.ShardStorage  `json:"shard"`
-	Shared    *cdssdk.SharedStorage `json:"shared"`
+	Storage   cdssdk.Storage `json:"storage"`
+	MasterHub *cdssdk.Hub    `json:"masterHub"`
 }
 
 type ObjectStorage struct {

@@ -30,33 +30,11 @@ func (svc *Service) GetHubConfig(msg *coormq.GetHubConfig) (*coormq.GetHubConfig
 		return nil, mq.Failed(errorcode.OperationFailed, fmt.Sprintf("getting hub storages: %v", err))
 	}
 
-	var stgIDs []cdssdk.StorageID
 	for _, stg := range stgs {
 		detailsMap[stg.StorageID] = &stgmod.StorageDetail{
 			Storage:   stg,
 			MasterHub: &hub,
 		}
-		stgIDs = append(stgIDs, stg.StorageID)
-	}
-
-	shards, err := svc.db2.ShardStorage().BatchGetByStorageIDs(svc.db2.DefCtx(), stgIDs)
-	if err != nil {
-		log.Warnf("getting shard storages: %v", err)
-		return nil, mq.Failed(errorcode.OperationFailed, fmt.Sprintf("getting shard storages: %v", err))
-	}
-	for _, shard := range shards {
-		sh := shard
-		detailsMap[shard.StorageID].Shard = &sh
-	}
-
-	shareds, err := svc.db2.SharedStorage().BatchGetByStorageIDs(svc.db2.DefCtx(), stgIDs)
-	if err != nil {
-		log.Warnf("getting shared storages: %v", err)
-		return nil, mq.Failed(errorcode.OperationFailed, fmt.Sprintf("getting shared storages: %v", err))
-	}
-	for _, shared := range shareds {
-		sh := shared
-		detailsMap[shared.StorageID].Shared = &sh
 	}
 
 	var details []stgmod.StorageDetail

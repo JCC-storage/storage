@@ -108,7 +108,7 @@ func (i *DownloadObjectIterator) init() error {
 		if s == nil {
 			return fmt.Errorf("storage %v not found", stgIDs[idx])
 		}
-		if s.Shard == nil {
+		if s.Storage.ShardStore == nil {
 			return fmt.Errorf("storage %v has no shard store", stgIDs[idx])
 		}
 

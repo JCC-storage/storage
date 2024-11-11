@@ -52,8 +52,6 @@ func migrate(configPath string) {
 	migrateOne(db, stgmod.PackageAccessStat{})
 	migrateOne(db, cdssdk.Package{})
 	migrateOne(db, cdssdk.PinnedObject{})
-	migrateOne(db, cdssdk.ShardStorage{})
-	migrateOne(db, cdssdk.SharedStorage{})
 	migrateOne(db, model.StoragePackage{})
 	migrateOne(db, cdssdk.Storage{})
 	migrateOne(db, model.UserStorage{})

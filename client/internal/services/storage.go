@@ -62,7 +62,7 @@ func (svc *StorageService) StartStorageLoadPackage(userID cdssdk.UserID, package
 		return 0, "", fmt.Errorf("getting storage info: %w", err)
 	}
 
-	if stgResp.Storages[0].Shard == nil {
+	if stgResp.Storages[0].Storage.ShardStore == nil {
 		return 0, "", fmt.Errorf("shard storage is not enabled")
 	}
 
@@ -133,7 +133,7 @@ func (svc *StorageService) StartStorageCreatePackage(userID cdssdk.UserID, bucke
 		return 0, "", fmt.Errorf("getting storage info: %w", err)
 	}
 
-	if stgResp.Storages[0].Shard == nil {
+	if stgResp.Storages[0].Storage.ShardStore == nil {
 		return 0, "", fmt.Errorf("shard storage is not enabled")
 	}
 
