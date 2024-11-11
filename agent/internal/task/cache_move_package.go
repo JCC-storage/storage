@@ -77,6 +77,7 @@ func (t *CacheMovePackage) do(ctx TaskContext) error {
 		writer := store.New()
 		_, err = io.Copy(writer, obj.File)
 		if err != nil {
+			writer.Abort()
 			return fmt.Errorf("writing to store: %w", err)
 		}
 		_, err = writer.Finish()

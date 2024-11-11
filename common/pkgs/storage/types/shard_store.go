@@ -65,8 +65,7 @@ type Stats struct {
 
 type ShardWriter interface {
 	io.Writer
-	// 取消写入。要求允许在调用了Finish之后再调用此函数，且此时不应该有任何影响。
-	// 方便defer机制
+	// 取消写入。要求允许在调用了Finish之后再调用此函数，且此时不应该有任何影响，方便使用defer语句
 	Abort() error
 	// 结束写入，获得文件哈希值
 	Finish() (FileInfo, error)

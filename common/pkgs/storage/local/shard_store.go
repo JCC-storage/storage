@@ -226,6 +226,8 @@ func (s *ShardStore) onWritterFinish(w *ShardWriter, hash cdssdk.FileHash) (type
 		s.removeTempFile(w.path)
 		log.Warnf("get file %v stat: %v", newPath, err)
 		return types.FileInfo{}, fmt.Errorf("get file stat: %w", err)
+	} else {
+		s.removeTempFile(w.path)
 	}
 
 	return types.FileInfo{
