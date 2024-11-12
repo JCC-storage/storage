@@ -174,6 +174,10 @@ loop:
 		curStripIndex++
 	}
 
+	if s.downloadingStream != nil {
+		s.downloadingStream.Close()
+		s.downloadingPlanCtxCancel()
+	}
 	close(s.dataChan)
 }
 
