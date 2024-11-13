@@ -2,7 +2,6 @@ package task
 
 import (
 	"fmt"
-	"io"
 	"time"
 
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
@@ -74,15 +73,9 @@ func (t *CacheMovePackage) do(ctx TaskContext) error {
 		}
 		defer obj.File.Close()
 
-		writer := store.New()
-		_, err = io.Copy(writer, obj.File)
+		_, err = store.Create(obj.File)
 		if err != nil {
-			writer.Abort()
 			return fmt.Errorf("writing to store: %w", err)
-		}
-		_, err = writer.Finish()
-		if err != nil {
-			return fmt.Errorf("finishing store: %w", err)
 		}
 
 		ctx.accessStat.AddAccessCounter(obj.Object.ObjectID, t.packageID, t.storageID, 1)

@@ -98,15 +98,7 @@ func (o *ShardWrite) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 	}
 	defer input.Stream.Close()
 
-	writer := store.New()
-	defer writer.Abort()
-
-	_, err = io.Copy(writer, input.Stream)
-	if err != nil {
-		return fmt.Errorf("writing file to shard store: %w", err)
-	}
-
-	fileInfo, err := writer.Finish()
+	fileInfo, err := store.Create(input.Stream)
 	if err != nil {
 		return fmt.Errorf("finishing writing file to shard store: %w", err)
 	}

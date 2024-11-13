@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/samber/lo"
@@ -23,7 +21,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ec"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
-	"gitlink.org.cn/cloudream/storage/common/utils"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/utils"
 )
 
 type StorageLoadPackage struct {
@@ -71,23 +69,11 @@ func (t *StorageLoadPackage) do(task *task.Task[TaskContext], ctx TaskContext) e
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-	getStgResp, err := coorCli.GetStorageDetails(coormq.ReqGetStorageDetails([]cdssdk.StorageID{t.storageID}))
+	shared, err := ctx.stgMgr.GetSharedStore(t.storageID)
 	if err != nil {
-		return fmt.Errorf("request to coordinator: %w", err)
+		return fmt.Errorf("get shared store of storage %v: %w", t.storageID, err)
 	}
-	if getStgResp.Storages[0] == nil {
-		return fmt.Errorf("storage not found")
-	}
-	if getStgResp.Storages[0].Shared == nil {
-		return fmt.Errorf("storage has shared storage")
-	}
-
 	t.PackagePath = utils.MakeLoadedPackagePath(t.userID, t.packageID)
-	fullLocalPath := filepath.Join(getStgResp.Storages[0].Shared.LoadBase, t.PackagePath)
-
-	if err = os.MkdirAll(fullLocalPath, 0755); err != nil {
-		return fmt.Errorf("creating output directory: %w", err)
-	}
 
 	getObjectDetails, err := coorCli.GetPackageObjectDetails(coormq.ReqGetPackageObjectDetails(t.packageID))
 	if err != nil {
@@ -113,7 +99,7 @@ func (t *StorageLoadPackage) do(task *task.Task[TaskContext], ctx TaskContext) e
 	defer mutex.Unlock()
 
 	for _, obj := range getObjectDetails.Objects {
-		err := t.downloadOne(coorCli, shardstore, fullLocalPath, obj)
+		err := t.downloadOne(coorCli, shardstore, shared, obj)
 		if err != nil {
 			return err
 		}
@@ -129,7 +115,7 @@ func (t *StorageLoadPackage) do(task *task.Task[TaskContext], ctx TaskContext) e
 	return err
 }
 
-func (t *StorageLoadPackage) downloadOne(coorCli *coormq.Client, shardStore types.ShardStore, dir string, obj stgmod.ObjectDetail) error {
+func (t *StorageLoadPackage) downloadOne(coorCli *coormq.Client, shardStore types.ShardStore, shared types.SharedStore, obj stgmod.ObjectDetail) error {
 	var file io.ReadCloser
 
 	switch red := obj.Object.Redundancy.(type) {
@@ -160,20 +146,7 @@ func (t *StorageLoadPackage) downloadOne(coorCli *coormq.Client, shardStore type
 	}
 	defer file.Close()
 
-	fullPath := filepath.Join(dir, obj.Object.Path)
-
-	lastDirPath := filepath.Dir(fullPath)
-	if err := os.MkdirAll(lastDirPath, 0755); err != nil {
-		return fmt.Errorf("creating object last dir: %w", err)
-	}
-
-	outputFile, err := os.Create(fullPath)
-	if err != nil {
-		return fmt.Errorf("creating object file: %w", err)
-	}
-	defer outputFile.Close()
-
-	if _, err := io.Copy(outputFile, file); err != nil {
+	if _, err := shared.WritePackageObject(t.userID, t.packageID, obj.Object.Path, file); err != nil {
 		return fmt.Errorf("writting object to file: %w", err)
 	}
 

@@ -24,16 +24,16 @@ type StoreEvent interface {
 
 type ShardStore interface {
 	StorageComponent
-	// 准备写入一个新文件，写入后获得FileHash
-	New() ShardWriter
+	// 写入一个新文件，写入后获得FileHash
+	Create(stream io.Reader) (FileInfo, error)
 	// 使用F函数创建Option对象
 	Open(opt OpenOption) (io.ReadCloser, error)
 	// 获得指定文件信息
 	Info(fileHash cdssdk.FileHash) (FileInfo, error)
 	// 获取所有文件信息，尽量保证操作是原子的
 	ListAll() ([]FileInfo, error)
-	// 删除指定的文件
-	Purge(removes []cdssdk.FileHash) error
+	// 垃圾清理。只保留availables中的文件，删除其他文件
+	GC(avaiables []cdssdk.FileHash) error
 	// 获得存储系统信息
 	Stats() Stats
 }
@@ -61,14 +61,6 @@ type Stats struct {
 	UsedSize int64
 	// 描述信息，用于调试
 	Description string
-}
-
-type ShardWriter interface {
-	io.Writer
-	// 取消写入。要求允许在调用了Finish之后再调用此函数，且此时不应该有任何影响，方便使用defer语句
-	Abort() error
-	// 结束写入，获得文件哈希值
-	Finish() (FileInfo, error)
 }
 
 type OpenOption struct {

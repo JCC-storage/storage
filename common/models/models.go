@@ -146,3 +146,8 @@ const (
 	AliCloud    = "AliCloud"
 	SugonCloud  = "SugonCloud"
 )
+
+type LoadedPackageID struct {
+	UserID    cdssdk.UserID
+	PackageID cdssdk.PackageID
+}

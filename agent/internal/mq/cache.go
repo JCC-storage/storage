@@ -36,7 +36,7 @@ func (svc *Service) CacheGC(msg *agtmq.CacheGC) (*agtmq.CacheGCResp, *mq.CodeMes
 		return nil, mq.Failed(errorcode.OperationFailed, fmt.Sprintf("get shard store of storage %v: %v", msg.StorageID, err))
 	}
 
-	err = store.Purge(msg.Avaiables)
+	err = store.GC(msg.Avaiables)
 	if err != nil {
 		return nil, mq.Failed(errorcode.OperationFailed, fmt.Sprintf("purging cache: %v", err))
 	}

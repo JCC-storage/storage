@@ -4,6 +4,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/model"
 )
 
@@ -96,8 +97,7 @@ type StorageCheck struct {
 }
 type StorageCheckResp struct {
 	mq.MessageBodyBase
-	DirectoryState string                 `json:"directoryState"`
-	Packages       []model.StoragePackage `json:"packages"`
+	Packages []stgmod.LoadedPackageID `json:"packages"`
 }
 
 func NewStorageCheck(storageID cdssdk.StorageID) *StorageCheck {
@@ -105,10 +105,9 @@ func NewStorageCheck(storageID cdssdk.StorageID) *StorageCheck {
 		StorageID: storageID,
 	}
 }
-func NewStorageCheckResp(dirState string, packages []model.StoragePackage) *StorageCheckResp {
+func NewStorageCheckResp(packages []stgmod.LoadedPackageID) *StorageCheckResp {
 	return &StorageCheckResp{
-		DirectoryState: dirState,
-		Packages:       packages,
+		Packages: packages,
 	}
 }
 func (client *Client) StorageCheck(msg *StorageCheck, opts ...mq.RequestOption) (*StorageCheckResp, error) {

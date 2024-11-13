@@ -2,12 +2,14 @@ package local
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,13 +17,11 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/io2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/utils"
 )
 
 const (
 	TempDir   = "tmp"
 	BlocksDir = "blocks"
-	SvcName   = "LocalShardStore"
 )
 
 type ShardStore struct {
@@ -47,10 +47,12 @@ func NewShardStore(stg cdssdk.Storage, cfg cdssdk.LocalShardStorage) (*ShardStor
 }
 
 func (s *ShardStore) Start(ch *types.StorageEventChan) {
-	s.getLogger().Infof("local shard store start, root: %v, max size: %v", s.cfg.Root, s.cfg.MaxSize)
+	s.getLogger().Infof("component start, root: %v, max size: %v", s.cfg.Root, s.cfg.MaxSize)
 
 	go func() {
 		removeTempTicker := time.NewTicker(time.Minute * 10)
+		defer removeTempTicker.Stop()
+
 		for {
 			select {
 			case <-removeTempTicker.C:
@@ -83,18 +85,24 @@ func (s *ShardStore) removeUnusedTempFiles() {
 			continue
 		}
 
+		info, err := entry.Info()
+		if err != nil {
+			log.Warnf("get temp file %v info: %v", entry.Name(), err)
+			continue
+		}
+
 		path := filepath.Join(s.cfg.Root, TempDir, entry.Name())
 		err = os.Remove(path)
 		if err != nil {
 			log.Warnf("remove temp file %v: %v", path, err)
 		} else {
-			log.Infof("remove unused temp file %v", path)
+			log.Infof("remove unused temp file %v, size: %v, last mod time: %v", path, info.Size(), info.ModTime())
 		}
 	}
 }
 
 func (s *ShardStore) Stop() {
-	s.getLogger().Infof("local shard store stop")
+	s.getLogger().Infof("component stop")
 
 	select {
 	case s.done <- nil:
@@ -102,7 +110,23 @@ func (s *ShardStore) Stop() {
 	}
 }
 
-func (s *ShardStore) New() types.ShardWriter {
+func (s *ShardStore) Create(stream io.Reader) (types.FileInfo, error) {
+	file, err := s.createTempFile()
+	if err != nil {
+		return types.FileInfo{}, err
+	}
+
+	size, hash, err := s.writeTempFile(file, stream)
+	if err != nil {
+		// Name是文件完整路径
+		s.onCreateFailed(file.Name())
+		return types.FileInfo{}, err
+	}
+
+	return s.onCreateFinished(file.Name(), size, hash)
+}
+
+func (s *ShardStore) createTempFile() (*os.File, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -110,25 +134,107 @@ func (s *ShardStore) New() types.ShardWriter {
 
 	err := os.MkdirAll(tmpDir, 0755)
 	if err != nil {
-		return utils.ErrorShardWriter(err)
+		s.lock.Unlock()
+		return nil, err
 	}
 
 	file, err := os.CreateTemp(tmpDir, "tmp-*")
 	if err != nil {
-		return utils.ErrorShardWriter(err)
+		s.lock.Unlock()
+		return nil, err
 	}
 
 	s.workingTempFiles[filepath.Base(file.Name())] = true
 
-	return &ShardWriter{
-		path:   file.Name(), // file.Name 包含tmpDir路径
-		file:   file,
-		hasher: sha256.New(),
-		owner:  s,
+	return file, nil
+}
+
+func (s *ShardStore) writeTempFile(file *os.File, stream io.Reader) (int64, cdssdk.FileHash, error) {
+	buf := make([]byte, 32*1024)
+	size := int64(0)
+
+	hasher := sha256.New()
+	for {
+		n, err := stream.Read(buf)
+		if n > 0 {
+			size += int64(n)
+			io2.WriteAll(hasher, buf[:n])
+			err := io2.WriteAll(file, buf[:n])
+			if err != nil {
+				return 0, "", err
+			}
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return 0, "", err
+		}
+	}
+
+	h := hasher.Sum(nil)
+	return size, cdssdk.FileHash(strings.ToUpper(hex.EncodeToString(h))), nil
+}
+
+func (s *ShardStore) onCreateFinished(tempFilePath string, size int64, hash cdssdk.FileHash) (types.FileInfo, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	defer delete(s.workingTempFiles, filepath.Base(tempFilePath))
+
+	log := s.getLogger()
+
+	log.Debugf("write file %v finished, size: %v, hash: %v", tempFilePath, size, hash)
+
+	blockDir := s.getFileDirFromHash(hash)
+	err := os.MkdirAll(blockDir, 0755)
+	if err != nil {
+		s.removeTempFile(tempFilePath)
+		log.Warnf("make block dir %v: %v", blockDir, err)
+		return types.FileInfo{}, fmt.Errorf("making block dir: %w", err)
+	}
+
+	newPath := filepath.Join(blockDir, string(hash))
+	_, err = os.Stat(newPath)
+	if os.IsNotExist(err) {
+		err = os.Rename(tempFilePath, newPath)
+		if err != nil {
+			s.removeTempFile(tempFilePath)
+			log.Warnf("rename %v to %v: %v", tempFilePath, newPath, err)
+			return types.FileInfo{}, fmt.Errorf("rename file: %w", err)
+		}
+
+	} else if err != nil {
+		s.removeTempFile(tempFilePath)
+		log.Warnf("get file %v stat: %v", newPath, err)
+		return types.FileInfo{}, fmt.Errorf("get file stat: %w", err)
+	} else {
+		s.removeTempFile(tempFilePath)
+	}
+
+	return types.FileInfo{
+		Hash:        hash,
+		Size:        size,
+		Description: tempFilePath,
+	}, nil
+}
+
+func (s *ShardStore) onCreateFailed(tempFilePath string) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	s.getLogger().Debugf("writting file %v aborted", tempFilePath)
+	s.removeTempFile(tempFilePath)
+	delete(s.workingTempFiles, filepath.Base(tempFilePath))
+}
+
+func (s *ShardStore) removeTempFile(path string) {
+	err := os.Remove(path)
+	if err != nil {
+		s.getLogger().Warnf("removing temp file %v: %v", path, err)
 	}
 }
 
-// 使用F函数创建Option对象
+// 使用NewOpen函数创建Option对象
 func (s *ShardStore) Open(opt types.OpenOption) (io.ReadCloser, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -212,22 +318,46 @@ func (s *ShardStore) ListAll() ([]types.FileInfo, error) {
 	return infos, nil
 }
 
-func (s *ShardStore) Purge(removes []cdssdk.FileHash) error {
+func (s *ShardStore) GC(avaiables []cdssdk.FileHash) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	avais := make(map[cdssdk.FileHash]bool)
+	for _, hash := range avaiables {
+		avais[hash] = true
+	}
+
 	cnt := 0
 
-	for _, hash := range removes {
-		fileName := string(hash)
-
-		path := filepath.Join(s.cfg.Root, BlocksDir, fileName[:2], fileName)
-		err := os.Remove(path)
+	blockDir := filepath.Join(s.cfg.Root, BlocksDir)
+	err := filepath.WalkDir(blockDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			s.getLogger().Warnf("remove file %v: %v", path, err)
-		} else {
-			cnt++
+			return err
 		}
+
+		if d.IsDir() {
+			return nil
+		}
+
+		info, err := d.Info()
+		if err != nil {
+			return err
+		}
+
+		fileHash := cdssdk.FileHash(filepath.Base(info.Name()))
+		if !avais[fileHash] {
+			err = os.Remove(path)
+			if err != nil {
+				s.getLogger().Warnf("remove file %v: %v", path, err)
+			} else {
+				cnt++
+			}
+		}
+
+		return nil
+	})
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
 	}
 
 	s.getLogger().Infof("purge %d files", cnt)
@@ -243,66 +373,8 @@ func (s *ShardStore) Stats() types.Stats {
 	}
 }
 
-func (s *ShardStore) onWritterAbort(w *ShardWriter) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	s.getLogger().Debugf("writting file %v aborted", w.path)
-	s.removeTempFile(w.path)
-	delete(s.workingTempFiles, filepath.Base(w.path))
-}
-
-func (s *ShardStore) onWritterFinish(w *ShardWriter, hash cdssdk.FileHash) (types.FileInfo, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	defer delete(s.workingTempFiles, filepath.Base(w.path))
-
-	log := s.getLogger()
-
-	log.Debugf("write file %v finished, size: %v, hash: %v", w.path, w.size, hash)
-
-	blockDir := s.getFileDirFromHash(hash)
-	err := os.MkdirAll(blockDir, 0755)
-	if err != nil {
-		s.removeTempFile(w.path)
-		log.Warnf("make block dir %v: %v", blockDir, err)
-		return types.FileInfo{}, fmt.Errorf("making block dir: %w", err)
-	}
-
-	newPath := filepath.Join(blockDir, string(hash))
-	_, err = os.Stat(newPath)
-	if os.IsNotExist(err) {
-		err = os.Rename(w.path, newPath)
-		if err != nil {
-			s.removeTempFile(w.path)
-			log.Warnf("rename %v to %v: %v", w.path, newPath, err)
-			return types.FileInfo{}, fmt.Errorf("rename file: %w", err)
-		}
-
-	} else if err != nil {
-		s.removeTempFile(w.path)
-		log.Warnf("get file %v stat: %v", newPath, err)
-		return types.FileInfo{}, fmt.Errorf("get file stat: %w", err)
-	} else {
-		s.removeTempFile(w.path)
-	}
-
-	return types.FileInfo{
-		Hash:        hash,
-		Size:        w.size,
-		Description: w.path,
-	}, nil
-}
-
-func (s *ShardStore) removeTempFile(path string) {
-	err := os.Remove(path)
-	if err != nil {
-		s.getLogger().Warnf("removing temp file %v: %v", path, err)
-	}
-}
-
 func (s *ShardStore) getLogger() logger.Logger {
-	return logger.WithField("S", SvcName).WithField("Storage", s.stg.String())
+	return logger.WithField("ShardStore", "Local").WithField("Storage", s.stg.String())
 }
 
 func (s *ShardStore) getFileDirFromHash(hash cdssdk.FileHash) string {
