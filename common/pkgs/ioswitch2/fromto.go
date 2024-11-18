@@ -143,18 +143,28 @@ func (t *ToShardStore) GetRange() exec.Range {
 	return t.Range
 }
 
-// type ToStorage struct {
-// 	Storage   cdssdk.Storage
-// 	DataIndex int
-// }
+type LoadToShared struct {
+	Hub       cdssdk.Hub
+	Storage   cdssdk.Storage
+	UserID    cdssdk.UserID
+	PackageID cdssdk.PackageID
+	Path      string
+}
 
-// func NewToStorage(storage cdssdk.Storage, dataIndex int) *ToStorage {
-// 	return &ToStorage{
-// 		Storage:   storage,
-// 		DataIndex: dataIndex,
-// 	}
-// }
+func NewLoadToShared(hub cdssdk.Hub, storage cdssdk.Storage, userID cdssdk.UserID, packageID cdssdk.PackageID, path string) *LoadToShared {
+	return &LoadToShared{
+		Hub:       hub,
+		Storage:   storage,
+		UserID:    userID,
+		PackageID: packageID,
+		Path:      path,
+	}
+}
 
-// func (t *ToStorage) GetDataIndex() int {
-// 	return t.DataIndex
-// }
+func (t *LoadToShared) GetDataIndex() int {
+	return -1
+}
+
+func (t *LoadToShared) GetRange() exec.Range {
+	return exec.Range{}
+}

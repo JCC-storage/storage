@@ -283,15 +283,8 @@ func (p *DefaultParser) buildToNode(ctx *ParseContext, t ioswitch2.To) (ops2.ToN
 	case *ioswitch2.ToShardStore:
 		n := ctx.DAG.NewShardWrite(t.Storage.StorageID, t.FileHashStoreKey)
 
-		switch addr := t.Hub.Address.(type) {
-		case *cdssdk.HttpAddressInfo:
-			n.Env().ToEnvWorker(&ioswitch2.HttpHubWorker{Hub: t.Hub})
-
-		case *cdssdk.GRPCAddressInfo:
-			n.Env().ToEnvWorker(&ioswitch2.AgentWorker{Hub: t.Hub, Address: *addr})
-
-		default:
-			return nil, fmt.Errorf("unsupported node address type %T", addr)
+		if err := p.setEnvByAddress(n, t.Hub, t.Hub.Address); err != nil {
+			return nil, err
 		}
 
 		n.Env().Pinned = true
@@ -305,9 +298,35 @@ func (p *DefaultParser) buildToNode(ctx *ParseContext, t ioswitch2.To) (ops2.ToN
 
 		return n, nil
 
+	case *ioswitch2.LoadToShared:
+		n := ctx.DAG.NewSharedLoad(t.Storage.StorageID, t.UserID, t.PackageID, t.Path)
+
+		if err := p.setEnvByAddress(n, t.Hub, t.Hub.Address); err != nil {
+			return nil, err
+		}
+
+		n.Env().Pinned = true
+
+		return n, nil
+
 	default:
 		return nil, fmt.Errorf("unsupported to type %T", t)
 	}
+}
+
+func (p *DefaultParser) setEnvByAddress(n dag.Node, hub cdssdk.Hub, addr cdssdk.HubAddressInfo) error {
+	switch addr := addr.(type) {
+	case *cdssdk.HttpAddressInfo:
+		n.Env().ToEnvWorker(&ioswitch2.HttpHubWorker{Hub: hub})
+
+	case *cdssdk.GRPCAddressInfo:
+		n.Env().ToEnvWorker(&ioswitch2.AgentWorker{Hub: hub, Address: *addr})
+
+	default:
+		return fmt.Errorf("unsupported node address type %T", addr)
+	}
+
+	return nil
 }
 
 // 删除输出流未被使用的Join指令
