@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	exec.UseOp[*ShardWrite]()
+	exec.UseOp[*SharedLoad]()
 }
 
 type SharedLoad struct {
@@ -99,9 +99,12 @@ func (t *SharedLoadNode) FullPathVar() *dag.Var {
 }
 
 func (t *SharedLoadNode) GenerateOp() (exec.Op, error) {
-	return &ShardWrite{
-		Input:     t.InputStreams().Get(0).VarID,
-		FileHash:  t.OutputValues().Get(0).VarID,
-		StorageID: t.StorageID,
+	return &SharedLoad{
+		Input:          t.InputStreams().Get(0).VarID,
+		StorageID:      t.StorageID,
+		UserID:         t.UserID,
+		PackageID:      t.PackageID,
+		Path:           t.Path,
+		FullPathOutput: t.OutputValues().Get(0).VarID,
 	}, nil
 }

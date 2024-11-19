@@ -102,6 +102,7 @@ func (u *CreateLoadUploader) Commit() (CreateLoadResult, error) {
 	}
 
 	ret := CreateLoadResult{
+		Package: u.pkg,
 		Objects: make(map[string]cdssdk.Object),
 	}
 

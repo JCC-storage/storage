@@ -53,6 +53,7 @@ func (s *Server) initRouters() {
 	rt.GET(cdsapi.PackageGetPath, s.Package().Get)
 	rt.GET(cdsapi.PackageGetByNamePath, s.Package().GetByName)
 	rt.POST(cdsapi.PackageCreatePath, s.Package().Create)
+	rt.POST(cdsapi.PackageCreateLoadPath, s.Package().CreateLoad)
 	rt.POST(cdsapi.PackageDeletePath, s.Package().Delete)
 	rt.GET(cdsapi.PackageListBucketPackagesPath, s.Package().ListBucketPackages)
 	rt.GET(cdsapi.PackageGetCachedStoragesPath, s.Package().GetCachedStorages)

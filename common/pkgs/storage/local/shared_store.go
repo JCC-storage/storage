@@ -13,6 +13,7 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/utils"
 )
 
 type SharedStore struct {
@@ -42,7 +43,7 @@ func (s *SharedStore) Stop() {
 }
 
 func (s *SharedStore) WritePackageObject(userID cdssdk.UserID, pkgID cdssdk.PackageID, path string, stream io.Reader) (string, error) {
-	relaPath := filepath.Join(fmt.Sprintf("%v", userID), fmt.Sprintf("%v", pkgID), path)
+	relaPath := filepath.Join(utils.MakeLoadedPackagePath(userID, pkgID), path)
 	fullPath := filepath.Join(s.cfg.LoadBase, relaPath)
 	err := os.MkdirAll(filepath.Dir(fullPath), 0755)
 	if err != nil {

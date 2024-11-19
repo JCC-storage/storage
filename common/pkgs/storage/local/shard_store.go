@@ -150,6 +150,8 @@ func (s *ShardStore) createTempFile() (*os.File, error) {
 }
 
 func (s *ShardStore) writeTempFile(file *os.File, stream io.Reader) (int64, cdssdk.FileHash, error) {
+	defer file.Close()
+
 	buf := make([]byte, 32*1024)
 	size := int64(0)
 

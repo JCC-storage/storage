@@ -53,7 +53,7 @@ func (db *StorageDB) BatchGetAllStorageIDs(ctx SQLContext, start int, count int)
 func (db *StorageDB) IsAvailable(ctx SQLContext, userID cdssdk.UserID, storageID cdssdk.StorageID) (bool, error) {
 	rows, err := ctx.Table("Storage").Select("Storage.StorageID").
 		Joins("inner join UserStorage on Storage.StorageID = UserStorage.StorageID").
-		Where("UserID = ? and StorageID = ?", userID, storageID).Rows()
+		Where("UserID = ? and Storage.StorageID = ?", userID, storageID).Rows()
 	if err != nil {
 		return false, fmt.Errorf("execute sql: %w", err)
 	}
@@ -66,7 +66,7 @@ func (db *StorageDB) GetUserStorage(ctx SQLContext, userID cdssdk.UserID, storag
 	var stg model.Storage
 	err := ctx.Table("Storage").Select("Storage.*").
 		Joins("inner join UserStorage on Storage.StorageID = UserStorage.StorageID").
-		Where("UserID = ? and StorageID = ?", userID, storageID).First(&stg).Error
+		Where("UserID = ? and Storage.StorageID = ?", userID, storageID).First(&stg).Error
 
 	return stg, err
 }

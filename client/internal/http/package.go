@@ -88,15 +88,15 @@ func (s *PackageService) Create(ctx *gin.Context) {
 }
 
 type PackageCreateLoad struct {
-	Info  cdsapi.PackageCreateLoad `form:"info" binding:"required"`
-	Files []*multipart.FileHeader  `form:"files"`
+	Info  cdsapi.PackageCreateLoadInfo `form:"info" binding:"required"`
+	Files []*multipart.FileHeader      `form:"files"`
 }
 
 func (s *PackageService) CreateLoad(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Package.CreateLoad")
 
 	var req PackageCreateLoad
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
 		return
