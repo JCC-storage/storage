@@ -453,8 +453,7 @@ func (t *CheckPackageRedundancy) noneToRep(ctx ExecuteContext, obj stgmod.Object
 	}
 
 	plans := exec.NewPlanBuilder()
-	parser := parser.NewParser(cdssdk.DefaultECRedundancy)
-	err = parser.Parse(ft, plans)
+	err = parser.Parse(ft, plans, cdssdk.DefaultECRedundancy)
 	if err != nil {
 		return nil, fmt.Errorf("parsing plan: %w", err)
 	}
@@ -511,9 +510,8 @@ func (t *CheckPackageRedundancy) noneToEC(ctx ExecuteContext, obj stgmod.ObjectD
 	for i := 0; i < red.N; i++ {
 		ft.AddTo(ioswitch2.NewToShardStore(*uploadStgs[i].Storage.MasterHub, uploadStgs[i].Storage.Storage, i, fmt.Sprintf("%d", i)))
 	}
-	parser := parser.NewParser(*red)
 	plans := exec.NewPlanBuilder()
-	err = parser.Parse(ft, plans)
+	err = parser.Parse(ft, plans, *red)
 	if err != nil {
 		return nil, fmt.Errorf("parsing plan: %w", err)
 	}
@@ -631,8 +629,7 @@ func (t *CheckPackageRedundancy) repToRep(ctx ExecuteContext, obj stgmod.ObjectD
 	}
 
 	plans := exec.NewPlanBuilder()
-	parser := parser.NewParser(cdssdk.DefaultECRedundancy)
-	err = parser.Parse(ft, plans)
+	err = parser.Parse(ft, plans, cdssdk.DefaultECRedundancy)
 	if err != nil {
 		return nil, fmt.Errorf("parsing plan: %w", err)
 	}
@@ -694,7 +691,6 @@ func (t *CheckPackageRedundancy) ecToRep(ctx ExecuteContext, obj stgmod.ObjectDe
 	uploadStgs = lo.UniqBy(uploadStgs, func(item *StorageLoadInfo) cdssdk.StorageID { return item.Storage.Storage.StorageID })
 
 	// 每个被选节点都在自己节点上重建原始数据
-	parser := parser.NewParser(*srcRed)
 	planBlder := exec.NewPlanBuilder()
 	for i := range uploadStgs {
 		ft := ioswitch2.NewFromTo()
@@ -709,7 +705,7 @@ func (t *CheckPackageRedundancy) ecToRep(ctx ExecuteContext, obj stgmod.ObjectDe
 			Length: &len,
 		}))
 
-		err := parser.Parse(ft, planBlder)
+		err := parser.Parse(ft, planBlder, *srcRed)
 		if err != nil {
 			return nil, fmt.Errorf("parsing plan: %w", err)
 		}
@@ -765,7 +761,6 @@ func (t *CheckPackageRedundancy) ecToEC(ctx ExecuteContext, obj stgmod.ObjectDet
 	}
 
 	// 目前EC的参数都相同，所以可以不用重建出完整数据然后再分块，可以直接构建出目的节点需要的块
-	parser := parser.NewParser(*srcRed)
 	planBlder := exec.NewPlanBuilder()
 
 	var newBlocks []stgmod.ObjectBlock
@@ -799,7 +794,7 @@ func (t *CheckPackageRedundancy) ecToEC(ctx ExecuteContext, obj stgmod.ObjectDet
 		// 输出只需要自己要保存的那一块
 		ft.AddTo(ioswitch2.NewToShardStore(*stg.Storage.MasterHub, stg.Storage.Storage, i, fmt.Sprintf("%d", i)))
 
-		err := parser.Parse(ft, planBlder)
+		err := parser.Parse(ft, planBlder, *srcRed)
 		if err != nil {
 			return nil, fmt.Errorf("parsing plan: %w", err)
 		}

@@ -21,6 +21,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 	agtrpc "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/mgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/uploader"
 
 	"google.golang.org/grpc"
 
@@ -122,8 +123,11 @@ func serve(configPath string) {
 	// 初始化下载器
 	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol, stgMgr)
 
+	// 初始化上传器
+	uploader := uploader.NewUploader(distlock, &conCol, stgMgr)
+
 	// 初始化任务管理器
-	taskMgr := task.NewManager(distlock, &conCol, &dlder, acStat, stgMgr)
+	taskMgr := task.NewManager(distlock, &conCol, &dlder, acStat, stgMgr, uploader)
 
 	// 启动命令服务器
 	// TODO 需要设计AgentID持久化机制

@@ -7,6 +7,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/client/internal/task"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/accessstat"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/uploader"
 )
 
 // Service 结构体封装了分布锁服务和任务管理服务。
@@ -15,13 +16,15 @@ type Service struct {
 	TaskMgr    *task.Manager
 	Downloader *downloader.Downloader
 	AccessStat *accessstat.AccessStat
+	Uploader   *uploader.Uploader
 }
 
-func NewService(distlock *distlock.Service, taskMgr *task.Manager, downloader *downloader.Downloader, accStat *accessstat.AccessStat) (*Service, error) {
+func NewService(distlock *distlock.Service, taskMgr *task.Manager, downloader *downloader.Downloader, accStat *accessstat.AccessStat, uploder *uploader.Uploader) (*Service, error) {
 	return &Service{
 		DistLock:   distlock,
 		TaskMgr:    taskMgr,
 		Downloader: downloader,
 		AccessStat: accStat,
+		Uploader:   uploder,
 	}, nil
 }

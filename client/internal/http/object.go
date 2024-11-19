@@ -1,16 +1,17 @@
 package http
 
 import (
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"net/url"
 	"path"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
+	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 	"gitlink.org.cn/cloudream/storage/client/internal/config"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
@@ -41,50 +42,52 @@ func (s *ObjectService) Upload(ctx *gin.Context) {
 		return
 	}
 
-	var err error
-
-	objIter := mapMultiPartFileToUploadingObject(req.Files)
-
-	taskID, err := s.svc.ObjectSvc().StartUploading(req.Info.UserID, req.Info.PackageID, objIter, req.Info.StorageAffinity)
-
+	up, err := s.svc.Uploader.BeginUpdate(req.Info.UserID, req.Info.PackageID, req.Info.Affinity)
 	if err != nil {
-		log.Warnf("start uploading object task: %s", err.Error())
-		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "start uploading task failed"))
+		log.Warnf("begin update: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("begin update: %v", err)))
+		return
+	}
+	defer up.Abort()
+
+	var pathes []string
+	for _, file := range req.Files {
+		f, err := file.Open()
+		if err != nil {
+			log.Warnf("open file: %s", err.Error())
+			ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("open file %v: %v", file.Filename, err)))
+			return
+		}
+
+		path, err := url.PathUnescape(file.Filename)
+		if err != nil {
+			log.Warnf("unescape filename: %s", err.Error())
+			ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("unescape filename %v: %v", file.Filename, err)))
+			return
+		}
+
+		err = up.Upload(path, file.Size, f)
+		if err != nil {
+			log.Warnf("uploading file: %s", err.Error())
+			ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("uploading file %v: %v", file.Filename, err)))
+			return
+		}
+		pathes = append(pathes, path)
+	}
+
+	ret, err := up.Commit()
+	if err != nil {
+		log.Warnf("commit update: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("commit update: %v", err)))
 		return
 	}
 
-	for {
-		complete, objs, err := s.svc.ObjectSvc().WaitUploading(taskID, time.Second*5)
-		if complete {
-			if err != nil {
-				log.Warnf("uploading object: %s", err.Error())
-				ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "uploading object failed"))
-				return
-			}
-
-			uploadeds := make([]cdsapi.UploadedObject, len(objs.Objects))
-			for i, obj := range objs.Objects {
-				err := ""
-				if obj.Error != nil {
-					err = obj.Error.Error()
-				}
-				o := obj.Object
-				uploadeds[i] = cdsapi.UploadedObject{
-					Object: &o,
-					Error:  err,
-				}
-			}
-
-			ctx.JSON(http.StatusOK, OK(cdsapi.ObjectUploadResp{Uploadeds: uploadeds}))
-			return
-		}
-
-		if err != nil {
-			log.Warnf("waiting task: %s", err.Error())
-			ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "wait uploading task failed"))
-			return
-		}
+	uploadeds := make([]cdssdk.Object, len(pathes))
+	for i := range pathes {
+		uploadeds[i] = ret.Objects[pathes[i]]
 	}
+
+	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectUploadResp{Uploadeds: uploadeds}))
 }
 
 func (s *ObjectService) Download(ctx *gin.Context) {

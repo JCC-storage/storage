@@ -1,17 +1,16 @@
 package http
 
 import (
+	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/url"
 
 	"github.com/gin-gonic/gin"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
-	"gitlink.org.cn/cloudream/common/pkgs/iterator"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
+	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
-
-	stgiter "gitlink.org.cn/cloudream/storage/common/pkgs/iterator"
 )
 
 // PackageService 包服务，负责处理包相关的HTTP请求。
@@ -88,6 +87,69 @@ func (s *PackageService) Create(ctx *gin.Context) {
 	}))
 }
 
+type PackageCreateLoad struct {
+	Info  cdsapi.PackageCreateLoad `form:"info" binding:"required"`
+	Files []*multipart.FileHeader  `form:"files"`
+}
+
+func (s *PackageService) CreateLoad(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Package.CreateLoad")
+
+	var req PackageCreateLoad
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Warnf("binding body: %s", err.Error())
+		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
+		return
+	}
+
+	up, err := s.svc.Uploader.BeginCreateLoad(req.Info.UserID, req.Info.BucketID, req.Info.Name, req.Info.LoadTo)
+	if err != nil {
+		log.Warnf("begin package create load: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("begin package create load: %v", err)))
+		return
+	}
+	defer up.Abort()
+
+	var pathes []string
+	for _, file := range req.Files {
+		f, err := file.Open()
+		if err != nil {
+			log.Warnf("open file: %s", err.Error())
+			ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("open file %v: %v", file.Filename, err)))
+			return
+		}
+
+		path, err := url.PathUnescape(file.Filename)
+		if err != nil {
+			log.Warnf("unescape filename: %s", err.Error())
+			ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("unescape filename %v: %v", file.Filename, err)))
+			return
+		}
+
+		err = up.Upload(path, file.Size, f)
+		if err != nil {
+			log.Warnf("uploading file: %s", err.Error())
+			ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("uploading file %v: %v", file.Filename, err)))
+			return
+		}
+		pathes = append(pathes, path)
+	}
+
+	ret, err := up.Commit()
+	if err != nil {
+		log.Warnf("commit create load: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("commit create load: %v", err)))
+		return
+	}
+
+	objs := make([]cdssdk.Object, len(pathes))
+	for i := range pathes {
+		objs[i] = ret.Objects[pathes[i]]
+	}
+
+	ctx.JSON(http.StatusOK, OK(cdsapi.PackageCreateLoadResp{Package: ret.Package, Objects: objs, LoadedDirs: ret.LoadedDirs}))
+
+}
 func (s *PackageService) Delete(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Package.Delete")
 
@@ -172,28 +234,4 @@ func (s *PackageService) GetLoadedStorages(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, OK(cdsapi.PackageGetLoadedStoragesResp{
 		StorageIDs: stgIDs,
 	}))
-}
-
-// mapMultiPartFileToUploadingObject 将multipart文件转换为上传对象的迭代器。
-func mapMultiPartFileToUploadingObject(files []*multipart.FileHeader) stgiter.UploadingObjectIterator {
-	return iterator.Map[*multipart.FileHeader](
-		iterator.Array(files...),
-		func(file *multipart.FileHeader) (*stgiter.IterUploadingObject, error) {
-			stream, err := file.Open()
-			if err != nil {
-				return nil, err
-			}
-
-			fileName, err := url.PathUnescape(file.Filename)
-			if err != nil {
-				return nil, err
-			}
-
-			return &stgiter.IterUploadingObject{
-				Path: fileName,
-				Size: file.Size,
-				File: stream,
-			}, nil
-		},
-	)
 }

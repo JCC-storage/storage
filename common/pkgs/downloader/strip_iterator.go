@@ -209,9 +209,8 @@ func (s *StripIterator) readStrip(stripIndex int64, buf []byte) (int, error) {
 		})
 		ft.AddTo(toExec)
 
-		parser := parser.NewParser(*s.red)
 		plans := exec.NewPlanBuilder()
-		err := parser.Parse(ft, plans)
+		err := parser.Parse(ft, plans, *s.red)
 		if err != nil {
 			return 0, err
 		}

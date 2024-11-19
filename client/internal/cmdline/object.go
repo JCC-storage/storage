@@ -7,7 +7,6 @@ import (
 	"time"
 
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/iterator"
 )
 
 // 必须添加的命令函数，用于处理对象上传。
@@ -28,56 +27,48 @@ var _ = MustAddCmd(func(ctx CommandContext, packageID cdssdk.PackageID, rootPath
 	// 模拟或获取用户ID。
 	userID := cdssdk.UserID(1)
 
-	// 遍历根目录下所有文件，收集待上传的文件路径。
-	var uploadFilePathes []string
-	err := filepath.WalkDir(rootPath, func(fname string, fi os.DirEntry, err error) error {
-		if err != nil {
-			return nil
-		}
-
-		// 仅添加非目录文件路径。
-		if !fi.IsDir() {
-			uploadFilePathes = append(uploadFilePathes, fname)
-		}
-
-		return nil
-	})
-	if err != nil {
-		// 目录遍历失败处理。
-		return fmt.Errorf("open directory %s failed, err: %w", rootPath, err)
-	}
-
 	// 根据节点亲和性列表设置首选上传节点。
 	var storageAff cdssdk.StorageID
 	if len(storageAffinity) > 0 {
 		storageAff = storageAffinity[0]
 	}
 
-	// 创建上传对象迭代器。
-	objIter := iterator.NewUploadingObjectIterator(rootPath, uploadFilePathes)
-	// 开始上传任务。
-	taskID, err := ctx.Cmdline.Svc.ObjectSvc().StartUploading(userID, packageID, objIter, storageAff)
+	up, err := ctx.Cmdline.Svc.Uploader.BeginUpdate(userID, packageID, storageAff)
 	if err != nil {
-		// 上传任务启动失败处理。
-		return fmt.Errorf("update objects to package %d failed, err: %w", packageID, err)
+		return fmt.Errorf("begin updating package: %w", err)
 	}
+	defer up.Abort()
 
-	// 循环等待上传任务完成。
-	for {
-		// 每5秒检查一次上传状态。
-		complete, _, err := ctx.Cmdline.Svc.ObjectSvc().WaitUploading(taskID, time.Second*5)
-		if complete {
-			// 上传完成，检查是否有错误。
-			if err != nil {
-				return fmt.Errorf("uploading objects: %w", err)
-			}
-
+	err = filepath.WalkDir(rootPath, func(fname string, fi os.DirEntry, err error) error {
+		if err != nil {
 			return nil
 		}
 
-		// 等待过程中发生错误处理。
-		if err != nil {
-			return fmt.Errorf("wait updating: %w", err)
+		if fi.IsDir() {
+			return nil
 		}
+
+		info, err := fi.Info()
+		if err != nil {
+			return err
+		}
+		file, err := os.Open(fname)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		return up.Upload(fname, info.Size(), file)
+	})
+	if err != nil {
+		return err
 	}
+
+	_, err = up.Commit()
+	if err != nil {
+		return fmt.Errorf("commit updating package: %w", err)
+	}
+
+	return nil
+
 }, "obj", "upload")

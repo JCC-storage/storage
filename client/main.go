@@ -20,6 +20,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/mgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/uploader"
 )
 
 func main() {
@@ -39,6 +40,7 @@ func main() {
 	stgglb.InitMQPool(&config.Cfg().RabbitMQ)
 	stgglb.InitAgentRPCPool(&config.Cfg().AgentGRPC)
 
+	// 连接性信息收集
 	var conCol connectivity.Collector
 	if config.Cfg().Local.HubID != nil {
 		//如果client与某个hub处于同一台机器，则使用这个hub的连通性信息
@@ -73,6 +75,7 @@ func main() {
 		conCol.CollectInPlace()
 	}
 
+	// 分布式锁
 	distlockSvc, err := distlock.NewService(&config.Cfg().DistLock)
 	if err != nil {
 		logger.Warnf("new distlock service failed, err: %s", err.Error())
@@ -80,19 +83,26 @@ func main() {
 	}
 	go serveDistLock(distlockSvc)
 
+	// 访问统计
 	acStat := accessstat.NewAccessStat(accessstat.Config{
 		// TODO 考虑放到配置里
 		ReportInterval: time.Second * 10,
 	})
 	go serveAccessStat(acStat)
 
+	// 存储管理器
 	stgMgr := mgr.NewManager()
 
+	// 任务管理器
 	taskMgr := task.NewManager(distlockSvc, &conCol, stgMgr)
 
+	// 下载器
 	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol, stgMgr)
 
-	svc, err := services.NewService(distlockSvc, &taskMgr, &dlder, acStat)
+	// 上传器
+	uploader := uploader.NewUploader(distlockSvc, &conCol, stgMgr)
+
+	svc, err := services.NewService(distlockSvc, &taskMgr, &dlder, acStat, uploader)
 	if err != nil {
 		logger.Warnf("new services failed, err: %s", err.Error())
 		os.Exit(1)

@@ -12,7 +12,6 @@ import (
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/iterator"
 )
 
 func init() {
@@ -64,54 +63,54 @@ func init() {
 					return
 				}
 			}
-
-			var fileCount int
-			var totalSize int64
-			var uploadFilePathes []string
-			err = filepath.WalkDir(local, func(fname string, fi os.DirEntry, err error) error {
-				if err != nil {
-					return nil
-				}
-
-				if !fi.IsDir() {
-					uploadFilePathes = append(uploadFilePathes, fname)
-					fileCount++
-
-					info, err := fi.Info()
-					if err == nil {
-						totalSize += info.Size()
-					}
-				}
-
-				return nil
-			})
-			if err != nil {
-				fmt.Printf("walking directory: %v\n", err)
-				return
-			}
-
 			var storageAff cdssdk.StorageID
 			if stgID != 0 {
 				storageAff = cdssdk.StorageID(stgID)
 			}
 
-			objIter := iterator.NewUploadingObjectIterator(local, uploadFilePathes)
-			taskID, err := cmdCtx.Cmdline.Svc.ObjectSvc().StartUploading(userID, pkg.PackageID, objIter, storageAff)
+			up, err := cmdCtx.Cmdline.Svc.Uploader.BeginUpdate(userID, pkg.PackageID, storageAff)
 			if err != nil {
-				fmt.Printf("start uploading objects: %v\n", err)
+				fmt.Printf("begin updating package: %v\n", err)
+				return
+			}
+			defer up.Abort()
+
+			var fileCount int
+			var totalSize int64
+			err = filepath.WalkDir(local, func(fname string, fi os.DirEntry, err error) error {
+				if err != nil {
+					return nil
+				}
+
+				if fi.IsDir() {
+					return nil
+				}
+
+				fileCount++
+
+				info, err := fi.Info()
+				if err != nil {
+					return err
+				}
+				totalSize += info.Size()
+
+				file, err := os.Open(fname)
+				if err != nil {
+					return err
+				}
+				defer file.Close()
+
+				return up.Upload(fname, info.Size(), file)
+			})
+			if err != nil {
+				fmt.Println(err.Error())
 				return
 			}
 
-			for {
-				complete, _, err := cmdCtx.Cmdline.Svc.ObjectSvc().WaitUploading(taskID, time.Second*5)
-				if err != nil {
-					fmt.Printf("uploading objects: %v\n", err)
-					return
-				}
-
-				if complete {
-					break
-				}
+			_, err = up.Commit()
+			if err != nil {
+				fmt.Printf("committing package: %v\n", err)
+				return
 			}
 
 			fmt.Printf("Put %v files (%v) to %s in %v.\n", fileCount, bytesize.ByteSize(totalSize), remote, time.Since(startTime))

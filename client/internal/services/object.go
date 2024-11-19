@@ -2,16 +2,13 @@ package services
 
 import (
 	"fmt"
-	"time"
 
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
-	mytask "gitlink.org.cn/cloudream/storage/client/internal/task"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/model"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/iterator"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
@@ -23,30 +20,6 @@ type ObjectService struct {
 // ObjectSvc 返回一个ObjectService的实例。
 func (svc *Service) ObjectSvc() *ObjectService {
 	return &ObjectService{Service: svc}
-}
-
-// StartUploading 开始上传对象。
-// userID: 用户ID。
-// packageID: 套件ID。
-// objIter: 正在上传的对象迭代器。
-// storageAffinity: 节点亲和性，指定对象上传的首选节点。
-// 返回值: 任务ID和错误信息。
-func (svc *ObjectService) StartUploading(userID cdssdk.UserID, packageID cdssdk.PackageID, objIter iterator.UploadingObjectIterator, storageAffinity cdssdk.StorageID) (string, error) {
-	tsk := svc.TaskMgr.StartNew(mytask.NewUploadObjects(userID, packageID, objIter, storageAffinity))
-	return tsk.ID(), nil
-}
-
-// WaitUploading 等待上传任务完成。
-// taskID: 任务ID。
-// waitTimeout: 等待超时时间。
-// 返回值: 任务是否完成、上传结果和错误信息。
-func (svc *ObjectService) WaitUploading(taskID string, waitTimeout time.Duration) (bool, *mytask.UploadObjectsResult, error) {
-	tsk := svc.TaskMgr.FindByID(taskID)
-	if tsk.WaitTimeout(waitTimeout) {
-		updatePkgTask := tsk.Body().(*mytask.UploadObjects)
-		return true, updatePkgTask.Result, tsk.Error()
-	}
-	return false, nil, nil
 }
 
 func (svc *ObjectService) UpdateInfo(userID cdssdk.UserID, updatings []cdsapi.UpdatingObject) ([]cdssdk.ObjectID, error) {

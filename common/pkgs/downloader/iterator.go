@@ -399,9 +399,8 @@ func (iter *DownloadObjectIterator) downloadFromStorage(stg *stgmod.StorageDetai
 	ft.AddFrom(ioswitch2.NewFromShardstore(req.Detail.Object.FileHash, *stg.MasterHub, stg.Storage, -1)).AddTo(toExec)
 	strHandle = handle
 
-	parser := parser.NewParser(cdssdk.DefaultECRedundancy)
 	plans := exec.NewPlanBuilder()
-	if err := parser.Parse(ft, plans); err != nil {
+	if err := parser.Parse(ft, plans, cdssdk.DefaultECRedundancy); err != nil {
 		return nil, fmt.Errorf("parsing plan: %w", err)
 	}
 

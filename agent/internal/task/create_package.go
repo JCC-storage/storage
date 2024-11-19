@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/samber/lo"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gitlink.org.cn/cloudream/common/pkgs/task"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/cmd"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/iterator"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
@@ -17,7 +17,7 @@ import (
 // 包含包的ID和上传的对象列表
 type CreatePackageResult struct {
 	PackageID cdssdk.PackageID
-	Objects   []cmd.ObjectUploadResult
+	Objects   []cdssdk.Object
 }
 
 // CreatePackage 定义创建包的任务结构
@@ -84,11 +84,48 @@ func (t *CreatePackage) Execute(task *task.Task[TaskContext], ctx TaskContext, c
 		return
 	}
 
-	uploadRet, err := cmd.NewUploadObjects(t.userID, createResp.Package.PackageID, t.objIter, t.stgAffinity).Execute(&cmd.UploadObjectsContext{
-		Distlock:     ctx.distlock,
-		Connectivity: ctx.connectivity,
-		StgMgr:       ctx.stgMgr,
-	})
+	up, err := ctx.uploader.BeginUpdate(t.userID, createResp.Package.PackageID, t.stgAffinity)
+	if err != nil {
+		err = fmt.Errorf("begin update: %w", err)
+		log.Error(err.Error())
+		// 完成任务并设置移除延迟
+		complete(err, CompleteOption{
+			RemovingDelay: time.Minute,
+		})
+		return
+	}
+	defer up.Abort()
+
+	for {
+		obj, err := t.objIter.MoveNext()
+		if err == iterator.ErrNoMoreItem {
+			break
+		}
+		if err != nil {
+			log.Error(err.Error())
+			// 完成任务并设置移除延迟
+			complete(err, CompleteOption{
+				RemovingDelay: time.Minute,
+			})
+			return
+		}
+
+		// 上传对象
+		err = up.Upload(obj.Path, obj.Size, obj.File)
+		if err != nil {
+			err = fmt.Errorf("uploading object: %w", err)
+			log.Error(err.Error())
+			// 完成任务并设置移除延迟
+			complete(err, CompleteOption{
+				RemovingDelay: time.Minute,
+			})
+			return
+		}
+
+	}
+
+	// 结束上传
+	uploadRet, err := up.Commit()
 	if err != nil {
 		err = fmt.Errorf("uploading objects: %w", err)
 		log.Error(err.Error())
@@ -100,7 +137,7 @@ func (t *CreatePackage) Execute(task *task.Task[TaskContext], ctx TaskContext, c
 	}
 
 	t.Result.PackageID = createResp.Package.PackageID
-	t.Result.Objects = uploadRet.Objects
+	t.Result.Objects = lo.Values(uploadRet.Objects)
 
 	// 完成任务并设置移除延迟
 	complete(nil, CompleteOption{
