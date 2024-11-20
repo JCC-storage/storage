@@ -6,7 +6,7 @@ import (
 )
 
 type From interface {
-	GetDataIndex() int
+	GetStreamType() StreamType
 }
 
 type To interface {
@@ -14,7 +14,53 @@ type To interface {
 	// 如果DataIndex == -1，则表示在整个文件的范围。
 	// 如果DataIndex >= 0，则表示在文件的某个分片的范围。
 	GetRange() exec.Range
-	GetDataIndex() int
+	GetStreamType() StreamType
+}
+
+const (
+	// 未处理的完整文件流
+	StreamTypeRaw = iota
+	// EC编码的某一块的流
+	StreamTypeEC
+	// 分段编码的某一段的流
+	StreamTypeSegment
+)
+
+type StreamType struct {
+	Type  int
+	Index int
+}
+
+func RawStream() StreamType {
+	return StreamType{
+		Type: StreamTypeRaw,
+	}
+}
+
+func ECSrteam(index int) StreamType {
+	return StreamType{
+		Type:  StreamTypeEC,
+		Index: index,
+	}
+}
+
+func SegmentStream(index int) StreamType {
+	return StreamType{
+		Type:  StreamTypeSegment,
+		Index: index,
+	}
+}
+
+func (s StreamType) IsRaw() bool {
+	return s.Type == StreamTypeRaw
+}
+
+func (s StreamType) IsEC() bool {
+	return s.Type == StreamTypeEC
+}
+
+func (s StreamType) IsSegment() bool {
+	return s.Type == StreamTypeSegment
 }
 
 type FromTos []FromTo
@@ -39,69 +85,69 @@ func (ft *FromTo) AddTo(to To) *FromTo {
 }
 
 type FromDriver struct {
-	Handle    *exec.DriverWriteStream
-	DataIndex int
+	Handle     *exec.DriverWriteStream
+	StreamType StreamType
 }
 
-func NewFromDriver(dataIndex int) (*FromDriver, *exec.DriverWriteStream) {
+func NewFromDriver(strType StreamType) (*FromDriver, *exec.DriverWriteStream) {
 	handle := &exec.DriverWriteStream{
 		RangeHint: &exec.Range{},
 	}
 	return &FromDriver{
-		Handle:    handle,
-		DataIndex: dataIndex,
+		Handle:     handle,
+		StreamType: strType,
 	}, handle
 }
 
-func (f *FromDriver) GetDataIndex() int {
-	return f.DataIndex
+func (f *FromDriver) GetStreamType() StreamType {
+	return f.StreamType
 }
 
 type FromShardstore struct {
-	FileHash  cdssdk.FileHash
-	Hub       cdssdk.Hub
-	Storage   cdssdk.Storage
-	DataIndex int
+	FileHash   cdssdk.FileHash
+	Hub        cdssdk.Hub
+	Storage    cdssdk.Storage
+	StreamType StreamType
 }
 
-func NewFromShardstore(fileHash cdssdk.FileHash, hub cdssdk.Hub, storage cdssdk.Storage, dataIndex int) *FromShardstore {
+func NewFromShardstore(fileHash cdssdk.FileHash, hub cdssdk.Hub, storage cdssdk.Storage, strType StreamType) *FromShardstore {
 	return &FromShardstore{
-		FileHash:  fileHash,
-		Hub:       hub,
-		Storage:   storage,
-		DataIndex: dataIndex,
+		FileHash:   fileHash,
+		Hub:        hub,
+		Storage:    storage,
+		StreamType: strType,
 	}
 }
 
-func (f *FromShardstore) GetDataIndex() int {
-	return f.DataIndex
+func (f *FromShardstore) GetStreamType() StreamType {
+	return f.StreamType
 }
 
 type ToDriver struct {
-	Handle    *exec.DriverReadStream
-	DataIndex int
-	Range     exec.Range
+	Handle     *exec.DriverReadStream
+	StreamType StreamType
+	Range      exec.Range
 }
 
-func NewToDriver(dataIndex int) (*ToDriver, *exec.DriverReadStream) {
+func NewToDriver(strType StreamType) (*ToDriver, *exec.DriverReadStream) {
 	str := exec.DriverReadStream{}
 	return &ToDriver{
-		Handle:    &str,
-		DataIndex: dataIndex,
+		Handle:     &str,
+		StreamType: strType,
 	}, &str
 }
 
-func NewToDriverWithRange(dataIndex int, rng exec.Range) (*ToDriver, *exec.DriverReadStream) {
+func NewToDriverWithRange(strType StreamType, rng exec.Range) (*ToDriver, *exec.DriverReadStream) {
 	str := exec.DriverReadStream{}
 	return &ToDriver{
-		Handle:    &str,
-		DataIndex: dataIndex,
-		Range:     rng,
+		Handle:     &str,
+		StreamType: strType,
+		Range:      rng,
 	}, &str
 }
 
-func (t *ToDriver) GetDataIndex() int {
-	return t.DataIndex
+func (t *ToDriver) GetStreamType() StreamType {
+	return t.StreamType
 }
 
 func (t *ToDriver) GetRange() exec.Range {
@@ -111,32 +157,32 @@ func (t *ToDriver) GetRange() exec.Range {
 type ToShardStore struct {
 	Hub              cdssdk.Hub
 	Storage          cdssdk.Storage
-	DataIndex        int
+	StreamType       StreamType
 	Range            exec.Range
 	FileHashStoreKey string
 }
 
-func NewToShardStore(hub cdssdk.Hub, stg cdssdk.Storage, dataIndex int, fileHashStoreKey string) *ToShardStore {
+func NewToShardStore(hub cdssdk.Hub, stg cdssdk.Storage, strType StreamType, fileHashStoreKey string) *ToShardStore {
 	return &ToShardStore{
 		Hub:              hub,
 		Storage:          stg,
-		DataIndex:        dataIndex,
+		StreamType:       strType,
 		FileHashStoreKey: fileHashStoreKey,
 	}
 }
 
-func NewToShardStoreWithRange(hub cdssdk.Hub, stg cdssdk.Storage, dataIndex int, fileHashStoreKey string, rng exec.Range) *ToShardStore {
+func NewToShardStoreWithRange(hub cdssdk.Hub, stg cdssdk.Storage, streamType StreamType, fileHashStoreKey string, rng exec.Range) *ToShardStore {
 	return &ToShardStore{
 		Hub:              hub,
 		Storage:          stg,
-		DataIndex:        dataIndex,
+		StreamType:       streamType,
 		FileHashStoreKey: fileHashStoreKey,
 		Range:            rng,
 	}
 }
 
-func (t *ToShardStore) GetDataIndex() int {
-	return t.DataIndex
+func (t *ToShardStore) GetStreamType() StreamType {
+	return t.StreamType
 }
 
 func (t *ToShardStore) GetRange() exec.Range {
@@ -161,8 +207,10 @@ func NewLoadToShared(hub cdssdk.Hub, storage cdssdk.Storage, userID cdssdk.UserI
 	}
 }
 
-func (t *LoadToShared) GetDataIndex() int {
-	return -1
+func (t *LoadToShared) GetStreamType() StreamType {
+	return StreamType{
+		Type: StreamTypeRaw,
+	}
 }
 
 func (t *LoadToShared) GetRange() exec.Range {

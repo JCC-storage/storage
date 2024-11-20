@@ -15,9 +15,9 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
-type IndexedStream struct {
-	Stream    *dag.Var
-	DataIndex int
+type TypedStream struct {
+	Stream     *dag.Var
+	StreamType ioswitch2.StreamType
 }
 
 type ParseContext struct {
@@ -25,10 +25,10 @@ type ParseContext struct {
 	DAG *ops2.GraphNodeBuilder
 	// 为了产生所有To所需的数据范围，而需要From打开的范围。
 	// 这个范围是基于整个文件的，且上下界都取整到条带大小的整数倍，因此上界是有可能超过文件大小的。
-	ToNodes        map[ioswitch2.To]ops2.ToNode
-	IndexedStreams []IndexedStream
-	StreamRange    exec.Range
-	EC             cdssdk.ECRedundancy
+	ToNodes      map[ioswitch2.To]ops2.ToNode
+	TypedStreams []TypedStream
+	StreamRange  exec.Range
+	EC           cdssdk.ECRedundancy
 }
 
 func Parse(ft ioswitch2.FromTo, blder *exec.PlanBuilder, ec cdssdk.ECRedundancy) error {
@@ -86,10 +86,10 @@ func Parse(ft ioswitch2.FromTo, blder *exec.PlanBuilder, ec cdssdk.ECRedundancy)
 
 	return plan.Generate(ctx.DAG.Graph, blder)
 }
-func findOutputStream(ctx *ParseContext, streamIndex int) *dag.Var {
+func findOutputStream(ctx *ParseContext, streamType ioswitch2.StreamType) *dag.Var {
 	var ret *dag.Var
-	for _, s := range ctx.IndexedStreams {
-		if s.DataIndex == streamIndex {
+	for _, s := range ctx.TypedStreams {
+		if s.StreamType == streamType {
 			ret = s.Stream
 			break
 		}
@@ -106,7 +106,7 @@ func calcStreamRange(ctx *ParseContext) {
 	}
 
 	for _, to := range ctx.Ft.Toes {
-		if to.GetDataIndex() == -1 {
+		if to.GetStreamType().IsRaw() {
 			toRng := to.GetRange()
 			rng.ExtendStart(math2.Floor(toRng.Offset, stripSize))
 			if toRng.Length != nil {
@@ -139,19 +139,19 @@ func extend(ctx *ParseContext) error {
 			return err
 		}
 
-		ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
-			Stream:    frNode.Output().Var,
-			DataIndex: fr.GetDataIndex(),
+		ctx.TypedStreams = append(ctx.TypedStreams, TypedStream{
+			Stream:     frNode.Output().Var,
+			StreamType: fr.GetStreamType(),
 		})
 
 		// 对于完整文件的From，生成Split指令
-		if fr.GetDataIndex() == -1 {
+		if fr.GetStreamType().IsRaw() {
 			splitNode := ctx.DAG.NewChunkedSplit(ctx.EC.ChunkSize)
 			splitNode.Split(frNode.Output().Var, ctx.EC.K)
 			for i := 0; i < ctx.EC.K; i++ {
-				ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
-					Stream:    splitNode.SubStream(i),
-					DataIndex: i,
+				ctx.TypedStreams = append(ctx.TypedStreams, TypedStream{
+					Stream:     splitNode.SubStream(i),
+					StreamType: ioswitch2.ECSrteam(i),
 				})
 			}
 		}
@@ -159,9 +159,9 @@ func extend(ctx *ParseContext) error {
 
 	// 如果有K个不同的文件块流，则生成Multiply指令，同时针对其生成的流，生成Join指令
 	ecInputStrs := make(map[int]*dag.Var)
-	for _, s := range ctx.IndexedStreams {
-		if s.DataIndex >= 0 && ecInputStrs[s.DataIndex] == nil {
-			ecInputStrs[s.DataIndex] = s.Stream
+	for _, s := range ctx.TypedStreams {
+		if s.StreamType.IsEC() && ecInputStrs[s.StreamType.Index] == nil {
+			ecInputStrs[s.StreamType.Index] = s.Stream
 			if len(ecInputStrs) == ctx.EC.K {
 				break
 			}
@@ -175,20 +175,20 @@ func extend(ctx *ParseContext) error {
 			mulNode.AddInput(s, i)
 		}
 		for i := 0; i < ctx.EC.N; i++ {
-			ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
-				Stream:    mulNode.NewOutput(i),
-				DataIndex: i,
+			ctx.TypedStreams = append(ctx.TypedStreams, TypedStream{
+				Stream:     mulNode.NewOutput(i),
+				StreamType: ioswitch2.ECSrteam(i),
 			})
 		}
 
 		joinNode := ctx.DAG.NewChunkedJoin(ctx.EC.ChunkSize)
 		for i := 0; i < ctx.EC.K; i++ {
 			// 不可能找不到流
-			joinNode.AddInput(findOutputStream(ctx, i))
+			joinNode.AddInput(findOutputStream(ctx, ioswitch2.ECSrteam(i)))
 		}
-		ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
-			Stream:    joinNode.Joined(),
-			DataIndex: -1,
+		ctx.TypedStreams = append(ctx.TypedStreams, TypedStream{
+			Stream:     joinNode.Joined(),
+			StreamType: ioswitch2.RawStream(),
 		})
 	}
 
@@ -200,9 +200,9 @@ func extend(ctx *ParseContext) error {
 		}
 		ctx.ToNodes[to] = toNode
 
-		str := findOutputStream(ctx, to.GetDataIndex())
+		str := findOutputStream(ctx, to.GetStreamType())
 		if str == nil {
-			return fmt.Errorf("no output stream found for data index %d", to.GetDataIndex())
+			return fmt.Errorf("no output stream found for data index %d", to.GetStreamType())
 		}
 
 		toNode.SetInput(str)
@@ -229,7 +229,7 @@ func buildFromNode(ctx *ParseContext, f ioswitch2.From) (ops2.FromNode, error) {
 	case *ioswitch2.FromShardstore:
 		t := ctx.DAG.NewShardRead(f.Storage.StorageID, types.NewOpen(f.FileHash))
 
-		if f.DataIndex == -1 {
+		if f.StreamType.IsRaw() {
 			t.Open.WithNullableLength(repRange.Offset, repRange.Length)
 		} else {
 			t.Open.WithNullableLength(blkRange.Offset, blkRange.Length)
@@ -255,7 +255,7 @@ func buildFromNode(ctx *ParseContext, f ioswitch2.From) (ops2.FromNode, error) {
 		n.Env().ToEnvDriver()
 		n.Env().Pinned = true
 
-		if f.DataIndex == -1 {
+		if f.StreamType.IsRaw() {
 			f.Handle.RangeHint.Offset = repRange.Offset
 			f.Handle.RangeHint.Length = repRange.Length
 		} else {
@@ -539,10 +539,10 @@ func generateRange(ctx *ParseContext) {
 		to := ctx.Ft.Toes[i]
 		toNode := ctx.ToNodes[to]
 
-		toDataIdx := to.GetDataIndex()
+		toStrType := to.GetStreamType()
 		toRng := to.GetRange()
 
-		if toDataIdx == -1 {
+		if toStrType.IsRaw() {
 			n := ctx.DAG.NewRange()
 			toInput := toNode.Input()
 			*n.Env() = *toInput.Var.From().Node.Env()

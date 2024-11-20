@@ -447,9 +447,9 @@ func (t *CheckPackageRedundancy) noneToRep(ctx ExecuteContext, obj stgmod.Object
 	uploadStgs = lo.UniqBy(uploadStgs, func(item *StorageLoadInfo) cdssdk.StorageID { return item.Storage.Storage.StorageID })
 
 	ft := ioswitch2.NewFromTo()
-	ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *getStgs.Storages[0].MasterHub, getStgs.Storages[0].Storage, -1))
+	ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *getStgs.Storages[0].MasterHub, getStgs.Storages[0].Storage, ioswitch2.RawStream()))
 	for i, stg := range uploadStgs {
-		ft.AddTo(ioswitch2.NewToShardStore(*stg.Storage.MasterHub, stg.Storage.Storage, -1, fmt.Sprintf("%d", i)))
+		ft.AddTo(ioswitch2.NewToShardStore(*stg.Storage.MasterHub, stg.Storage.Storage, ioswitch2.RawStream(), fmt.Sprintf("%d", i)))
 	}
 
 	plans := exec.NewPlanBuilder()
@@ -506,9 +506,9 @@ func (t *CheckPackageRedundancy) noneToEC(ctx ExecuteContext, obj stgmod.ObjectD
 	}
 
 	ft := ioswitch2.NewFromTo()
-	ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *getStgs.Storages[0].MasterHub, getStgs.Storages[0].Storage, -1))
+	ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *getStgs.Storages[0].MasterHub, getStgs.Storages[0].Storage, ioswitch2.RawStream()))
 	for i := 0; i < red.N; i++ {
-		ft.AddTo(ioswitch2.NewToShardStore(*uploadStgs[i].Storage.MasterHub, uploadStgs[i].Storage.Storage, i, fmt.Sprintf("%d", i)))
+		ft.AddTo(ioswitch2.NewToShardStore(*uploadStgs[i].Storage.MasterHub, uploadStgs[i].Storage.Storage, ioswitch2.ECSrteam(i), fmt.Sprintf("%d", i)))
 	}
 	plans := exec.NewPlanBuilder()
 	err = parser.Parse(ft, plans, *red)
@@ -623,9 +623,9 @@ func (t *CheckPackageRedundancy) repToRep(ctx ExecuteContext, obj stgmod.ObjectD
 	uploadStgs = lo.UniqBy(uploadStgs, func(item *StorageLoadInfo) cdssdk.StorageID { return item.Storage.Storage.StorageID })
 
 	ft := ioswitch2.NewFromTo()
-	ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *getStgs.Storages[0].MasterHub, getStgs.Storages[0].Storage, -1))
+	ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *getStgs.Storages[0].MasterHub, getStgs.Storages[0].Storage, ioswitch2.RawStream()))
 	for i, stg := range uploadStgs {
-		ft.AddTo(ioswitch2.NewToShardStore(*stg.Storage.MasterHub, stg.Storage.Storage, -1, fmt.Sprintf("%d", i)))
+		ft.AddTo(ioswitch2.NewToShardStore(*stg.Storage.MasterHub, stg.Storage.Storage, ioswitch2.RawStream(), fmt.Sprintf("%d", i)))
 	}
 
 	plans := exec.NewPlanBuilder()
@@ -696,11 +696,11 @@ func (t *CheckPackageRedundancy) ecToRep(ctx ExecuteContext, obj stgmod.ObjectDe
 		ft := ioswitch2.NewFromTo()
 
 		for _, block := range chosenBlocks {
-			ft.AddFrom(ioswitch2.NewFromShardstore(block.FileHash, *uploadStgs[i].Storage.MasterHub, uploadStgs[i].Storage.Storage, block.Index))
+			ft.AddFrom(ioswitch2.NewFromShardstore(block.FileHash, *uploadStgs[i].Storage.MasterHub, uploadStgs[i].Storage.Storage, ioswitch2.ECSrteam(block.Index)))
 		}
 
 		len := obj.Object.Size
-		ft.AddTo(ioswitch2.NewToShardStoreWithRange(*uploadStgs[i].Storage.MasterHub, uploadStgs[i].Storage.Storage, -1, fmt.Sprintf("%d", i), exec.Range{
+		ft.AddTo(ioswitch2.NewToShardStoreWithRange(*uploadStgs[i].Storage.MasterHub, uploadStgs[i].Storage.Storage, ioswitch2.RawStream(), fmt.Sprintf("%d", i), exec.Range{
 			Offset: 0,
 			Length: &len,
 		}))
@@ -788,11 +788,11 @@ func (t *CheckPackageRedundancy) ecToEC(ctx ExecuteContext, obj stgmod.ObjectDet
 		ft := ioswitch2.NewFromTo()
 		for _, block := range chosenBlocks {
 			stg := stg.Storage
-			ft.AddFrom(ioswitch2.NewFromShardstore(block.FileHash, *stg.MasterHub, stg.Storage, block.Index))
+			ft.AddFrom(ioswitch2.NewFromShardstore(block.FileHash, *stg.MasterHub, stg.Storage, ioswitch2.ECSrteam(block.Index)))
 		}
 
 		// 输出只需要自己要保存的那一块
-		ft.AddTo(ioswitch2.NewToShardStore(*stg.Storage.MasterHub, stg.Storage.Storage, i, fmt.Sprintf("%d", i)))
+		ft.AddTo(ioswitch2.NewToShardStore(*stg.Storage.MasterHub, stg.Storage.Storage, ioswitch2.ECSrteam(i), fmt.Sprintf("%d", i)))
 
 		err := parser.Parse(ft, planBlder, *srcRed)
 		if err != nil {

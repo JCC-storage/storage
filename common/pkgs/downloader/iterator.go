@@ -387,7 +387,7 @@ func (iter *DownloadObjectIterator) downloadFromStorage(stg *stgmod.StorageDetai
 	var strHandle *exec.DriverReadStream
 	ft := ioswitch2.NewFromTo()
 
-	toExec, handle := ioswitch2.NewToDriver(-1)
+	toExec, handle := ioswitch2.NewToDriver(ioswitch2.RawStream())
 	toExec.Range = exec.Range{
 		Offset: req.Raw.Offset,
 	}
@@ -396,7 +396,7 @@ func (iter *DownloadObjectIterator) downloadFromStorage(stg *stgmod.StorageDetai
 		toExec.Range.Length = &len
 	}
 
-	ft.AddFrom(ioswitch2.NewFromShardstore(req.Detail.Object.FileHash, *stg.MasterHub, stg.Storage, -1)).AddTo(toExec)
+	ft.AddFrom(ioswitch2.NewFromShardstore(req.Detail.Object.FileHash, *stg.MasterHub, stg.Storage, ioswitch2.RawStream())).AddTo(toExec)
 	strHandle = handle
 
 	plans := exec.NewPlanBuilder()

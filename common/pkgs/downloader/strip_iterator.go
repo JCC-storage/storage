@@ -201,10 +201,10 @@ func (s *StripIterator) readStrip(stripIndex int64, buf []byte) (int, error) {
 		ft := ioswitch2.NewFromTo()
 		for _, b := range s.blocks {
 			stg := b.Storage
-			ft.AddFrom(ioswitch2.NewFromShardstore(b.Block.FileHash, *stg.MasterHub, stg.Storage, b.Block.Index))
+			ft.AddFrom(ioswitch2.NewFromShardstore(b.Block.FileHash, *stg.MasterHub, stg.Storage, ioswitch2.ECSrteam(b.Block.Index)))
 		}
 
-		toExec, hd := ioswitch2.NewToDriverWithRange(-1, exec.Range{
+		toExec, hd := ioswitch2.NewToDriverWithRange(ioswitch2.RawStream(), exec.Range{
 			Offset: stripIndex * s.red.StripSize(),
 		})
 		ft.AddTo(toExec)
