@@ -70,7 +70,7 @@ func (svc *Service) CreatePackage(msg *coormq.CreatePackage) (*coormq.CreatePack
 		logger.WithField("BucketID", msg.BucketID).
 			WithField("Name", msg.Name).
 			Warn(err.Error())
-		return nil, mq.Failed(errorcode.OperationFailed, "creating package failed")
+		return nil, mq.Failed(errorcode.OperationFailed, err.Error())
 	}
 
 	return mq.ReplyOK(coormq.NewCreatePackageResp(pkg))

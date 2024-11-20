@@ -26,9 +26,6 @@
             "retryInterval": 5000
         }
     },
-    "ipfs": {
-        "address": "127.0.0.1:5001"
-    },
     "distlock": {
         "etcdAddress": "127.0.0.1:2379",
         "etcdUsername": "",
