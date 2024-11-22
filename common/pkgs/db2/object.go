@@ -262,7 +262,7 @@ func (db *ObjectDB) BatchAdd(ctx SQLContext, packageID cdssdk.PackageID, adds []
 	}
 
 	// 创建 ObjectBlock
-	objBlocks := make([]stgmod.ObjectBlock, len(adds))
+	objBlocks := make([]stgmod.ObjectBlock, 0, len(adds))
 	for i, add := range adds {
 		for _, stgID := range add.StorageIDs {
 			objBlocks = append(objBlocks, stgmod.ObjectBlock{
@@ -278,7 +278,7 @@ func (db *ObjectDB) BatchAdd(ctx SQLContext, packageID cdssdk.PackageID, adds []
 	}
 
 	// 创建 Cache
-	caches := make([]model.Cache, len(adds))
+	caches := make([]model.Cache, 0, len(adds))
 	for _, add := range adds {
 		for _, stgID := range add.StorageIDs {
 			caches = append(caches, model.Cache{
