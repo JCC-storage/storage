@@ -38,6 +38,7 @@ type CreateLoadResult struct {
 
 func (u *CreateLoadUploader) Upload(path string, size int64, stream io.Reader) error {
 	uploadTime := time.Now()
+	stgIDs := make([]cdssdk.StorageID, 0, len(u.targetStgs))
 
 	ft := ioswitch2.NewFromTo()
 	fromExec, hd := ioswitch2.NewFromDriver(-1)
@@ -45,6 +46,7 @@ func (u *CreateLoadUploader) Upload(path string, size int64, stream io.Reader) e
 	for _, stg := range u.targetStgs {
 		ft.AddTo(ioswitch2.NewToShardStore(*stg.MasterHub, stg.Storage, -1, "fileHash"))
 		ft.AddTo(ioswitch2.NewLoadToShared(*stg.MasterHub, stg.Storage, u.userID, u.pkg.PackageID, path))
+		stgIDs = append(stgIDs, stg.Storage.StorageID)
 	}
 
 	plans := exec.NewPlanBuilder()
@@ -67,15 +69,13 @@ func (u *CreateLoadUploader) Upload(path string, size int64, stream io.Reader) e
 
 	// 记录上传结果
 	fileHash := ret["fileHash"].(*ops2.FileHashValue).Hash
-	for _, stg := range u.targetStgs {
-		u.successes = append(u.successes, coormq.AddObjectEntry{
-			Path:       path,
-			Size:       size,
-			FileHash:   fileHash,
-			UploadTime: uploadTime,
-			StorageID:  stg.Storage.StorageID,
-		})
-	}
+	u.successes = append(u.successes, coormq.AddObjectEntry{
+		Path:       path,
+		Size:       size,
+		FileHash:   fileHash,
+		UploadTime: uploadTime,
+		StorageIDs: stgIDs,
+	})
 	return nil
 }
 
