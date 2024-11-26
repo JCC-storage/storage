@@ -131,7 +131,7 @@ func (t *ChunkedSplitNode) SplitCount() int {
 	return t.OutputStreams().Len()
 }
 
-func (t *ChunkedSplitNode) Clear() {
+func (t *ChunkedSplitNode) RemoveAllStream() {
 	if t.InputStreams().Len() == 0 {
 		return
 	}

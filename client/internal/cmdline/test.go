@@ -17,8 +17,8 @@ import (
 
 func init() {
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "test2",
-		Short: "test2",
+		Use:   "test",
+		Short: "test",
 		Run: func(cmd *cobra.Command, args []string) {
 			coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 			if err != nil {
@@ -63,8 +63,8 @@ func init() {
 		},
 	})
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "test",
-		Short: "test",
+		Use:   "test3",
+		Short: "test3",
 		Run: func(cmd *cobra.Command, args []string) {
 			coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 			if err != nil {

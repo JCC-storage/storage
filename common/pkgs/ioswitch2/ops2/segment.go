@@ -139,6 +139,20 @@ func (n *SegmentSplitNode) SetInput(input *dag.Var) {
 	input.StreamTo(n, 0)
 }
 
+func (t *SegmentSplitNode) RemoveAllStream() {
+	if t.InputStreams().Len() == 0 {
+		return
+	}
+
+	t.InputStreams().Get(0).StreamNotTo(t, 0)
+	t.InputStreams().Resize(0)
+
+	for _, out := range t.OutputStreams().RawArray() {
+		out.NoInputAllStream()
+	}
+	t.OutputStreams().Resize(0)
+}
+
 func (n *SegmentSplitNode) Segment(index int) *dag.Var {
 	// 必须连续消耗流
 	for i := 0; i <= index; i++ {
@@ -181,6 +195,13 @@ func (b *GraphNodeBuilder) NewSegmentJoin(segmentSizes []int64) *SegmentJoinNode
 
 func (n *SegmentJoinNode) SetInput(index int, input *dag.Var) {
 	input.StreamTo(n, index)
+}
+
+func (n *SegmentJoinNode) RemoveAllInputs() {
+	for i, in := range n.InputStreams().RawArray() {
+		in.StreamNotTo(n, i)
+	}
+	n.InputStreams().Resize(0)
 }
 
 // 记录本计划中实际要使用的分段的范围，范围外的分段流都会取消输入
