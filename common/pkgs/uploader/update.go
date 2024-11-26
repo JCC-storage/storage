@@ -47,7 +47,7 @@ func (w *UpdateUploader) Upload(path string, size int64, stream io.Reader) error
 	ft.AddFrom(fromExec).AddTo(ioswitch2.NewToShardStore(*w.targetStg.MasterHub, w.targetStg.Storage, ioswitch2.RawStream(), "fileHash"))
 
 	plans := exec.NewPlanBuilder()
-	err := parser.Parse(ft, plans, cdssdk.DefaultECRedundancy)
+	err := parser.Parse(ft, plans)
 	if err != nil {
 		return fmt.Errorf("parsing plan: %w", err)
 	}

@@ -400,7 +400,7 @@ func (iter *DownloadObjectIterator) downloadFromStorage(stg *stgmod.StorageDetai
 	strHandle = handle
 
 	plans := exec.NewPlanBuilder()
-	if err := parser.Parse(ft, plans, cdssdk.DefaultECRedundancy); err != nil {
+	if err := parser.Parse(ft, plans); err != nil {
 		return nil, fmt.Errorf("parsing plan: %w", err)
 	}
 

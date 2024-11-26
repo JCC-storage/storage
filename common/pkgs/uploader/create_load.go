@@ -39,7 +39,7 @@ type CreateLoadResult struct {
 func (u *CreateLoadUploader) Upload(path string, size int64, stream io.Reader) error {
 	uploadTime := time.Now()
 
-	ft := ioswitch2.NewFromTo()
+	ft := ioswitch2.FromTo{}
 	fromExec, hd := ioswitch2.NewFromDriver(ioswitch2.RawStream())
 	ft.AddFrom(fromExec)
 	for _, stg := range u.targetStgs {
@@ -48,7 +48,7 @@ func (u *CreateLoadUploader) Upload(path string, size int64, stream io.Reader) e
 	}
 
 	plans := exec.NewPlanBuilder()
-	err := parser.Parse(ft, plans, cdssdk.DefaultECRedundancy)
+	err := parser.Parse(ft, plans)
 	if err != nil {
 		return fmt.Errorf("parsing plan: %w", err)
 	}

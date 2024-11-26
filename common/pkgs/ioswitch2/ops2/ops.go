@@ -3,6 +3,7 @@ package ops2
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/dag"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/plan/ops"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
 )
 
 type GraphNodeBuilder struct {
@@ -15,11 +16,13 @@ func NewGraphNodeBuilder() *GraphNodeBuilder {
 
 type FromNode interface {
 	dag.Node
+	GetFrom() ioswitch2.From
 	Output() dag.Slot
 }
 
 type ToNode interface {
 	dag.Node
+	GetTo() ioswitch2.To
 	Input() dag.Slot
 	SetInput(input *dag.Var)
 }

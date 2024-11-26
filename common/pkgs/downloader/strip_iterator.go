@@ -199,6 +199,7 @@ func (s *StripIterator) readStrip(stripIndex int64, buf []byte) (int, error) {
 		}
 
 		ft := ioswitch2.NewFromTo()
+		ft.ECParam = s.red
 		for _, b := range s.blocks {
 			stg := b.Storage
 			ft.AddFrom(ioswitch2.NewFromShardstore(b.Block.FileHash, *stg.MasterHub, stg.Storage, ioswitch2.ECSrteam(b.Block.Index)))
@@ -210,7 +211,7 @@ func (s *StripIterator) readStrip(stripIndex int64, buf []byte) (int, error) {
 		ft.AddTo(toExec)
 
 		plans := exec.NewPlanBuilder()
-		err := parser.Parse(ft, plans, *s.red)
+		err := parser.Parse(ft, plans)
 		if err != nil {
 			return 0, err
 		}

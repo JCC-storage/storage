@@ -72,7 +72,11 @@ func (o *Range) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 }
 
 func (o *Range) String() string {
-	return fmt.Sprintf("Range(%v+%v) %v -> %v", o.Offset, o.Length, o.Input, o.Output)
+	len := ""
+	if o.Length != nil {
+		len = fmt.Sprintf("%v", *o.Length)
+	}
+	return fmt.Sprintf("Range(%v+%v) %v -> %v", o.Offset, len, o.Input, o.Output)
 }
 
 type RangeNode struct {

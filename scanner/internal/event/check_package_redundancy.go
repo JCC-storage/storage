@@ -142,43 +142,47 @@ func (t *CheckPackageRedundancy) Execute(execCtx ExecuteContext) {
 			switch newRed := newRed.(type) {
 			case *cdssdk.RepRedundancy:
 				log.WithField("ObjectID", obj.Object.ObjectID).Debugf("redundancy: none -> rep")
-				updating, err = t.noneToRep(execCtx, obj, newRed, newRepStgs)
+				updating, err = t.noneToRep(execCtx, obj, newRed, newRepStgs, userAllStorages)
 
 			case *cdssdk.ECRedundancy:
 				log.WithField("ObjectID", obj.Object.ObjectID).Debugf("redundancy: none -> ec")
-				updating, err = t.noneToEC(execCtx, obj, newRed, newECStgs)
+				updating, err = t.noneToEC(execCtx, obj, newRed, newECStgs, userAllStorages)
 
 			case *cdssdk.LRCRedundancy:
 				log.WithField("ObjectID", obj.Object.ObjectID).Debugf("redundancy: none -> lrc")
-				updating, err = t.noneToLRC(execCtx, obj, newRed, selectedStorages)
+				updating, err = t.noneToLRC(execCtx, obj, newRed, selectedStorages, userAllStorages)
+
+			case *cdssdk.SegmentRedundancy:
+				log.WithField("ObjectID", obj.Object.ObjectID).Debugf("redundancy: none -> segment")
+				updating, err = t.noneToSeg(execCtx, obj, newRed, selectedStorages, userAllStorages)
 			}
 
 		case *cdssdk.RepRedundancy:
 			switch newRed := newRed.(type) {
 			case *cdssdk.RepRedundancy:
-				updating, err = t.repToRep(execCtx, obj, srcRed, rechoosedRepStgs)
+				updating, err = t.repToRep(execCtx, obj, srcRed, rechoosedRepStgs, userAllStorages)
 
 			case *cdssdk.ECRedundancy:
 				log.WithField("ObjectID", obj.Object.ObjectID).Debugf("redundancy: rep -> ec")
-				updating, err = t.repToEC(execCtx, obj, newRed, newECStgs)
+				updating, err = t.repToEC(execCtx, obj, newRed, newECStgs, userAllStorages)
 			}
 
 		case *cdssdk.ECRedundancy:
 			switch newRed := newRed.(type) {
 			case *cdssdk.RepRedundancy:
 				log.WithField("ObjectID", obj.Object.ObjectID).Debugf("redundancy: ec -> rep")
-				updating, err = t.ecToRep(execCtx, obj, srcRed, newRed, newRepStgs)
+				updating, err = t.ecToRep(execCtx, obj, srcRed, newRed, newRepStgs, userAllStorages)
 
 			case *cdssdk.ECRedundancy:
 				uploadStorages := t.rechooseStoragesForEC(obj, srcRed, userAllStorages)
-				updating, err = t.ecToEC(execCtx, obj, srcRed, newRed, uploadStorages)
+				updating, err = t.ecToEC(execCtx, obj, srcRed, newRed, uploadStorages, userAllStorages)
 			}
 
 		case *cdssdk.LRCRedundancy:
 			switch newRed := newRed.(type) {
 			case *cdssdk.LRCRedundancy:
 				uploadStorages := t.rechooseStoragesForLRC(obj, srcRed, userAllStorages)
-				updating, err = t.lrcToLRC(execCtx, obj, srcRed, newRed, uploadStorages)
+				updating, err = t.lrcToLRC(execCtx, obj, srcRed, newRed, uploadStorages, userAllStorages)
 			}
 		}
 
@@ -205,11 +209,23 @@ func (t *CheckPackageRedundancy) Execute(execCtx ExecuteContext) {
 func (t *CheckPackageRedundancy) chooseRedundancy(obj stgmod.ObjectDetail, userAllStgs map[cdssdk.StorageID]*StorageLoadInfo) (cdssdk.Redundancy, []*StorageLoadInfo) {
 	switch obj.Object.Redundancy.(type) {
 	case *cdssdk.NoneRedundancy:
-		newStgs := t.chooseNewStoragesForEC(&cdssdk.DefaultECRedundancy, userAllStgs)
-		return &cdssdk.DefaultECRedundancy, newStgs
+		if obj.Object.Size > config.Cfg().ECFileSizeThreshold {
+			newStgs := t.chooseNewStoragesForEC(&cdssdk.DefaultECRedundancy, userAllStgs)
+			return &cdssdk.DefaultECRedundancy, newStgs
+		}
 
-		// newLRCStorages := t.chooseNewStoragesForLRC(&cdssdk.DefaultLRCRedundancy, userAllStorages)
-		// return &cdssdk.DefaultLRCRedundancy, newLRCStorages
+		return &cdssdk.DefaultRepRedundancy, t.chooseNewStoragesForRep(&cdssdk.DefaultRepRedundancy, userAllStgs)
+
+	case *cdssdk.RepRedundancy:
+		if obj.Object.Size > config.Cfg().ECFileSizeThreshold {
+			newStgs := t.chooseNewStoragesForEC(&cdssdk.DefaultECRedundancy, userAllStgs)
+			return &cdssdk.DefaultECRedundancy, newStgs
+		}
+
+	case *cdssdk.ECRedundancy:
+		if obj.Object.Size <= config.Cfg().ECFileSizeThreshold {
+			return &cdssdk.DefaultRepRedundancy, t.chooseNewStoragesForRep(&cdssdk.DefaultRepRedundancy, userAllStgs)
+		}
 
 	case *cdssdk.LRCRedundancy:
 		newLRCStgs := t.rechooseStoragesForLRC(obj, &cdssdk.DefaultLRCRedundancy, userAllStgs)
@@ -276,6 +292,14 @@ func (t *CheckPackageRedundancy) chooseNewStoragesForLRC(red *cdssdk.LRCRedundan
 	})
 
 	return t.chooseSoManyStorages(red.N, sortedStorages)
+}
+
+func (t *CheckPackageRedundancy) chooseNewStoragesForSeg(segCount int, allStgs map[cdssdk.StorageID]*StorageLoadInfo) []*StorageLoadInfo {
+	sortedStorages := sort2.Sort(lo.Values(allStgs), func(left *StorageLoadInfo, right *StorageLoadInfo) int {
+		return sort2.Cmp(right.AccessAmount, left.AccessAmount)
+	})
+
+	return t.chooseSoManyStorages(segCount, sortedStorages)
 }
 
 func (t *CheckPackageRedundancy) rechooseStoragesForRep(mostBlockStgIDs []cdssdk.StorageID, red *cdssdk.RepRedundancy, allStgs map[cdssdk.StorageID]*StorageLoadInfo) []*StorageLoadInfo {
@@ -421,25 +445,16 @@ func (t *CheckPackageRedundancy) chooseSoManyStorages(count int, stgs []*Storage
 	return chosen
 }
 
-func (t *CheckPackageRedundancy) noneToRep(ctx ExecuteContext, obj stgmod.ObjectDetail, red *cdssdk.RepRedundancy, uploadStgs []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) noneToRep(ctx ExecuteContext, obj stgmod.ObjectDetail, red *cdssdk.RepRedundancy, uploadStgs []*StorageLoadInfo, allStgs map[cdssdk.StorageID]*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	if len(obj.Blocks) == 0 {
 		return nil, fmt.Errorf("object is not cached on any storages, cannot change its redundancy to rep")
 	}
 
-	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
-	if err != nil {
-		return nil, fmt.Errorf("new coordinator client: %w", err)
-	}
-	defer stgglb.CoordinatorMQPool.Release(coorCli)
-
-	getStgs, err := coorCli.GetStorageDetails(coormq.ReqGetStorageDetails([]cdssdk.StorageID{obj.Blocks[0].StorageID}))
-	if err != nil {
-		return nil, fmt.Errorf("requesting to get storages: %w", err)
-	}
-	if getStgs.Storages[0] == nil {
+	srcStg, ok := allStgs[obj.Blocks[0].StorageID]
+	if !ok {
 		return nil, fmt.Errorf("storage %v not found", obj.Blocks[0].StorageID)
 	}
-	if getStgs.Storages[0].MasterHub == nil {
+	if srcStg.Storage.MasterHub == nil {
 		return nil, fmt.Errorf("storage %v has no master hub", obj.Blocks[0].StorageID)
 	}
 
@@ -447,13 +462,13 @@ func (t *CheckPackageRedundancy) noneToRep(ctx ExecuteContext, obj stgmod.Object
 	uploadStgs = lo.UniqBy(uploadStgs, func(item *StorageLoadInfo) cdssdk.StorageID { return item.Storage.Storage.StorageID })
 
 	ft := ioswitch2.NewFromTo()
-	ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *getStgs.Storages[0].MasterHub, getStgs.Storages[0].Storage, ioswitch2.RawStream()))
+	ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *srcStg.Storage.MasterHub, srcStg.Storage.Storage, ioswitch2.RawStream()))
 	for i, stg := range uploadStgs {
 		ft.AddTo(ioswitch2.NewToShardStore(*stg.Storage.MasterHub, stg.Storage.Storage, ioswitch2.RawStream(), fmt.Sprintf("%d", i)))
 	}
 
 	plans := exec.NewPlanBuilder()
-	err = parser.Parse(ft, plans, cdssdk.DefaultECRedundancy)
+	err := parser.Parse(ft, plans)
 	if err != nil {
 		return nil, fmt.Errorf("parsing plan: %w", err)
 	}
@@ -483,35 +498,27 @@ func (t *CheckPackageRedundancy) noneToRep(ctx ExecuteContext, obj stgmod.Object
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) noneToEC(ctx ExecuteContext, obj stgmod.ObjectDetail, red *cdssdk.ECRedundancy, uploadStgs []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
-	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
-	if err != nil {
-		return nil, fmt.Errorf("new coordinator client: %w", err)
-	}
-	defer stgglb.CoordinatorMQPool.Release(coorCli)
-
+func (t *CheckPackageRedundancy) noneToEC(ctx ExecuteContext, obj stgmod.ObjectDetail, red *cdssdk.ECRedundancy, uploadStgs []*StorageLoadInfo, allStgs map[cdssdk.StorageID]*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	if len(obj.Blocks) == 0 {
 		return nil, fmt.Errorf("object is not cached on any storages, cannot change its redundancy to ec")
 	}
 
-	getStgs, err := coorCli.GetStorageDetails(coormq.ReqGetStorageDetails([]cdssdk.StorageID{obj.Blocks[0].StorageID}))
-	if err != nil {
-		return nil, fmt.Errorf("requesting to get storages: %w", err)
-	}
-	if getStgs.Storages[0] == nil {
+	srcStg, ok := allStgs[obj.Blocks[0].StorageID]
+	if !ok {
 		return nil, fmt.Errorf("storage %v not found", obj.Blocks[0].StorageID)
 	}
-	if getStgs.Storages[0].MasterHub == nil {
+	if srcStg.Storage.MasterHub == nil {
 		return nil, fmt.Errorf("storage %v has no master hub", obj.Blocks[0].StorageID)
 	}
 
 	ft := ioswitch2.NewFromTo()
-	ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *getStgs.Storages[0].MasterHub, getStgs.Storages[0].Storage, ioswitch2.RawStream()))
+	ft.ECParam = red
+	ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *srcStg.Storage.MasterHub, srcStg.Storage.Storage, ioswitch2.RawStream()))
 	for i := 0; i < red.N; i++ {
 		ft.AddTo(ioswitch2.NewToShardStore(*uploadStgs[i].Storage.MasterHub, uploadStgs[i].Storage.Storage, ioswitch2.ECSrteam(i), fmt.Sprintf("%d", i)))
 	}
 	plans := exec.NewPlanBuilder()
-	err = parser.Parse(ft, plans, *red)
+	err := parser.Parse(ft, plans)
 	if err != nil {
 		return nil, fmt.Errorf("parsing plan: %w", err)
 	}
@@ -540,25 +547,16 @@ func (t *CheckPackageRedundancy) noneToEC(ctx ExecuteContext, obj stgmod.ObjectD
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) noneToLRC(ctx ExecuteContext, obj stgmod.ObjectDetail, red *cdssdk.LRCRedundancy, uploadStorages []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
-	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
-	if err != nil {
-		return nil, fmt.Errorf("new coordinator client: %w", err)
-	}
-	defer stgglb.CoordinatorMQPool.Release(coorCli)
-
+func (t *CheckPackageRedundancy) noneToLRC(ctx ExecuteContext, obj stgmod.ObjectDetail, red *cdssdk.LRCRedundancy, uploadStorages []*StorageLoadInfo, allStgs map[cdssdk.StorageID]*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	if len(obj.Blocks) == 0 {
 		return nil, fmt.Errorf("object is not cached on any storages, cannot change its redundancy to ec")
 	}
 
-	getStgs, err := coorCli.GetStorageDetails(coormq.ReqGetStorageDetails([]cdssdk.StorageID{obj.Blocks[0].StorageID}))
-	if err != nil {
-		return nil, fmt.Errorf("requesting to get storages: %w", err)
-	}
-	if getStgs.Storages[0] == nil {
+	srcStg, ok := allStgs[obj.Blocks[0].StorageID]
+	if !ok {
 		return nil, fmt.Errorf("storage %v not found", obj.Blocks[0].StorageID)
 	}
-	if getStgs.Storages[0].MasterHub == nil {
+	if srcStg.Storage.MasterHub == nil {
 		return nil, fmt.Errorf("storage %v has no master hub", obj.Blocks[0].StorageID)
 	}
 
@@ -568,7 +566,7 @@ func (t *CheckPackageRedundancy) noneToLRC(ctx ExecuteContext, obj stgmod.Object
 	}
 
 	plans := exec.NewPlanBuilder()
-	err = lrcparser.Encode(ioswitchlrc.NewFromStorage(obj.Object.FileHash, *getStgs.Storages[0].MasterHub, getStgs.Storages[0].Storage, -1), toes, plans)
+	err := lrcparser.Encode(ioswitchlrc.NewFromStorage(obj.Object.FileHash, *srcStg.Storage.MasterHub, srcStg.Storage.Storage, -1), toes, plans)
 	if err != nil {
 		return nil, fmt.Errorf("parsing plan: %w", err)
 	}
@@ -597,25 +595,16 @@ func (t *CheckPackageRedundancy) noneToLRC(ctx ExecuteContext, obj stgmod.Object
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) repToRep(ctx ExecuteContext, obj stgmod.ObjectDetail, red *cdssdk.RepRedundancy, uploadStgs []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) noneToSeg(ctx ExecuteContext, obj stgmod.ObjectDetail, red *cdssdk.SegmentRedundancy, uploadStgs []*StorageLoadInfo, allStgs map[cdssdk.StorageID]*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	if len(obj.Blocks) == 0 {
 		return nil, fmt.Errorf("object is not cached on any storages, cannot change its redundancy to rep")
 	}
 
-	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
-	if err != nil {
-		return nil, fmt.Errorf("new coordinator client: %w", err)
-	}
-	defer stgglb.CoordinatorMQPool.Release(coorCli)
-
-	getStgs, err := coorCli.GetStorageDetails(coormq.ReqGetStorageDetails([]cdssdk.StorageID{obj.Blocks[0].StorageID}))
-	if err != nil {
-		return nil, fmt.Errorf("requesting to get storages: %w", err)
-	}
-	if getStgs.Storages[0] == nil {
+	srcStg, ok := allStgs[obj.Blocks[0].StorageID]
+	if !ok {
 		return nil, fmt.Errorf("storage %v not found", obj.Blocks[0].StorageID)
 	}
-	if getStgs.Storages[0].MasterHub == nil {
+	if srcStg.Storage.MasterHub == nil {
 		return nil, fmt.Errorf("storage %v has no master hub", obj.Blocks[0].StorageID)
 	}
 
@@ -623,13 +612,67 @@ func (t *CheckPackageRedundancy) repToRep(ctx ExecuteContext, obj stgmod.ObjectD
 	uploadStgs = lo.UniqBy(uploadStgs, func(item *StorageLoadInfo) cdssdk.StorageID { return item.Storage.Storage.StorageID })
 
 	ft := ioswitch2.NewFromTo()
-	ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *getStgs.Storages[0].MasterHub, getStgs.Storages[0].Storage, ioswitch2.RawStream()))
+	ft.SegmentParam = red
+	ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *srcStg.Storage.MasterHub, srcStg.Storage.Storage, ioswitch2.RawStream()))
+	for i, stg := range uploadStgs {
+		ft.AddTo(ioswitch2.NewToShardStore(*stg.Storage.MasterHub, stg.Storage.Storage, ioswitch2.SegmentStream(i), fmt.Sprintf("%d", i)))
+	}
+
+	plans := exec.NewPlanBuilder()
+	err := parser.Parse(ft, plans)
+	if err != nil {
+		return nil, fmt.Errorf("parsing plan: %w", err)
+	}
+
+	// TODO 添加依赖
+	execCtx := exec.NewExecContext()
+	exec.SetValueByType(execCtx, ctx.Args.StgMgr)
+	ret, err := plans.Execute(execCtx).Wait(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("executing io plan: %w", err)
+	}
+
+	var blocks []stgmod.ObjectBlock
+	for i, stg := range uploadStgs {
+		blocks = append(blocks, stgmod.ObjectBlock{
+			ObjectID:  obj.Object.ObjectID,
+			Index:     i,
+			StorageID: stg.Storage.Storage.StorageID,
+			FileHash:  ret[fmt.Sprintf("%d", i)].(*ops2.FileHashValue).Hash,
+		})
+	}
+
+	return &coormq.UpdatingObjectRedundancy{
+		ObjectID:   obj.Object.ObjectID,
+		Redundancy: red,
+		Blocks:     blocks,
+	}, nil
+}
+
+func (t *CheckPackageRedundancy) repToRep(ctx ExecuteContext, obj stgmod.ObjectDetail, red *cdssdk.RepRedundancy, uploadStgs []*StorageLoadInfo, allStgs map[cdssdk.StorageID]*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+	if len(obj.Blocks) == 0 {
+		return nil, fmt.Errorf("object is not cached on any storages, cannot change its redundancy to rep")
+	}
+
+	srcStg, ok := allStgs[obj.Blocks[0].StorageID]
+	if !ok {
+		return nil, fmt.Errorf("storage %v not found", obj.Blocks[0].StorageID)
+	}
+	if srcStg.Storage.MasterHub == nil {
+		return nil, fmt.Errorf("storage %v has no master hub", obj.Blocks[0].StorageID)
+	}
+
+	// 如果选择的备份节点都是同一个，那么就只要上传一次
+	uploadStgs = lo.UniqBy(uploadStgs, func(item *StorageLoadInfo) cdssdk.StorageID { return item.Storage.Storage.StorageID })
+
+	ft := ioswitch2.NewFromTo()
+	ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *srcStg.Storage.MasterHub, srcStg.Storage.Storage, ioswitch2.RawStream()))
 	for i, stg := range uploadStgs {
 		ft.AddTo(ioswitch2.NewToShardStore(*stg.Storage.MasterHub, stg.Storage.Storage, ioswitch2.RawStream(), fmt.Sprintf("%d", i)))
 	}
 
 	plans := exec.NewPlanBuilder()
-	err = parser.Parse(ft, plans, cdssdk.DefaultECRedundancy)
+	err := parser.Parse(ft, plans)
 	if err != nil {
 		return nil, fmt.Errorf("parsing plan: %w", err)
 	}
@@ -659,23 +702,28 @@ func (t *CheckPackageRedundancy) repToRep(ctx ExecuteContext, obj stgmod.ObjectD
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) repToEC(ctx ExecuteContext, obj stgmod.ObjectDetail, red *cdssdk.ECRedundancy, uploadStorages []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
-	return t.noneToEC(ctx, obj, red, uploadStorages)
+func (t *CheckPackageRedundancy) repToEC(ctx ExecuteContext, obj stgmod.ObjectDetail, red *cdssdk.ECRedundancy, uploadStorages []*StorageLoadInfo, allStgs map[cdssdk.StorageID]*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+	return t.noneToEC(ctx, obj, red, uploadStorages, allStgs)
 }
 
-func (t *CheckPackageRedundancy) ecToRep(ctx ExecuteContext, obj stgmod.ObjectDetail, srcRed *cdssdk.ECRedundancy, tarRed *cdssdk.RepRedundancy, uploadStgs []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
-	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
-	if err != nil {
-		return nil, fmt.Errorf("new coordinator client: %w", err)
-	}
-	defer stgglb.CoordinatorMQPool.Release(coorCli)
-
+func (t *CheckPackageRedundancy) ecToRep(ctx ExecuteContext, obj stgmod.ObjectDetail, srcRed *cdssdk.ECRedundancy, tarRed *cdssdk.RepRedundancy, uploadStgs []*StorageLoadInfo, allStgs map[cdssdk.StorageID]*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	var chosenBlocks []stgmod.GrouppedObjectBlock
 	var chosenBlockIndexes []int
+	var chosenBlockStg []stgmod.StorageDetail
 	for _, block := range obj.GroupBlocks() {
 		if len(block.StorageIDs) > 0 {
+			// TODO 考虑选择最优的节点
+			stg, ok := allStgs[block.StorageIDs[0]]
+			if !ok {
+				continue
+			}
+			if stg.Storage.MasterHub == nil {
+				continue
+			}
+
 			chosenBlocks = append(chosenBlocks, block)
 			chosenBlockIndexes = append(chosenBlockIndexes, block.Index)
+			chosenBlockStg = append(chosenBlockStg, stg.Storage)
 		}
 
 		if len(chosenBlocks) == srcRed.K {
@@ -694,9 +742,10 @@ func (t *CheckPackageRedundancy) ecToRep(ctx ExecuteContext, obj stgmod.ObjectDe
 	planBlder := exec.NewPlanBuilder()
 	for i := range uploadStgs {
 		ft := ioswitch2.NewFromTo()
+		ft.ECParam = srcRed
 
-		for _, block := range chosenBlocks {
-			ft.AddFrom(ioswitch2.NewFromShardstore(block.FileHash, *uploadStgs[i].Storage.MasterHub, uploadStgs[i].Storage.Storage, ioswitch2.ECSrteam(block.Index)))
+		for i2, block := range chosenBlocks {
+			ft.AddFrom(ioswitch2.NewFromShardstore(block.FileHash, *chosenBlockStg[i2].MasterHub, chosenBlockStg[i2].Storage, ioswitch2.ECSrteam(block.Index)))
 		}
 
 		len := obj.Object.Size
@@ -705,7 +754,7 @@ func (t *CheckPackageRedundancy) ecToRep(ctx ExecuteContext, obj stgmod.ObjectDe
 			Length: &len,
 		}))
 
-		err := parser.Parse(ft, planBlder, *srcRed)
+		err := parser.Parse(ft, planBlder)
 		if err != nil {
 			return nil, fmt.Errorf("parsing plan: %w", err)
 		}
@@ -736,19 +785,23 @@ func (t *CheckPackageRedundancy) ecToRep(ctx ExecuteContext, obj stgmod.ObjectDe
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) ecToEC(ctx ExecuteContext, obj stgmod.ObjectDetail, srcRed *cdssdk.ECRedundancy, tarRed *cdssdk.ECRedundancy, uploadStorages []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
-	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
-	if err != nil {
-		return nil, fmt.Errorf("new coordinator client: %w", err)
-	}
-	defer stgglb.CoordinatorMQPool.Release(coorCli)
-
+func (t *CheckPackageRedundancy) ecToEC(ctx ExecuteContext, obj stgmod.ObjectDetail, srcRed *cdssdk.ECRedundancy, tarRed *cdssdk.ECRedundancy, uploadStorages []*StorageLoadInfo, allStgs map[cdssdk.StorageID]*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	grpBlocks := obj.GroupBlocks()
 
 	var chosenBlocks []stgmod.GrouppedObjectBlock
+	var chosenBlockStg []stgmod.StorageDetail
 	for _, block := range grpBlocks {
 		if len(block.StorageIDs) > 0 {
+			stg, ok := allStgs[block.StorageIDs[0]]
+			if !ok {
+				continue
+			}
+			if stg.Storage.MasterHub == nil {
+				continue
+			}
+
 			chosenBlocks = append(chosenBlocks, block)
+			chosenBlockStg = append(chosenBlockStg, stg.Storage)
 		}
 
 		if len(chosenBlocks) == srcRed.K {
@@ -786,15 +839,15 @@ func (t *CheckPackageRedundancy) ecToEC(ctx ExecuteContext, obj stgmod.ObjectDet
 		// 否则就要重建出这个节点需要的块
 
 		ft := ioswitch2.NewFromTo()
-		for _, block := range chosenBlocks {
-			stg := stg.Storage
-			ft.AddFrom(ioswitch2.NewFromShardstore(block.FileHash, *stg.MasterHub, stg.Storage, ioswitch2.ECSrteam(block.Index)))
+		ft.ECParam = srcRed
+		for i2, block := range chosenBlocks {
+			ft.AddFrom(ioswitch2.NewFromShardstore(block.FileHash, *chosenBlockStg[i2].MasterHub, chosenBlockStg[i2].Storage, ioswitch2.ECSrteam(block.Index)))
 		}
 
 		// 输出只需要自己要保存的那一块
 		ft.AddTo(ioswitch2.NewToShardStore(*stg.Storage.MasterHub, stg.Storage.Storage, ioswitch2.ECSrteam(i), fmt.Sprintf("%d", i)))
 
-		err := parser.Parse(ft, planBlder, *srcRed)
+		err := parser.Parse(ft, planBlder)
 		if err != nil {
 			return nil, fmt.Errorf("parsing plan: %w", err)
 		}
@@ -830,12 +883,7 @@ func (t *CheckPackageRedundancy) ecToEC(ctx ExecuteContext, obj stgmod.ObjectDet
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) lrcToLRC(ctx ExecuteContext, obj stgmod.ObjectDetail, srcRed *cdssdk.LRCRedundancy, tarRed *cdssdk.LRCRedundancy, uploadStorages []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
-	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
-	if err != nil {
-		return nil, fmt.Errorf("new coordinator client: %w", err)
-	}
-	defer stgglb.CoordinatorMQPool.Release(coorCli)
+func (t *CheckPackageRedundancy) lrcToLRC(ctx ExecuteContext, obj stgmod.ObjectDetail, srcRed *cdssdk.LRCRedundancy, tarRed *cdssdk.LRCRedundancy, uploadStorages []*StorageLoadInfo, allStgs map[cdssdk.StorageID]*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 
 	blocksGrpByIndex := obj.GroupBlocks()
 
@@ -870,7 +918,7 @@ func (t *CheckPackageRedundancy) lrcToLRC(ctx ExecuteContext, obj stgmod.ObjectD
 		// 	return t.groupReconstructLRC(obj, lostBlocks, lostBlockGrps, blocksGrpByIndex, srcRed, uploadStorages)
 	}
 
-	return t.reconstructLRC(ctx, obj, blocksGrpByIndex, srcRed, uploadStorages)
+	return t.reconstructLRC(ctx, obj, blocksGrpByIndex, srcRed, uploadStorages, allStgs)
 }
 
 /*
@@ -939,11 +987,22 @@ TODO2 修复这一块的代码
 		}, nil
 	}
 */
-func (t *CheckPackageRedundancy) reconstructLRC(ctx ExecuteContext, obj stgmod.ObjectDetail, grpBlocks []stgmod.GrouppedObjectBlock, red *cdssdk.LRCRedundancy, uploadStorages []*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) reconstructLRC(ctx ExecuteContext, obj stgmod.ObjectDetail, grpBlocks []stgmod.GrouppedObjectBlock, red *cdssdk.LRCRedundancy, uploadStorages []*StorageLoadInfo, allStgs map[cdssdk.StorageID]*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	var chosenBlocks []stgmod.GrouppedObjectBlock
+	var chosenBlockStg []stgmod.StorageDetail
+
 	for _, block := range grpBlocks {
 		if len(block.StorageIDs) > 0 && block.Index < red.M() {
+			stg, ok := allStgs[block.StorageIDs[0]]
+			if !ok {
+				continue
+			}
+			if stg.Storage.MasterHub == nil {
+				continue
+			}
+
 			chosenBlocks = append(chosenBlocks, block)
+			chosenBlockStg = append(chosenBlockStg, stg.Storage)
 		}
 
 		if len(chosenBlocks) == red.K {
@@ -982,10 +1041,8 @@ func (t *CheckPackageRedundancy) reconstructLRC(ctx ExecuteContext, obj stgmod.O
 
 		// 否则就要重建出这个节点需要的块
 
-		for _, block := range chosenBlocks {
-			fmt.Printf("b: %v\n", block.Index)
-			stg := storage.Storage
-			froms = append(froms, ioswitchlrc.NewFromStorage(block.FileHash, *stg.MasterHub, stg.Storage, block.Index))
+		for i2, block := range chosenBlocks {
+			froms = append(froms, ioswitchlrc.NewFromStorage(block.FileHash, *chosenBlockStg[i2].MasterHub, chosenBlockStg[i2].Storage, block.Index))
 		}
 
 		// 输出只需要自己要保存的那一块

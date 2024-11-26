@@ -745,7 +745,7 @@ func (t *CleanPinned) makePlansForRepObject(allStgInfos map[cdssdk.StorageID]*st
 				toStg := allStgInfos[solu.blockList[i].StorageID]
 				ft.AddTo(ioswitch2.NewToShardStore(*toStg.MasterHub, toStg.Storage, ioswitch2.RawStream(), fmt.Sprintf("%d.0", obj.Object.ObjectID)))
 
-				err := parser.Parse(ft, planBld, cdssdk.DefaultECRedundancy)
+				err := parser.Parse(ft, planBld)
 				if err != nil {
 					// TODO 错误处理
 					continue
@@ -798,13 +798,14 @@ func (t *CleanPinned) makePlansForECObject(allStgInfos map[cdssdk.StorageID]*stg
 
 	for id, idxs := range reconstrct {
 		ft := ioswitch2.NewFromTo()
+		ft.ECParam = ecRed
 		ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *allStgInfos[id].MasterHub, allStgInfos[id].Storage, ioswitch2.RawStream()))
 
 		for _, i := range *idxs {
 			ft.AddTo(ioswitch2.NewToShardStore(*allStgInfos[id].MasterHub, allStgInfos[id].Storage, ioswitch2.ECSrteam(i), fmt.Sprintf("%d.%d", obj.Object.ObjectID, i)))
 		}
 
-		err := parser.Parse(ft, planBld, *ecRed)
+		err := parser.Parse(ft, planBld)
 		if err != nil {
 			// TODO 错误处理
 			continue

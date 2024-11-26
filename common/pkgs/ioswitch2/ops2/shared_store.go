@@ -7,6 +7,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/mgr"
 )
 
@@ -64,14 +65,16 @@ func (o *SharedLoad) String() string {
 
 type SharedLoadNode struct {
 	dag.NodeBase
+	To        ioswitch2.To
 	StorageID cdssdk.StorageID
 	UserID    cdssdk.UserID
 	PackageID cdssdk.PackageID
 	Path      string
 }
 
-func (b *GraphNodeBuilder) NewSharedLoad(stgID cdssdk.StorageID, userID cdssdk.UserID, packageID cdssdk.PackageID, path string) *SharedLoadNode {
+func (b *GraphNodeBuilder) NewSharedLoad(to ioswitch2.To, stgID cdssdk.StorageID, userID cdssdk.UserID, packageID cdssdk.PackageID, path string) *SharedLoadNode {
 	node := &SharedLoadNode{
+		To:        to,
 		StorageID: stgID,
 		UserID:    userID,
 		PackageID: packageID,
@@ -79,6 +82,10 @@ func (b *GraphNodeBuilder) NewSharedLoad(stgID cdssdk.StorageID, userID cdssdk.U
 	}
 	b.AddNode(node)
 	return node
+}
+
+func (t *SharedLoadNode) GetTo() ioswitch2.To {
+	return t.To
 }
 
 func (t *SharedLoadNode) SetInput(input *dag.Var) {

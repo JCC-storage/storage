@@ -15,9 +15,9 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
-type TypedStream struct {
-	Stream     *dag.Var
-	StreamType ioswitch2.StreamType
+type IndexedStream struct {
+	Stream      *dag.Var
+	StreamIndex ioswitch2.StreamIndex
 }
 
 type ParseContext struct {
@@ -25,32 +25,42 @@ type ParseContext struct {
 	DAG *ops2.GraphNodeBuilder
 	// 为了产生所有To所需的数据范围，而需要From打开的范围。
 	// 这个范围是基于整个文件的，且上下界都取整到条带大小的整数倍，因此上界是有可能超过文件大小的。
-	ToNodes      map[ioswitch2.To]ops2.ToNode
-	TypedStreams []TypedStream
-	StreamRange  exec.Range
-	EC           cdssdk.ECRedundancy
+	ToNodes        map[ioswitch2.To]ops2.ToNode
+	IndexedStreams []IndexedStream
+	StreamRange    exec.Range
+	UseEC          bool // 是否使用纠删码
+	UseSegment     bool // 是否使用分段
 }
 
-func Parse(ft ioswitch2.FromTo, blder *exec.PlanBuilder, ec cdssdk.ECRedundancy) error {
+func Parse(ft ioswitch2.FromTo, blder *exec.PlanBuilder) error {
 	ctx := ParseContext{
 		Ft:      ft,
 		DAG:     ops2.NewGraphNodeBuilder(),
 		ToNodes: make(map[ioswitch2.To]ops2.ToNode),
-		EC:      ec,
 	}
 
 	// 分成两个阶段：
 	// 1. 基于From和To生成更多指令，初步匹配to的需求
 
+	err := checkEncodingParams(&ctx)
+	if err != nil {
+		return err
+	}
+
 	// 计算一下打开流的范围
 	calcStreamRange(&ctx)
 
-	err := extend(&ctx)
+	err = extend(&ctx)
 	if err != nil {
 		return err
 	}
 
 	// 2. 优化上一步生成的指令
+
+	err = removeUnusedSegment(&ctx)
+	if err != nil {
+		return err
+	}
 
 	// 对于删除指令的优化，需要反复进行，直到没有变化为止。
 	// 从目前实现上来说不会死循环
@@ -79,17 +89,18 @@ func Parse(ft ioswitch2.FromTo, blder *exec.PlanBuilder, ec cdssdk.ECRedundancy)
 	}
 
 	// 下面这些只需要执行一次，但需要按顺序
+	removeUnusedFromNode(&ctx)
 	dropUnused(&ctx)
 	storeIPFSWriteResult(&ctx)
-	generateClone(&ctx)
 	generateRange(&ctx)
+	generateClone(&ctx)
 
 	return plan.Generate(ctx.DAG.Graph, blder)
 }
-func findOutputStream(ctx *ParseContext, streamType ioswitch2.StreamType) *dag.Var {
+func findOutputStream(ctx *ParseContext, streamIndex ioswitch2.StreamIndex) *dag.Var {
 	var ret *dag.Var
-	for _, s := range ctx.TypedStreams {
-		if s.StreamType == streamType {
+	for _, s := range ctx.IndexedStreams {
+		if s.StreamIndex == streamIndex {
 			ret = s.Stream
 			break
 		}
@@ -97,35 +108,91 @@ func findOutputStream(ctx *ParseContext, streamType ioswitch2.StreamType) *dag.V
 	return ret
 }
 
-// 计算输入流的打开范围。会把流的范围按条带大小取整
-func calcStreamRange(ctx *ParseContext) {
-	stripSize := int64(ctx.EC.ChunkSize * ctx.EC.K)
+// 检查使用不同编码时参数是否设置到位
+func checkEncodingParams(ctx *ParseContext) error {
+	for _, f := range ctx.Ft.Froms {
+		if f.GetStreamIndex().IsEC() {
+			ctx.UseEC = true
+			if ctx.Ft.ECParam == nil {
+				return fmt.Errorf("EC encoding parameters not set")
+			}
+		}
 
-	rng := exec.Range{
-		Offset: math.MaxInt64,
+		if f.GetStreamIndex().IsSegment() {
+			ctx.UseSegment = true
+			if ctx.Ft.SegmentParam == nil {
+				return fmt.Errorf("segment parameters not set")
+			}
+		}
 	}
 
+	for _, t := range ctx.Ft.Toes {
+		if t.GetStreamIndex().IsEC() {
+			ctx.UseEC = true
+			if ctx.Ft.ECParam == nil {
+				return fmt.Errorf("EC encoding parameters not set")
+			}
+		}
+
+		if t.GetStreamIndex().IsSegment() {
+			ctx.UseSegment = true
+			if ctx.Ft.SegmentParam == nil {
+				return fmt.Errorf("segment parameters not set")
+			}
+		}
+	}
+
+	return nil
+}
+
+// 计算输入流的打开范围。如果From或者To中包含EC的流，则会将打开范围扩大到条带大小的整数倍。
+func calcStreamRange(ctx *ParseContext) {
+	rng := exec.NewRange(math.MaxInt64, 0)
+
 	for _, to := range ctx.Ft.Toes {
-		if to.GetStreamType().IsRaw() {
+		strIdx := to.GetStreamIndex()
+		if strIdx.IsRaw() {
 			toRng := to.GetRange()
-			rng.ExtendStart(math2.Floor(toRng.Offset, stripSize))
+			rng.ExtendStart(toRng.Offset)
 			if toRng.Length != nil {
-				rng.ExtendEnd(math2.Ceil(toRng.Offset+*toRng.Length, stripSize))
+				rng.ExtendEnd(toRng.Offset + *toRng.Length)
 			} else {
 				rng.Length = nil
 			}
-
-		} else {
+		} else if strIdx.IsEC() {
 			toRng := to.GetRange()
-
-			blkStartIndex := math2.FloorDiv(toRng.Offset, int64(ctx.EC.ChunkSize))
+			stripSize := ctx.Ft.ECParam.StripSize()
+			blkStartIndex := math2.FloorDiv(toRng.Offset, int64(ctx.Ft.ECParam.ChunkSize))
 			rng.ExtendStart(blkStartIndex * stripSize)
 			if toRng.Length != nil {
-				blkEndIndex := math2.CeilDiv(toRng.Offset+*toRng.Length, int64(ctx.EC.ChunkSize))
+				blkEndIndex := math2.CeilDiv(toRng.Offset+*toRng.Length, int64(ctx.Ft.ECParam.ChunkSize))
 				rng.ExtendEnd(blkEndIndex * stripSize)
 			} else {
 				rng.Length = nil
 			}
+
+		} else if strIdx.IsSegment() {
+			// Segment节点的Range是相对于本段的，需要加上本段的起始位置
+			toRng := to.GetRange()
+
+			segStart := ctx.Ft.SegmentParam.CalcSegmentStart(strIdx.Index)
+
+			offset := toRng.Offset + segStart
+
+			rng.ExtendStart(offset)
+			if toRng.Length != nil {
+				rng.ExtendEnd(offset + *toRng.Length)
+			} else {
+				rng.Length = nil
+			}
+		}
+	}
+
+	if ctx.UseEC {
+		stripSize := ctx.Ft.ECParam.StripSize()
+		rng.ExtendStart(math2.Floor(rng.Offset, stripSize))
+		if rng.Length != nil {
+			rng.ExtendEnd(math2.Ceil(rng.Offset+*rng.Length, stripSize))
 		}
 	}
 
@@ -139,57 +206,112 @@ func extend(ctx *ParseContext) error {
 			return err
 		}
 
-		ctx.TypedStreams = append(ctx.TypedStreams, TypedStream{
-			Stream:     frNode.Output().Var,
-			StreamType: fr.GetStreamType(),
+		ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
+			Stream:      frNode.Output().Var,
+			StreamIndex: fr.GetStreamIndex(),
 		})
 
 		// 对于完整文件的From，生成Split指令
-		if fr.GetStreamType().IsRaw() {
-			splitNode := ctx.DAG.NewChunkedSplit(ctx.EC.ChunkSize)
-			splitNode.Split(frNode.Output().Var, ctx.EC.K)
-			for i := 0; i < ctx.EC.K; i++ {
-				ctx.TypedStreams = append(ctx.TypedStreams, TypedStream{
-					Stream:     splitNode.SubStream(i),
-					StreamType: ioswitch2.ECSrteam(i),
+		if fr.GetStreamIndex().IsRaw() {
+			// 只有输入输出需要EC编码的块时，才生成相关指令
+			if ctx.UseEC {
+				splitNode := ctx.DAG.NewChunkedSplit(ctx.Ft.ECParam.ChunkSize)
+				splitNode.Split(frNode.Output().Var, ctx.Ft.ECParam.K)
+				for i := 0; i < ctx.Ft.ECParam.K; i++ {
+					ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
+						Stream:      splitNode.SubStream(i),
+						StreamIndex: ioswitch2.ECSrteam(i),
+					})
+				}
+			}
+
+			// 同上
+			if ctx.UseSegment {
+				splitNode := ctx.DAG.NewSegmentSplit(ctx.Ft.SegmentParam.Segments)
+				splitNode.SetInput(frNode.Output().Var)
+				for i := 0; i < len(ctx.Ft.SegmentParam.Segments); i++ {
+					ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
+						Stream:      splitNode.Segment(i),
+						StreamIndex: ioswitch2.SegmentStream(i),
+					})
+				}
+			}
+		}
+	}
+
+	if ctx.UseEC {
+		// 如果有K个不同的文件块流，则生成Multiply指令，同时针对其生成的流，生成Join指令
+		ecInputStrs := make(map[int]*dag.Var)
+		for _, s := range ctx.IndexedStreams {
+			if s.StreamIndex.IsEC() && ecInputStrs[s.StreamIndex.Index] == nil {
+				ecInputStrs[s.StreamIndex.Index] = s.Stream
+				if len(ecInputStrs) == ctx.Ft.ECParam.K {
+					break
+				}
+			}
+		}
+
+		if len(ecInputStrs) == ctx.Ft.ECParam.K {
+			mulNode := ctx.DAG.NewECMultiply(*ctx.Ft.ECParam)
+
+			for i, s := range ecInputStrs {
+				mulNode.AddInput(s, i)
+			}
+			for i := 0; i < ctx.Ft.ECParam.N; i++ {
+				ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
+					Stream:      mulNode.NewOutput(i),
+					StreamIndex: ioswitch2.ECSrteam(i),
+				})
+			}
+
+			joinNode := ctx.DAG.NewChunkedJoin(ctx.Ft.ECParam.ChunkSize)
+			for i := 0; i < ctx.Ft.ECParam.K; i++ {
+				// 不可能找不到流
+				joinNode.AddInput(findOutputStream(ctx, ioswitch2.ECSrteam(i)))
+			}
+			ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
+				Stream:      joinNode.Joined(),
+				StreamIndex: ioswitch2.RawStream(),
+			})
+		}
+	}
+
+	if ctx.UseSegment {
+		// 先假设有所有的顺序分段，生成Join指令，后续根据Range再实际计算是否缺少流
+		joinNode := ctx.DAG.NewSegmentJoin(ctx.Ft.SegmentParam.Segments)
+		for i := 0; i < ctx.Ft.SegmentParam.SegmentCount(); i++ {
+			str := findOutputStream(ctx, ioswitch2.SegmentStream(i))
+			if str != nil {
+				joinNode.SetInput(i, str)
+			}
+		}
+		ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
+			Stream:      joinNode.Joined(),
+			StreamIndex: ioswitch2.RawStream(),
+		})
+
+		// SegmentJoin生成的Join指令可以用来生成EC块
+		if ctx.UseEC {
+			splitNode := ctx.DAG.NewChunkedSplit(ctx.Ft.ECParam.ChunkSize)
+			splitNode.Split(joinNode.Joined(), ctx.Ft.ECParam.K)
+
+			mulNode := ctx.DAG.NewECMultiply(*ctx.Ft.ECParam)
+
+			for i := 0; i < ctx.Ft.ECParam.K; i++ {
+				mulNode.AddInput(splitNode.SubStream(i), i)
+				ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
+					Stream:      splitNode.SubStream(i),
+					StreamIndex: ioswitch2.ECSrteam(i),
+				})
+			}
+
+			for i := 0; i < ctx.Ft.ECParam.N; i++ {
+				ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
+					Stream:      mulNode.NewOutput(i),
+					StreamIndex: ioswitch2.ECSrteam(i),
 				})
 			}
 		}
-	}
-
-	// 如果有K个不同的文件块流，则生成Multiply指令，同时针对其生成的流，生成Join指令
-	ecInputStrs := make(map[int]*dag.Var)
-	for _, s := range ctx.TypedStreams {
-		if s.StreamType.IsEC() && ecInputStrs[s.StreamType.Index] == nil {
-			ecInputStrs[s.StreamType.Index] = s.Stream
-			if len(ecInputStrs) == ctx.EC.K {
-				break
-			}
-		}
-	}
-
-	if len(ecInputStrs) == ctx.EC.K {
-		mulNode := ctx.DAG.NewECMultiply(ctx.EC)
-
-		for i, s := range ecInputStrs {
-			mulNode.AddInput(s, i)
-		}
-		for i := 0; i < ctx.EC.N; i++ {
-			ctx.TypedStreams = append(ctx.TypedStreams, TypedStream{
-				Stream:     mulNode.NewOutput(i),
-				StreamType: ioswitch2.ECSrteam(i),
-			})
-		}
-
-		joinNode := ctx.DAG.NewChunkedJoin(ctx.EC.ChunkSize)
-		for i := 0; i < ctx.EC.K; i++ {
-			// 不可能找不到流
-			joinNode.AddInput(findOutputStream(ctx, ioswitch2.ECSrteam(i)))
-		}
-		ctx.TypedStreams = append(ctx.TypedStreams, TypedStream{
-			Stream:     joinNode.Joined(),
-			StreamType: ioswitch2.RawStream(),
-		})
 	}
 
 	// 为每一个To找到一个输入流
@@ -200,9 +322,9 @@ func extend(ctx *ParseContext) error {
 		}
 		ctx.ToNodes[to] = toNode
 
-		str := findOutputStream(ctx, to.GetStreamType())
+		str := findOutputStream(ctx, to.GetStreamIndex())
 		if str == nil {
-			return fmt.Errorf("no output stream found for data index %d", to.GetStreamType())
+			return fmt.Errorf("no output stream found for data index %d", to.GetStreamIndex())
 		}
 
 		toNode.SetInput(str)
@@ -213,26 +335,48 @@ func extend(ctx *ParseContext) error {
 
 func buildFromNode(ctx *ParseContext, f ioswitch2.From) (ops2.FromNode, error) {
 	var repRange exec.Range
-	var blkRange exec.Range
-
 	repRange.Offset = ctx.StreamRange.Offset
-	blkRange.Offset = ctx.StreamRange.Offset / int64(ctx.EC.ChunkSize*ctx.EC.K) * int64(ctx.EC.ChunkSize)
 	if ctx.StreamRange.Length != nil {
 		repRngLen := *ctx.StreamRange.Length
 		repRange.Length = &repRngLen
+	}
 
-		blkRngLen := *ctx.StreamRange.Length / int64(ctx.EC.ChunkSize*ctx.EC.K) * int64(ctx.EC.ChunkSize)
-		blkRange.Length = &blkRngLen
+	var blkRange exec.Range
+	if ctx.UseEC {
+		blkRange.Offset = ctx.StreamRange.Offset / int64(ctx.Ft.ECParam.ChunkSize*ctx.Ft.ECParam.K) * int64(ctx.Ft.ECParam.ChunkSize)
+		if ctx.StreamRange.Length != nil {
+			blkRngLen := *ctx.StreamRange.Length / int64(ctx.Ft.ECParam.ChunkSize*ctx.Ft.ECParam.K) * int64(ctx.Ft.ECParam.ChunkSize)
+			blkRange.Length = &blkRngLen
+		}
 	}
 
 	switch f := f.(type) {
 	case *ioswitch2.FromShardstore:
-		t := ctx.DAG.NewShardRead(f.Storage.StorageID, types.NewOpen(f.FileHash))
+		t := ctx.DAG.NewShardRead(f, f.Storage.StorageID, types.NewOpen(f.FileHash))
 
-		if f.StreamType.IsRaw() {
+		if f.StreamIndex.IsRaw() {
 			t.Open.WithNullableLength(repRange.Offset, repRange.Length)
-		} else {
+		} else if f.StreamIndex.IsEC() {
 			t.Open.WithNullableLength(blkRange.Offset, blkRange.Length)
+		} else if f.StreamIndex.IsSegment() {
+			segStart := ctx.Ft.SegmentParam.CalcSegmentStart(f.StreamIndex.Index)
+			segLen := ctx.Ft.SegmentParam.Segments[f.StreamIndex.Index]
+			segEnd := segStart + segLen
+
+			// 打开的范围不超过本段的范围
+
+			openOff := ctx.StreamRange.Offset - segStart
+			openOff = math2.Clamp(openOff, 0, segLen)
+
+			openLen := segLen
+
+			if ctx.StreamRange.Length != nil {
+				strEnd := ctx.StreamRange.Offset + *ctx.StreamRange.Length
+				openEnd := math2.Min(strEnd, segEnd)
+				openLen = openEnd - segStart - openOff
+			}
+
+			t.Open.WithNullableLength(openOff, &openLen)
 		}
 
 		switch addr := f.Hub.Address.(type) {
@@ -251,16 +395,36 @@ func buildFromNode(ctx *ParseContext, f ioswitch2.From) (ops2.FromNode, error) {
 		return t, nil
 
 	case *ioswitch2.FromDriver:
-		n := ctx.DAG.NewFromDriver(f.Handle)
+		n := ctx.DAG.NewFromDriver(f, f.Handle)
 		n.Env().ToEnvDriver()
 		n.Env().Pinned = true
 
-		if f.StreamType.IsRaw() {
+		if f.StreamIndex.IsRaw() {
 			f.Handle.RangeHint.Offset = repRange.Offset
 			f.Handle.RangeHint.Length = repRange.Length
-		} else {
+		} else if f.StreamIndex.IsEC() {
 			f.Handle.RangeHint.Offset = blkRange.Offset
 			f.Handle.RangeHint.Length = blkRange.Length
+		} else if f.StreamIndex.IsSegment() {
+			segStart := ctx.Ft.SegmentParam.CalcSegmentStart(f.StreamIndex.Index)
+			segLen := ctx.Ft.SegmentParam.Segments[f.StreamIndex.Index]
+			segEnd := segStart + segLen
+
+			// 打开的范围不超过本段的范围
+
+			openOff := repRange.Offset - segStart
+			openOff = math2.Clamp(openOff, 0, segLen)
+
+			openLen := segLen
+
+			if repRange.Length != nil {
+				repEnd := repRange.Offset + *repRange.Length
+				openEnd := math2.Min(repEnd, segEnd)
+				openLen = openEnd - openOff
+			}
+
+			f.Handle.RangeHint.Offset = openOff
+			f.Handle.RangeHint.Length = &openLen
 		}
 
 		return n, nil
@@ -273,7 +437,7 @@ func buildFromNode(ctx *ParseContext, f ioswitch2.From) (ops2.FromNode, error) {
 func buildToNode(ctx *ParseContext, t ioswitch2.To) (ops2.ToNode, error) {
 	switch t := t.(type) {
 	case *ioswitch2.ToShardStore:
-		n := ctx.DAG.NewShardWrite(t.Storage.StorageID, t.FileHashStoreKey)
+		n := ctx.DAG.NewShardWrite(t, t.Storage.StorageID, t.FileHashStoreKey)
 
 		if err := setEnvByAddress(n, t.Hub, t.Hub.Address); err != nil {
 			return nil, err
@@ -284,14 +448,14 @@ func buildToNode(ctx *ParseContext, t ioswitch2.To) (ops2.ToNode, error) {
 		return n, nil
 
 	case *ioswitch2.ToDriver:
-		n := ctx.DAG.NewToDriver(t.Handle)
+		n := ctx.DAG.NewToDriver(t, t.Handle)
 		n.Env().ToEnvDriver()
 		n.Env().Pinned = true
 
 		return n, nil
 
 	case *ioswitch2.LoadToShared:
-		n := ctx.DAG.NewSharedLoad(t.Storage.StorageID, t.UserID, t.PackageID, t.Path)
+		n := ctx.DAG.NewSharedLoad(t, t.Storage.StorageID, t.UserID, t.PackageID, t.Path)
 
 		if err := setEnvByAddress(n, t.Hub, t.Hub.Address); err != nil {
 			return nil, err
@@ -319,6 +483,34 @@ func setEnvByAddress(n dag.Node, hub cdssdk.Hub, addr cdssdk.HubAddressInfo) err
 	}
 
 	return nil
+}
+
+// 从SegmentJoin中删除未使用的分段
+func removeUnusedSegment(ctx *ParseContext) error {
+	var err error
+	dag.WalkOnlyType[*ops2.SegmentJoinNode](ctx.DAG.Graph, func(node *ops2.SegmentJoinNode) bool {
+		start := ctx.StreamRange.Offset
+		var end *int64
+		if ctx.StreamRange.Length != nil {
+			e := ctx.StreamRange.Offset + *ctx.StreamRange.Length
+			end = &e
+		}
+
+		segStart, segEnd := ctx.Ft.SegmentParam.CalcSegmentRange(start, end)
+
+		node.MarkUsed(segStart, segEnd)
+
+		for i := segStart; i < segEnd; i++ {
+			if node.InputStreams().Get(i) == nil {
+				err = fmt.Errorf("segment %v missed to join an raw stream", i)
+				return false
+			}
+		}
+
+		return true
+	})
+
+	return err
 }
 
 // 删除输出流未被使用的Join指令
@@ -352,6 +544,8 @@ func removeUnusedMultiplyOutput(ctx *ParseContext) bool {
 			node.OutputIndexes[i2] = -2
 			changed = true
 		}
+
+		// TODO2 没有修改SlotIndex
 		node.OutputStreams().SetRawArray(lo2.RemoveAllDefault(outArr))
 		node.OutputIndexes = lo2.RemoveAll(node.OutputIndexes, -2)
 
@@ -504,6 +698,20 @@ func pin(ctx *ParseContext) bool {
 	return changed
 }
 
+// 删除未使用的From流，不会删除FromDriver
+func removeUnusedFromNode(ctx *ParseContext) {
+	dag.WalkOnlyType[ops2.FromNode](ctx.DAG.Graph, func(node ops2.FromNode) bool {
+		if _, ok := node.(*ops2.FromDriverNode); ok {
+			return true
+		}
+
+		if node.Output().Var == nil {
+			ctx.DAG.RemoveNode(node)
+		}
+		return true
+	})
+}
+
 // 对于所有未使用的流，增加Drop指令
 func dropUnused(ctx *ParseContext) {
 	ctx.DAG.Walk(func(node dag.Node) bool {
@@ -539,10 +747,10 @@ func generateRange(ctx *ParseContext) {
 		to := ctx.Ft.Toes[i]
 		toNode := ctx.ToNodes[to]
 
-		toStrType := to.GetStreamType()
+		toStrIdx := to.GetStreamIndex()
 		toRng := to.GetRange()
 
-		if toStrType.IsRaw() {
+		if toStrIdx.IsRaw() {
 			n := ctx.DAG.NewRange()
 			toInput := toNode.Input()
 			*n.Env() = *toInput.Var.From().Node.Env()
@@ -553,11 +761,11 @@ func generateRange(ctx *ParseContext) {
 			toInput.Var.StreamNotTo(toNode, toInput.Index)
 			toNode.SetInput(rnged)
 
-		} else {
-			stripSize := int64(ctx.EC.ChunkSize * ctx.EC.K)
+		} else if toStrIdx.IsEC() {
+			stripSize := int64(ctx.Ft.ECParam.ChunkSize * ctx.Ft.ECParam.K)
 			blkStartIdx := ctx.StreamRange.Offset / stripSize
 
-			blkStart := blkStartIdx * int64(ctx.EC.ChunkSize)
+			blkStart := blkStartIdx * int64(ctx.Ft.ECParam.ChunkSize)
 
 			n := ctx.DAG.NewRange()
 			toInput := toNode.Input()
@@ -568,6 +776,26 @@ func generateRange(ctx *ParseContext) {
 			})
 			toInput.Var.StreamNotTo(toNode, toInput.Index)
 			toNode.SetInput(rnged)
+		} else if toStrIdx.IsSegment() {
+			// if frNode, ok := toNode.Input().Var.From().Node.(ops2.FromNode); ok {
+			// 	// 目前只有To也是分段时，才可能对接一个提供分段的From，此时不需要再生成Range指令
+			// 	if frNode.GetFrom().GetStreamIndex().IsSegment() {
+			// 		continue
+			// 	}
+			// }
+
+			// segStart := ctx.Ft.SegmentParam.CalcSegmentStart(toStrIdx.Index)
+			// strStart := segStart + toRng.Offset
+
+			// n := ctx.DAG.NewRange()
+			// toInput := toNode.Input()
+			// *n.Env() = *toInput.Var.From().Node.Env()
+			// rnged := n.RangeStream(toInput.Var, exec.Range{
+			// 	Offset: strStart - ctx.StreamRange.Offset,
+			// 	Length: toRng.Length,
+			// })
+			// toInput.Var.StreamNotTo(toNode, toInput.Index)
+			// toNode.SetInput(rnged)
 		}
 	}
 }
