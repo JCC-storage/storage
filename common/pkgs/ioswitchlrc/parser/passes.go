@@ -142,13 +142,13 @@ func pin(ctx *GenerateContext) bool {
 		var toEnv *dag.NodeEnv
 		for _, out := range node.OutputStreams().RawArray() {
 			for _, to := range out.To().RawArray() {
-				if to.Node.Env().Type == dag.EnvUnknown {
+				if to.Env().Type == dag.EnvUnknown {
 					continue
 				}
 
 				if toEnv == nil {
-					toEnv = to.Node.Env()
-				} else if !toEnv.Equals(to.Node.Env()) {
+					toEnv = to.Env()
+				} else if !toEnv.Equals(to.Env()) {
 					toEnv = nil
 					break
 				}
@@ -167,13 +167,13 @@ func pin(ctx *GenerateContext) bool {
 		// 否则根据输入流的始发地来固定
 		var fromEnv *dag.NodeEnv
 		for _, in := range node.InputStreams().RawArray() {
-			if in.From().Node.Env().Type == dag.EnvUnknown {
+			if in.From().Env().Type == dag.EnvUnknown {
 				continue
 			}
 
 			if fromEnv == nil {
-				fromEnv = in.From().Node.Env()
-			} else if !fromEnv.Equals(in.From().Node.Env()) {
+				fromEnv = in.From().Env()
+			} else if !fromEnv.Equals(in.From().Env()) {
 				fromEnv = nil
 				break
 			}
@@ -233,7 +233,7 @@ func generateRange(ctx *GenerateContext) {
 		if toDataIdx == -1 {
 			n := ctx.DAG.NewRange()
 			toInput := toNode.Input()
-			*n.Env() = *toInput.Var.From().Node.Env()
+			*n.Env() = *toInput.Var.From().Env()
 			rnged := n.RangeStream(toInput.Var, exec.Range{
 				Offset: toRng.Offset - ctx.StreamRange.Offset,
 				Length: toRng.Length,
@@ -249,7 +249,7 @@ func generateRange(ctx *GenerateContext) {
 
 			n := ctx.DAG.NewRange()
 			toInput := toNode.Input()
-			*n.Env() = *toInput.Var.From().Node.Env()
+			*n.Env() = *toInput.Var.From().Env()
 			rnged := n.RangeStream(toInput.Var, exec.Range{
 				Offset: toRng.Offset - blkStart,
 				Length: toRng.Length,
@@ -263,32 +263,32 @@ func generateRange(ctx *GenerateContext) {
 // 生成Clone指令
 func generateClone(ctx *GenerateContext) {
 	ctx.DAG.Walk(func(node dag.Node) bool {
-		for _, out := range node.OutputStreams().RawArray() {
-			if out.To().Len() <= 1 {
+		for _, outVar := range node.OutputStreams().RawArray() {
+			if outVar.To().Len() <= 1 {
 				continue
 			}
 
 			t := ctx.DAG.NewCloneStream()
 			*t.Env() = *node.Env()
-			for _, to := range out.To().RawArray() {
-				t.NewOutput().StreamTo(to.Node, to.SlotIndex)
+			for _, to := range outVar.To().RawArray() {
+				t.NewOutput().StreamTo(to, to.InputStreams().IndexOf(outVar))
 			}
-			out.To().Resize(0)
-			t.SetInput(out)
+			outVar.To().Resize(0)
+			t.SetInput(outVar)
 		}
 
-		for _, out := range node.OutputValues().RawArray() {
-			if out.To().Len() <= 1 {
+		for _, outVar := range node.OutputValues().RawArray() {
+			if outVar.To().Len() <= 1 {
 				continue
 			}
 
 			t := ctx.DAG.NewCloneValue()
 			*t.Env() = *node.Env()
-			for _, to := range out.To().RawArray() {
-				t.NewOutput().ValueTo(to.Node, to.SlotIndex)
+			for _, to := range outVar.To().RawArray() {
+				t.NewOutput().ValueTo(to, to.InputValues().IndexOf(outVar))
 			}
-			out.To().Resize(0)
-			t.SetInput(out)
+			outVar.To().Resize(0)
+			t.SetInput(outVar)
 		}
 
 		return true
