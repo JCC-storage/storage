@@ -83,8 +83,8 @@ func buildDAGEncode(ctx *GenerateContext, fr ioswitchlrc.From, toes []ioswitchlr
 	}
 
 	// 需要文件块，则生成Split指令
-	splitNode := ctx.DAG.NewChunkedSplit(ctx.LRC.ChunkSize)
-	splitNode.Split(frNode.Output().Var, ctx.LRC.K)
+	splitNode := ctx.DAG.NewChunkedSplit(ctx.LRC.ChunkSize, ctx.LRC.K)
+	splitNode.Split(frNode.Output().Var)
 
 	for _, to := range dataToes {
 		toNode, err := buildToNode(ctx, to)
@@ -104,7 +104,7 @@ func buildDAGEncode(ctx *GenerateContext, fr ioswitchlrc.From, toes []ioswitchlr
 
 	conType := ctx.DAG.NewLRCConstructAny(ctx.LRC)
 
-	for i, out := range splitNode.OutputStreams().RawArray() {
+	for i, out := range splitNode.OutputStreams().Slots.RawArray() {
 		conType.AddInput(out, i)
 	}
 
@@ -271,7 +271,7 @@ func ReconstructGroup(frs []ioswitchlrc.From, toes []ioswitchlrc.To, blder *exec
 
 func buildDAGReconstructGroup(ctx *GenerateContext, frs []ioswitchlrc.From, toes []ioswitchlrc.To) error {
 
-	var inputs []*dag.Var
+	var inputs []*dag.StreamVar
 	for _, fr := range frs {
 		frNode, err := buildFromNode(ctx, fr)
 		if err != nil {

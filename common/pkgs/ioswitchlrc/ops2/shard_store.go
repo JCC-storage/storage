@@ -10,6 +10,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/io2"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/mgr"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
@@ -66,7 +67,7 @@ func (o *ShardRead) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 }
 
 func (o *ShardRead) String() string {
-	return fmt.Sprintf("ShardRead %v -> %v", o.Open, o.Output)
+	return fmt.Sprintf("ShardRead %v -> %v", o.Open.String(), o.Output)
 }
 
 type ShardWrite struct {
@@ -100,7 +101,7 @@ func (o *ShardWrite) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 
 	fileInfo, err := store.Create(input.Stream)
 	if err != nil {
-		return fmt.Errorf("finishing writing file to shard store: %w", err)
+		return fmt.Errorf("writing file to shard store: %w", err)
 	}
 
 	e.PutVar(o.FileHash, &FileHashValue{
@@ -115,22 +116,29 @@ func (o *ShardWrite) String() string {
 
 type ShardReadNode struct {
 	dag.NodeBase
+	From      ioswitchlrc.From
 	StorageID cdssdk.StorageID
 	Open      types.OpenOption
 }
 
-func (b *GraphNodeBuilder) NewShardRead(stgID cdssdk.StorageID, open types.OpenOption) *ShardReadNode {
+func (b *GraphNodeBuilder) NewShardRead(fr ioswitchlrc.From, stgID cdssdk.StorageID, open types.OpenOption) *ShardReadNode {
 	node := &ShardReadNode{
+		From:      fr,
 		StorageID: stgID,
 		Open:      open,
 	}
 	b.AddNode(node)
-	node.OutputStreams().SetupNew(node, b.NewVar())
+
+	node.OutputStreams().Init(node, 1)
 	return node
 }
 
-func (t *ShardReadNode) Output() dag.Slot {
-	return dag.Slot{
+func (t *ShardReadNode) GetFrom() ioswitchlrc.From {
+	return t.From
+}
+
+func (t *ShardReadNode) Output() dag.StreamSlot {
+	return dag.StreamSlot{
 		Var:   t.OutputStreams().Get(0),
 		Index: 0,
 	}
@@ -150,38 +158,48 @@ func (t *ShardReadNode) GenerateOp() (exec.Op, error) {
 
 type ShardWriteNode struct {
 	dag.NodeBase
+	To               ioswitchlrc.To
+	StorageID        cdssdk.StorageID
 	FileHashStoreKey string
 }
 
-func (b *GraphNodeBuilder) NewShardWrite(fileHashStoreKey string) *ShardWriteNode {
+func (b *GraphNodeBuilder) NewShardWrite(to ioswitchlrc.To, stgID cdssdk.StorageID, fileHashStoreKey string) *ShardWriteNode {
 	node := &ShardWriteNode{
+		To:               to,
+		StorageID:        stgID,
 		FileHashStoreKey: fileHashStoreKey,
 	}
 	b.AddNode(node)
+
+	node.InputStreams().Init(1)
+	node.OutputValues().Init(node, 1)
 	return node
 }
 
-func (t *ShardWriteNode) SetInput(input *dag.Var) {
-	t.InputStreams().EnsureSize(1)
-	input.StreamTo(t, 0)
-	t.OutputValues().SetupNew(t, t.Graph().NewVar())
+func (t *ShardWriteNode) GetTo() ioswitchlrc.To {
+	return t.To
 }
 
-func (t *ShardWriteNode) Input() dag.Slot {
-	return dag.Slot{
+func (t *ShardWriteNode) SetInput(input *dag.StreamVar) {
+	input.To(t, 0)
+}
+
+func (t *ShardWriteNode) Input() dag.StreamSlot {
+	return dag.StreamSlot{
 		Var:   t.InputStreams().Get(0),
 		Index: 0,
 	}
 }
 
-func (t *ShardWriteNode) FileHashVar() *dag.Var {
+func (t *ShardWriteNode) FileHashVar() *dag.ValueVar {
 	return t.OutputValues().Get(0)
 }
 
 func (t *ShardWriteNode) GenerateOp() (exec.Op, error) {
 	return &ShardWrite{
-		Input:    t.InputStreams().Get(0).VarID,
-		FileHash: t.OutputValues().Get(0).VarID,
+		Input:     t.InputStreams().Get(0).VarID,
+		FileHash:  t.OutputValues().Get(0).VarID,
+		StorageID: t.StorageID,
 	}, nil
 }
 

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/samber/lo"
 	"gitlink.org.cn/cloudream/common/pkgs/future"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/dag"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
@@ -129,25 +128,21 @@ func (b *GraphNodeBuilder) NewECMultiply(ec cdssdk.ECRedundancy) *ECMultiplyNode
 	return node
 }
 
-func (t *ECMultiplyNode) AddInput(str *dag.Var, dataIndex int) {
+func (t *ECMultiplyNode) AddInput(str *dag.StreamVar, dataIndex int) {
 	t.InputIndexes = append(t.InputIndexes, dataIndex)
 	idx := t.InputStreams().EnlargeOne()
-	str.StreamTo(t, idx)
+	str.To(t, idx)
 }
 
 func (t *ECMultiplyNode) RemoveAllInputs() {
-	for i, in := range t.InputStreams().RawArray() {
-		in.StreamNotTo(t, i)
-	}
-	t.InputStreams().Resize(0)
+	t.InputStreams().ClearAllInput(t)
+	t.InputStreams().Slots.Resize(0)
 	t.InputIndexes = nil
 }
 
-func (t *ECMultiplyNode) NewOutput(dataIndex int) *dag.Var {
+func (t *ECMultiplyNode) NewOutput(dataIndex int) *dag.StreamVar {
 	t.OutputIndexes = append(t.OutputIndexes, dataIndex)
-	output := t.Graph().NewVar()
-	t.OutputStreams().SetupNew(t, output)
-	return output
+	return t.OutputStreams().SetupNew(t).Var
 }
 
 func (t *ECMultiplyNode) GenerateOp() (exec.Op, error) {
@@ -162,8 +157,8 @@ func (t *ECMultiplyNode) GenerateOp() (exec.Op, error) {
 
 	return &ECMultiply{
 		Coef:      coef,
-		Inputs:    lo.Map(t.InputStreams().RawArray(), func(v *dag.Var, idx int) exec.VarID { return v.VarID }),
-		Outputs:   lo.Map(t.OutputStreams().RawArray(), func(v *dag.Var, idx int) exec.VarID { return v.VarID }),
+		Inputs:    t.InputStreams().GetVarIDs(),
+		Outputs:   t.OutputStreams().GetVarIDs(),
 		ChunkSize: t.EC.ChunkSize,
 	}, nil
 }

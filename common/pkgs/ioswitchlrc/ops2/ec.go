@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/samber/lo"
 	"gitlink.org.cn/cloudream/common/pkgs/future"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/dag"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
@@ -128,25 +127,21 @@ func (b *GraphNodeBuilder) NewLRCConstructAny(lrc cdssdk.LRCRedundancy) *LRCCons
 	return node
 }
 
-func (t *LRCConstructAnyNode) AddInput(str *dag.Var, dataIndex int) {
+func (t *LRCConstructAnyNode) AddInput(str *dag.StreamVar, dataIndex int) {
 	t.InputIndexes = append(t.InputIndexes, dataIndex)
 	idx := t.InputStreams().EnlargeOne()
-	str.StreamTo(t, idx)
+	str.To(t, idx)
 }
 
 func (t *LRCConstructAnyNode) RemoveAllInputs() {
-	for i, in := range t.InputStreams().RawArray() {
-		in.StreamNotTo(t, i)
-	}
-	t.InputStreams().Resize(0)
+	t.InputStreams().ClearAllInput(t)
+	t.InputStreams().Slots.Resize(0)
 	t.InputIndexes = nil
 }
 
-func (t *LRCConstructAnyNode) NewOutput(dataIndex int) *dag.Var {
+func (t *LRCConstructAnyNode) NewOutput(dataIndex int) *dag.StreamVar {
 	t.OutputIndexes = append(t.OutputIndexes, dataIndex)
-	output := t.Graph().NewVar()
-	t.OutputStreams().SetupNew(t, output)
-	return output
+	return t.OutputStreams().SetupNew(t).Var
 }
 
 func (t *LRCConstructAnyNode) GenerateOp() (exec.Op, error) {
@@ -161,8 +156,8 @@ func (t *LRCConstructAnyNode) GenerateOp() (exec.Op, error) {
 
 	return &GalMultiply{
 		Coef:      coef,
-		Inputs:    lo.Map(t.InputStreams().RawArray(), func(v *dag.Var, idx int) exec.VarID { return v.VarID }),
-		Outputs:   lo.Map(t.OutputStreams().RawArray(), func(v *dag.Var, idx int) exec.VarID { return v.VarID }),
+		Inputs:    t.InputStreams().GetVarIDs(),
+		Outputs:   t.OutputStreams().GetVarIDs(),
 		ChunkSize: t.LRC.ChunkSize,
 	}, nil
 }
@@ -182,21 +177,20 @@ func (b *GraphNodeBuilder) NewLRCConstructGroup(lrc cdssdk.LRCRedundancy) *LRCCo
 		LRC: lrc,
 	}
 	b.AddNode(node)
+
+	node.OutputStreams().Init(node, 1)
 	return node
 }
 
-func (t *LRCConstructGroupNode) SetupForTarget(blockIdx int, inputs []*dag.Var) *dag.Var {
+func (t *LRCConstructGroupNode) SetupForTarget(blockIdx int, inputs []*dag.StreamVar) *dag.StreamVar {
 	t.TargetBlockIndex = blockIdx
 
-	t.InputStreams().Resize(0)
-	for _, in := range inputs {
-		idx := t.InputStreams().EnlargeOne()
-		in.StreamTo(t, idx)
+	t.InputStreams().Init(len(inputs))
+	for i := 0; i < len(inputs); i++ {
+		inputs[i].To(t, i)
 	}
 
-	output := t.Graph().NewVar()
-	t.OutputStreams().Setup(t, output, 0)
-	return output
+	return t.OutputStreams().Get(0)
 }
 
 func (t *LRCConstructGroupNode) GenerateOp() (exec.Op, error) {
@@ -211,8 +205,8 @@ func (t *LRCConstructGroupNode) GenerateOp() (exec.Op, error) {
 
 	return &GalMultiply{
 		Coef:      coef,
-		Inputs:    lo.Map(t.InputStreams().RawArray(), func(v *dag.Var, idx int) exec.VarID { return v.VarID }),
-		Outputs:   lo.Map(t.OutputStreams().RawArray(), func(v *dag.Var, idx int) exec.VarID { return v.VarID }),
+		Inputs:    t.InputStreams().GetVarIDs(),
+		Outputs:   t.OutputStreams().GetVarIDs(),
 		ChunkSize: t.LRC.ChunkSize,
 	}, nil
 }

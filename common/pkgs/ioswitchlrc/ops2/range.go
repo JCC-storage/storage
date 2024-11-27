@@ -72,7 +72,11 @@ func (o *Range) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 }
 
 func (o *Range) String() string {
-	return fmt.Sprintf("Range(%v+%v) %v -> %v", o.Offset, o.Length, o.Input, o.Output)
+	len := ""
+	if o.Length != nil {
+		len = fmt.Sprintf("%v", *o.Length)
+	}
+	return fmt.Sprintf("Range(%v+%v) %v -> %v", o.Offset, len, o.Input, o.Output)
 }
 
 type RangeNode struct {
@@ -83,16 +87,16 @@ type RangeNode struct {
 func (b *GraphNodeBuilder) NewRange() *RangeNode {
 	node := &RangeNode{}
 	b.AddNode(node)
+
+	node.InputStreams().Init(1)
+	node.OutputStreams().Init(node, 1)
 	return node
 }
 
-func (t *RangeNode) RangeStream(input *dag.Var, rng exec.Range) *dag.Var {
-	t.InputStreams().EnsureSize(1)
-	input.StreamTo(t, 0)
+func (t *RangeNode) RangeStream(input *dag.StreamVar, rng exec.Range) *dag.StreamVar {
+	input.To(t, 0)
 	t.Range = rng
-	output := t.Graph().NewVar()
-	t.OutputStreams().Setup(t, output, 0)
-	return output
+	return t.OutputStreams().Get(0)
 }
 
 func (t *RangeNode) GenerateOp() (exec.Op, error) {

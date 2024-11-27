@@ -16,7 +16,7 @@ import (
 )
 
 type IndexedStream struct {
-	Stream      *dag.Var
+	Stream      *dag.StreamVar
 	StreamIndex ioswitch2.StreamIndex
 }
 
@@ -57,7 +57,12 @@ func Parse(ft ioswitch2.FromTo, blder *exec.PlanBuilder) error {
 
 	// 2. 优化上一步生成的指令
 
-	err = removeUnusedSegment(&ctx)
+	err = fixSegmentJoin(&ctx)
+	if err != nil {
+		return err
+	}
+
+	err = fixSegmentSplit(&ctx)
 	if err != nil {
 		return err
 	}
@@ -106,8 +111,8 @@ func Parse(ft ioswitch2.FromTo, blder *exec.PlanBuilder) error {
 
 	return plan.Generate(ctx.DAG.Graph, blder)
 }
-func findOutputStream(ctx *ParseContext, streamIndex ioswitch2.StreamIndex) *dag.Var {
-	var ret *dag.Var
+func findOutputStream(ctx *ParseContext, streamIndex ioswitch2.StreamIndex) *dag.StreamVar {
+	var ret *dag.StreamVar
 	for _, s := range ctx.IndexedStreams {
 		if s.StreamIndex == streamIndex {
 			ret = s.Stream
@@ -224,8 +229,8 @@ func extend(ctx *ParseContext) error {
 		if fr.GetStreamIndex().IsRaw() {
 			// 只有输入输出需要EC编码的块时，才生成相关指令
 			if ctx.UseEC {
-				splitNode := ctx.DAG.NewChunkedSplit(ctx.Ft.ECParam.ChunkSize)
-				splitNode.Split(frNode.Output().Var, ctx.Ft.ECParam.K)
+				splitNode := ctx.DAG.NewChunkedSplit(ctx.Ft.ECParam.ChunkSize, ctx.Ft.ECParam.K)
+				splitNode.Split(frNode.Output().Var)
 				for i := 0; i < ctx.Ft.ECParam.K; i++ {
 					ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
 						Stream:      splitNode.SubStream(i),
@@ -250,7 +255,7 @@ func extend(ctx *ParseContext) error {
 
 	if ctx.UseEC {
 		// 如果有K个不同的文件块流，则生成Multiply指令，同时针对其生成的流，生成Join指令
-		ecInputStrs := make(map[int]*dag.Var)
+		ecInputStrs := make(map[int]*dag.StreamVar)
 		for _, s := range ctx.IndexedStreams {
 			if s.StreamIndex.IsEC() && ecInputStrs[s.StreamIndex.Index] == nil {
 				ecInputStrs[s.StreamIndex.Index] = s.Stream
@@ -301,8 +306,8 @@ func extend(ctx *ParseContext) error {
 
 		// SegmentJoin生成的Join指令可以用来生成EC块
 		if ctx.UseEC {
-			splitNode := ctx.DAG.NewChunkedSplit(ctx.Ft.ECParam.ChunkSize)
-			splitNode.Split(joinNode.Joined(), ctx.Ft.ECParam.K)
+			splitNode := ctx.DAG.NewChunkedSplit(ctx.Ft.ECParam.ChunkSize, ctx.Ft.ECParam.K)
+			splitNode.Split(joinNode.Joined())
 
 			mulNode := ctx.DAG.NewECMultiply(*ctx.Ft.ECParam)
 
@@ -494,8 +499,46 @@ func setEnvByAddress(n dag.Node, hub cdssdk.Hub, addr cdssdk.HubAddressInfo) err
 	return nil
 }
 
+// 根据StreamRange，调整SegmentSplit中分段的个数和每段的大小
+func fixSegmentSplit(ctx *ParseContext) error {
+	var err error
+	dag.WalkOnlyType[*ops2.SegmentSplitNode](ctx.DAG.Graph, func(node *ops2.SegmentSplitNode) bool {
+		var strEnd *int64
+		if ctx.StreamRange.Length != nil {
+			e := ctx.StreamRange.Offset + *ctx.StreamRange.Length
+			strEnd = &e
+		}
+
+		startSeg, endSeg := ctx.Ft.SegmentParam.CalcSegmentRange(ctx.StreamRange.Offset, strEnd)
+
+		// 关闭超出范围的分段
+		for i := 0; i < startSeg; i++ {
+			node.Segments[i] = 0
+			node.OutputStreams().Slots.Set(i, nil)
+		}
+
+		for i := endSeg; i < len(node.Segments); i++ {
+			node.Segments[i] = 0
+			node.OutputStreams().Slots.Set(i, nil)
+		}
+
+		// StreamRange开始的位置可能在某个分段的中间，此时这个分段的大小等于流开始位置到分段结束位置的距离
+		startSegStart := ctx.Ft.SegmentParam.CalcSegmentStart(startSeg)
+		node.Segments[startSeg] -= ctx.StreamRange.Offset - startSegStart
+
+		// StreamRange结束的位置可能在某个分段的中间，此时这个分段的大小就等于流结束位置到分段起始位置的距离
+		if strEnd != nil {
+			endSegStart := ctx.Ft.SegmentParam.CalcSegmentStart(endSeg - 1)
+			node.Segments[endSeg-1] = *strEnd - endSegStart
+		}
+		return true
+	})
+
+	return err
+}
+
 // 从SegmentJoin中删除未使用的分段
-func removeUnusedSegment(ctx *ParseContext) error {
+func fixSegmentJoin(ctx *ParseContext) error {
 	var err error
 	dag.WalkOnlyType[*ops2.SegmentJoinNode](ctx.DAG.Graph, func(node *ops2.SegmentJoinNode) bool {
 		start := ctx.StreamRange.Offset
@@ -505,11 +548,19 @@ func removeUnusedSegment(ctx *ParseContext) error {
 			end = &e
 		}
 
-		segStart, segEnd := ctx.Ft.SegmentParam.CalcSegmentRange(start, end)
+		startSeg, endSeg := ctx.Ft.SegmentParam.CalcSegmentRange(start, end)
 
-		node.MarkUsed(segStart, segEnd)
+		// 关闭超出范围的分段
+		for i := 0; i < startSeg; i++ {
+			node.InputStreams().ClearInputAt(node, i)
+		}
 
-		for i := segStart; i < segEnd; i++ {
+		for i := endSeg; i < node.InputStreams().Len(); i++ {
+			node.InputStreams().ClearInputAt(node, i)
+		}
+
+		// 检查一下必须的分段是否都被加入到Join中
+		for i := startSeg; i < endSeg; i++ {
 			if node.InputStreams().Get(i) == nil {
 				err = fmt.Errorf("segment %v missed to join an raw stream", i)
 				return false
@@ -527,7 +578,7 @@ func removeUnusedSegmentJoin(ctx *ParseContext) bool {
 	changed := false
 
 	dag.WalkOnlyType[*ops2.SegmentJoinNode](ctx.DAG.Graph, func(node *ops2.SegmentJoinNode) bool {
-		if node.Joined().To().Len() > 0 {
+		if node.Joined().Dst.Len() > 0 {
 			return true
 		}
 
@@ -544,8 +595,8 @@ func removeUnusedSegmentSplit(ctx *ParseContext) bool {
 	changed := false
 	dag.WalkOnlyType[*ops2.SegmentSplitNode](ctx.DAG.Graph, func(typ *ops2.SegmentSplitNode) bool {
 		// Split出来的每一个流都没有被使用，才能删除这个指令
-		for _, out := range typ.OutputStreams().RawArray() {
-			if out.To().Len() > 0 {
+		for _, out := range typ.OutputStreams().Slots.RawArray() {
+			if out.Dst.Len() > 0 {
 				return true
 			}
 		}
@@ -566,14 +617,14 @@ func omitSegmentSplitJoin(ctx *ParseContext) bool {
 	dag.WalkOnlyType[*ops2.SegmentSplitNode](ctx.DAG.Graph, func(splitNode *ops2.SegmentSplitNode) bool {
 		// Split指令的每一个输出都有且只有一个目的地
 		var dstNode dag.Node
-		for _, out := range splitNode.OutputStreams().RawArray() {
-			if out.To().Len() != 1 {
+		for _, out := range splitNode.OutputStreams().Slots.RawArray() {
+			if out.Dst.Len() != 1 {
 				return true
 			}
 
 			if dstNode == nil {
-				dstNode = out.To().Get(0)
-			} else if dstNode != out.To().Get(0) {
+				dstNode = out.Dst.Get(0)
+			} else if dstNode != out.Dst.Get(0) {
 				return true
 			}
 		}
@@ -597,10 +648,10 @@ func omitSegmentSplitJoin(ctx *ParseContext) bool {
 		// 所有条件都满足，可以开始省略操作，将Join操作的目的地的输入流替换为Split操作的输入流：
 		// F->Split->Join->T 变换为：F->T
 		splitInput := splitNode.InputStreams().Get(0)
-		for _, to := range joinNode.Joined().To().RawArray() {
-			splitInput.StreamTo(to, to.InputStreams().IndexOf(joinNode.Joined()))
+		for _, to := range joinNode.Joined().Dst.RawArray() {
+			splitInput.To(to, to.InputStreams().IndexOf(joinNode.Joined()))
 		}
-		splitInput.StreamNotTo(splitNode, 0)
+		splitInput.NotTo(splitNode)
 
 		// 并删除这两个指令
 		ctx.DAG.RemoveNode(joinNode)
@@ -618,7 +669,7 @@ func removeUnusedJoin(ctx *ParseContext) bool {
 	changed := false
 
 	dag.WalkOnlyType[*ops2.ChunkedJoinNode](ctx.DAG.Graph, func(node *ops2.ChunkedJoinNode) bool {
-		if node.Joined().To().Len() > 0 {
+		if node.Joined().Dst.Len() > 0 {
 			return true
 		}
 
@@ -634,9 +685,9 @@ func removeUnusedJoin(ctx *ParseContext) bool {
 func removeUnusedMultiplyOutput(ctx *ParseContext) bool {
 	changed := false
 	dag.WalkOnlyType[*ops2.ECMultiplyNode](ctx.DAG.Graph, func(node *ops2.ECMultiplyNode) bool {
-		outArr := node.OutputStreams().RawArray()
+		outArr := node.OutputStreams().Slots.RawArray()
 		for i2, out := range outArr {
-			if out.To().Len() > 0 {
+			if out.Dst.Len() > 0 {
 				continue
 			}
 
@@ -645,8 +696,7 @@ func removeUnusedMultiplyOutput(ctx *ParseContext) bool {
 			changed = true
 		}
 
-		// TODO2 没有修改SlotIndex
-		node.OutputStreams().SetRawArray(lo2.RemoveAllDefault(outArr))
+		node.OutputStreams().Slots.SetRawArray(lo2.RemoveAllDefault(outArr))
 		node.OutputIndexes = lo2.RemoveAll(node.OutputIndexes, -2)
 
 		// 如果所有输出流都被删除，则删除该指令
@@ -666,8 +716,8 @@ func removeUnusedSplit(ctx *ParseContext) bool {
 	changed := false
 	dag.WalkOnlyType[*ops2.ChunkedSplitNode](ctx.DAG.Graph, func(typ *ops2.ChunkedSplitNode) bool {
 		// Split出来的每一个流都没有被使用，才能删除这个指令
-		for _, out := range typ.OutputStreams().RawArray() {
-			if out.To().Len() > 0 {
+		for _, out := range typ.OutputStreams().Slots.RawArray() {
+			if out.Dst.Len() > 0 {
 				return true
 			}
 		}
@@ -688,14 +738,14 @@ func omitSplitJoin(ctx *ParseContext) bool {
 	dag.WalkOnlyType[*ops2.ChunkedSplitNode](ctx.DAG.Graph, func(splitNode *ops2.ChunkedSplitNode) bool {
 		// Split指令的每一个输出都有且只有一个目的地
 		var dstNode dag.Node
-		for _, out := range splitNode.OutputStreams().RawArray() {
-			if out.To().Len() != 1 {
+		for _, out := range splitNode.OutputStreams().Slots.RawArray() {
+			if out.Dst.Len() != 1 {
 				return true
 			}
 
 			if dstNode == nil {
-				dstNode = out.To().Get(0)
-			} else if dstNode != out.To().Get(0) {
+				dstNode = out.Dst.Get(0)
+			} else if dstNode != out.Dst.Get(0) {
 				return true
 			}
 		}
@@ -719,10 +769,10 @@ func omitSplitJoin(ctx *ParseContext) bool {
 		// 所有条件都满足，可以开始省略操作，将Join操作的目的地的输入流替换为Split操作的输入流：
 		// F->Split->Join->T 变换为：F->T
 		splitInput := splitNode.InputStreams().Get(0)
-		for _, to := range joinNode.Joined().To().RawArray() {
-			splitInput.StreamTo(to, to.InputStreams().IndexOf(joinNode.Joined()))
+		for _, to := range joinNode.Joined().Dst.RawArray() {
+			splitInput.To(to, to.InputStreams().IndexOf(joinNode.Joined()))
 		}
-		splitInput.StreamNotTo(splitNode, 0)
+		splitInput.NotTo(splitNode)
 
 		// 并删除这两个指令
 		ctx.DAG.RemoveNode(joinNode)
@@ -746,8 +796,8 @@ func pin(ctx *ParseContext) bool {
 		}
 
 		var toEnv *dag.NodeEnv
-		for _, out := range node.OutputStreams().RawArray() {
-			for _, to := range out.To().RawArray() {
+		for _, out := range node.OutputStreams().Slots.RawArray() {
+			for _, to := range out.Dst.RawArray() {
 				if to.Env().Type == dag.EnvUnknown {
 					continue
 				}
@@ -772,14 +822,14 @@ func pin(ctx *ParseContext) bool {
 
 		// 否则根据输入流的始发地来固定
 		var fromEnv *dag.NodeEnv
-		for _, in := range node.InputStreams().RawArray() {
-			if in.From().Env().Type == dag.EnvUnknown {
+		for _, in := range node.InputStreams().Slots.RawArray() {
+			if in.Src.Env().Type == dag.EnvUnknown {
 				continue
 			}
 
 			if fromEnv == nil {
-				fromEnv = in.From().Env()
-			} else if !fromEnv.Equals(in.From().Env()) {
+				fromEnv = in.Src.Env()
+			} else if !fromEnv.Equals(in.Src.Env()) {
 				fromEnv = nil
 				break
 			}
@@ -815,8 +865,8 @@ func removeUnusedFromNode(ctx *ParseContext) {
 // 对于所有未使用的流，增加Drop指令
 func dropUnused(ctx *ParseContext) {
 	ctx.DAG.Walk(func(node dag.Node) bool {
-		for _, out := range node.OutputStreams().RawArray() {
-			if out.To().Len() == 0 {
+		for _, out := range node.OutputStreams().Slots.RawArray() {
+			if out.Dst.Len() == 0 {
 				n := ctx.DAG.NewDropStream()
 				*n.Env() = *node.Env()
 				n.SetInput(out)
@@ -853,12 +903,12 @@ func generateRange(ctx *ParseContext) {
 		if toStrIdx.IsRaw() {
 			n := ctx.DAG.NewRange()
 			toInput := toNode.Input()
-			*n.Env() = *toInput.Var.From().Env()
+			*n.Env() = *toInput.Var.Src.Env()
 			rnged := n.RangeStream(toInput.Var, exec.Range{
 				Offset: toRng.Offset - ctx.StreamRange.Offset,
 				Length: toRng.Length,
 			})
-			toInput.Var.StreamNotTo(toNode, toInput.Index)
+			toInput.Var.NotTo(toNode)
 			toNode.SetInput(rnged)
 
 		} else if toStrIdx.IsEC() {
@@ -869,12 +919,12 @@ func generateRange(ctx *ParseContext) {
 
 			n := ctx.DAG.NewRange()
 			toInput := toNode.Input()
-			*n.Env() = *toInput.Var.From().Env()
+			*n.Env() = *toInput.Var.Src.Env()
 			rnged := n.RangeStream(toInput.Var, exec.Range{
 				Offset: toRng.Offset - blkStart,
 				Length: toRng.Length,
 			})
-			toInput.Var.StreamNotTo(toNode, toInput.Index)
+			toInput.Var.NotTo(toNode)
 			toNode.SetInput(rnged)
 		} else if toStrIdx.IsSegment() {
 			// if frNode, ok := toNode.Input().Var.From().Node.(ops2.FromNode); ok {
@@ -894,7 +944,7 @@ func generateRange(ctx *ParseContext) {
 			// 	Offset: strStart - ctx.StreamRange.Offset,
 			// 	Length: toRng.Length,
 			// })
-			// toInput.Var.StreamNotTo(toNode, toInput.Index)
+			// toInput.Var.NotTo(toNode, toInput.Index)
 			// toNode.SetInput(rnged)
 		}
 	}
@@ -903,31 +953,31 @@ func generateRange(ctx *ParseContext) {
 // 生成Clone指令
 func generateClone(ctx *ParseContext) {
 	ctx.DAG.Walk(func(node dag.Node) bool {
-		for _, outVar := range node.OutputStreams().RawArray() {
-			if outVar.To().Len() <= 1 {
+		for _, outVar := range node.OutputStreams().Slots.RawArray() {
+			if outVar.Dst.Len() <= 1 {
 				continue
 			}
 
 			c := ctx.DAG.NewCloneStream()
 			*c.Env() = *node.Env()
-			for _, to := range outVar.To().RawArray() {
-				c.NewOutput().StreamTo(to, to.InputStreams().IndexOf(outVar))
+			for _, to := range outVar.Dst.RawArray() {
+				c.NewOutput().To(to, to.InputStreams().IndexOf(outVar))
 			}
-			outVar.To().Resize(0)
+			outVar.Dst.Resize(0)
 			c.SetInput(outVar)
 		}
 
-		for _, outVar := range node.OutputValues().RawArray() {
-			if outVar.To().Len() <= 1 {
+		for _, outVar := range node.OutputValues().Slots.RawArray() {
+			if outVar.Dst.Len() <= 1 {
 				continue
 			}
 
 			t := ctx.DAG.NewCloneValue()
 			*t.Env() = *node.Env()
-			for _, to := range outVar.To().RawArray() {
-				t.NewOutput().ValueTo(to, to.InputValues().IndexOf(outVar))
+			for _, to := range outVar.Dst.RawArray() {
+				t.NewOutput().To(to, to.InputValues().IndexOf(outVar))
 			}
-			outVar.To().Resize(0)
+			outVar.Dst.Resize(0)
 			t.SetInput(outVar)
 		}
 

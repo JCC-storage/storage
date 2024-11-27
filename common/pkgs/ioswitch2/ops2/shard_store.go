@@ -128,7 +128,8 @@ func (b *GraphNodeBuilder) NewShardRead(fr ioswitch2.From, stgID cdssdk.StorageI
 		Open:      open,
 	}
 	b.AddNode(node)
-	node.OutputStreams().SetupNew(node, b.NewVar())
+
+	node.OutputStreams().Init(node, 1)
 	return node
 }
 
@@ -136,8 +137,8 @@ func (t *ShardReadNode) GetFrom() ioswitch2.From {
 	return t.From
 }
 
-func (t *ShardReadNode) Output() dag.Slot {
-	return dag.Slot{
+func (t *ShardReadNode) Output() dag.StreamSlot {
+	return dag.StreamSlot{
 		Var:   t.OutputStreams().Get(0),
 		Index: 0,
 	}
@@ -169,6 +170,9 @@ func (b *GraphNodeBuilder) NewShardWrite(to ioswitch2.To, stgID cdssdk.StorageID
 		FileHashStoreKey: fileHashStoreKey,
 	}
 	b.AddNode(node)
+
+	node.InputStreams().Init(1)
+	node.OutputValues().Init(node, 1)
 	return node
 }
 
@@ -176,20 +180,18 @@ func (t *ShardWriteNode) GetTo() ioswitch2.To {
 	return t.To
 }
 
-func (t *ShardWriteNode) SetInput(input *dag.Var) {
-	t.InputStreams().EnsureSize(1)
-	input.StreamTo(t, 0)
-	t.OutputValues().SetupNew(t, t.Graph().NewVar())
+func (t *ShardWriteNode) SetInput(input *dag.StreamVar) {
+	input.To(t, 0)
 }
 
-func (t *ShardWriteNode) Input() dag.Slot {
-	return dag.Slot{
+func (t *ShardWriteNode) Input() dag.StreamSlot {
+	return dag.StreamSlot{
 		Var:   t.InputStreams().Get(0),
 		Index: 0,
 	}
 }
 
-func (t *ShardWriteNode) FileHashVar() *dag.Var {
+func (t *ShardWriteNode) FileHashVar() *dag.ValueVar {
 	return t.OutputValues().Get(0)
 }
 

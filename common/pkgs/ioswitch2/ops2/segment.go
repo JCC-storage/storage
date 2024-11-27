@@ -122,115 +122,78 @@ func (o *SegmentJoin) String() string {
 
 type SegmentSplitNode struct {
 	dag.NodeBase
-	segments []int64
+	Segments []int64
 }
 
 func (b *GraphNodeBuilder) NewSegmentSplit(segments []int64) *SegmentSplitNode {
 	node := &SegmentSplitNode{
-		segments: segments,
+		Segments: segments,
 	}
 	b.AddNode(node)
-	node.OutputStreams().Resize(len(segments))
+
+	node.InputStreams().Init(1)
+	node.OutputStreams().Init(node, len(segments))
 	return node
 }
 
-func (n *SegmentSplitNode) SetInput(input *dag.Var) {
-	n.InputStreams().EnsureSize(1)
-	input.StreamTo(n, 0)
+func (n *SegmentSplitNode) SetInput(input *dag.StreamVar) {
+	input.To(n, 0)
 }
 
 func (t *SegmentSplitNode) RemoveAllStream() {
-	if t.InputStreams().Len() == 0 {
-		return
-	}
-
-	t.InputStreams().Get(0).StreamNotTo(t, 0)
-	t.InputStreams().Resize(0)
-
-	for _, out := range t.OutputStreams().RawArray() {
-		out.NoInputAllStream()
-	}
-	t.OutputStreams().Resize(0)
+	t.InputStreams().ClearAllInput(t)
+	t.OutputStreams().ClearAllOutput(t)
 }
 
-func (n *SegmentSplitNode) Segment(index int) *dag.Var {
-	// 必须连续消耗流
-	for i := 0; i <= index; i++ {
-		if n.OutputStreams().Get(i) == nil {
-			n.OutputStreams().Setup(n, n.Graph().NewVar(), i)
-		}
-	}
+func (n *SegmentSplitNode) Segment(index int) *dag.StreamVar {
 	return n.OutputStreams().Get(index)
 }
 
-func (t *SegmentSplitNode) GenerateOp() (exec.Op, error) {
-	lastUsedSeg := 0
-	for i := t.OutputStreams().Len() - 1; i >= 0; i-- {
-		if t.OutputStreams().Get(i) != nil {
-			lastUsedSeg = i
-			break
+func (n *SegmentSplitNode) GenerateOp() (exec.Op, error) {
+	var realSegs []int64
+	var realSegVarIDs []exec.VarID
+
+	for i := 0; i < len(n.Segments); i++ {
+		if n.Segments[i] > 0 {
+			realSegs = append(realSegs, n.Segments[i])
+			realSegVarIDs = append(realSegVarIDs, n.Segment(i).VarID)
 		}
 	}
 
 	return &SegmentSplit{
-		Input:    t.InputStreams().Get(0).VarID,
-		Segments: t.segments[:lastUsedSeg+1],
-		Outputs:  t.OutputStreams().GetVarIDs(),
+		Input:    n.InputStreams().Get(0).VarID,
+		Segments: realSegs,
+		Outputs:  realSegVarIDs,
 	}, nil
 }
 
 type SegmentJoinNode struct {
 	dag.NodeBase
-	UsedStart int
-	UsedCount int
 }
 
 func (b *GraphNodeBuilder) NewSegmentJoin(segmentSizes []int64) *SegmentJoinNode {
 	node := &SegmentJoinNode{}
 	b.AddNode(node)
-	node.InputStreams().Resize(len(segmentSizes))
-	node.OutputStreams().SetupNew(node, b.NewVar())
+	node.InputStreams().Init(len(segmentSizes))
+	node.OutputStreams().Init(node, 1)
 	return node
 }
 
-func (n *SegmentJoinNode) SetInput(index int, input *dag.Var) {
-	input.StreamTo(n, index)
+func (n *SegmentJoinNode) SetInput(index int, input *dag.StreamVar) {
+	input.To(n, index)
 }
 
 func (n *SegmentJoinNode) RemoveAllInputs() {
-	for i, in := range n.InputStreams().RawArray() {
-		in.StreamNotTo(n, i)
-	}
-	n.InputStreams().Resize(0)
+	n.InputStreams().ClearAllInput(n)
 }
 
-// 记录本计划中实际要使用的分段的范围，范围外的分段流都会取消输入
-func (n *SegmentJoinNode) MarkUsed(start, cnt int) {
-	n.UsedStart = start
-	n.UsedCount = cnt
-
-	for i := 0; i < start; i++ {
-		str := n.InputStreams().Get(i)
-		if str != nil {
-			str.StreamNotTo(n, i)
-		}
-	}
-
-	for i := start + cnt; i < n.InputStreams().Len(); i++ {
-		str := n.InputStreams().Get(i)
-		if str != nil {
-			str.StreamNotTo(n, i)
-		}
-	}
-}
-
-func (n *SegmentJoinNode) Joined() *dag.Var {
+func (n *SegmentJoinNode) Joined() *dag.StreamVar {
 	return n.OutputStreams().Get(0)
 }
 
 func (t *SegmentJoinNode) GenerateOp() (exec.Op, error) {
 	return &SegmentJoin{
-		Inputs: t.InputStreams().GetVarIDsRanged(t.UsedStart, t.UsedStart+t.UsedCount),
+		Inputs: t.InputStreams().GetVarIDs(),
 		Output: t.OutputStreams().Get(0).VarID,
 	}, nil
 }

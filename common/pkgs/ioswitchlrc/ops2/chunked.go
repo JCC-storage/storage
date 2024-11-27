@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/samber/lo"
 	"gitlink.org.cn/cloudream/common/pkgs/future"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/dag"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
@@ -103,54 +102,40 @@ func (o *ChunkedJoin) String() string {
 
 type ChunkedSplitNode struct {
 	dag.NodeBase
-	ChunkSize int
+	ChunkSize  int
+	SplitCount int
 }
 
-func (b *GraphNodeBuilder) NewChunkedSplit(chunkSize int) *ChunkedSplitNode {
+func (b *GraphNodeBuilder) NewChunkedSplit(chunkSize int, splitCnt int) *ChunkedSplitNode {
 	node := &ChunkedSplitNode{
-		ChunkSize: chunkSize,
+		ChunkSize:  chunkSize,
+		SplitCount: splitCnt,
 	}
 	b.AddNode(node)
+
+	node.InputStreams().Init(1)
+	node.OutputStreams().Init(node, splitCnt)
 	return node
 }
 
-func (t *ChunkedSplitNode) Split(input *dag.Var, cnt int) {
-	t.InputStreams().EnsureSize(1)
-	input.StreamTo(t, 0)
-	t.OutputStreams().Resize(cnt)
-	for i := 0; i < cnt; i++ {
-		t.OutputStreams().Setup(t, t.Graph().NewVar(), i)
-	}
+func (t *ChunkedSplitNode) Split(input *dag.StreamVar) {
+	input.To(t, 0)
 }
 
-func (t *ChunkedSplitNode) SubStream(idx int) *dag.Var {
+func (t *ChunkedSplitNode) SubStream(idx int) *dag.StreamVar {
 	return t.OutputStreams().Get(idx)
 }
 
-func (t *ChunkedSplitNode) SplitCount() int {
-	return t.OutputStreams().Len()
-}
-
-func (t *ChunkedSplitNode) Clear() {
-	if t.InputStreams().Len() == 0 {
-		return
-	}
-
-	t.InputStreams().Get(0).StreamNotTo(t, 0)
-	t.InputStreams().Resize(0)
-
-	for _, out := range t.OutputStreams().RawArray() {
-		out.NoInputAllStream()
-	}
-	t.OutputStreams().Resize(0)
+func (t *ChunkedSplitNode) RemoveAllStream() {
+	t.InputStreams().ClearAllInput(t)
+	t.OutputStreams().ClearAllOutput(t)
+	t.OutputStreams().Slots.Resize(0)
 }
 
 func (t *ChunkedSplitNode) GenerateOp() (exec.Op, error) {
 	return &ChunkedSplit{
-		Input: t.InputStreams().Get(0).VarID,
-		Outputs: lo.Map(t.OutputStreams().RawArray(), func(v *dag.Var, idx int) exec.VarID {
-			return v.VarID
-		}),
+		Input:        t.InputStreams().Get(0).VarID,
+		Outputs:      t.OutputStreams().GetVarIDs(),
 		ChunkSize:    t.ChunkSize,
 		PaddingZeros: true,
 	}, nil
@@ -170,31 +155,27 @@ func (b *GraphNodeBuilder) NewChunkedJoin(chunkSize int) *ChunkedJoinNode {
 		ChunkSize: chunkSize,
 	}
 	b.AddNode(node)
-	node.OutputStreams().SetupNew(node, b.Graph.NewVar())
+	node.OutputStreams().Init(node, 1)
 	return node
 }
 
-func (t *ChunkedJoinNode) AddInput(str *dag.Var) {
+func (t *ChunkedJoinNode) AddInput(str *dag.StreamVar) {
 	idx := t.InputStreams().EnlargeOne()
-	str.StreamTo(t, idx)
+	str.To(t, idx)
 }
 
-func (t *ChunkedJoinNode) Joined() *dag.Var {
+func (t *ChunkedJoinNode) Joined() *dag.StreamVar {
 	return t.OutputStreams().Get(0)
 }
 
 func (t *ChunkedJoinNode) RemoveAllInputs() {
-	for i, in := range t.InputStreams().RawArray() {
-		in.StreamNotTo(t, i)
-	}
-	t.InputStreams().Resize(0)
+	t.InputStreams().ClearAllInput(t)
+	t.InputStreams().Slots.Resize(0)
 }
 
 func (t *ChunkedJoinNode) GenerateOp() (exec.Op, error) {
 	return &ChunkedJoin{
-		Inputs: lo.Map(t.InputStreams().RawArray(), func(v *dag.Var, idx int) exec.VarID {
-			return v.VarID
-		}),
+		Inputs:    t.InputStreams().GetVarIDs(),
 		Output:    t.OutputStreams().Get(0).VarID,
 		ChunkSize: t.ChunkSize,
 	}, nil

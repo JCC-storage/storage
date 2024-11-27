@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/samber/lo"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/dag"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/utils"
@@ -33,7 +32,10 @@ func (o *CloneStream) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 
 	sem := semaphore.NewWeighted(int64(len(o.Cloneds)))
 	for i, s := range cloned {
-		sem.Acquire(ctx.Context, 1)
+		err = sem.Acquire(ctx.Context, 1)
+		if err != nil {
+			return err
+		}
 
 		e.PutVar(o.Cloneds[i], &exec.StreamValue{
 			Stream: io2.AfterReadClosedOnce(s, func(closer io.ReadCloser) {
@@ -78,26 +80,22 @@ type CloneStreamType struct {
 func (b *GraphNodeBuilder) NewCloneStream() *CloneStreamType {
 	node := &CloneStreamType{}
 	b.AddNode(node)
+	node.InputStreams().Init(1)
 	return node
 }
 
-func (t *CloneStreamType) SetInput(raw *dag.Var) {
-	t.InputStreams().EnsureSize(1)
-	raw.StreamTo(t, 0)
+func (t *CloneStreamType) SetInput(raw *dag.StreamVar) {
+	raw.To(t, 0)
 }
 
-func (t *CloneStreamType) NewOutput() *dag.Var {
-	output := t.Graph().NewVar()
-	t.OutputStreams().SetupNew(t, output)
-	return output
+func (t *CloneStreamType) NewOutput() *dag.StreamVar {
+	return t.OutputStreams().SetupNew(t).Var
 }
 
 func (t *CloneStreamType) GenerateOp() (exec.Op, error) {
 	return &CloneStream{
-		Raw: t.InputStreams().Get(0).VarID,
-		Cloneds: lo.Map(t.OutputStreams().RawArray(), func(v *dag.Var, idx int) exec.VarID {
-			return v.VarID
-		}),
+		Raw:     t.InputStreams().Get(0).VarID,
+		Cloneds: t.OutputValues().GetVarIDs(),
 	}, nil
 }
 
@@ -115,23 +113,19 @@ func (b *GraphNodeBuilder) NewCloneValue() *CloneVarType {
 	return node
 }
 
-func (t *CloneVarType) SetInput(raw *dag.Var) {
-	t.InputValues().EnsureSize(1)
-	raw.ValueTo(t, 0)
+func (t *CloneVarType) SetInput(raw *dag.ValueVar) {
+	t.InputValues().Init(1)
+	raw.To(t, 0)
 }
 
-func (t *CloneVarType) NewOutput() *dag.Var {
-	output := t.Graph().NewVar()
-	t.OutputValues().SetupNew(t, output)
-	return output
+func (t *CloneVarType) NewOutput() *dag.ValueVar {
+	return t.OutputValues().AppendNew(t).Var
 }
 
 func (t *CloneVarType) GenerateOp() (exec.Op, error) {
 	return &CloneVar{
-		Raw: t.InputValues().Get(0).VarID,
-		Cloneds: lo.Map(t.OutputValues().RawArray(), func(v *dag.Var, idx int) exec.VarID {
-			return v.VarID
-		}),
+		Raw:     t.InputValues().Get(0).VarID,
+		Cloneds: t.OutputValues().GetVarIDs(),
 	}, nil
 }
 

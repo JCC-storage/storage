@@ -81,6 +81,9 @@ func (b *GraphNodeBuilder) NewSharedLoad(to ioswitch2.To, stgID cdssdk.StorageID
 		Path:      path,
 	}
 	b.AddNode(node)
+
+	node.InputStreams().Init(1)
+	node.OutputValues().Init(node, 1)
 	return node
 }
 
@@ -88,20 +91,18 @@ func (t *SharedLoadNode) GetTo() ioswitch2.To {
 	return t.To
 }
 
-func (t *SharedLoadNode) SetInput(input *dag.Var) {
-	t.InputStreams().EnsureSize(1)
-	input.StreamTo(t, 0)
-	t.OutputValues().SetupNew(t, t.Graph().NewVar())
+func (t *SharedLoadNode) SetInput(input *dag.StreamVar) {
+	input.To(t, 0)
 }
 
-func (t *SharedLoadNode) Input() dag.Slot {
-	return dag.Slot{
+func (t *SharedLoadNode) Input() dag.StreamSlot {
+	return dag.StreamSlot{
 		Var:   t.InputStreams().Get(0),
 		Index: 0,
 	}
 }
 
-func (t *SharedLoadNode) FullPathVar() *dag.Var {
+func (t *SharedLoadNode) FullPathVar() *dag.ValueVar {
 	return t.OutputValues().Get(0)
 }
 

@@ -21,8 +21,7 @@ func (b *GraphNodeBuilder) NewFromDriver(fr ioswitch2.From, handle *exec.DriverW
 	}
 	b.AddNode(node)
 
-	node.OutputStreams().SetupNew(node, b.NewVar())
-
+	node.OutputStreams().Init(node, 1)
 	return node
 }
 
@@ -30,8 +29,8 @@ func (f *FromDriverNode) GetFrom() ioswitch2.From {
 	return f.From
 }
 
-func (t *FromDriverNode) Output() dag.Slot {
-	return dag.Slot{
+func (t *FromDriverNode) Output() dag.StreamSlot {
+	return dag.StreamSlot{
 		Var:   t.OutputStreams().Get(0),
 		Index: 0,
 	}
@@ -56,6 +55,7 @@ func (b *GraphNodeBuilder) NewToDriver(to ioswitch2.To, handle *exec.DriverReadS
 	}
 	b.AddNode(node)
 
+	node.InputStreams().Init(1)
 	return node
 }
 
@@ -63,13 +63,12 @@ func (t *ToDriverNode) GetTo() ioswitch2.To {
 	return t.To
 }
 
-func (t *ToDriverNode) SetInput(v *dag.Var) {
-	t.InputStreams().EnsureSize(1)
-	v.StreamTo(t, 0)
+func (t *ToDriverNode) SetInput(v *dag.StreamVar) {
+	v.To(t, 0)
 }
 
-func (t *ToDriverNode) Input() dag.Slot {
-	return dag.Slot{
+func (t *ToDriverNode) Input() dag.StreamSlot {
+	return dag.StreamSlot{
 		Var:   t.InputStreams().Get(0),
 		Index: 0,
 	}
