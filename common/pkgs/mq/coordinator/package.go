@@ -129,11 +129,11 @@ type UpdatePackageResp struct {
 	Added []cdssdk.Object `json:"added"`
 }
 type AddObjectEntry struct {
-	Path       string           `json:"path"`
-	Size       int64            `json:"size,string"`
-	FileHash   cdssdk.FileHash  `json:"fileHash"`
-	UploadTime time.Time        `json:"uploadTime"` // 开始上传文件的时间
-	StorageID  cdssdk.StorageID `json:"storageID"`
+	Path       string             `json:"path"`
+	Size       int64              `json:"size,string"`
+	FileHash   cdssdk.FileHash    `json:"fileHash"`
+	UploadTime time.Time          `json:"uploadTime"` // 开始上传文件的时间
+	StorageIDs []cdssdk.StorageID `json:"storageIDs"`
 }
 
 func NewUpdatePackage(packageID cdssdk.PackageID, adds []AddObjectEntry, deletes []cdssdk.ObjectID) *UpdatePackage {
@@ -148,13 +148,13 @@ func NewUpdatePackageResp(added []cdssdk.Object) *UpdatePackageResp {
 		Added: added,
 	}
 }
-func NewAddObjectEntry(path string, size int64, fileHash cdssdk.FileHash, uploadTime time.Time, stgID cdssdk.StorageID) AddObjectEntry {
+func NewAddObjectEntry(path string, size int64, fileHash cdssdk.FileHash, uploadTime time.Time, stgIDs []cdssdk.StorageID) AddObjectEntry {
 	return AddObjectEntry{
 		Path:       path,
 		Size:       size,
 		FileHash:   fileHash,
 		UploadTime: uploadTime,
-		StorageID:  stgID,
+		StorageIDs: stgIDs,
 	}
 }
 func (client *Client) UpdatePackage(msg *UpdatePackage) (*UpdatePackageResp, error) {

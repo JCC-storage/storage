@@ -262,13 +262,15 @@ func (db *ObjectDB) BatchAdd(ctx SQLContext, packageID cdssdk.PackageID, adds []
 	}
 
 	// 创建 ObjectBlock
-	objBlocks := make([]stgmod.ObjectBlock, len(adds))
+	objBlocks := make([]stgmod.ObjectBlock, 0, len(adds))
 	for i, add := range adds {
-		objBlocks[i] = stgmod.ObjectBlock{
-			ObjectID:  affectedObjIDs[i],
-			Index:     0,
-			StorageID: add.StorageID,
-			FileHash:  add.FileHash,
+		for _, stgID := range add.StorageIDs {
+			objBlocks = append(objBlocks, stgmod.ObjectBlock{
+				ObjectID:  affectedObjIDs[i],
+				Index:     0,
+				StorageID: stgID,
+				FileHash:  add.FileHash,
+			})
 		}
 	}
 	if err := db.ObjectBlock().BatchCreate(ctx, objBlocks); err != nil {
@@ -276,13 +278,15 @@ func (db *ObjectDB) BatchAdd(ctx SQLContext, packageID cdssdk.PackageID, adds []
 	}
 
 	// 创建 Cache
-	caches := make([]model.Cache, len(adds))
-	for i, add := range adds {
-		caches[i] = model.Cache{
-			FileHash:   add.FileHash,
-			StorageID:  add.StorageID,
-			CreateTime: time.Now(),
-			Priority:   0,
+	caches := make([]model.Cache, 0, len(adds))
+	for _, add := range adds {
+		for _, stgID := range add.StorageIDs {
+			caches = append(caches, model.Cache{
+				FileHash:   add.FileHash,
+				StorageID:  stgID,
+				CreateTime: time.Now(),
+				Priority:   0,
+			})
 		}
 	}
 	if err := db.Cache().BatchCreate(ctx, caches); err != nil {

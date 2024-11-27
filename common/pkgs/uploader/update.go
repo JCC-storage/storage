@@ -70,7 +70,7 @@ func (w *UpdateUploader) Upload(path string, size int64, stream io.Reader) error
 		Size:       size,
 		FileHash:   ret["fileHash"].(*ops2.FileHashValue).Hash,
 		UploadTime: uploadTime,
-		StorageID:  w.targetStg.Storage.StorageID,
+		StorageIDs: []cdssdk.StorageID{w.targetStg.Storage.StorageID},
 	})
 	return nil
 }
