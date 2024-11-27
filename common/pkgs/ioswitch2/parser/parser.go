@@ -512,24 +512,19 @@ func fixSegmentSplit(ctx *ParseContext) error {
 		startSeg, endSeg := ctx.Ft.SegmentParam.CalcSegmentRange(ctx.StreamRange.Offset, strEnd)
 
 		// 关闭超出范围的分段
-		for i := 0; i < startSeg; i++ {
-			node.Segments[i] = 0
-			node.OutputStreams().Slots.Set(i, nil)
-		}
-
-		for i := endSeg; i < len(node.Segments); i++ {
-			node.Segments[i] = 0
-			node.OutputStreams().Slots.Set(i, nil)
-		}
+		node.OutputStreams().Slots.RemoveRange(endSeg, ctx.Ft.SegmentParam.SegmentCount()-endSeg)
+		node.Segments = lo2.RemoveRange(node.Segments, endSeg, ctx.Ft.SegmentParam.SegmentCount()-endSeg)
+		node.OutputStreams().Slots.RemoveRange(0, startSeg)
+		node.Segments = lo2.RemoveRange(node.Segments, 0, startSeg)
 
 		// StreamRange开始的位置可能在某个分段的中间，此时这个分段的大小等于流开始位置到分段结束位置的距离
 		startSegStart := ctx.Ft.SegmentParam.CalcSegmentStart(startSeg)
-		node.Segments[startSeg] -= ctx.StreamRange.Offset - startSegStart
+		node.Segments[0] -= ctx.StreamRange.Offset - startSegStart
 
 		// StreamRange结束的位置可能在某个分段的中间，此时这个分段的大小就等于流结束位置到分段起始位置的距离
 		if strEnd != nil {
 			endSegStart := ctx.Ft.SegmentParam.CalcSegmentStart(endSeg - 1)
-			node.Segments[endSeg-1] = *strEnd - endSegStart
+			node.Segments[len(node.Segments)-1] = *strEnd - endSegStart
 		}
 		return true
 	})
@@ -551,18 +546,13 @@ func fixSegmentJoin(ctx *ParseContext) error {
 		startSeg, endSeg := ctx.Ft.SegmentParam.CalcSegmentRange(start, end)
 
 		// 关闭超出范围的分段
-		for i := 0; i < startSeg; i++ {
-			node.InputStreams().ClearInputAt(node, i)
-		}
-
-		for i := endSeg; i < node.InputStreams().Len(); i++ {
-			node.InputStreams().ClearInputAt(node, i)
-		}
+		node.InputStreams().Slots.RemoveRange(endSeg, ctx.Ft.SegmentParam.SegmentCount()-endSeg)
+		node.InputStreams().Slots.RemoveRange(0, startSeg)
 
 		// 检查一下必须的分段是否都被加入到Join中
-		for i := startSeg; i < endSeg; i++ {
+		for i := 0; i < node.InputStreams().Len(); i++ {
 			if node.InputStreams().Get(i) == nil {
-				err = fmt.Errorf("segment %v missed to join an raw stream", i)
+				err = fmt.Errorf("segment %v missed to join an raw stream", i+startSeg)
 				return false
 			}
 		}
@@ -615,34 +605,34 @@ func omitSegmentSplitJoin(ctx *ParseContext) bool {
 	changed := false
 
 	dag.WalkOnlyType[*ops2.SegmentSplitNode](ctx.DAG.Graph, func(splitNode *ops2.SegmentSplitNode) bool {
-		// Split指令的每一个输出都有且只有一个目的地
-		var dstNode dag.Node
-		for _, out := range splitNode.OutputStreams().Slots.RawArray() {
-			if out.Dst.Len() != 1 {
-				return true
-			}
-
-			if dstNode == nil {
-				dstNode = out.Dst.Get(0)
-			} else if dstNode != out.Dst.Get(0) {
-				return true
-			}
-		}
-
-		if dstNode == nil {
+		// 随便找一个输出流的目的地
+		splitOut := splitNode.OutputStreams().Get(0)
+		if splitOut.Dst.Len() != 1 {
 			return true
 		}
+		dstNode := splitOut.Dst.Get(0)
 
-		// 且这个目的地要是一个Join指令
+		// 这个目的地要是一个Join指令
 		joinNode, ok := dstNode.(*ops2.SegmentJoinNode)
 		if !ok {
 			return true
 		}
 
-		// 同时这个Join指令的输入也必须全部来自Split指令的输出。
-		// 由于上面判断了Split指令的输出目的地都相同，所以这里只要判断Join指令的输入数量是否与Split指令的输出数量相同即可
-		if joinNode.InputStreams().Len() != splitNode.OutputStreams().Len() {
+		if splitNode.OutputStreams().Len() != joinNode.Joined().Dst.Len() {
 			return true
+		}
+
+		// Join指令的输入必须全部来自Split指令的输出，且位置要相同
+		for i := 0; i < splitNode.OutputStreams().Len(); i++ {
+			splitOut := splitNode.OutputStreams().Get(i)
+			joinIn := joinNode.InputStreams().Get(i)
+			if splitOut != joinIn {
+				return true
+			}
+
+			if splitOut != nil && splitOut.Dst.Len() != 1 {
+				return true
+			}
 		}
 
 		// 所有条件都满足，可以开始省略操作，将Join操作的目的地的输入流替换为Split操作的输入流：
@@ -960,8 +950,8 @@ func generateClone(ctx *ParseContext) {
 
 			c := ctx.DAG.NewCloneStream()
 			*c.Env() = *node.Env()
-			for _, to := range outVar.Dst.RawArray() {
-				c.NewOutput().To(to, to.InputStreams().IndexOf(outVar))
+			for _, dst := range outVar.Dst.RawArray() {
+				c.NewOutput().To(dst, dst.InputStreams().IndexOf(outVar))
 			}
 			outVar.Dst.Resize(0)
 			c.SetInput(outVar)
@@ -974,8 +964,8 @@ func generateClone(ctx *ParseContext) {
 
 			t := ctx.DAG.NewCloneValue()
 			*t.Env() = *node.Env()
-			for _, to := range outVar.Dst.RawArray() {
-				t.NewOutput().To(to, to.InputValues().IndexOf(outVar))
+			for _, dst := range outVar.Dst.RawArray() {
+				t.NewOutput().To(dst, dst.InputValues().IndexOf(outVar))
 			}
 			outVar.Dst.Resize(0)
 			t.SetInput(outVar)

@@ -150,20 +150,10 @@ func (n *SegmentSplitNode) Segment(index int) *dag.StreamVar {
 }
 
 func (n *SegmentSplitNode) GenerateOp() (exec.Op, error) {
-	var realSegs []int64
-	var realSegVarIDs []exec.VarID
-
-	for i := 0; i < len(n.Segments); i++ {
-		if n.Segments[i] > 0 {
-			realSegs = append(realSegs, n.Segments[i])
-			realSegVarIDs = append(realSegVarIDs, n.Segment(i).VarID)
-		}
-	}
-
 	return &SegmentSplit{
 		Input:    n.InputStreams().Get(0).VarID,
-		Segments: realSegs,
-		Outputs:  realSegVarIDs,
+		Segments: n.Segments,
+		Outputs:  n.OutputStreams().GetVarIDs(),
 	}, nil
 }
 

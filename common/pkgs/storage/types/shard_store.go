@@ -82,10 +82,10 @@ func (o *OpenOption) WithLength(len int64) OpenOption {
 	return *o
 }
 
-// [start, end]，即包含end
+// [start, end)，不包含end
 func (o *OpenOption) WithRange(start int64, end int64) OpenOption {
 	o.Offset = start
-	o.Length = end - start + 1
+	o.Length = end - start
 	return *o
 }
 
@@ -104,7 +104,7 @@ func (o *OpenOption) String() string {
 
 	rangeEnd := ""
 	if o.Length >= 0 {
-		rangeEnd = fmt.Sprintf("%d", o.Offset+o.Length-1)
+		rangeEnd = fmt.Sprintf("%d", o.Offset+o.Length)
 	}
 
 	if rangeStart == "" && rangeEnd == "" {

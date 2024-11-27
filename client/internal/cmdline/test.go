@@ -17,8 +17,8 @@ import (
 
 func init() {
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "test",
-		Short: "test",
+		Use:   "test32",
+		Short: "test32",
 		Run: func(cmd *cobra.Command, args []string) {
 			coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 			if err != nil {
@@ -34,8 +34,8 @@ func init() {
 			ft := ioswitch2.NewFromTo()
 			ft.SegmentParam = cdssdk.NewSegmentRedundancy(1293, 3)
 			ft.AddFrom(ioswitch2.NewFromShardstore("4E69A8B8CD9F42EDE371DA94458BADFB2308AFCA736AA393784A3D81F4746377", *stgs.Storages[0].MasterHub, stgs.Storages[0].Storage, ioswitch2.RawStream()))
-			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(0), "0"))
-			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(1), "1"))
+			// ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(0), "0"))
+			ft.AddTo(ioswitch2.NewToShardStoreWithRange(*stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(1), "1", exec.Range{Offset: 1}))
 			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(2), "2"))
 
 			plans := exec.NewPlanBuilder()
@@ -63,8 +63,8 @@ func init() {
 		},
 	})
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "test3",
-		Short: "test3",
+		Use:   "test",
+		Short: "test",
 		Run: func(cmd *cobra.Command, args []string) {
 			coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 			if err != nil {
@@ -84,7 +84,7 @@ func init() {
 			ft.AddFrom(ioswitch2.NewFromShardstore("5EAC20EB3EBC7B5FA176C5BD1C01041FB2A6D14C35D6A232CA83D7F1E4B01ADE", *stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(1)))
 			ft.AddFrom(ioswitch2.NewFromShardstore("A9BC1802F37100C80C72A1D6E8F53C0E0B73F85F99153D8C78FB01CEC9D8D903", *stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(2)))
 
-			toDrv, drvStr := ioswitch2.NewToDriverWithRange(ioswitch2.RawStream(), exec.NewRange(500, 500))
+			toDrv, drvStr := ioswitch2.NewToDriverWithRange(ioswitch2.RawStream(), exec.NewRange(0, 1293))
 			ft.AddTo(toDrv)
 			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[0].MasterHub, stgs.Storages[0].Storage, ioswitch2.ECSrteam(0), "EC0"))
 			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[0].MasterHub, stgs.Storages[0].Storage, ioswitch2.ECSrteam(1), "EC1"))
