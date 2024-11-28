@@ -196,7 +196,7 @@ func (iter *DownloadObjectIterator) downloadNoneOrRepObject(obj downloadReqeust2
 	bsc, blocks := iter.getMinReadingBlockSolution(allStgs, 1)
 	osc, stg := iter.getMinReadingObjectSolution(allStgs, 1)
 	if bsc < osc {
-		logger.Debugf("downloading object %v from storage %v", obj.Raw.ObjectID, blocks[0].Storage.Storage)
+		logger.Debugf("downloading object %v from storage %v", obj.Raw.ObjectID, blocks[0].Storage.Storage.String())
 		return iter.downloadFromStorage(&blocks[0].Storage, obj)
 	}
 
@@ -205,7 +205,7 @@ func (iter *DownloadObjectIterator) downloadNoneOrRepObject(obj downloadReqeust2
 		return nil, fmt.Errorf("no storage has this object")
 	}
 
-	logger.Debugf("downloading object %v from storage %v", obj.Raw.ObjectID, stg)
+	logger.Debugf("downloading object %v from storage %v", obj.Raw.ObjectID, stg.Storage.String())
 	return iter.downloadFromStorage(stg, obj)
 }
 
