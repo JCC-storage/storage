@@ -19,7 +19,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/mgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/uploader"
 )
 
@@ -91,7 +91,7 @@ func main() {
 	go serveAccessStat(acStat)
 
 	// 存储管理器
-	stgMgr := mgr.NewManager()
+	stgMgr := svcmgr.NewManager()
 
 	// 任务管理器
 	taskMgr := task.NewManager(distlockSvc, &conCol, stgMgr)

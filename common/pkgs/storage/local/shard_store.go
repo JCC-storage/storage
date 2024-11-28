@@ -25,21 +25,16 @@ const (
 )
 
 type ShardStore struct {
-	stg              cdssdk.Storage
+	svc              *Service
 	cfg              cdssdk.LocalShardStorage
 	lock             sync.Mutex
 	workingTempFiles map[string]bool
 	done             chan any
 }
 
-func NewShardStore(stg cdssdk.Storage, cfg cdssdk.LocalShardStorage) (*ShardStore, error) {
-	_, ok := stg.Address.(*cdssdk.LocalStorageAddress)
-	if !ok {
-		return nil, fmt.Errorf("storage address(%T) is not local", stg)
-	}
-
+func NewShardStore(svc *Service, cfg cdssdk.LocalShardStorage) (*ShardStore, error) {
 	return &ShardStore{
-		stg:              stg,
+		svc:              svc,
 		cfg:              cfg,
 		workingTempFiles: make(map[string]bool),
 		done:             make(chan any, 1),
@@ -376,7 +371,7 @@ func (s *ShardStore) Stats() types.Stats {
 }
 
 func (s *ShardStore) getLogger() logger.Logger {
-	return logger.WithField("ShardStore", "Local").WithField("Storage", s.stg.String())
+	return logger.WithField("ShardStore", "Local").WithField("Storage", s.svc.Detail.Storage.String())
 }
 
 func (s *ShardStore) getFileDirFromHash(hash cdssdk.FileHash) string {

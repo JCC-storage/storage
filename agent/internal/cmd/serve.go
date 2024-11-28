@@ -20,7 +20,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 	agtrpc "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/mgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/uploader"
 
 	"google.golang.org/grpc"
@@ -53,9 +53,9 @@ func serve(configPath string) {
 	hubCfg := downloadHubConfig()
 
 	// 初始化存储服务管理器
-	stgMgr := mgr.NewManager()
+	stgMgr := svcmgr.NewManager()
 	for _, stg := range hubCfg.Storages {
-		err := stgMgr.InitStorage(stg)
+		err := stgMgr.CreateService(stg)
 		if err != nil {
 			fmt.Printf("init storage %v: %v", stg, err)
 			os.Exit(1)

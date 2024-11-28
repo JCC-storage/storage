@@ -8,7 +8,8 @@ import (
 )
 
 type SharedStore interface {
-	StorageComponent
+	Start(ch *StorageEventChan)
+	Stop()
 	// 写入一个文件到Package的调度目录下，返回值为文件路径：userID/pkgID/path
 	WritePackageObject(userID cdssdk.UserID, pkgID cdssdk.PackageID, path string, stream io.Reader) (string, error)
 	// 获取所有已加载的Package信息

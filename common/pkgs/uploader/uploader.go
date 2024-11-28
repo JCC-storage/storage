@@ -15,16 +15,16 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock/reqbuilder"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/mgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
 )
 
 type Uploader struct {
 	distlock     *distlock.Service
 	connectivity *connectivity.Collector
-	stgMgr       *mgr.Manager
+	stgMgr       *svcmgr.Manager
 }
 
-func NewUploader(distlock *distlock.Service, connectivity *connectivity.Collector, stgMgr *mgr.Manager) *Uploader {
+func NewUploader(distlock *distlock.Service, connectivity *connectivity.Collector, stgMgr *svcmgr.Manager) *Uploader {
 	return &Uploader{
 		distlock:     distlock,
 		connectivity: connectivity,

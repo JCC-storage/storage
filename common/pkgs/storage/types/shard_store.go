@@ -23,7 +23,8 @@ type StoreEvent interface {
 }
 
 type ShardStore interface {
-	StorageComponent
+	Start(ch *StorageEventChan)
+	Stop()
 	// 写入一个新文件，写入后获得FileHash
 	Create(stream io.Reader) (FileInfo, error)
 	// 使用F函数创建Option对象

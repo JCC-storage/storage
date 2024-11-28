@@ -11,7 +11,7 @@ import (
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/mgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
 )
 
 const (
@@ -41,10 +41,10 @@ type Downloader struct {
 	strips *StripCache
 	cfg    Config
 	conn   *connectivity.Collector
-	stgMgr *mgr.Manager
+	stgMgr *svcmgr.Manager
 }
 
-func NewDownloader(cfg Config, conn *connectivity.Collector, stgMgr *mgr.Manager) Downloader {
+func NewDownloader(cfg Config, conn *connectivity.Collector, stgMgr *svcmgr.Manager) Downloader {
 	if cfg.MaxStripCacheCount == 0 {
 		cfg.MaxStripCacheCount = DefaultMaxStripCacheCount
 	}

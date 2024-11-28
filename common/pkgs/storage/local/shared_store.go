@@ -17,19 +17,14 @@ import (
 )
 
 type SharedStore struct {
-	stg cdssdk.Storage
+	svc *Service
 	cfg cdssdk.LocalSharedStorage
 	// lock sync.Mutex
 }
 
-func NewSharedStore(stg cdssdk.Storage, cfg cdssdk.LocalSharedStorage) (*SharedStore, error) {
-	_, ok := stg.Address.(*cdssdk.LocalStorageAddress)
-	if !ok {
-		return nil, fmt.Errorf("storage address(%T) is not local", stg)
-	}
-
+func NewSharedStore(svc *Service, cfg cdssdk.LocalSharedStorage) (*SharedStore, error) {
 	return &SharedStore{
-		stg: stg,
+		svc: svc,
 		cfg: cfg,
 	}, nil
 }
@@ -192,7 +187,7 @@ func (s *SharedStore) PackageGC(avaiables []stgmod.LoadedPackageID) error {
 }
 
 func (s *SharedStore) getLogger() logger.Logger {
-	return logger.WithField("SharedStore", "Local").WithField("Storage", s.stg.String())
+	return logger.WithField("SharedStore", "Local").WithField("Storage", s.svc.Detail.Storage.String())
 }
 
 type PackageWriter struct {

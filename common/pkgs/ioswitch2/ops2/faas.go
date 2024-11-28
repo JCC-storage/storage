@@ -6,7 +6,7 @@ import (
 	"github.com/samber/lo"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/mgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
@@ -19,17 +19,17 @@ type InternalFaaSGalMultiply struct {
 }
 
 func (o *InternalFaaSGalMultiply) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
-	stgMgr, err := exec.GetValueByType[*mgr.Manager](ctx)
+	stgMgr, err := exec.GetValueByType[*svcmgr.Manager](ctx)
 	if err != nil {
 		return err
 	}
 
-	fass, err := mgr.GetComponent[types.InternalFaaSCall](stgMgr, o.StorageID)
+	fass, err := svcmgr.GetComponent[types.InternalFaaSCall](stgMgr, o.StorageID)
 	if err != nil {
 		return fmt.Errorf("getting faas component: %w", err)
 	}
 
-	tmp, err := mgr.GetComponent[types.TempStore](stgMgr, o.StorageID)
+	tmp, err := svcmgr.GetComponent[types.TempStore](stgMgr, o.StorageID)
 	if err != nil {
 		return fmt.Errorf("getting temp store component: %w", err)
 	}
