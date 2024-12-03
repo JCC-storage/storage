@@ -44,7 +44,7 @@ func (u *CreateLoadUploader) Upload(path string, size int64, stream io.Reader) e
 	fromExec, hd := ioswitch2.NewFromDriver(ioswitch2.RawStream())
 	ft.AddFrom(fromExec)
 	for _, stg := range u.targetStgs {
-		ft.AddTo(ioswitch2.NewToShardStore(*stg.MasterHub, stg.Storage, ioswitch2.RawStream(), "fileHash"))
+		ft.AddTo(ioswitch2.NewToShardStore(*stg.MasterHub, stg, ioswitch2.RawStream(), "fileHash"))
 		ft.AddTo(ioswitch2.NewLoadToShared(*stg.MasterHub, stg.Storage, u.userID, u.pkg.PackageID, path))
 		stgIDs = append(stgIDs, stg.Storage.StorageID)
 	}

@@ -136,8 +136,15 @@ func (b *GraphNodeBuilder) NewSegmentSplit(segments []int64) *SegmentSplitNode {
 	return node
 }
 
-func (n *SegmentSplitNode) SetInput(input *dag.StreamVar) {
-	input.To(n, 0)
+func (n *SegmentSplitNode) InputSlot() dag.StreamInputSlot {
+	return dag.StreamInputSlot{
+		Node:  n,
+		Index: 0,
+	}
+}
+
+func (n *SegmentSplitNode) SegmentVar(index int) *dag.StreamVar {
+	return n.OutputStreams().Get(index)
 }
 
 func (t *SegmentSplitNode) RemoveAllStream() {
@@ -159,18 +166,24 @@ func (n *SegmentSplitNode) GenerateOp() (exec.Op, error) {
 
 type SegmentJoinNode struct {
 	dag.NodeBase
+	Segments []int64
 }
 
-func (b *GraphNodeBuilder) NewSegmentJoin(segmentSizes []int64) *SegmentJoinNode {
-	node := &SegmentJoinNode{}
+func (b *GraphNodeBuilder) NewSegmentJoin(segments []int64) *SegmentJoinNode {
+	node := &SegmentJoinNode{
+		Segments: segments,
+	}
 	b.AddNode(node)
-	node.InputStreams().Init(len(segmentSizes))
+	node.InputStreams().Init(len(segments))
 	node.OutputStreams().Init(node, 1)
 	return node
 }
 
-func (n *SegmentJoinNode) SetInput(index int, input *dag.StreamVar) {
-	input.To(n, index)
+func (n *SegmentJoinNode) InputSlot(index int) dag.StreamInputSlot {
+	return dag.StreamInputSlot{
+		Node:  n,
+		Index: index,
+	}
 }
 
 func (n *SegmentJoinNode) RemoveAllInputs() {

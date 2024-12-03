@@ -44,7 +44,7 @@ func (w *UpdateUploader) Upload(path string, size int64, stream io.Reader) error
 
 	ft := ioswitch2.NewFromTo()
 	fromExec, hd := ioswitch2.NewFromDriver(ioswitch2.RawStream())
-	ft.AddFrom(fromExec).AddTo(ioswitch2.NewToShardStore(*w.targetStg.MasterHub, w.targetStg.Storage, ioswitch2.RawStream(), "fileHash"))
+	ft.AddFrom(fromExec).AddTo(ioswitch2.NewToShardStore(*w.targetStg.MasterHub, w.targetStg, ioswitch2.RawStream(), "fileHash"))
 
 	plans := exec.NewPlanBuilder()
 	err := parser.Parse(ft, plans)

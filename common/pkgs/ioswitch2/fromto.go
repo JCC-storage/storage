@@ -3,6 +3,7 @@ package ioswitch2
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 )
 
 type From interface {
@@ -160,13 +161,13 @@ func (t *ToDriver) GetRange() exec.Range {
 
 type ToShardStore struct {
 	Hub              cdssdk.Hub
-	Storage          cdssdk.Storage
+	Storage          stgmod.StorageDetail
 	StreamIndex      StreamIndex
 	Range            exec.Range
 	FileHashStoreKey string
 }
 
-func NewToShardStore(hub cdssdk.Hub, stg cdssdk.Storage, strIdx StreamIndex, fileHashStoreKey string) *ToShardStore {
+func NewToShardStore(hub cdssdk.Hub, stg stgmod.StorageDetail, strIdx StreamIndex, fileHashStoreKey string) *ToShardStore {
 	return &ToShardStore{
 		Hub:              hub,
 		Storage:          stg,
@@ -175,7 +176,7 @@ func NewToShardStore(hub cdssdk.Hub, stg cdssdk.Storage, strIdx StreamIndex, fil
 	}
 }
 
-func NewToShardStoreWithRange(hub cdssdk.Hub, stg cdssdk.Storage, streamIndex StreamIndex, fileHashStoreKey string, rng exec.Range) *ToShardStore {
+func NewToShardStoreWithRange(hub cdssdk.Hub, stg stgmod.StorageDetail, streamIndex StreamIndex, fileHashStoreKey string, rng exec.Range) *ToShardStore {
 	return &ToShardStore{
 		Hub:              hub,
 		Storage:          stg,

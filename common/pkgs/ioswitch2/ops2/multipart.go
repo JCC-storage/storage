@@ -246,8 +246,8 @@ func (n *MultipartUploadNode) UploadResultVar() *dag.ValueVar {
 	return n.OutputValues().Get(0)
 }
 
-func (n *MultipartUploadNode) PartStreamSlot() dag.ValueInputSlot {
-	return dag.ValueInputSlot{
+func (n *MultipartUploadNode) PartStreamSlot() dag.StreamInputSlot {
+	return dag.StreamInputSlot{
 		Node:  n,
 		Index: 0,
 	}

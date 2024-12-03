@@ -13,6 +13,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/ops2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/utils"
 )
 
 type IndexedStream struct {
@@ -104,6 +105,7 @@ func Parse(ft ioswitch2.FromTo, blder *exec.PlanBuilder) error {
 
 	// 下面这些只需要执行一次，但需要按顺序
 	removeUnusedFromNode(&ctx)
+	useMultipartUploadToShardStore(&ctx)
 	dropUnused(&ctx)
 	storeIPFSWriteResult(&ctx)
 	generateRange(&ctx)
@@ -242,7 +244,7 @@ func extend(ctx *ParseContext) error {
 			// 同上
 			if ctx.UseSegment {
 				splitNode := ctx.DAG.NewSegmentSplit(ctx.Ft.SegmentParam.Segments)
-				splitNode.SetInput(frNode.Output().Var())
+				frNode.Output().Var().ToSlot(splitNode.InputSlot())
 				for i := 0; i < len(ctx.Ft.SegmentParam.Segments); i++ {
 					ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
 						Stream:      splitNode.Segment(i),
@@ -296,7 +298,7 @@ func extend(ctx *ParseContext) error {
 		for i := 0; i < ctx.Ft.SegmentParam.SegmentCount(); i++ {
 			str := findOutputStream(ctx, ioswitch2.SegmentStream(i))
 			if str != nil {
-				joinNode.SetInput(i, str)
+				str.ToSlot(joinNode.InputSlot(i))
 			}
 		}
 		ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
@@ -451,7 +453,7 @@ func buildFromNode(ctx *ParseContext, f ioswitch2.From) (ops2.FromNode, error) {
 func buildToNode(ctx *ParseContext, t ioswitch2.To) (ops2.ToNode, error) {
 	switch t := t.(type) {
 	case *ioswitch2.ToShardStore:
-		n := ctx.DAG.NewShardWrite(t, t.Storage.StorageID, t.FileHashStoreKey)
+		n := ctx.DAG.NewShardWrite(t, t.Storage, t.FileHashStoreKey)
 
 		if err := setEnvByAddress(n, t.Hub, t.Hub.Address); err != nil {
 			return nil, err
@@ -546,8 +548,14 @@ func fixSegmentJoin(ctx *ParseContext) error {
 		startSeg, endSeg := ctx.Ft.SegmentParam.CalcSegmentRange(start, end)
 
 		// 关闭超出范围的分段
-		node.InputStreams().Slots.RemoveRange(endSeg, ctx.Ft.SegmentParam.SegmentCount()-endSeg)
-		node.InputStreams().Slots.RemoveRange(0, startSeg)
+		node.OutputStreams().Slots.RemoveRange(endSeg, ctx.Ft.SegmentParam.SegmentCount()-endSeg)
+		node.Segments = lo2.RemoveRange(node.Segments, endSeg, ctx.Ft.SegmentParam.SegmentCount()-endSeg)
+		node.OutputStreams().Slots.RemoveRange(0, startSeg)
+		node.Segments = lo2.RemoveRange(node.Segments, 0, startSeg)
+
+		// StreamRange开始的位置可能在某个分段的中间，此时这个分段的大小等于流开始位置到分段结束位置的距离
+		startSegStart := ctx.Ft.SegmentParam.CalcSegmentStart(startSeg)
+		node.Segments[0] -= ctx.StreamRange.Offset - startSegStart
 
 		// 检查一下必须的分段是否都被加入到Join中
 		for i := 0; i < node.InputStreams().Len(); i++ {
@@ -845,7 +853,7 @@ func removeUnusedFromNode(ctx *ParseContext) {
 			return true
 		}
 
-		if node.Output().Var == nil {
+		if node.Output().Var() == nil {
 			ctx.DAG.RemoveNode(node)
 		}
 		return true
@@ -862,6 +870,92 @@ func dropUnused(ctx *ParseContext) {
 				n.SetInput(out)
 			}
 		}
+		return true
+	})
+}
+
+// 将SegmentJoin指令替换成分片上传指令
+func useMultipartUploadToShardStore(ctx *ParseContext) {
+	dag.WalkOnlyType[*ops2.SegmentJoinNode](ctx.DAG.Graph, func(joinNode *ops2.SegmentJoinNode) bool {
+		if joinNode.Joined().Dst.Len() != 1 {
+			return true
+		}
+
+		joinDst := joinNode.Joined().Dst.Get(0)
+		shardNode, ok := joinDst.(*ops2.ShardWriteNode)
+		if !ok {
+			return true
+		}
+
+		// Join的目的地必须支持TempStore和MultipartUpload功能才能替换成分片上传
+		if utils.FindFeature[*cdssdk.TempStore](shardNode.Storage) == nil {
+			return true
+		}
+
+		multiUpload := utils.FindFeature[*cdssdk.MultipartUploadFeature](shardNode.Storage)
+		if multiUpload == nil {
+			return true
+		}
+
+		// Join的每一个段的大小必须超过最小分片大小。
+		// 目前只支持拆分超过最大分片的流，不支持合并多个小段流以达到最小分片大小。
+		for _, size := range joinNode.Segments {
+			if size < multiUpload.MinPartSize {
+				return true
+			}
+		}
+
+		initNode := ctx.DAG.NewMultipartInitiator(shardNode.Storage.Storage.StorageID)
+		initNode.Env().CopyFrom(shardNode.Env())
+
+		partNumber := 1
+		for i, size := range joinNode.Segments {
+			joinInput := joinNode.InputSlot(i)
+			joinInput.Var().NotTo(joinNode)
+
+			if size > multiUpload.MaxPartSize {
+				// 如果一个分段的大小大于最大分片大小，则需要拆分为多个小段上传
+				// 拆分以及上传指令直接在流的产生节点执行
+				splits := math2.SplitLessThan(size, multiUpload.MaxPartSize)
+				splitNode := ctx.DAG.NewSegmentSplit(splits)
+				splitNode.Env().CopyFrom(joinInput.Var().Src.Env())
+
+				joinInput.Var().ToSlot(splitNode.InputSlot())
+
+				for i2 := 0; i2 < len(splits); i2++ {
+					uploadNode := ctx.DAG.NewMultipartUpload(shardNode.Storage, partNumber, splits[i2])
+					uploadNode.Env().CopyFrom(joinInput.Var().Src.Env())
+
+					initNode.UploadArgsVar().ToSlot(uploadNode.UploadArgsSlot())
+					splitNode.SegmentVar(i2).ToSlot(uploadNode.PartStreamSlot())
+					uploadNode.UploadResultVar().ToSlot(initNode.AppendPartInfoSlot())
+
+					partNumber++
+				}
+			} else {
+				// 否则直接上传整个分段
+				uploadNode := ctx.DAG.NewMultipartUpload(shardNode.Storage, partNumber, size)
+				// 上传指令直接在流的产生节点执行
+				uploadNode.Env().CopyFrom(joinInput.Var().Src.Env())
+
+				initNode.UploadArgsVar().ToSlot(uploadNode.UploadArgsSlot())
+				joinInput.Var().ToSlot(uploadNode.PartStreamSlot())
+				uploadNode.UploadResultVar().ToSlot(initNode.AppendPartInfoSlot())
+
+				partNumber++
+			}
+		}
+
+		bypassNode := ctx.DAG.NewBypassToShardStore(shardNode.Storage.Storage.StorageID)
+		bypassNode.Env().CopyFrom(shardNode.Env())
+
+		// 分片上传Node产生的结果送到bypassNode，bypassNode将处理结果再送回分片上传Node
+		initNode.BypassFileInfoVar().ToSlot(bypassNode.BypassFileInfoSlot())
+		bypassNode.BypassCallbackVar().ToSlot(initNode.BypassCallbackSlot())
+
+		// 最后删除Join指令和ToShardStore指令
+		ctx.DAG.RemoveNode(joinNode)
+		ctx.DAG.RemoveNode(shardNode)
 		return true
 	})
 }

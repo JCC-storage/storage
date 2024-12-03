@@ -10,6 +10,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/io2"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
@@ -159,14 +160,14 @@ func (t *ShardReadNode) GenerateOp() (exec.Op, error) {
 type ShardWriteNode struct {
 	dag.NodeBase
 	To               ioswitch2.To
-	StorageID        cdssdk.StorageID
+	Storage          stgmod.StorageDetail
 	FileHashStoreKey string
 }
 
-func (b *GraphNodeBuilder) NewShardWrite(to ioswitch2.To, stgID cdssdk.StorageID, fileHashStoreKey string) *ShardWriteNode {
+func (b *GraphNodeBuilder) NewShardWrite(to ioswitch2.To, stg stgmod.StorageDetail, fileHashStoreKey string) *ShardWriteNode {
 	node := &ShardWriteNode{
 		To:               to,
-		StorageID:        stgID,
+		Storage:          stg,
 		FileHashStoreKey: fileHashStoreKey,
 	}
 	b.AddNode(node)
@@ -199,7 +200,7 @@ func (t *ShardWriteNode) GenerateOp() (exec.Op, error) {
 	return &ShardWrite{
 		Input:     t.InputStreams().Get(0).VarID,
 		FileHash:  t.OutputValues().Get(0).VarID,
-		StorageID: t.StorageID,
+		StorageID: t.Storage.Storage.StorageID,
 	}, nil
 }
 

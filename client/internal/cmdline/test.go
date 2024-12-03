@@ -35,8 +35,8 @@ func init() {
 			ft.SegmentParam = cdssdk.NewSegmentRedundancy(1293, 3)
 			ft.AddFrom(ioswitch2.NewFromShardstore("4E69A8B8CD9F42EDE371DA94458BADFB2308AFCA736AA393784A3D81F4746377", *stgs.Storages[0].MasterHub, stgs.Storages[0].Storage, ioswitch2.RawStream()))
 			// ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(0), "0"))
-			ft.AddTo(ioswitch2.NewToShardStoreWithRange(*stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(1), "1", exec.Range{Offset: 1}))
-			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(2), "2"))
+			ft.AddTo(ioswitch2.NewToShardStoreWithRange(*stgs.Storages[1].MasterHub, *stgs.Storages[1], ioswitch2.SegmentStream(1), "1", exec.Range{Offset: 1}))
+			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[1].MasterHub, *stgs.Storages[1], ioswitch2.SegmentStream(2), "2"))
 
 			plans := exec.NewPlanBuilder()
 			err = parser.Parse(ft, plans)
@@ -86,9 +86,9 @@ func init() {
 
 			toDrv, drvStr := ioswitch2.NewToDriverWithRange(ioswitch2.RawStream(), exec.NewRange(0, 1293))
 			ft.AddTo(toDrv)
-			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[0].MasterHub, stgs.Storages[0].Storage, ioswitch2.ECSrteam(0), "EC0"))
-			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[0].MasterHub, stgs.Storages[0].Storage, ioswitch2.ECSrteam(1), "EC1"))
-			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[0].MasterHub, stgs.Storages[0].Storage, ioswitch2.ECSrteam(2), "EC2"))
+			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[0].MasterHub, *stgs.Storages[0], ioswitch2.ECSrteam(0), "EC0"))
+			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[0].MasterHub, *stgs.Storages[0], ioswitch2.ECSrteam(1), "EC1"))
+			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[0].MasterHub, *stgs.Storages[0], ioswitch2.ECSrteam(2), "EC2"))
 
 			plans := exec.NewPlanBuilder()
 			err = parser.Parse(ft, plans)
@@ -150,9 +150,9 @@ func init() {
 			ft := ioswitch2.NewFromTo()
 			ft.ECParam = &cdssdk.DefaultECRedundancy
 			ft.AddFrom(ioswitch2.NewFromShardstore("4E69A8B8CD9F42EDE371DA94458BADFB2308AFCA736AA393784A3D81F4746377", *stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.RawStream()))
-			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[0].MasterHub, stgs.Storages[0].Storage, ioswitch2.ECSrteam(0), "EC0"))
-			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[0].MasterHub, stgs.Storages[0].Storage, ioswitch2.ECSrteam(1), "EC1"))
-			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[0].MasterHub, stgs.Storages[0].Storage, ioswitch2.ECSrteam(2), "EC2"))
+			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[0].MasterHub, *stgs.Storages[0], ioswitch2.ECSrteam(0), "EC0"))
+			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[0].MasterHub, *stgs.Storages[0], ioswitch2.ECSrteam(1), "EC1"))
+			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[0].MasterHub, *stgs.Storages[0], ioswitch2.ECSrteam(2), "EC2"))
 
 			plans := exec.NewPlanBuilder()
 			err = parser.Parse(ft, plans)
