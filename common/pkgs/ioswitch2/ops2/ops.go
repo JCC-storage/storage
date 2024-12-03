@@ -17,13 +17,13 @@ func NewGraphNodeBuilder() *GraphNodeBuilder {
 type FromNode interface {
 	dag.Node
 	GetFrom() ioswitch2.From
-	Output() dag.StreamSlot
+	Output() dag.StreamOutputSlot
 }
 
 type ToNode interface {
 	dag.Node
 	GetTo() ioswitch2.To
-	Input() dag.StreamSlot
+	Input() dag.StreamOutputSlot
 	SetInput(input *dag.StreamVar)
 }
 

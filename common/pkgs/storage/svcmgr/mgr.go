@@ -51,6 +51,18 @@ func (m *Manager) CreateService(detail stgmod.StorageDetail) error {
 	return nil
 }
 
+func (m *Manager) GetInfo(stgID cdssdk.StorageID) (stgmod.StorageDetail, error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	stg := m.storages[stgID]
+	if stg == nil {
+		return stgmod.StorageDetail{}, types.ErrStorageNotFound
+	}
+
+	return stg.Service.Info(), nil
+}
+
 // 查找指定Storage的ShardStore组件
 func (m *Manager) GetShardStore(stgID cdssdk.StorageID) (types.ShardStore, error) {
 	return GetComponent[types.ShardStore](m, stgID)

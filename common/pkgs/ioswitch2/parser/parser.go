@@ -221,7 +221,7 @@ func extend(ctx *ParseContext) error {
 		}
 
 		ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
-			Stream:      frNode.Output().Var,
+			Stream:      frNode.Output().Var(),
 			StreamIndex: fr.GetStreamIndex(),
 		})
 
@@ -230,7 +230,7 @@ func extend(ctx *ParseContext) error {
 			// 只有输入输出需要EC编码的块时，才生成相关指令
 			if ctx.UseEC {
 				splitNode := ctx.DAG.NewChunkedSplit(ctx.Ft.ECParam.ChunkSize, ctx.Ft.ECParam.K)
-				splitNode.Split(frNode.Output().Var)
+				splitNode.Split(frNode.Output().Var())
 				for i := 0; i < ctx.Ft.ECParam.K; i++ {
 					ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
 						Stream:      splitNode.SubStream(i),
@@ -242,7 +242,7 @@ func extend(ctx *ParseContext) error {
 			// 同上
 			if ctx.UseSegment {
 				splitNode := ctx.DAG.NewSegmentSplit(ctx.Ft.SegmentParam.Segments)
-				splitNode.SetInput(frNode.Output().Var)
+				splitNode.SetInput(frNode.Output().Var())
 				for i := 0; i < len(ctx.Ft.SegmentParam.Segments); i++ {
 					ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
 						Stream:      splitNode.Segment(i),
@@ -893,12 +893,12 @@ func generateRange(ctx *ParseContext) {
 		if toStrIdx.IsRaw() {
 			n := ctx.DAG.NewRange()
 			toInput := toNode.Input()
-			*n.Env() = *toInput.Var.Src.Env()
-			rnged := n.RangeStream(toInput.Var, exec.Range{
+			*n.Env() = *toInput.Var().Src.Env()
+			rnged := n.RangeStream(toInput.Var(), exec.Range{
 				Offset: toRng.Offset - ctx.StreamRange.Offset,
 				Length: toRng.Length,
 			})
-			toInput.Var.NotTo(toNode)
+			toInput.Var().NotTo(toNode)
 			toNode.SetInput(rnged)
 
 		} else if toStrIdx.IsEC() {
@@ -909,15 +909,15 @@ func generateRange(ctx *ParseContext) {
 
 			n := ctx.DAG.NewRange()
 			toInput := toNode.Input()
-			*n.Env() = *toInput.Var.Src.Env()
-			rnged := n.RangeStream(toInput.Var, exec.Range{
+			*n.Env() = *toInput.Var().Src.Env()
+			rnged := n.RangeStream(toInput.Var(), exec.Range{
 				Offset: toRng.Offset - blkStart,
 				Length: toRng.Length,
 			})
-			toInput.Var.NotTo(toNode)
+			toInput.Var().NotTo(toNode)
 			toNode.SetInput(rnged)
 		} else if toStrIdx.IsSegment() {
-			// if frNode, ok := toNode.Input().Var.From().Node.(ops2.FromNode); ok {
+			// if frNode, ok := toNode.Input().Var().From().Node.(ops2.FromNode); ok {
 			// 	// 目前只有To也是分段时，才可能对接一个提供分段的From，此时不需要再生成Range指令
 			// 	if frNode.GetFrom().GetStreamIndex().IsSegment() {
 			// 		continue
@@ -929,12 +929,12 @@ func generateRange(ctx *ParseContext) {
 
 			// n := ctx.DAG.NewRange()
 			// toInput := toNode.Input()
-			// *n.Env() = *toInput.Var.From().Node.Env()
-			// rnged := n.RangeStream(toInput.Var, exec.Range{
+			// *n.Env() = *toInput.Var().From().Node.Env()
+			// rnged := n.RangeStream(toInput.Var(), exec.Range{
 			// 	Offset: strStart - ctx.StreamRange.Offset,
 			// 	Length: toRng.Length,
 			// })
-			// toInput.Var.NotTo(toNode, toInput.Index)
+			// toInput.Var().NotTo(toNode, toInput.Index)
 			// toNode.SetInput(rnged)
 		}
 	}

@@ -15,12 +15,12 @@ func NewGraphNodeBuilder() *GraphNodeBuilder {
 
 type FromNode interface {
 	dag.Node
-	Output() dag.StreamSlot
+	Output() dag.StreamOutputSlot
 }
 
 type ToNode interface {
 	dag.Node
-	Input() dag.StreamSlot
+	Input() dag.StreamOutputSlot
 	SetInput(input *dag.StreamVar)
 }
 

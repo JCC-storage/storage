@@ -3,13 +3,13 @@ package cos
 import (
 	"context"
 	"fmt"
-	"github.com/tencentyun/cos-go-sdk-v5"
-	log "gitlink.org.cn/cloudream/common/pkgs/logger"
-	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 	"io"
 	"net/http"
 	"net/url"
+
+	"github.com/tencentyun/cos-go-sdk-v5"
+	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
 type MultiPartUploader struct {
@@ -32,16 +32,15 @@ func NewMultiPartUpload(address *cdssdk.COSAddress) *MultiPartUploader {
 	}
 }
 
-func (c *MultiPartUploader) InitiateMultipartUpload(objectName string) (string, error) {
+func (c *MultiPartUploader) Initiate(objectName string) (string, error) {
 	v, _, err := c.client.Object.InitiateMultipartUpload(context.Background(), objectName, nil)
 	if err != nil {
-		log.Error("Failed to initiate multipart upload: %v", err)
-		return "", err
+		return "", fmt.Errorf("failed to initiate multipart upload: %w", err)
 	}
 	return v.UploadID, nil
 }
 
-func (c *MultiPartUploader) UploadPart(uploadID string, key string, partSize int64, partNumber int, stream io.Reader) (*types.UploadPartOutput, error) {
+func (c *MultiPartUploader) UploadPart(uploadID string, key string, partSize int64, partNumber int, stream io.Reader) (*types.UploadedPartInfo, error) {
 	resp, err := c.client.Object.UploadPart(
 		context.Background(), key, uploadID, partNumber, stream, nil,
 	)
@@ -49,14 +48,14 @@ func (c *MultiPartUploader) UploadPart(uploadID string, key string, partSize int
 		return nil, fmt.Errorf("failed to upload part: %w", err)
 	}
 
-	result := &types.UploadPartOutput{
+	result := &types.UploadedPartInfo{
 		ETag:       resp.Header.Get("ETag"),
 		PartNumber: partNumber,
 	}
 	return result, nil
 }
 
-func (c *MultiPartUploader) CompleteMultipartUpload(uploadID string, key string, parts []*types.UploadPartOutput) error {
+func (c *MultiPartUploader) Complete(uploadID string, key string, parts []*types.UploadedPartInfo) error {
 	opt := &cos.CompleteMultipartUploadOptions{}
 	for i := 0; i < len(parts); i++ {
 		opt.Parts = append(opt.Parts, cos.Object{
@@ -72,7 +71,7 @@ func (c *MultiPartUploader) CompleteMultipartUpload(uploadID string, key string,
 
 	return nil
 }
-func (c *MultiPartUploader) AbortMultipartUpload() {
+func (c *MultiPartUploader) Abort() {
 
 }
 

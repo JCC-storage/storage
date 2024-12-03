@@ -2,11 +2,12 @@ package oss
 
 import (
 	"fmt"
+	"io"
+	"log"
+
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
-	"io"
-	"log"
 )
 
 type MultiPartUploader struct {
@@ -14,7 +15,7 @@ type MultiPartUploader struct {
 	bucket *oss.Bucket
 }
 
-func NewMultiPartUpload(address *cdssdk.OSSAddress) *MultiPartUploader {
+func NewMultiPartUpload(address *cdssdk.OSSType) *MultiPartUploader {
 	// 创建OSSClient实例。
 	client, err := oss.New(address.Endpoint, address.AK, address.SK)
 	if err != nil {
@@ -32,7 +33,7 @@ func NewMultiPartUpload(address *cdssdk.OSSAddress) *MultiPartUploader {
 	}
 }
 
-func (c *MultiPartUploader) InitiateMultipartUpload(objectName string) (string, error) {
+func (c *MultiPartUploader) Initiate(objectName string) (string, error) {
 	imur, err := c.bucket.InitiateMultipartUpload(objectName)
 	if err != nil {
 		return "", fmt.Errorf("failed to initiate multipart upload: %w", err)
@@ -40,7 +41,7 @@ func (c *MultiPartUploader) InitiateMultipartUpload(objectName string) (string, 
 	return imur.UploadID, nil
 }
 
-func (c *MultiPartUploader) UploadPart(uploadID string, key string, partSize int64, partNumber int, stream io.Reader) (*types.UploadPartOutput, error) {
+func (c *MultiPartUploader) UploadPart(uploadID string, key string, partSize int64, partNumber int, stream io.Reader) (*types.UploadedPartInfo, error) {
 	uploadParam := oss.InitiateMultipartUploadResult{
 		UploadID: uploadID,
 		Key:      key,
@@ -50,14 +51,14 @@ func (c *MultiPartUploader) UploadPart(uploadID string, key string, partSize int
 	if err != nil {
 		return nil, fmt.Errorf("failed to upload part: %w", err)
 	}
-	result := &types.UploadPartOutput{
+	result := &types.UploadedPartInfo{
 		ETag:       part.ETag,
 		PartNumber: partNumber,
 	}
 	return result, nil
 }
 
-func (c *MultiPartUploader) CompleteMultipartUpload(uploadID string, Key string, parts []*types.UploadPartOutput) error {
+func (c *MultiPartUploader) Complete(uploadID string, Key string, parts []*types.UploadedPartInfo) error {
 	notifyParam := oss.InitiateMultipartUploadResult{
 		UploadID: uploadID,
 		Key:      Key,
@@ -77,7 +78,7 @@ func (c *MultiPartUploader) CompleteMultipartUpload(uploadID string, Key string,
 	return nil
 }
 
-func (c *MultiPartUploader) AbortMultipartUpload() {
+func (c *MultiPartUploader) Abort() {
 
 }
 

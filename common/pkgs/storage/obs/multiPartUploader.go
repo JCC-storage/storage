@@ -2,11 +2,12 @@ package obs
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/huaweicloud/huaweicloud-sdk-go-obs/obs"
 	log "gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
-	"io"
 )
 
 type MultiPartUploader struct {
@@ -26,7 +27,7 @@ func NewMultiPartUpload(address *cdssdk.OBSAddress) *MultiPartUploader {
 	}
 }
 
-func (c *MultiPartUploader) InitiateMultipartUpload(objectName string) (string, error) {
+func (c *MultiPartUploader) Initiate(objectName string) (string, error) {
 	input := &obs.InitiateMultipartUploadInput{}
 	input.Bucket = c.bucket
 	input.Key = objectName
@@ -37,7 +38,7 @@ func (c *MultiPartUploader) InitiateMultipartUpload(objectName string) (string, 
 	return imur.UploadId, nil
 }
 
-func (c *MultiPartUploader) UploadPart(uploadID string, key string, partSize int64, partNumber int, stream io.Reader) (*types.UploadPartOutput, error) {
+func (c *MultiPartUploader) UploadPart(uploadID string, key string, partSize int64, partNumber int, stream io.Reader) (*types.UploadedPartInfo, error) {
 	uploadParam := &obs.UploadPartInput{
 		Bucket:     c.bucket,
 		Key:        key,
@@ -51,14 +52,14 @@ func (c *MultiPartUploader) UploadPart(uploadID string, key string, partSize int
 	if err != nil {
 		return nil, fmt.Errorf("failed to upload part: %w", err)
 	}
-	result := &types.UploadPartOutput{
+	result := &types.UploadedPartInfo{
 		ETag:       part.ETag,
 		PartNumber: partNumber,
 	}
 	return result, nil
 }
 
-func (c *MultiPartUploader) CompleteMultipartUpload(uploadID string, Key string, parts []*types.UploadPartOutput) error {
+func (c *MultiPartUploader) Complete(uploadID string, Key string, parts []*types.UploadedPartInfo) error {
 	var uploadPart []obs.Part
 	for i := 0; i < len(parts); i++ {
 		uploadPart = append(uploadPart, obs.Part{
@@ -80,7 +81,7 @@ func (c *MultiPartUploader) CompleteMultipartUpload(uploadID string, Key string,
 	}
 	return nil
 }
-func (c *MultiPartUploader) AbortMultipartUpload() {
+func (c *MultiPartUploader) Abort() {
 
 }
 

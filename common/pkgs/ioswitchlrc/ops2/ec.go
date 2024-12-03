@@ -141,7 +141,7 @@ func (t *LRCConstructAnyNode) RemoveAllInputs() {
 
 func (t *LRCConstructAnyNode) NewOutput(dataIndex int) *dag.StreamVar {
 	t.OutputIndexes = append(t.OutputIndexes, dataIndex)
-	return t.OutputStreams().AppendNew(t).Var
+	return t.OutputStreams().AppendNew(t).Var()
 }
 
 func (t *LRCConstructAnyNode) GenerateOp() (exec.Op, error) {

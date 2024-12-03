@@ -89,7 +89,7 @@ func (t *CloneStreamType) SetInput(raw *dag.StreamVar) {
 }
 
 func (t *CloneStreamType) NewOutput() *dag.StreamVar {
-	return t.OutputStreams().AppendNew(t).Var
+	return t.OutputStreams().AppendNew(t).Var()
 }
 
 func (t *CloneStreamType) GenerateOp() (exec.Op, error) {
@@ -119,7 +119,7 @@ func (t *CloneVarType) SetInput(raw *dag.ValueVar) {
 }
 
 func (t *CloneVarType) NewOutput() *dag.ValueVar {
-	return t.OutputValues().AppendNew(t).Var
+	return t.OutputValues().AppendNew(t).Var()
 }
 
 func (t *CloneVarType) GenerateOp() (exec.Op, error) {

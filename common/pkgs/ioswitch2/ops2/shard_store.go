@@ -137,9 +137,9 @@ func (t *ShardReadNode) GetFrom() ioswitch2.From {
 	return t.From
 }
 
-func (t *ShardReadNode) Output() dag.StreamSlot {
-	return dag.StreamSlot{
-		Var:   t.OutputStreams().Get(0),
+func (t *ShardReadNode) Output() dag.StreamOutputSlot {
+	return dag.StreamOutputSlot{
+		Node:  t,
 		Index: 0,
 	}
 }
@@ -184,9 +184,9 @@ func (t *ShardWriteNode) SetInput(input *dag.StreamVar) {
 	input.To(t, 0)
 }
 
-func (t *ShardWriteNode) Input() dag.StreamSlot {
-	return dag.StreamSlot{
-		Var:   t.InputStreams().Get(0),
+func (t *ShardWriteNode) Input() dag.StreamOutputSlot {
+	return dag.StreamOutputSlot{
+		Node:  t,
 		Index: 0,
 	}
 }

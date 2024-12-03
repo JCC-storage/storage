@@ -142,7 +142,7 @@ func (t *ECMultiplyNode) RemoveAllInputs() {
 
 func (t *ECMultiplyNode) NewOutput(dataIndex int) *dag.StreamVar {
 	t.OutputIndexes = append(t.OutputIndexes, dataIndex)
-	return t.OutputStreams().AppendNew(t).Var
+	return t.OutputStreams().AppendNew(t).Var()
 }
 
 func (t *ECMultiplyNode) GenerateOp() (exec.Op, error) {

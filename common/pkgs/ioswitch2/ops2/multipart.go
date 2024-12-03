@@ -1,190 +1,265 @@
 package ops2
 
-/*
 import (
 	"fmt"
+	"time"
+
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/dag"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	log "gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/cos"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/mgr"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/obs"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/oss"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/factory"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
-	"io"
-	"time"
 )
 
 func init() {
-	exec.UseOp[*MultipartManage]()
+	exec.UseOp[*MultipartInitiator]()
 	exec.UseOp[*MultipartUpload]()
-	exec.UseVarValue[*InitUploadValue]()
+	exec.UseVarValue[*MultipartUploadArgsValue]()
+	exec.UseVarValue[*UploadedPartInfoValue]()
 }
 
-type InitUploadValue struct {
-	Key      string `xml:"Key"`      // Object name to upload
-	UploadID string `xml:"UploadId"` // Generated UploadId
+type MultipartUploadArgsValue struct {
+	Key       string
+	InitState types.MultipartInitState
 }
 
-func (v *InitUploadValue) Clone() exec.VarValue {
-	return &*v
+func (v *MultipartUploadArgsValue) Clone() exec.VarValue {
+	return &MultipartUploadArgsValue{
+		InitState: v.InitState,
+	}
 }
 
-type MultipartManage struct {
-	Address      cdssdk.StorageAddress `json:"address"`
-	UploadArgs   exec.VarID            `json:"uploadArgs"`
-	UploadOutput exec.VarID            `json:"uploadOutput"`
-	StorageID    cdssdk.StorageID      `json:"storageID"`
+type UploadedPartInfoValue struct {
+	types.UploadedPartInfo
 }
 
-func (o *MultipartManage) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
-	manager, err := exec.GetValueByType[*mgr.Manager](ctx)
+func (v *UploadedPartInfoValue) Clone() exec.VarValue {
+	return &UploadedPartInfoValue{
+		UploadedPartInfo: v.UploadedPartInfo,
+	}
+}
+
+type MultipartInitiator struct {
+	StorageID        cdssdk.StorageID
+	UploadArgs       exec.VarID
+	UploadedParts    []exec.VarID
+	BypassFileOutput exec.VarID // 分片上传之后的临时文件的路径
+	BypassCallback   exec.VarID // 临时文件使用结果，用于告知Initiator如何处理临时文件
+}
+
+func (o *MultipartInitiator) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
+	stgMgr, err := exec.GetValueByType[*svcmgr.Manager](ctx)
 	if err != nil {
 		return err
 	}
 
-	var client types.MultipartUploader
-	switch addr := o.Address.(type) {
-	case *cdssdk.OSSAddress:
-		client = oss.NewMultiPartUpload(addr)
-	case *cdssdk.OBSAddress:
-		client = obs.NewMultiPartUpload(addr)
-	case *cdssdk.COSAddress:
-		client = cos.NewMultiPartUpload(addr)
-	}
-	defer client.Close()
-
-	tempStore, err := manager.GetTempStore(o.StorageID)
+	tempStore, err := svcmgr.GetComponent[types.TempStore](stgMgr, o.StorageID)
 	if err != nil {
 		return err
 	}
 	objName := tempStore.CreateTemp()
+	defer tempStore.Drop(objName)
 
-	uploadID, err := client.InitiateMultipartUpload(objName)
+	initiator, err := svcmgr.GetComponent[types.MultipartInitiator](stgMgr, o.StorageID)
 	if err != nil {
 		return err
 	}
-	e.PutVar(o.UploadArgs, &InitUploadValue{
-		UploadID: uploadID,
-		Key:      objName,
+
+	// 启动一个新的上传任务
+	initState, err := initiator.Initiate(ctx.Context, objName)
+	if err != nil {
+		return err
+	}
+	// 分发上传参数
+	e.PutVar(o.UploadArgs, &MultipartUploadArgsValue{
+		Key:       objName,
+		InitState: initState,
 	})
 
-	parts, err := exec.BindVar[*UploadPartOutputValue](e, ctx.Context, o.UploadOutput)
+	// 收集分片上传结果
+	partInfoValues, err := exec.BindArray[*UploadedPartInfoValue](e, ctx.Context, o.UploadedParts)
 	if err != nil {
-		return err
+		return fmt.Errorf("getting uploaded parts: %v", err)
 	}
-	err = client.CompleteMultipartUpload(uploadID, objName, parts.Parts)
+
+	partInfos := make([]types.UploadedPartInfo, len(partInfoValues))
+	for i, v := range partInfoValues {
+		partInfos[i] = v.UploadedPartInfo
+	}
+
+	// 完成分片上传
+	compInfo, err := initiator.Complete(ctx.Context, partInfos)
 	if err != nil {
-		return err
+		return fmt.Errorf("completing multipart upload: %v", err)
+	}
+
+	// 告知后续Op临时文件的路径
+	e.PutVar(o.BypassFileOutput, &BypassFileInfoValue{
+		BypassFileInfo: types.BypassFileInfo{
+			TempFilePath: objName,
+			FileHash:     compInfo.FileHash,
+		},
+	})
+
+	// 等待后续Op处理临时文件
+	cb, err := exec.BindVar[*BypassHandleResultValue](e, ctx.Context, o.BypassCallback)
+	if err != nil {
+		return fmt.Errorf("getting temp file callback: %v", err)
+	}
+
+	if cb.Commited {
+		tempStore.Commited(objName)
 	}
 
 	return nil
 }
 
-func (o *MultipartManage) String() string {
-	return "MultipartManage"
-}
-
-type MultipartManageNode struct {
-	dag.NodeBase
-	Address   cdssdk.StorageAddress
-	StorageID cdssdk.StorageID `json:"storageID"`
-}
-
-func (b *GraphNodeBuilder) NewMultipartManage(addr cdssdk.StorageAddress, storageID cdssdk.StorageID) *MultipartManageNode {
-	node := &MultipartManageNode{
-		Address:   addr,
-		StorageID: storageID,
-	}
-	b.AddNode(node)
-	return node
-}
-
-func (t *MultipartManageNode) GenerateOp() (exec.Op, error) {
-	return &MultipartManage{
-		Address:   t.Address,
-		StorageID: t.StorageID,
-	}, nil
+func (o *MultipartInitiator) String() string {
+	return "MultipartInitiator"
 }
 
 type MultipartUpload struct {
-	Address      cdssdk.StorageAddress `json:"address"`
-	UploadArgs   exec.VarID            `json:"uploadArgs"`
-	UploadOutput exec.VarID            `json:"uploadOutput"`
-	PartNumbers  []int                 `json:"partNumbers"`
-	PartSize     []int64               `json:"partSize"`
-	Input        exec.VarID            `json:"input"`
-}
-
-type UploadPartOutputValue struct {
-	Parts []*types.UploadPartOutput `json:"parts"`
-}
-
-func (v *UploadPartOutputValue) Clone() exec.VarValue {
-	return &*v
+	Storage      stgmod.StorageDetail
+	UploadArgs   exec.VarID
+	UploadResult exec.VarID
+	PartStream   exec.VarID
+	PartNumber   int
+	PartSize     int64
 }
 
 func (o *MultipartUpload) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
-	initUploadResult, err := exec.BindVar[*InitUploadValue](e, ctx.Context, o.UploadArgs)
+	uploadArgs, err := exec.BindVar[*MultipartUploadArgsValue](e, ctx.Context, o.UploadArgs)
 	if err == nil {
 		return err
 	}
 
-	input, err := exec.BindVar[*exec.StreamValue](e, ctx.Context, o.Input)
+	partStr, err := exec.BindVar[*exec.StreamValue](e, ctx.Context, o.PartStream)
 	if err != nil {
 		return err
 	}
-	defer input.Stream.Close()
+	defer partStr.Stream.Close()
 
-	var client types.MultipartUploader
-	switch addr := o.Address.(type) {
-	case *cdssdk.OSSAddress:
-		client = oss.NewMultiPartUpload(addr)
+	uploader, err := factory.CreateComponent[types.MultipartUploader](o.Storage)
+	if err != nil {
+		return err
 	}
 
-	var parts UploadPartOutputValue
-	for i := 0; i < len(o.PartNumbers); i++ {
-		startTime := time.Now()
-		uploadPart, err := client.UploadPart(initUploadResult.UploadID, initUploadResult.Key, o.PartSize[i], o.PartNumbers[i], io.LimitReader(input.Stream, o.PartSize[i]))
-		log.Debugf("upload multipart spend time: %v", time.Since(startTime))
-		if err != nil {
-			return fmt.Errorf("failed to upload part: %w", err)
-		}
-		parts.Parts = append(parts.Parts, uploadPart)
+	startTime := time.Now()
+	uploadedInfo, err := uploader.UploadPart(ctx.Context, uploadArgs.InitState, uploadArgs.Key, o.PartSize, o.PartNumber, partStr.Stream)
+	log.Debugf("upload finished in %v", time.Since(startTime))
+
+	if err != nil {
+		return err
 	}
 
-	e.PutVar(o.UploadOutput, &parts)
+	e.PutVar(o.UploadResult, &UploadedPartInfoValue{
+		uploadedInfo,
+	})
 
 	return nil
 }
 
 func (o *MultipartUpload) String() string {
-	return "MultipartUpload"
+	return fmt.Sprintf("MultipartUpload[PartNumber=%v,PartSize=%v] Args: %v, Result: %v, Stream: %v", o.PartNumber, o.PartSize, o.UploadArgs, o.UploadResult, o.PartStream)
+}
+
+type MultipartInitiatorNode struct {
+	dag.NodeBase
+	StorageID cdssdk.StorageID `json:"storageID"`
+}
+
+func (b *GraphNodeBuilder) NewMultipartInitiator(storageID cdssdk.StorageID) *MultipartInitiatorNode {
+	node := &MultipartInitiatorNode{
+		StorageID: storageID,
+	}
+	b.AddNode(node)
+
+	node.OutputValues().Init(node, 2)
+	node.InputValues().Init(1)
+	return node
+}
+
+func (n *MultipartInitiatorNode) UploadArgsVar() *dag.ValueVar {
+	return n.OutputValues().Get(0)
+}
+
+func (n *MultipartInitiatorNode) BypassFileInfoVar() *dag.ValueVar {
+	return n.OutputValues().Get(1)
+}
+
+func (n *MultipartInitiatorNode) BypassCallbackSlot() dag.ValueInputSlot {
+	return dag.ValueInputSlot{
+		Node:  n,
+		Index: 0,
+	}
+}
+
+func (n *MultipartInitiatorNode) AppendPartInfoSlot() dag.ValueInputSlot {
+	return dag.ValueInputSlot{
+		Node:  n,
+		Index: n.InputStreams().EnlargeOne(),
+	}
+}
+
+func (n *MultipartInitiatorNode) GenerateOp() (exec.Op, error) {
+	return &MultipartInitiator{
+		StorageID:        n.StorageID,
+		UploadArgs:       n.UploadArgsVar().VarID,
+		UploadedParts:    n.InputValues().GetVarIDsStart(1),
+		BypassFileOutput: n.BypassFileInfoVar().VarID,
+		BypassCallback:   n.BypassCallbackSlot().Var().VarID,
+	}, nil
 }
 
 type MultipartUploadNode struct {
 	dag.NodeBase
-	Address     cdssdk.StorageAddress
-	PartNumbers []int   `json:"partNumbers"`
-	PartSize    []int64 `json:"partSize"`
+	Storage    stgmod.StorageDetail
+	PartNumber int
+	PartSize   int64
 }
 
-func (b *GraphNodeBuilder) NewMultipartUpload(addr cdssdk.StorageAddress, partNumbers []int, partSize []int64) *MultipartUploadNode {
+func (b *GraphNodeBuilder) NewMultipartUpload(stg stgmod.StorageDetail, partNumber int, partSize int64) *MultipartUploadNode {
 	node := &MultipartUploadNode{
-		Address:     addr,
-		PartNumbers: partNumbers,
-		PartSize:    partSize,
+		Storage:    stg,
+		PartNumber: partNumber,
+		PartSize:   partSize,
 	}
 	b.AddNode(node)
+
+	node.InputValues().Init(1)
+	node.OutputValues().Init(node, 1)
+	node.InputStreams().Init(1)
 	return node
 }
 
-func (t MultipartUploadNode) GenerateOp() (exec.Op, error) {
+func (n *MultipartUploadNode) UploadArgsSlot() dag.ValueInputSlot {
+	return dag.ValueInputSlot{
+		Node:  n,
+		Index: 0,
+	}
+}
+
+func (n *MultipartUploadNode) UploadResultVar() *dag.ValueVar {
+	return n.OutputValues().Get(0)
+}
+
+func (n *MultipartUploadNode) PartStreamSlot() dag.ValueInputSlot {
+	return dag.ValueInputSlot{
+		Node:  n,
+		Index: 0,
+	}
+}
+
+func (n *MultipartUploadNode) GenerateOp() (exec.Op, error) {
 	return &MultipartUpload{
-		Address:     t.Address,
-		PartNumbers: t.PartNumbers,
-		PartSize:    t.PartSize,
+		Storage:      n.Storage,
+		UploadArgs:   n.UploadArgsSlot().Var().VarID,
+		UploadResult: n.UploadResultVar().VarID,
+		PartStream:   n.PartStreamSlot().Var().VarID,
+		PartNumber:   n.PartNumber,
+		PartSize:     n.PartSize,
 	}, nil
 }
-*/

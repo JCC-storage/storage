@@ -95,9 +95,9 @@ func (t *SharedLoadNode) SetInput(input *dag.StreamVar) {
 	input.To(t, 0)
 }
 
-func (t *SharedLoadNode) Input() dag.StreamSlot {
-	return dag.StreamSlot{
-		Var:   t.InputStreams().Get(0),
+func (t *SharedLoadNode) Input() dag.StreamOutputSlot {
+	return dag.StreamOutputSlot{
+		Node:  t,
 		Index: 0,
 	}
 }

@@ -233,12 +233,12 @@ func generateRange(ctx *GenerateContext) {
 		if toDataIdx == -1 {
 			n := ctx.DAG.NewRange()
 			toInput := toNode.Input()
-			*n.Env() = *toInput.Var.Src.Env()
-			rnged := n.RangeStream(toInput.Var, exec.Range{
+			*n.Env() = *toInput.Var().Src.Env()
+			rnged := n.RangeStream(toInput.Var(), exec.Range{
 				Offset: toRng.Offset - ctx.StreamRange.Offset,
 				Length: toRng.Length,
 			})
-			toInput.Var.NotTo(toNode)
+			toInput.Var().NotTo(toNode)
 			toNode.SetInput(rnged)
 
 		} else {
@@ -249,12 +249,12 @@ func generateRange(ctx *GenerateContext) {
 
 			n := ctx.DAG.NewRange()
 			toInput := toNode.Input()
-			*n.Env() = *toInput.Var.Src.Env()
-			rnged := n.RangeStream(toInput.Var, exec.Range{
+			*n.Env() = *toInput.Var().Src.Env()
+			rnged := n.RangeStream(toInput.Var(), exec.Range{
 				Offset: toRng.Offset - blkStart,
 				Length: toRng.Length,
 			})
-			toInput.Var.NotTo(toNode)
+			toInput.Var().NotTo(toNode)
 			toNode.SetInput(rnged)
 		}
 	}

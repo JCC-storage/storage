@@ -29,9 +29,9 @@ func (f *FromDriverNode) GetFrom() ioswitch2.From {
 	return f.From
 }
 
-func (t *FromDriverNode) Output() dag.StreamSlot {
-	return dag.StreamSlot{
-		Var:   t.OutputStreams().Get(0),
+func (t *FromDriverNode) Output() dag.StreamOutputSlot {
+	return dag.StreamOutputSlot{
+		Node:  t,
 		Index: 0,
 	}
 }
@@ -67,9 +67,9 @@ func (t *ToDriverNode) SetInput(v *dag.StreamVar) {
 	v.To(t, 0)
 }
 
-func (t *ToDriverNode) Input() dag.StreamSlot {
-	return dag.StreamSlot{
-		Var:   t.InputStreams().Get(0),
+func (t *ToDriverNode) Input() dag.StreamOutputSlot {
+	return dag.StreamOutputSlot{
+		Node:  t,
 		Index: 0,
 	}
 }

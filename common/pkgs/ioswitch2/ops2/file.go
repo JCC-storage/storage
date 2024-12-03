@@ -93,9 +93,9 @@ func (b *GraphNodeBuilder) NewFileRead(filePath string) *FileReadNode {
 	return node
 }
 
-func (t *FileReadNode) Output() dag.StreamSlot {
-	return dag.StreamSlot{
-		Var:   t.OutputStreams().Get(0),
+func (t *FileReadNode) Output() dag.StreamOutputSlot {
+	return dag.StreamOutputSlot{
+		Node:  t,
 		Index: 0,
 	}
 }
@@ -126,9 +126,9 @@ func (b *GraphNodeBuilder) NewFileWrite(filePath string) *FileWriteNode {
 	return node
 }
 
-func (t *FileWriteNode) Input() dag.StreamSlot {
-	return dag.StreamSlot{
-		Var:   t.InputStreams().Get(0),
+func (t *FileWriteNode) Input() dag.StreamOutputSlot {
+	return dag.StreamOutputSlot{
+		Node:  t,
 		Index: 0,
 	}
 }

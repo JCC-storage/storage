@@ -70,7 +70,7 @@ func buildDAGEncode(ctx *GenerateContext, fr ioswitchlrc.From, toes []ioswitchlr
 			}
 			ctx.ToNodes[to] = toNode
 
-			toNode.SetInput(frNode.Output().Var)
+			toNode.SetInput(frNode.Output().Var())
 		} else if idx < ctx.LRC.K {
 			dataToes = append(dataToes, to)
 		} else {
@@ -84,7 +84,7 @@ func buildDAGEncode(ctx *GenerateContext, fr ioswitchlrc.From, toes []ioswitchlr
 
 	// 需要文件块，则生成Split指令
 	splitNode := ctx.DAG.NewChunkedSplit(ctx.LRC.ChunkSize, ctx.LRC.K)
-	splitNode.Split(frNode.Output().Var)
+	splitNode.Split(frNode.Output().Var())
 
 	for _, to := range dataToes {
 		toNode, err := buildToNode(ctx, to)
@@ -173,7 +173,7 @@ func buildDAGReconstructAny(ctx *GenerateContext, frs []ioswitchlrc.From, toes [
 			}
 			ctx.ToNodes[to] = toNode
 
-			toNode.SetInput(fr.Output().Var)
+			toNode.SetInput(fr.Output().Var())
 			continue
 		}
 
@@ -192,7 +192,7 @@ func buildDAGReconstructAny(ctx *GenerateContext, frs []ioswitchlrc.From, toes [
 
 	conNode := ctx.DAG.NewLRCConstructAny(ctx.LRC)
 	for i, fr := range frNodes {
-		conNode.AddInput(fr.Output().Var, i)
+		conNode.AddInput(fr.Output().Var(), i)
 	}
 
 	for _, to := range missedToes {
@@ -218,7 +218,7 @@ func buildDAGReconstructAny(ctx *GenerateContext, frs []ioswitchlrc.From, toes [
 		if fr == nil {
 			joinNode.AddInput(conNode.NewOutput(i))
 		} else {
-			joinNode.AddInput(fr.Output().Var)
+			joinNode.AddInput(fr.Output().Var())
 		}
 	}
 
@@ -278,7 +278,7 @@ func buildDAGReconstructGroup(ctx *GenerateContext, frs []ioswitchlrc.From, toes
 			return fmt.Errorf("building from node: %w", err)
 		}
 
-		inputs = append(inputs, frNode.Output().Var)
+		inputs = append(inputs, frNode.Output().Var())
 	}
 
 	missedGrpIdx := toes[0].GetDataIndex()
