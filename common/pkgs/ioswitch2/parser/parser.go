@@ -107,7 +107,7 @@ func Parse(ft ioswitch2.FromTo, blder *exec.PlanBuilder) error {
 	removeUnusedFromNode(&ctx)
 	useMultipartUploadToShardStore(&ctx)
 	dropUnused(&ctx)
-	storeIPFSWriteResult(&ctx)
+	storeShardWriteResult(&ctx)
 	generateRange(&ctx)
 	generateClone(&ctx)
 
@@ -514,8 +514,15 @@ func fixSegmentSplit(ctx *ParseContext) error {
 		startSeg, endSeg := ctx.Ft.SegmentParam.CalcSegmentRange(ctx.StreamRange.Offset, strEnd)
 
 		// 关闭超出范围的分段
+		for i := endSeg; i < len(node.Segments); i++ {
+			node.OutputStreams().Get(i).ClearAllDst()
+		}
 		node.OutputStreams().Slots.RemoveRange(endSeg, ctx.Ft.SegmentParam.SegmentCount()-endSeg)
 		node.Segments = lo2.RemoveRange(node.Segments, endSeg, ctx.Ft.SegmentParam.SegmentCount()-endSeg)
+
+		for i := 0; i < startSeg; i++ {
+			node.OutputStreams().Get(i).ClearAllDst()
+		}
 		node.OutputStreams().Slots.RemoveRange(0, startSeg)
 		node.Segments = lo2.RemoveRange(node.Segments, 0, startSeg)
 
@@ -548,9 +555,16 @@ func fixSegmentJoin(ctx *ParseContext) error {
 		startSeg, endSeg := ctx.Ft.SegmentParam.CalcSegmentRange(start, end)
 
 		// 关闭超出范围的分段
-		node.OutputStreams().Slots.RemoveRange(endSeg, ctx.Ft.SegmentParam.SegmentCount()-endSeg)
+		for i := endSeg; i < len(node.Segments); i++ {
+			node.InputStreams().Get(i).NotTo(node)
+		}
+		node.InputStreams().Slots.RemoveRange(endSeg, ctx.Ft.SegmentParam.SegmentCount()-endSeg)
 		node.Segments = lo2.RemoveRange(node.Segments, endSeg, ctx.Ft.SegmentParam.SegmentCount()-endSeg)
-		node.OutputStreams().Slots.RemoveRange(0, startSeg)
+
+		for i := 0; i < startSeg; i++ {
+			node.InputStreams().Get(i).NotTo(node)
+		}
+		node.InputStreams().Slots.RemoveRange(0, startSeg)
 		node.Segments = lo2.RemoveRange(node.Segments, 0, startSeg)
 
 		// StreamRange开始的位置可能在某个分段的中间，此时这个分段的大小等于流开始位置到分段结束位置的距离
@@ -853,7 +867,7 @@ func removeUnusedFromNode(ctx *ParseContext) {
 			return true
 		}
 
-		if node.Output().Var() == nil {
+		if node.Output().Var().Dst.Len() == 0 {
 			ctx.DAG.RemoveNode(node)
 		}
 		return true
@@ -887,11 +901,19 @@ func useMultipartUploadToShardStore(ctx *ParseContext) {
 			return true
 		}
 
-		// Join的目的地必须支持TempStore和MultipartUpload功能才能替换成分片上传
-		if utils.FindFeature[*cdssdk.TempStore](shardNode.Storage) == nil {
+		// SegmentJoin的输出流的范围必须与ToShardStore的输入流的范围相同，
+		// 虽然可以通过调整SegmentJoin的输入流来调整范围，但太复杂，暂不支持
+		toStrIdx := shardNode.GetTo().GetStreamIndex()
+		toStrRng := shardNode.GetTo().GetRange()
+		if toStrIdx.IsRaw() {
+			if !toStrRng.Equals(ctx.StreamRange) {
+				return true
+			}
+		} else {
 			return true
 		}
 
+		// Join的目的地必须支持MultipartUpload功能才能替换成分片上传
 		multiUpload := utils.FindFeature[*cdssdk.MultipartUploadFeature](shardNode.Storage)
 		if multiUpload == nil {
 			return true
@@ -905,13 +927,12 @@ func useMultipartUploadToShardStore(ctx *ParseContext) {
 			}
 		}
 
-		initNode := ctx.DAG.NewMultipartInitiator(shardNode.Storage.Storage.StorageID)
+		initNode := ctx.DAG.NewMultipartInitiator(shardNode.Storage)
 		initNode.Env().CopyFrom(shardNode.Env())
 
 		partNumber := 1
 		for i, size := range joinNode.Segments {
 			joinInput := joinNode.InputSlot(i)
-			joinInput.Var().NotTo(joinNode)
 
 			if size > multiUpload.MaxPartSize {
 				// 如果一个分段的大小大于最大分片大小，则需要拆分为多个小段上传
@@ -944,9 +965,11 @@ func useMultipartUploadToShardStore(ctx *ParseContext) {
 
 				partNumber++
 			}
+
+			joinInput.Var().NotTo(joinNode)
 		}
 
-		bypassNode := ctx.DAG.NewBypassToShardStore(shardNode.Storage.Storage.StorageID)
+		bypassNode := ctx.DAG.NewBypassToShardStore(shardNode.Storage.Storage.StorageID, shardNode.FileHashStoreKey)
 		bypassNode.Env().CopyFrom(shardNode.Env())
 
 		// 分片上传Node产生的结果送到bypassNode，bypassNode将处理结果再送回分片上传Node
@@ -956,13 +979,28 @@ func useMultipartUploadToShardStore(ctx *ParseContext) {
 		// 最后删除Join指令和ToShardStore指令
 		ctx.DAG.RemoveNode(joinNode)
 		ctx.DAG.RemoveNode(shardNode)
+		// 因为ToShardStore已经被替换，所以对应的To也要删除。
+		// 虽然会跳过后续的Range过程，但由于之前做的流范围判断，不加Range也可以
+		ctx.Ft.Toes = lo2.Remove(ctx.Ft.Toes, shardNode.GetTo())
 		return true
 	})
 }
 
 // 为IPFS写入指令存储结果
-func storeIPFSWriteResult(ctx *ParseContext) {
+func storeShardWriteResult(ctx *ParseContext) {
 	dag.WalkOnlyType[*ops2.ShardWriteNode](ctx.DAG.Graph, func(n *ops2.ShardWriteNode) bool {
+		if n.FileHashStoreKey == "" {
+			return true
+		}
+
+		storeNode := ctx.DAG.NewStore()
+		storeNode.Env().ToEnvDriver()
+
+		storeNode.Store(n.FileHashStoreKey, n.FileHashVar())
+		return true
+	})
+
+	dag.WalkOnlyType[*ops2.BypassToShardStoreNode](ctx.DAG.Graph, func(n *ops2.BypassToShardStoreNode) bool {
 		if n.FileHashStoreKey == "" {
 			return true
 		}

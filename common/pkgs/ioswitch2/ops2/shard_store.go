@@ -185,8 +185,8 @@ func (t *ShardWriteNode) SetInput(input *dag.StreamVar) {
 	input.To(t, 0)
 }
 
-func (t *ShardWriteNode) Input() dag.StreamOutputSlot {
-	return dag.StreamOutputSlot{
+func (t *ShardWriteNode) Input() dag.StreamInputSlot {
+	return dag.StreamInputSlot{
 		Node:  t,
 		Index: 0,
 	}

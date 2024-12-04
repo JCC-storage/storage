@@ -14,10 +14,6 @@ var ErrComponentNotFound = errors.New("component not found")
 
 var ErrStorageExists = errors.New("storage already exists")
 
-var ErrUnsupportedStorageType = errors.New("unsupported storage type")
-
-var ErrUnsupportedComponent = errors.New("unsupported component type")
-
 type StorageEvent interface{}
 
 type StorageEventChan = async.UnboundChannel[StorageEvent]
@@ -28,4 +24,15 @@ type StorageService interface {
 	GetComponent(typ reflect.Type) (any, error)
 	Start(ch *StorageEventChan)
 	Stop()
+}
+
+// 创建一个在MasterHub上长期运行的存储服务
+type StorageServiceBuilder func(detail stgmod.StorageDetail) (StorageService, error)
+
+// 根据存储服务信息创建一个指定类型的组件
+type StorageComponentBuilder func(detail stgmod.StorageDetail, typ reflect.Type) (any, error)
+
+type StorageBuilder struct {
+	CreateService   StorageServiceBuilder
+	CreateComponent StorageComponentBuilder
 }

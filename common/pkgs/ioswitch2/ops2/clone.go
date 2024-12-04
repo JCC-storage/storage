@@ -70,7 +70,7 @@ func (o *CloneVar) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 }
 
 func (o *CloneVar) String() string {
-	return fmt.Sprintf("CloneStream %v -> (%v)", o.Raw, utils.FormatVarIDs(o.Cloneds))
+	return fmt.Sprintf("CloneVar %v -> (%v)", o.Raw, utils.FormatVarIDs(o.Cloneds))
 }
 
 type CloneStreamType struct {

@@ -27,22 +27,29 @@ const (
 type ShardStore struct {
 	svc              *Service
 	cfg              cdssdk.LocalShardStorage
+	absRoot          string
 	lock             sync.Mutex
 	workingTempFiles map[string]bool
 	done             chan any
 }
 
 func NewShardStore(svc *Service, cfg cdssdk.LocalShardStorage) (*ShardStore, error) {
+	absRoot, err := filepath.Abs(cfg.Root)
+	if err != nil {
+		return nil, fmt.Errorf("get abs root: %w", err)
+	}
+
 	return &ShardStore{
 		svc:              svc,
 		cfg:              cfg,
+		absRoot:          absRoot,
 		workingTempFiles: make(map[string]bool),
 		done:             make(chan any, 1),
 	}, nil
 }
 
 func (s *ShardStore) Start(ch *types.StorageEventChan) {
-	s.getLogger().Infof("component start, root: %v, max size: %v", s.cfg.Root, s.cfg.MaxSize)
+	s.getLogger().Infof("component start, root: %v, max size: %v", s.absRoot, s.cfg.MaxSize)
 
 	go func() {
 		removeTempTicker := time.NewTicker(time.Minute * 10)
@@ -65,7 +72,7 @@ func (s *ShardStore) removeUnusedTempFiles() {
 
 	log := s.getLogger()
 
-	entries, err := os.ReadDir(filepath.Join(s.cfg.Root, TempDir))
+	entries, err := os.ReadDir(filepath.Join(s.absRoot, TempDir))
 	if err != nil {
 		log.Warnf("read temp dir: %v", err)
 		return
@@ -86,7 +93,7 @@ func (s *ShardStore) removeUnusedTempFiles() {
 			continue
 		}
 
-		path := filepath.Join(s.cfg.Root, TempDir, entry.Name())
+		path := filepath.Join(s.absRoot, TempDir, entry.Name())
 		err = os.Remove(path)
 		if err != nil {
 			log.Warnf("remove temp file %v: %v", path, err)
@@ -125,7 +132,7 @@ func (s *ShardStore) createTempFile() (*os.File, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	tmpDir := filepath.Join(s.cfg.Root, TempDir)
+	tmpDir := filepath.Join(s.absRoot, TempDir)
 
 	err := os.MkdirAll(tmpDir, 0755)
 	if err != nil {
@@ -285,7 +292,7 @@ func (s *ShardStore) ListAll() ([]types.FileInfo, error) {
 
 	var infos []types.FileInfo
 
-	blockDir := filepath.Join(s.cfg.Root, BlocksDir)
+	blockDir := filepath.Join(s.absRoot, BlocksDir)
 	err := filepath.WalkDir(blockDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -326,7 +333,7 @@ func (s *ShardStore) GC(avaiables []cdssdk.FileHash) error {
 
 	cnt := 0
 
-	blockDir := filepath.Join(s.cfg.Root, BlocksDir)
+	blockDir := filepath.Join(s.absRoot, BlocksDir)
 	err := filepath.WalkDir(blockDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -370,14 +377,50 @@ func (s *ShardStore) Stats() types.Stats {
 	}
 }
 
+func (s *ShardStore) BypassUploaded(info types.BypassFileInfo) error {
+	if info.FileHash == "" {
+		return fmt.Errorf("empty file hash is not allowed by this shard store")
+	}
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	log := s.getLogger()
+
+	log.Debugf("%v bypass uploaded, size: %v, hash: %v", info.TempFilePath, info.Size, info.FileHash)
+
+	blockDir := s.getFileDirFromHash(info.FileHash)
+	err := os.MkdirAll(blockDir, 0755)
+	if err != nil {
+		log.Warnf("make block dir %v: %v", blockDir, err)
+		return fmt.Errorf("making block dir: %w", err)
+	}
+
+	newPath := filepath.Join(blockDir, string(info.FileHash))
+	_, err = os.Stat(newPath)
+	if os.IsNotExist(err) {
+		err = os.Rename(info.TempFilePath, newPath)
+		if err != nil {
+			log.Warnf("rename %v to %v: %v", info.TempFilePath, newPath, err)
+			return fmt.Errorf("rename file: %w", err)
+		}
+
+	} else if err != nil {
+		log.Warnf("get file %v stat: %v", newPath, err)
+		return fmt.Errorf("get file stat: %w", err)
+	}
+
+	return nil
+}
+
 func (s *ShardStore) getLogger() logger.Logger {
 	return logger.WithField("ShardStore", "Local").WithField("Storage", s.svc.Detail.Storage.String())
 }
 
 func (s *ShardStore) getFileDirFromHash(hash cdssdk.FileHash) string {
-	return filepath.Join(s.cfg.Root, BlocksDir, string(hash)[:2])
+	return filepath.Join(s.absRoot, BlocksDir, string(hash)[:2])
 }
 
 func (s *ShardStore) getFilePathFromHash(hash cdssdk.FileHash) string {
-	return filepath.Join(s.cfg.Root, BlocksDir, string(hash)[:2], string(hash))
+	return filepath.Join(s.absRoot, BlocksDir, string(hash)[:2], string(hash))
 }

@@ -3,19 +3,21 @@ package types
 import (
 	"context"
 	"io"
-
-	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 )
 
 type MultipartInitiator interface {
-	MultipartUploader
-	Initiate(ctx context.Context, objectName string) (MultipartInitState, error)
-	Complete(ctx context.Context, parts []UploadedPartInfo) (CompletedFileInfo, error)
+	// 启动一个分片上传
+	Initiate(ctx context.Context) (MultipartInitState, error)
+	// 所有分片上传完成后，合并分片
+	JoinParts(ctx context.Context, parts []UploadedPartInfo) (BypassFileInfo, error)
+	// 合成之后的文件已被使用
+	Complete()
+	// 取消上传。如果在调用Complete之前调用，则应该删除合并后的文件。如果已经调用Complete，则应该不做任何事情。
 	Abort()
 }
 
 type MultipartUploader interface {
-	UploadPart(ctx context.Context, init MultipartInitState, objectName string, partSize int64, partNumber int, stream io.Reader) (UploadedPartInfo, error)
+	UploadPart(ctx context.Context, init MultipartInitState, partSize int64, partNumber int, stream io.Reader) (UploadedPartInfo, error)
 	Close()
 }
 
@@ -26,8 +28,4 @@ type MultipartInitState struct {
 type UploadedPartInfo struct {
 	PartNumber int
 	ETag       string
-}
-
-type CompletedFileInfo struct {
-	FileHash cdssdk.FileHash // 可以为空，为空代表获取不到FileHash值
 }

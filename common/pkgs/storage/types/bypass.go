@@ -4,13 +4,10 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 )
 
-// type BypassWriter interface {
-// 	Write(stream io.Reader) (string, error)
-// }
-
 type BypassFileInfo struct {
 	TempFilePath string
 	FileHash     cdssdk.FileHash
+	Size         int64
 }
 
 type BypassNotifier interface {

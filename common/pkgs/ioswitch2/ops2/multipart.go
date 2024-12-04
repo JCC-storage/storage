@@ -7,10 +7,8 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/dag"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	log "gitlink.org.cn/cloudream/common/pkgs/logger"
-	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/factory"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
@@ -22,7 +20,6 @@ func init() {
 }
 
 type MultipartUploadArgsValue struct {
-	Key       string
 	InitState types.MultipartInitState
 }
 
@@ -43,7 +40,7 @@ func (v *UploadedPartInfoValue) Clone() exec.VarValue {
 }
 
 type MultipartInitiator struct {
-	StorageID        cdssdk.StorageID
+	Storage          stgmod.StorageDetail
 	UploadArgs       exec.VarID
 	UploadedParts    []exec.VarID
 	BypassFileOutput exec.VarID // 分片上传之后的临时文件的路径
@@ -51,31 +48,19 @@ type MultipartInitiator struct {
 }
 
 func (o *MultipartInitiator) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
-	stgMgr, err := exec.GetValueByType[*svcmgr.Manager](ctx)
+	initiator, err := factory.CreateComponent[types.MultipartInitiator](o.Storage)
 	if err != nil {
 		return err
 	}
-
-	tempStore, err := svcmgr.GetComponent[types.TempStore](stgMgr, o.StorageID)
-	if err != nil {
-		return err
-	}
-	objName := tempStore.CreateTemp()
-	defer tempStore.Drop(objName)
-
-	initiator, err := svcmgr.GetComponent[types.MultipartInitiator](stgMgr, o.StorageID)
-	if err != nil {
-		return err
-	}
+	defer initiator.Abort()
 
 	// 启动一个新的上传任务
-	initState, err := initiator.Initiate(ctx.Context, objName)
+	initState, err := initiator.Initiate(ctx.Context)
 	if err != nil {
 		return err
 	}
 	// 分发上传参数
 	e.PutVar(o.UploadArgs, &MultipartUploadArgsValue{
-		Key:       objName,
 		InitState: initState,
 	})
 
@@ -90,18 +75,15 @@ func (o *MultipartInitiator) Execute(ctx *exec.ExecContext, e *exec.Executor) er
 		partInfos[i] = v.UploadedPartInfo
 	}
 
-	// 完成分片上传
-	compInfo, err := initiator.Complete(ctx.Context, partInfos)
+	// 合并分片
+	fileInfo, err := initiator.JoinParts(ctx.Context, partInfos)
 	if err != nil {
 		return fmt.Errorf("completing multipart upload: %v", err)
 	}
 
 	// 告知后续Op临时文件的路径
 	e.PutVar(o.BypassFileOutput, &BypassFileInfoValue{
-		BypassFileInfo: types.BypassFileInfo{
-			TempFilePath: objName,
-			FileHash:     compInfo.FileHash,
-		},
+		BypassFileInfo: fileInfo,
 	})
 
 	// 等待后续Op处理临时文件
@@ -111,14 +93,14 @@ func (o *MultipartInitiator) Execute(ctx *exec.ExecContext, e *exec.Executor) er
 	}
 
 	if cb.Commited {
-		tempStore.Commited(objName)
+		initiator.Complete()
 	}
 
 	return nil
 }
 
 func (o *MultipartInitiator) String() string {
-	return "MultipartInitiator"
+	return fmt.Sprintf("MultipartInitiator Args: %v, Parts: %v, BypassFileOutput: %v, BypassCallback: %v", o.UploadArgs, o.UploadedParts, o.BypassFileOutput, o.BypassCallback)
 }
 
 type MultipartUpload struct {
@@ -132,7 +114,7 @@ type MultipartUpload struct {
 
 func (o *MultipartUpload) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 	uploadArgs, err := exec.BindVar[*MultipartUploadArgsValue](e, ctx.Context, o.UploadArgs)
-	if err == nil {
+	if err != nil {
 		return err
 	}
 
@@ -148,12 +130,11 @@ func (o *MultipartUpload) Execute(ctx *exec.ExecContext, e *exec.Executor) error
 	}
 
 	startTime := time.Now()
-	uploadedInfo, err := uploader.UploadPart(ctx.Context, uploadArgs.InitState, uploadArgs.Key, o.PartSize, o.PartNumber, partStr.Stream)
-	log.Debugf("upload finished in %v", time.Since(startTime))
-
+	uploadedInfo, err := uploader.UploadPart(ctx.Context, uploadArgs.InitState, o.PartSize, o.PartNumber, partStr.Stream)
 	if err != nil {
 		return err
 	}
+	log.Debugf("upload finished in %v", time.Since(startTime))
 
 	e.PutVar(o.UploadResult, &UploadedPartInfoValue{
 		uploadedInfo,
@@ -168,12 +149,12 @@ func (o *MultipartUpload) String() string {
 
 type MultipartInitiatorNode struct {
 	dag.NodeBase
-	StorageID cdssdk.StorageID `json:"storageID"`
+	Storage stgmod.StorageDetail `json:"storageID"`
 }
 
-func (b *GraphNodeBuilder) NewMultipartInitiator(storageID cdssdk.StorageID) *MultipartInitiatorNode {
+func (b *GraphNodeBuilder) NewMultipartInitiator(storage stgmod.StorageDetail) *MultipartInitiatorNode {
 	node := &MultipartInitiatorNode{
-		StorageID: storageID,
+		Storage: storage,
 	}
 	b.AddNode(node)
 
@@ -200,13 +181,13 @@ func (n *MultipartInitiatorNode) BypassCallbackSlot() dag.ValueInputSlot {
 func (n *MultipartInitiatorNode) AppendPartInfoSlot() dag.ValueInputSlot {
 	return dag.ValueInputSlot{
 		Node:  n,
-		Index: n.InputStreams().EnlargeOne(),
+		Index: n.InputValues().EnlargeOne(),
 	}
 }
 
 func (n *MultipartInitiatorNode) GenerateOp() (exec.Op, error) {
 	return &MultipartInitiator{
-		StorageID:        n.StorageID,
+		Storage:          n.Storage,
 		UploadArgs:       n.UploadArgsVar().VarID,
 		UploadedParts:    n.InputValues().GetVarIDsStart(1),
 		BypassFileOutput: n.BypassFileInfoVar().VarID,

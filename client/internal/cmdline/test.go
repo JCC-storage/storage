@@ -63,8 +63,8 @@ func init() {
 		},
 	})
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "test",
-		Short: "test",
+		Use:   "test1",
+		Short: "test1",
 		Run: func(cmd *cobra.Command, args []string) {
 			coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 			if err != nil {
@@ -133,8 +133,8 @@ func init() {
 	})
 
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "test3",
-		Short: "test3",
+		Use:   "test4",
+		Short: "test4",
 		Run: func(cmd *cobra.Command, args []string) {
 			coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 			if err != nil {
@@ -153,6 +153,57 @@ func init() {
 			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[0].MasterHub, *stgs.Storages[0], ioswitch2.ECSrteam(0), "EC0"))
 			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[0].MasterHub, *stgs.Storages[0], ioswitch2.ECSrteam(1), "EC1"))
 			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[0].MasterHub, *stgs.Storages[0], ioswitch2.ECSrteam(2), "EC2"))
+
+			plans := exec.NewPlanBuilder()
+			err = parser.Parse(ft, plans)
+			if err != nil {
+				panic(err)
+			}
+
+			fmt.Printf("plans: %v\n", plans)
+
+			exec := plans.Execute(exec.NewExecContext())
+
+			fut := future.NewSetVoid()
+			go func() {
+				mp, err := exec.Wait(context.Background())
+				if err != nil {
+					panic(err)
+				}
+
+				for k, v := range mp {
+					fmt.Printf("%s: %v\n", k, v)
+				}
+
+				fut.SetVoid()
+			}()
+
+			fut.Wait(context.TODO())
+		},
+	})
+
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "test",
+		Short: "test",
+		Run: func(cmd *cobra.Command, args []string) {
+			coorCli, err := stgglb.CoordinatorMQPool.Acquire()
+			if err != nil {
+				panic(err)
+			}
+			defer stgglb.CoordinatorMQPool.Release(coorCli)
+
+			stgs, err := coorCli.GetStorageDetails(coormq.ReqGetStorageDetails([]cdssdk.StorageID{1, 2}))
+			if err != nil {
+				panic(err)
+			}
+
+			ft := ioswitch2.NewFromTo()
+			ft.SegmentParam = cdssdk.NewSegmentRedundancy(1293, 3)
+			ft.ECParam = &cdssdk.DefaultECRedundancy
+			ft.AddFrom(ioswitch2.NewFromShardstore("22CC59CE3297F78F2D20DC1E33181B77F21E6782097C94E1664F99F129834069", *stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(0)))
+			ft.AddFrom(ioswitch2.NewFromShardstore("5EAC20EB3EBC7B5FA176C5BD1C01041FB2A6D14C35D6A232CA83D7F1E4B01ADE", *stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(1)))
+			ft.AddFrom(ioswitch2.NewFromShardstore("A9BC1802F37100C80C72A1D6E8F53C0E0B73F85F99153D8C78FB01CEC9D8D903", *stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(2)))
+			ft.AddTo(ioswitch2.NewToShardStoreWithRange(*stgs.Storages[0].MasterHub, *stgs.Storages[0], ioswitch2.RawStream(), "raw", exec.NewRange(10, 645)))
 
 			plans := exec.NewPlanBuilder()
 			err = parser.Parse(ft, plans)

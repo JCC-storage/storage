@@ -67,8 +67,8 @@ func (t *ToDriverNode) SetInput(v *dag.StreamVar) {
 	v.To(t, 0)
 }
 
-func (t *ToDriverNode) Input() dag.StreamOutputSlot {
-	return dag.StreamOutputSlot{
+func (t *ToDriverNode) Input() dag.StreamInputSlot {
+	return dag.StreamInputSlot{
 		Node:  t,
 		Index: 0,
 	}

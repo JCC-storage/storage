@@ -23,7 +23,7 @@ type FromNode interface {
 type ToNode interface {
 	dag.Node
 	GetTo() ioswitch2.To
-	Input() dag.StreamOutputSlot
+	Input() dag.StreamInputSlot
 	SetInput(input *dag.StreamVar)
 }
 

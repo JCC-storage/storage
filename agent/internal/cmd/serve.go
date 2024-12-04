@@ -57,7 +57,7 @@ func serve(configPath string) {
 	for _, stg := range hubCfg.Storages {
 		err := stgMgr.CreateService(stg)
 		if err != nil {
-			fmt.Printf("init storage %v: %v", stg, err)
+			fmt.Printf("init storage %v: %v", stg.Storage.String(), err)
 			os.Exit(1)
 		}
 	}

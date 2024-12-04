@@ -13,6 +13,7 @@ import (
 func init() {
 	exec.UseOp[*BypassToShardStore]()
 	exec.UseVarValue[*BypassFileInfoValue]()
+	exec.UseVarValue[*BypassHandleResultValue]()
 }
 
 type BypassFileInfoValue struct {
@@ -39,6 +40,7 @@ type BypassToShardStore struct {
 	StorageID      cdssdk.StorageID
 	BypassFileInfo exec.VarID
 	BypassCallback exec.VarID
+	FileHash       exec.VarID
 }
 
 func (o *BypassToShardStore) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
@@ -68,6 +70,7 @@ func (o *BypassToShardStore) Execute(ctx *exec.ExecContext, e *exec.Executor) er
 	}
 
 	e.PutVar(o.BypassCallback, &BypassHandleResultValue{Commited: true})
+	e.PutVar(o.FileHash, &FileHashValue{Hash: fileInfo.FileHash})
 	return nil
 }
 
@@ -77,17 +80,19 @@ func (o *BypassToShardStore) String() string {
 
 type BypassToShardStoreNode struct {
 	dag.NodeBase
-	StorageID cdssdk.StorageID
+	StorageID        cdssdk.StorageID
+	FileHashStoreKey string
 }
 
-func (b *GraphNodeBuilder) NewBypassToShardStore(storageID cdssdk.StorageID) *BypassToShardStoreNode {
+func (b *GraphNodeBuilder) NewBypassToShardStore(storageID cdssdk.StorageID, fileHashStoreKey string) *BypassToShardStoreNode {
 	node := &BypassToShardStoreNode{
-		StorageID: storageID,
+		StorageID:        storageID,
+		FileHashStoreKey: fileHashStoreKey,
 	}
 	b.AddNode(node)
 
 	node.InputValues().Init(1)
-	node.OutputValues().Init(node, 1)
+	node.OutputValues().Init(node, 2)
 	return node
 }
 
@@ -102,10 +107,15 @@ func (n *BypassToShardStoreNode) BypassCallbackVar() *dag.ValueVar {
 	return n.OutputValues().Get(0)
 }
 
+func (n *BypassToShardStoreNode) FileHashVar() *dag.ValueVar {
+	return n.OutputValues().Get(1)
+}
+
 func (t *BypassToShardStoreNode) GenerateOp() (exec.Op, error) {
 	return &BypassToShardStore{
 		StorageID:      t.StorageID,
 		BypassFileInfo: t.BypassFileInfoSlot().Var().VarID,
 		BypassCallback: t.BypassCallbackVar().VarID,
+		FileHash:       t.FileHashVar().VarID,
 	}, nil
 }

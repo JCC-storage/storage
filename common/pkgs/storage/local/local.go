@@ -2,16 +2,19 @@ package local
 
 import (
 	"fmt"
+	"path/filepath"
 	"reflect"
 
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/utils/reflect2"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/factory"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/factory/reg"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/utils"
 )
 
 func init() {
-	factory.RegisterBuilder[*cdssdk.LocalStorageType](createService, createComponent)
+	reg.RegisterBuilder[*cdssdk.LocalStorageType](createService, createComponent)
 }
 
 func createService(detail stgmod.StorageDetail) (types.StorageService, error) {
@@ -49,5 +52,30 @@ func createService(detail stgmod.StorageDetail) (types.StorageService, error) {
 }
 
 func createComponent(detail stgmod.StorageDetail, typ reflect.Type) (any, error) {
-	return nil, types.ErrUnsupportedComponent
+	switch typ {
+	case reflect2.TypeOf[types.MultipartInitiator]():
+		feat := utils.FindFeature[*cdssdk.MultipartUploadFeature](detail)
+		if feat == nil {
+			return nil, fmt.Errorf("feature %T not found", cdssdk.MultipartUploadFeature{})
+		}
+
+		absTempDir, err := filepath.Abs(feat.TempDir)
+		if err != nil {
+			return nil, fmt.Errorf("get abs temp dir %v: %v", feat.TempDir, err)
+		}
+
+		return &MultipartInitiator{
+			absTempDir: absTempDir,
+		}, nil
+
+	case reflect2.TypeOf[types.MultipartUploader]():
+		feat := utils.FindFeature[*cdssdk.MultipartUploadFeature](detail)
+		if feat == nil {
+			return nil, fmt.Errorf("feature %T not found", cdssdk.MultipartUploadFeature{})
+		}
+
+		return &MultipartUploader{}, nil
+	}
+
+	return nil, fmt.Errorf("unsupported component type %v", typ)
 }

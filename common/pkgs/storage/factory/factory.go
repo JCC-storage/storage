@@ -1,40 +1,23 @@
 package factory
 
 import (
+	"fmt"
 	"reflect"
 
-	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/reflect2"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/factory/reg"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
+
+	// 需要导入所有存储服务的包
+	_ "gitlink.org.cn/cloudream/storage/common/pkgs/storage/local"
 )
-
-// 创建一个在MasterHub上长期运行的存储服务
-type StorageServiceBuilder func(detail stgmod.StorageDetail) (types.StorageService, error)
-
-// 根据存储服务信息创建一个指定类型的组件
-type StorageComponentBuilder func(detail stgmod.StorageDetail, typ reflect.Type) (any, error)
-
-type StorageBuilder struct {
-	CreateService   StorageServiceBuilder
-	CreateComponent StorageComponentBuilder
-}
-
-var storageBuilders = make(map[reflect.Type]StorageBuilder)
-
-// 注册针对指定存储服务类型的Builder
-func RegisterBuilder[T cdssdk.StorageType](createSvc StorageServiceBuilder, createComp StorageComponentBuilder) {
-	storageBuilders[reflect2.TypeOf[T]()] = StorageBuilder{
-		CreateService:   createSvc,
-		CreateComponent: createComp,
-	}
-}
 
 func CreateService(detail stgmod.StorageDetail) (types.StorageService, error) {
 	typ := reflect.TypeOf(detail.Storage.Type)
-	bld, ok := storageBuilders[typ]
+	bld, ok := reg.StorageBuilders[typ]
 	if !ok {
-		return nil, types.ErrUnsupportedStorageType
+		return nil, fmt.Errorf("unsupported storage type: %T", detail.Storage.Type)
 	}
 
 	return bld.CreateService(detail)
@@ -42,10 +25,10 @@ func CreateService(detail stgmod.StorageDetail) (types.StorageService, error) {
 
 func CreateComponent[T any](detail stgmod.StorageDetail) (T, error) {
 	typ := reflect.TypeOf(detail.Storage.Type)
-	bld, ok := storageBuilders[typ]
+	bld, ok := reg.StorageBuilders[typ]
 	if !ok {
 		var def T
-		return def, types.ErrUnsupportedStorageType
+		return def, fmt.Errorf("unsupported storage type: %T", detail.Storage.Type)
 	}
 
 	comp, err := bld.CreateComponent(detail, reflect2.TypeOf[T]())
@@ -54,5 +37,11 @@ func CreateComponent[T any](detail stgmod.StorageDetail) (T, error) {
 		return def, err
 	}
 
-	return comp.(T), nil
+	c, ok := comp.(T)
+	if !ok {
+		var def T
+		return def, fmt.Errorf("invalid component type: %T", comp)
+	}
+
+	return c, nil
 }
