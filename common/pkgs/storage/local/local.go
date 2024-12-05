@@ -18,7 +18,9 @@ func init() {
 }
 
 func createService(detail stgmod.StorageDetail) (types.StorageService, error) {
-	svc := &Service{}
+	svc := &Service{
+		Detail: detail,
+	}
 
 	if detail.Storage.ShardStore != nil {
 		local, ok := detail.Storage.ShardStore.(*cdssdk.LocalShardStorage)

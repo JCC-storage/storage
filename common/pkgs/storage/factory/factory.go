@@ -9,8 +9,9 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/factory/reg"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 
-	// 需要导入所有存储服务的包
+	// !!! 需要导入所有存储服务的包 !!!
 	_ "gitlink.org.cn/cloudream/storage/common/pkgs/storage/local"
+	_ "gitlink.org.cn/cloudream/storage/common/pkgs/storage/s3"
 )
 
 func CreateService(detail stgmod.StorageDetail) (types.StorageService, error) {

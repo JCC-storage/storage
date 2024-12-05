@@ -218,7 +218,7 @@ func (s *ShardStore) onCreateFinished(tempFilePath string, size int64, hash cdss
 	return types.FileInfo{
 		Hash:        hash,
 		Size:        size,
-		Description: tempFilePath,
+		Description: newPath,
 	}, nil
 }
 

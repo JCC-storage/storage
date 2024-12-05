@@ -15,7 +15,7 @@ type MultiPartUploader struct {
 	bucket string
 }
 
-func NewMultiPartUpload(address *cdssdk.OBSAddress) *MultiPartUploader {
+func NewMultiPartUpload(address *cdssdk.OBSType) *MultiPartUploader {
 	client, err := obs.New(address.AK, address.SK, address.Endpoint)
 	if err != nil {
 		log.Fatalf("Error: %v", err)

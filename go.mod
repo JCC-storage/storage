@@ -1,6 +1,8 @@
 module gitlink.org.cn/cloudream/storage
 
-go 1.20
+go 1.21
+
+toolchain go1.23.2
 
 replace gitlink.org.cn/cloudream/common v0.0.0 => ../common
 
@@ -25,6 +27,8 @@ require (
 )
 
 require (
+	github.com/aws/aws-sdk-go-v2 v1.32.6 // indirect
+	github.com/aws/smithy-go v1.22.1 // indirect
 	github.com/clbanning/mxj v1.8.4 // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/google/uuid v1.3.1 // indirect

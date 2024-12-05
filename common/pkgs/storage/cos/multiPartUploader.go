@@ -16,7 +16,7 @@ type MultiPartUploader struct {
 	client *cos.Client
 }
 
-func NewMultiPartUpload(address *cdssdk.COSAddress) *MultiPartUploader {
+func NewMultiPartUpload(address *cdssdk.COSType) *MultiPartUploader {
 	// cos的endpoint已包含bucket名，会自动将桶解析出来
 	u, _ := url.Parse(address.Endpoint)
 	b := &cos.BaseURL{BucketURL: u}
