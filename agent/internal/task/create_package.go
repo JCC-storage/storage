@@ -2,6 +2,7 @@ package task
 
 import (
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/samber/lo"
@@ -109,9 +110,10 @@ func (t *CreatePackage) Execute(task *task.Task[TaskContext], ctx TaskContext, c
 			})
 			return
 		}
+		path := filepath.ToSlash(obj.Path)
 
 		// 上传对象
-		err = up.Upload(obj.Path, obj.Size, obj.File)
+		err = up.Upload(path, obj.Size, obj.File)
 		if err != nil {
 			err = fmt.Errorf("uploading object: %w", err)
 			log.Error(err.Error())

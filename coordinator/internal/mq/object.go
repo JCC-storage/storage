@@ -17,6 +17,31 @@ import (
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
+func (svc *Service) GetObjectsWithPrefix(msg *coormq.GetObjectsWithPrefix) (*coormq.GetObjectsWithPrefixResp, *mq.CodeMessage) {
+	var objs []cdssdk.Object
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
+		var err error
+
+		_, err = svc.db2.Package().GetUserPackage(tx, msg.UserID, msg.PackageID)
+		if err != nil {
+			return fmt.Errorf("getting package by id: %w", err)
+		}
+
+		objs, err = svc.db2.Object().GetWithPathPrefix(tx, msg.PackageID, msg.PathPrefix)
+		if err != nil {
+			return fmt.Errorf("getting objects with prefix: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		logger.WithField("PathPrefix", msg.PathPrefix).Warn(err.Error())
+		return nil, mq.Failed(errorcode.OperationFailed, "get objects with prefix failed")
+	}
+
+	return mq.ReplyOK(coormq.RespGetObjectsWithPrefix(objs))
+}
+
 func (svc *Service) GetPackageObjects(msg *coormq.GetPackageObjects) (*coormq.GetPackageObjectsResp, *mq.CodeMessage) {
 	var objs []cdssdk.Object
 	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
@@ -39,7 +64,7 @@ func (svc *Service) GetPackageObjects(msg *coormq.GetPackageObjects) (*coormq.Ge
 		return nil, mq.Failed(errorcode.OperationFailed, "get package objects failed")
 	}
 
-	return mq.ReplyOK(coormq.NewGetPackageObjectsResp(objs))
+	return mq.ReplyOK(coormq.RespGetPackageObjects(objs))
 }
 
 func (svc *Service) GetPackageObjectDetails(msg *coormq.GetPackageObjectDetails) (*coormq.GetPackageObjectDetailsResp, *mq.CodeMessage) {

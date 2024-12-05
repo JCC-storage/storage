@@ -104,6 +104,10 @@ func (s *ShardStore) removeUnusedTempFiles() {
 		marker = resp.NextMarker
 	}
 
+	if len(deletes) == 0 {
+		return
+	}
+
 	resp, err := s.cli.DeleteObjects(context.Background(), &s3.DeleteObjectsInput{
 		Bucket: aws.String(s.bucket),
 		Delete: &s3types.Delete{

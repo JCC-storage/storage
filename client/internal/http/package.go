@@ -5,6 +5,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
@@ -125,6 +126,7 @@ func (s *PackageService) CreateLoad(ctx *gin.Context) {
 			ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("unescape filename %v: %v", file.Filename, err)))
 			return
 		}
+		path = filepath.ToSlash(path)
 
 		err = up.Upload(path, file.Size, f)
 		if err != nil {

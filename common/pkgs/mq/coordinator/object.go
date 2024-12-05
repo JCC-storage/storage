@@ -10,6 +10,8 @@ import (
 )
 
 type ObjectService interface {
+	GetObjectsWithPrefix(msg *GetObjectsWithPrefix) (*GetObjectsWithPrefixResp, *mq.CodeMessage)
+
 	GetPackageObjects(msg *GetPackageObjects) (*GetPackageObjectsResp, *mq.CodeMessage)
 
 	GetPackageObjectDetails(msg *GetPackageObjectDetails) (*GetPackageObjectDetailsResp, *mq.CodeMessage)
@@ -29,6 +31,36 @@ type ObjectService interface {
 	AddAccessStat(msg *AddAccessStat)
 }
 
+// 查询指定前缀的Object，返回的Objects会按照ObjectID升序
+var _ = Register(Service.GetObjectsWithPrefix)
+
+type GetObjectsWithPrefix struct {
+	mq.MessageBodyBase
+	UserID     cdssdk.UserID    `json:"userID"`
+	PackageID  cdssdk.PackageID `json:"packageID"`
+	PathPrefix string           `json:"pathPrefix"`
+}
+type GetObjectsWithPrefixResp struct {
+	mq.MessageBodyBase
+	Objects []model.Object `json:"objects"`
+}
+
+func ReqGetObjectsWithPrefix(userID cdssdk.UserID, packageID cdssdk.PackageID, pathPrefix string) *GetObjectsWithPrefix {
+	return &GetObjectsWithPrefix{
+		UserID:     userID,
+		PackageID:  packageID,
+		PathPrefix: pathPrefix,
+	}
+}
+func RespGetObjectsWithPrefix(objects []model.Object) *GetObjectsWithPrefixResp {
+	return &GetObjectsWithPrefixResp{
+		Objects: objects,
+	}
+}
+func (client *Client) GetObjectsWithPrefix(msg *GetObjectsWithPrefix) (*GetObjectsWithPrefixResp, error) {
+	return mq.Request(Service.GetObjectsWithPrefix, client.rabbitCli, msg)
+}
+
 // 查询Package中的所有Object，返回的Objects会按照ObjectID升序
 var _ = Register(Service.GetPackageObjects)
 
@@ -42,13 +74,13 @@ type GetPackageObjectsResp struct {
 	Objects []model.Object `json:"objects"`
 }
 
-func NewGetPackageObjects(userID cdssdk.UserID, packageID cdssdk.PackageID) *GetPackageObjects {
+func ReqGetPackageObjects(userID cdssdk.UserID, packageID cdssdk.PackageID) *GetPackageObjects {
 	return &GetPackageObjects{
 		UserID:    userID,
 		PackageID: packageID,
 	}
 }
-func NewGetPackageObjectsResp(objects []model.Object) *GetPackageObjectsResp {
+func RespGetPackageObjects(objects []model.Object) *GetPackageObjectsResp {
 	return &GetPackageObjectsResp{
 		Objects: objects,
 	}

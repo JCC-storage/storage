@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
@@ -25,6 +26,26 @@ func (s *Server) Object() *ObjectService {
 	return &ObjectService{
 		Server: s,
 	}
+}
+
+func (s *ObjectService) List(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Object.List")
+
+	var req cdsapi.ObjectList
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		log.Warnf("binding body: %s", err.Error())
+		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
+		return
+	}
+
+	objs, err := s.svc.ObjectSvc().List(req.UserID, req.PackageID, req.PathPrefix)
+	if err != nil {
+		log.Warnf("listing objects: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("listing objects: %v", err)))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectListResp{Objects: objs}))
 }
 
 type ObjectUploadReq struct {
@@ -65,6 +86,7 @@ func (s *ObjectService) Upload(ctx *gin.Context) {
 			ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("unescape filename %v: %v", file.Filename, err)))
 			return
 		}
+		path = filepath.ToSlash(path)
 
 		err = up.Upload(path, file.Size, f)
 		if err != nil {

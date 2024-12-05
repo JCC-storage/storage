@@ -22,6 +22,21 @@ func (svc *Service) ObjectSvc() *ObjectService {
 	return &ObjectService{Service: svc}
 }
 
+func (svc *ObjectService) List(userID cdssdk.UserID, pkgID cdssdk.PackageID, pathPrefix string) ([]cdssdk.Object, error) {
+	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
+	if err != nil {
+		return nil, fmt.Errorf("new coordinator client: %w", err)
+	}
+	defer stgglb.CoordinatorMQPool.Release(coorCli)
+
+	listResp, err := coorCli.GetObjectsWithPrefix(coormq.ReqGetObjectsWithPrefix(userID, pkgID, pathPrefix))
+	if err != nil {
+		return nil, fmt.Errorf("requsting to coodinator: %w", err)
+	}
+
+	return listResp.Objects, nil
+}
+
 func (svc *ObjectService) UpdateInfo(userID cdssdk.UserID, updatings []cdsapi.UpdatingObject) ([]cdssdk.ObjectID, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
@@ -94,7 +109,7 @@ func (svc *ObjectService) GetPackageObjects(userID cdssdk.UserID, packageID cdss
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli) // 释放协调器客户端资源
 
-	getResp, err := coorCli.GetPackageObjects(coormq.NewGetPackageObjects(userID, packageID)) // 请求协调器获取套餐对象
+	getResp, err := coorCli.GetPackageObjects(coormq.ReqGetPackageObjects(userID, packageID)) // 请求协调器获取套餐对象
 	if err != nil {
 		return nil, fmt.Errorf("requesting to coordinator: %w", err)
 	}
