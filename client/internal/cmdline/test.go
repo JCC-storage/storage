@@ -33,9 +33,9 @@ func init() {
 
 			ft := ioswitch2.NewFromTo()
 			ft.SegmentParam = cdssdk.NewSegmentRedundancy(1024*100*3, 3)
-			ft.AddFrom(ioswitch2.NewFromShardstore("E58B075E9F7C5744CB1C2CBBECC30F163DE699DCDA94641DDA34A0C2EB01E240", *stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(0)))
-			ft.AddFrom(ioswitch2.NewFromShardstore("EA14D17544786427C3A766F0C5E6DEB221D00D3DE1875BBE3BD0AD5C8118C1A0", *stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(1)))
-			ft.AddFrom(ioswitch2.NewFromShardstore("4D142C458F2399175232D5636235B09A84664D60869E925EB20FFBE931045BDD", *stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(2)))
+			ft.AddFrom(ioswitch2.NewFromShardstore("FullE58B075E9F7C5744CB1C2CBBECC30F163DE699DCDA94641DDA34A0C2EB01E240", *stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(0)))
+			ft.AddFrom(ioswitch2.NewFromShardstore("FullEA14D17544786427C3A766F0C5E6DEB221D00D3DE1875BBE3BD0AD5C8118C1A0", *stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(1)))
+			ft.AddFrom(ioswitch2.NewFromShardstore("Full4D142C458F2399175232D5636235B09A84664D60869E925EB20FFBE931045BDD", *stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(2)))
 			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[2].MasterHub, *stgs.Storages[2], ioswitch2.RawStream(), "0"))
 			// ft.AddFrom(ioswitch2.NewFromShardstore("CA56E5934859E0220D1F3B848F41619D937D7B874D4EBF63A6CC98D2D8E3280F", *stgs.Storages[0].MasterHub, stgs.Storages[0].Storage, ioswitch2.RawStream()))
 			// ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(0), "0"))
