@@ -2,6 +2,7 @@ package s3
 
 import (
 	"context"
+	"crypto/sha256"
 	"io"
 	"path/filepath"
 
@@ -9,7 +10,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/utils/io2"
 	"gitlink.org.cn/cloudream/common/utils/os2"
+	"gitlink.org.cn/cloudream/common/utils/sort2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
@@ -45,6 +48,10 @@ func (i *MultipartInitiator) Initiate(ctx context.Context) (types.MultipartInitS
 }
 
 func (i *MultipartInitiator) JoinParts(ctx context.Context, parts []types.UploadedPartInfo) (types.BypassFileInfo, error) {
+	parts = sort2.Sort(parts, func(l, r types.UploadedPartInfo) int {
+		return l.PartNumber - r.PartNumber
+	})
+
 	s3Parts := make([]s3types.CompletedPart, len(parts))
 	for i, part := range parts {
 		s3Parts[i] = s3types.CompletedPart{
@@ -52,8 +59,12 @@ func (i *MultipartInitiator) JoinParts(ctx context.Context, parts []types.Upload
 			PartNumber: aws.Int32(int32(part.PartNumber)),
 		}
 	}
+	partHashes := make([][]byte, len(parts))
+	for i, part := range parts {
+		partHashes[i] = part.PartHash
+	}
 
-	compResp, err := i.cli.CompleteMultipartUpload(ctx, &s3.CompleteMultipartUploadInput{
+	_, err := i.cli.CompleteMultipartUpload(ctx, &s3.CompleteMultipartUploadInput{
 		Bucket:   aws.String(i.bucket),
 		Key:      aws.String(i.tempFilePath),
 		UploadId: aws.String(i.uploadID),
@@ -73,17 +84,7 @@ func (i *MultipartInitiator) JoinParts(ctx context.Context, parts []types.Upload
 		return types.BypassFileInfo{}, err
 	}
 
-	var hash cdssdk.FileHash
-	// if compResp.ChecksumSHA256 == nil {
-	// 	hash = "4D142C458F2399175232D5636235B09A84664D60869E925EB20FFBE931045BDD"
-	// } else {
-	// }
-	// TODO2 这里其实是单独上传的每一个分片的SHA256按顺序组成一个新字符串后，再计算得到的SHA256，不是完整文件的SHA256。
-	// 这种Hash考虑使用特殊的格式来区分
-	hash, err = DecodeBase64Hash(*compResp.ChecksumSHA256)
-	if err != nil {
-		return types.BypassFileInfo{}, err
-	}
+	hash := cdssdk.CalculateCompositeHash(partHashes)
 
 	return types.BypassFileInfo{
 		TempFilePath: i.tempFilePath,
@@ -117,12 +118,13 @@ type MultipartUploader struct {
 }
 
 func (u *MultipartUploader) UploadPart(ctx context.Context, init types.MultipartInitState, partSize int64, partNumber int, stream io.Reader) (types.UploadedPartInfo, error) {
+	hashStr := io2.NewReadHasher(sha256.New(), stream)
 	resp, err := u.cli.UploadPart(ctx, &s3.UploadPartInput{
 		Bucket:     aws.String(init.Bucket),
 		Key:        aws.String(init.Key),
 		UploadId:   aws.String(init.UploadID),
 		PartNumber: aws.Int32(int32(partNumber)),
-		Body:       stream,
+		Body:       hashStr,
 	})
 	if err != nil {
 		return types.UploadedPartInfo{}, err
@@ -131,6 +133,7 @@ func (u *MultipartUploader) UploadPart(ctx context.Context, init types.Multipart
 	return types.UploadedPartInfo{
 		ETag:       *resp.ETag,
 		PartNumber: partNumber,
+		PartHash:   hashStr.Sum(),
 	}, nil
 }
 

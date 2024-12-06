@@ -2,14 +2,12 @@ package local
 
 import (
 	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -177,7 +175,7 @@ func (s *ShardStore) writeTempFile(file *os.File, stream io.Reader) (int64, cdss
 	}
 
 	h := hasher.Sum(nil)
-	return size, cdssdk.FileHash(strings.ToUpper(hex.EncodeToString(h))), nil
+	return size, cdssdk.NewFullHash(h), nil
 }
 
 func (s *ShardStore) onCreateFinished(tempFilePath string, size int64, hash cdssdk.FileHash) (types.FileInfo, error) {
@@ -243,12 +241,7 @@ func (s *ShardStore) Open(opt types.OpenOption) (io.ReadCloser, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	fileName := string(opt.FileHash)
-	if len(fileName) < 2 {
-		return nil, fmt.Errorf("invalid file name")
-	}
-
-	filePath := s.getFilePathFromHash(cdssdk.FileHash(fileName))
+	filePath := s.getFilePathFromHash(opt.FileHash)
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -306,10 +299,14 @@ func (s *ShardStore) ListAll() ([]types.FileInfo, error) {
 		if err != nil {
 			return err
 		}
-		// TODO 简单检查一下文件名是否合法
+
+		fileHash, err := cdssdk.ParseHash(filepath.Base(info.Name()))
+		if err != nil {
+			return nil
+		}
 
 		infos = append(infos, types.FileInfo{
-			Hash:        cdssdk.FileHash(filepath.Base(info.Name())),
+			Hash:        fileHash,
 			Size:        info.Size(),
 			Description: filepath.Join(blockDir, path),
 		})
@@ -348,7 +345,11 @@ func (s *ShardStore) GC(avaiables []cdssdk.FileHash) error {
 			return err
 		}
 
-		fileHash := cdssdk.FileHash(filepath.Base(info.Name()))
+		fileHash, err := cdssdk.ParseHash(filepath.Base(info.Name()))
+		if err != nil {
+			return nil
+		}
+
 		if !avais[fileHash] {
 			err = os.Remove(path)
 			if err != nil {
@@ -378,10 +379,6 @@ func (s *ShardStore) Stats() types.Stats {
 }
 
 func (s *ShardStore) BypassUploaded(info types.BypassFileInfo) error {
-	if info.FileHash == "" {
-		return fmt.Errorf("empty file hash is not allowed by this shard store")
-	}
-
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -418,9 +415,9 @@ func (s *ShardStore) getLogger() logger.Logger {
 }
 
 func (s *ShardStore) getFileDirFromHash(hash cdssdk.FileHash) string {
-	return filepath.Join(s.absRoot, BlocksDir, string(hash)[:2])
+	return filepath.Join(s.absRoot, BlocksDir, hash.GetHashPrefix(2))
 }
 
 func (s *ShardStore) getFilePathFromHash(hash cdssdk.FileHash) string {
-	return filepath.Join(s.absRoot, BlocksDir, string(hash)[:2], string(hash))
+	return filepath.Join(s.absRoot, BlocksDir, hash.GetHashPrefix(2), string(hash))
 }

@@ -2,6 +2,7 @@ package s3
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
@@ -24,22 +25,28 @@ const (
 	BlocksDir = "blocks"
 )
 
+type ShardStoreOption struct {
+	UseAWSSha256 bool // 能否直接使用AWS提供的SHA256校验，如果不行，则使用本地计算。默认使用本地计算。
+}
+
 type ShardStore struct {
 	svc              *Service
 	cli              *s3.Client
 	bucket           string
 	cfg              cdssdk.S3ShardStorage
+	opt              ShardStoreOption
 	lock             sync.Mutex
 	workingTempFiles map[string]bool
 	done             chan any
 }
 
-func NewShardStore(svc *Service, cli *s3.Client, bkt string, cfg cdssdk.S3ShardStorage) (*ShardStore, error) {
+func NewShardStore(svc *Service, cli *s3.Client, bkt string, cfg cdssdk.S3ShardStorage, opt ShardStoreOption) (*ShardStore, error) {
 	return &ShardStore{
 		svc:              svc,
 		cli:              cli,
 		bucket:           bkt,
 		cfg:              cfg,
+		opt:              opt,
 		workingTempFiles: make(map[string]bool),
 		done:             make(chan any, 1),
 	}, nil
@@ -135,6 +142,14 @@ func (s *ShardStore) Stop() {
 }
 
 func (s *ShardStore) Create(stream io.Reader) (types.FileInfo, error) {
+	if s.opt.UseAWSSha256 {
+		return s.createWithAwsSha256(stream)
+	} else {
+		return s.createWithCalcSha256(stream)
+	}
+}
+
+func (s *ShardStore) createWithAwsSha256(stream io.Reader) (types.FileInfo, error) {
 	log := s.getLogger()
 
 	key, fileName := s.createTempFile()
@@ -170,7 +185,34 @@ func (s *ShardStore) Create(stream io.Reader) (types.FileInfo, error) {
 		return types.FileInfo{}, fmt.Errorf("decode SHA256 checksum: %v", err)
 	}
 
-	return s.onCreateFinished(key, counter.Count(), hash)
+	return s.onCreateFinished(key, counter.Count(), cdssdk.NewFullHash(hash))
+}
+
+func (s *ShardStore) createWithCalcSha256(stream io.Reader) (types.FileInfo, error) {
+	log := s.getLogger()
+
+	key, fileName := s.createTempFile()
+
+	hashStr := io2.NewReadHasher(sha256.New(), stream)
+	counter := io2.NewCounter(hashStr)
+
+	_, err := s.cli.PutObject(context.TODO(), &s3.PutObjectInput{
+		Bucket:            aws.String(s.bucket),
+		Key:               aws.String(key),
+		Body:              counter,
+		ChecksumAlgorithm: s3types.ChecksumAlgorithmSha256,
+	})
+	if err != nil {
+		log.Warnf("uploading file %v: %v", key, err)
+
+		s.lock.Lock()
+		defer s.lock.Unlock()
+
+		delete(s.workingTempFiles, fileName)
+		return types.FileInfo{}, err
+	}
+
+	return s.onCreateFinished(key, counter.Count(), cdssdk.NewFullHash(hashStr.Sum()))
 }
 
 func (s *ShardStore) createTempFile() (string, string) {
@@ -238,12 +280,7 @@ func (s *ShardStore) Open(opt types.OpenOption) (io.ReadCloser, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	fileName := string(opt.FileHash)
-	if len(fileName) < 2 {
-		return nil, fmt.Errorf("invalid file name")
-	}
-
-	filePath := s.getFilePathFromHash(cdssdk.FileHash(fileName))
+	filePath := s.getFilePathFromHash(opt.FileHash)
 
 	rngStr := fmt.Sprintf("bytes=%d-", opt.Offset)
 	if opt.Length >= 0 {
@@ -307,12 +344,14 @@ func (s *ShardStore) ListAll() ([]types.FileInfo, error) {
 
 		for _, obj := range resp.Contents {
 			key := BaseKey(*obj.Key)
-			if len(key) != 64 {
+
+			fileHash, err := cdssdk.ParseHash(key)
+			if err != nil {
 				continue
 			}
 
 			infos = append(infos, types.FileInfo{
-				Hash:        cdssdk.FileHash(key),
+				Hash:        fileHash,
 				Size:        *obj.Size,
 				Description: *obj.Key,
 			})
@@ -355,11 +394,12 @@ func (s *ShardStore) GC(avaiables []cdssdk.FileHash) error {
 
 		for _, obj := range resp.Contents {
 			key := BaseKey(*obj.Key)
-			if len(key) != 64 {
+			fileHash, err := cdssdk.ParseHash(key)
+			if err != nil {
 				continue
 			}
 
-			if !avais[cdssdk.FileHash(key)] {
+			if !avais[fileHash] {
 				deletes = append(deletes, s3types.ObjectIdentifier{
 					Key: obj.Key,
 				})
@@ -441,9 +481,9 @@ func (s *ShardStore) getLogger() logger.Logger {
 }
 
 func (s *ShardStore) getFileDirFromHash(hash cdssdk.FileHash) string {
-	return JoinKey(s.cfg.Root, BlocksDir, string(hash)[:2])
+	return JoinKey(s.cfg.Root, BlocksDir, hash.GetHashPrefix(2))
 }
 
 func (s *ShardStore) getFilePathFromHash(hash cdssdk.FileHash) string {
-	return JoinKey(s.cfg.Root, BlocksDir, string(hash)[:2], string(hash))
+	return JoinKey(s.cfg.Root, BlocksDir, hash.GetHashPrefix(2), string(hash))
 }

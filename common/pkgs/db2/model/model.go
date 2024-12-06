@@ -57,7 +57,7 @@ type HubConnectivity = cdssdk.HubConnectivity
 type ObjectBlock = stgmod.ObjectBlock
 
 type Cache struct {
-	FileHash   cdssdk.FileHash  `gorm:"column:FileHash; primaryKey; type: char(64)" json:"fileHash"`
+	FileHash   cdssdk.FileHash  `gorm:"column:FileHash; primaryKey; type: char(68)" json:"fileHash"`
 	StorageID  cdssdk.StorageID `gorm:"column:StorageID; primaryKey; type: bigint" json:"storageID"`
 	CreateTime time.Time        `gorm:"column:CreateTime; type:datetime" json:"createTime"`
 	Priority   int              `gorm:"column:Priority; type:int" json:"priority"`

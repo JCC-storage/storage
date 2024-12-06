@@ -10,7 +10,7 @@ type ObjectBlock struct {
 	ObjectID  cdssdk.ObjectID  `gorm:"column:ObjectID; primaryKey; type:bigint" json:"objectID"`
 	Index     int              `gorm:"column:Index; primaryKey; type:int" json:"index"`
 	StorageID cdssdk.StorageID `gorm:"column:StorageID; primaryKey; type:bigint" json:"storageID"` // 这个块应该在哪个节点上
-	FileHash  cdssdk.FileHash  `gorm:"column:FileHash; type:char(64); not null" json:"fileHash"`
+	FileHash  cdssdk.FileHash  `gorm:"column:FileHash; type:char(68); not null" json:"fileHash"`
 }
 
 func (ObjectBlock) TableName() string {

@@ -4,8 +4,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
-
-	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 )
 
 func JoinKey(comps ...string) string {
@@ -27,15 +25,15 @@ func BaseKey(key string) string {
 	return key[strings.LastIndex(key, "/")+1:]
 }
 
-func DecodeBase64Hash(hash string) (cdssdk.FileHash, error) {
+func DecodeBase64Hash(hash string) ([]byte, error) {
 	hashBytes := make([]byte, 32)
 	n, err := base64.RawStdEncoding.Decode(hashBytes, []byte(hash))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if n != 32 {
-		return "", fmt.Errorf("invalid hash length: %d", n)
+		return nil, fmt.Errorf("invalid hash length: %d", n)
 	}
 
-	return cdssdk.FileHash(strings.ToUpper(string(hashBytes))), nil
+	return hashBytes, nil
 }

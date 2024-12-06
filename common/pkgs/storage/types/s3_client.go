@@ -21,14 +21,15 @@ type MultipartUploader interface {
 	Close()
 }
 
-// TODO 重构成一个接口，支持不同的类型的分片有不同内容的实现
+// TODO 可以考虑重构成一个接口，支持不同的类型的分片有不同内容的实现
 type MultipartInitState struct {
 	UploadID string
-	Bucket   string // TODO 临时使用
-	Key      string // TODO 临时使用
+	Bucket   string
+	Key      string
 }
 
 type UploadedPartInfo struct {
-	PartNumber int
 	ETag       string
+	PartNumber int
+	PartHash   []byte
 }

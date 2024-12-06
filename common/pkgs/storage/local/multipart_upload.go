@@ -3,13 +3,11 @@ package local
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"hash"
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/io2"
@@ -68,7 +66,7 @@ func (i *MultipartInitiator) JoinParts(ctx context.Context, parts []types.Upload
 	return types.BypassFileInfo{
 		TempFilePath: joined.Name(),
 		Size:         size,
-		FileHash:     cdssdk.FileHash(strings.ToUpper(hex.EncodeToString(h))),
+		FileHash:     cdssdk.NewFullHash(h),
 	}, nil
 }
 

@@ -37,7 +37,10 @@ func createService(detail stgmod.StorageDetail) (types.StorageService, error) {
 			return nil, err
 		}
 
-		store, err := NewShardStore(svc, cli, bkt, *cfg)
+		store, err := NewShardStore(svc, cli, bkt, *cfg, ShardStoreOption{
+			// 目前对接的存储服务都不支持从上传接口直接获取到Sha256
+			UseAWSSha256: false,
+		})
 		if err != nil {
 			return nil, err
 		}
