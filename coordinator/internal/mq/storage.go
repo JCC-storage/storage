@@ -1,7 +1,7 @@
 package mq
 
 import (
-	"database/sql"
+	"errors"
 	"fmt"
 
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
@@ -92,7 +92,7 @@ func (svc *Service) GetStorageByName(msg *coormq.GetStorageByName) (*coormq.GetS
 	if err != nil {
 		logger.Warnf("getting user storage by name: %s", err.Error())
 
-		if err == sql.ErrNoRows {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, mq.Failed(errorcode.DataNotFound, "storage not found")
 		}
 

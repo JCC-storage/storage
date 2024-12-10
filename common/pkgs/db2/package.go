@@ -1,7 +1,6 @@
 package db2
 
 import (
-	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -122,7 +121,7 @@ func (db *PackageDB) Create(ctx SQLContext, bucketID cdssdk.BucketID, name strin
 		return 0, err
 	}
 	if packageID != 0 {
-		return 0, errors.New("package already exists")
+		return 0, gorm.ErrDuplicatedKey
 	}
 
 	newPackage := cdssdk.Package{Name: name, BucketID: bucketID, State: cdssdk.PackageStateNormal}

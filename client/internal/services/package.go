@@ -30,7 +30,7 @@ func (svc *PackageService) Get(userID cdssdk.UserID, packageID cdssdk.PackageID)
 	// 向协调器请求获取包信息
 	getResp, err := coorCli.GetPackage(coormq.NewGetPackage(userID, packageID))
 	if err != nil {
-		return nil, fmt.Errorf("requsting to coodinator: %w", err)
+		return nil, err
 	}
 
 	return &getResp.Package, nil
@@ -77,7 +77,7 @@ func (svc *PackageService) Create(userID cdssdk.UserID, bucketID cdssdk.BucketID
 	// 向协调器发送创建包的请求
 	resp, err := coorCli.CreatePackage(coormq.NewCreatePackage(userID, bucketID, name))
 	if err != nil {
-		return cdssdk.Package{}, fmt.Errorf("creating package: %w", err)
+		return cdssdk.Package{}, err
 	}
 
 	return resp.Package, nil

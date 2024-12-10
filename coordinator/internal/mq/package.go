@@ -1,11 +1,12 @@
 package mq
 
 import (
-	"database/sql"
+	"errors"
 	"fmt"
 	"sort"
 
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
+	"gorm.io/gorm"
 
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
@@ -19,6 +20,10 @@ func (svc *Service) GetPackage(msg *coormq.GetPackage) (*coormq.GetPackageResp, 
 	if err != nil {
 		logger.WithField("PackageID", msg.PackageID).
 			Warnf("get package: %s", err.Error())
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, mq.Failed(errorcode.DataNotFound, "package not found")
+		}
 
 		return nil, mq.Failed(errorcode.OperationFailed, "get package failed")
 	}
@@ -34,7 +39,7 @@ func (svc *Service) GetPackageByName(msg *coormq.GetPackageByName) (*coormq.GetP
 			WithField("PackageName", msg.PackageName).
 			Warnf("get package by name: %s", err.Error())
 
-		if err == sql.ErrNoRows {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, mq.Failed(errorcode.DataNotFound, "package not found")
 		}
 
@@ -70,6 +75,11 @@ func (svc *Service) CreatePackage(msg *coormq.CreatePackage) (*coormq.CreatePack
 		logger.WithField("BucketID", msg.BucketID).
 			WithField("Name", msg.Name).
 			Warn(err.Error())
+
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return nil, mq.Failed(errorcode.DataExists, "package already exists")
+		}
+
 		return nil, mq.Failed(errorcode.OperationFailed, err.Error())
 	}
 

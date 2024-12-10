@@ -1,9 +1,11 @@
 package mq
 
 import (
+	"errors"
 	"fmt"
 
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
+	"gorm.io/gorm"
 
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
@@ -24,7 +26,12 @@ func (svc *Service) GetBucketByName(msg *coormq.GetBucketByName) (*coormq.GetBuc
 		logger.WithField("UserID", msg.UserID).
 			WithField("Name", msg.Name).
 			Warnf("getting bucket by name: %s", err.Error())
-		return nil, mq.Failed(errorcode.OperationFailed, "get bucket by name failed")
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, mq.Failed(errorcode.DataNotFound, "bucket not found")
+		}
+
+		return nil, mq.Failed(errorcode.OperationFailed, err.Error())
 	}
 
 	return mq.ReplyOK(coormq.RespGetBucketByName(bucket))
@@ -36,7 +43,7 @@ func (svc *Service) GetUserBuckets(msg *coormq.GetUserBuckets) (*coormq.GetUserB
 	if err != nil {
 		logger.WithField("UserID", msg.UserID).
 			Warnf("get user buckets failed, err: %s", err.Error())
-		return nil, mq.Failed(errorcode.OperationFailed, "get all buckets failed")
+		return nil, mq.Failed(errorcode.OperationFailed, err.Error())
 	}
 
 	return mq.ReplyOK(coormq.NewGetUserBucketsResp(buckets))
@@ -78,7 +85,12 @@ func (svc *Service) CreateBucket(msg *coormq.CreateBucket) (*coormq.CreateBucket
 		logger.WithField("UserID", msg.UserID).
 			WithField("BucketName", msg.BucketName).
 			Warn(err.Error())
-		return nil, mq.Failed(errorcode.OperationFailed, "create bucket failed")
+
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return nil, mq.Failed(errorcode.DataExists, "bucket name already exists")
+		}
+
+		return nil, mq.Failed(errorcode.OperationFailed, err.Error())
 	}
 
 	return mq.ReplyOK(coormq.NewCreateBucketResp(bucket))

@@ -10,7 +10,7 @@ import (
 )
 
 type ObjectService interface {
-	GetObjectsWithPrefix(msg *GetObjectsWithPrefix) (*GetObjectsWithPrefixResp, *mq.CodeMessage)
+	GetObjectsByPath(msg *GetObjectsByPath) (*GetObjectsByPathResp, *mq.CodeMessage)
 
 	GetPackageObjects(msg *GetPackageObjects) (*GetPackageObjectsResp, *mq.CodeMessage)
 
@@ -32,33 +32,35 @@ type ObjectService interface {
 }
 
 // 查询指定前缀的Object，返回的Objects会按照ObjectID升序
-var _ = Register(Service.GetObjectsWithPrefix)
+var _ = Register(Service.GetObjectsByPath)
 
-type GetObjectsWithPrefix struct {
+type GetObjectsByPath struct {
 	mq.MessageBodyBase
-	UserID     cdssdk.UserID    `json:"userID"`
-	PackageID  cdssdk.PackageID `json:"packageID"`
-	PathPrefix string           `json:"pathPrefix"`
+	UserID    cdssdk.UserID    `json:"userID"`
+	PackageID cdssdk.PackageID `json:"packageID"`
+	Path      string           `json:"path"`
+	IsPrefix  bool             `json:"isPrefix"`
 }
-type GetObjectsWithPrefixResp struct {
+type GetObjectsByPathResp struct {
 	mq.MessageBodyBase
 	Objects []model.Object `json:"objects"`
 }
 
-func ReqGetObjectsWithPrefix(userID cdssdk.UserID, packageID cdssdk.PackageID, pathPrefix string) *GetObjectsWithPrefix {
-	return &GetObjectsWithPrefix{
-		UserID:     userID,
-		PackageID:  packageID,
-		PathPrefix: pathPrefix,
+func ReqGetObjectsByPath(userID cdssdk.UserID, packageID cdssdk.PackageID, path string, isPrefix bool) *GetObjectsByPath {
+	return &GetObjectsByPath{
+		UserID:    userID,
+		PackageID: packageID,
+		Path:      path,
+		IsPrefix:  isPrefix,
 	}
 }
-func RespGetObjectsWithPrefix(objects []model.Object) *GetObjectsWithPrefixResp {
-	return &GetObjectsWithPrefixResp{
+func RespGetObjectsByPath(objects []model.Object) *GetObjectsByPathResp {
+	return &GetObjectsByPathResp{
 		Objects: objects,
 	}
 }
-func (client *Client) GetObjectsWithPrefix(msg *GetObjectsWithPrefix) (*GetObjectsWithPrefixResp, error) {
-	return mq.Request(Service.GetObjectsWithPrefix, client.rabbitCli, msg)
+func (client *Client) GetObjectsByPath(msg *GetObjectsByPath) (*GetObjectsByPathResp, error) {
+	return mq.Request(Service.GetObjectsByPath, client.rabbitCli, msg)
 }
 
 // 查询Package中的所有Object，返回的Objects会按照ObjectID升序

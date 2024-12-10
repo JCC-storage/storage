@@ -39,7 +39,7 @@ func (s *PackageService) Get(ctx *gin.Context) {
 	pkg, err := s.svc.PackageSvc().Get(req.UserID, req.PackageID)
 	if err != nil {
 		log.Warnf("getting package: %s", err.Error())
-		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get package failed"))
+		ctx.JSON(http.StatusOK, FailedError(err))
 		return
 	}
 
@@ -59,7 +59,7 @@ func (s *PackageService) GetByName(ctx *gin.Context) {
 	pkg, err := s.svc.PackageSvc().GetByName(req.UserID, req.BucketName, req.PackageName)
 	if err != nil {
 		log.Warnf("getting package by name: %s", err.Error())
-		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get package by name failed"))
+		ctx.JSON(http.StatusOK, FailedError(err))
 		return
 	}
 
@@ -79,7 +79,7 @@ func (s *PackageService) Create(ctx *gin.Context) {
 	pkg, err := s.svc.PackageSvc().Create(req.UserID, req.BucketID, req.Name)
 	if err != nil {
 		log.Warnf("creating package: %s", err.Error())
-		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "create package failed"))
+		ctx.JSON(http.StatusOK, FailedError(err))
 		return
 	}
 

@@ -1,10 +1,11 @@
 package mq
 
 import (
-	"database/sql"
+	"errors"
 	"fmt"
 
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
+	"gorm.io/gorm"
 
 	"github.com/samber/lo"
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
@@ -17,7 +18,7 @@ import (
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
-func (svc *Service) GetObjectsWithPrefix(msg *coormq.GetObjectsWithPrefix) (*coormq.GetObjectsWithPrefixResp, *mq.CodeMessage) {
+func (svc *Service) GetObjectsByPath(msg *coormq.GetObjectsByPath) (*coormq.GetObjectsByPathResp, *mq.CodeMessage) {
 	var objs []cdssdk.Object
 	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
 		var err error
@@ -27,19 +28,26 @@ func (svc *Service) GetObjectsWithPrefix(msg *coormq.GetObjectsWithPrefix) (*coo
 			return fmt.Errorf("getting package by id: %w", err)
 		}
 
-		objs, err = svc.db2.Object().GetWithPathPrefix(tx, msg.PackageID, msg.PathPrefix)
-		if err != nil {
-			return fmt.Errorf("getting objects with prefix: %w", err)
+		if msg.IsPrefix {
+			objs, err = svc.db2.Object().GetWithPathPrefix(tx, msg.PackageID, msg.Path)
+			if err != nil {
+				return fmt.Errorf("getting objects with prefix: %w", err)
+			}
+		} else {
+			objs, err = svc.db2.Object().GetByPath(tx, msg.PackageID, msg.Path)
+			if err != nil {
+				return fmt.Errorf("getting object by path: %w", err)
+			}
 		}
 
 		return nil
 	})
 	if err != nil {
-		logger.WithField("PathPrefix", msg.PathPrefix).Warn(err.Error())
+		logger.WithField("PathPrefix", msg.Path).Warn(err.Error())
 		return nil, mq.Failed(errorcode.OperationFailed, "get objects with prefix failed")
 	}
 
-	return mq.ReplyOK(coormq.RespGetObjectsWithPrefix(objs))
+	return mq.ReplyOK(coormq.RespGetObjectsByPath(objs))
 }
 
 func (svc *Service) GetPackageObjects(msg *coormq.GetPackageObjects) (*coormq.GetPackageObjectsResp, *mq.CodeMessage) {
@@ -335,7 +343,7 @@ func (svc *Service) checkPackageChangedObjects(tx db2.SQLContext, userID cdssdk.
 	var willUpdateObjs []cdssdk.Object
 	for _, pkg := range packages {
 		_, err := svc.db2.Package().GetUserPackage(tx, userID, pkg.PackageID)
-		if err == sql.ErrNoRows {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			continue
 		}
 		if err != nil {
@@ -381,7 +389,7 @@ func (svc *Service) checkPathChangedObjects(tx db2.SQLContext, userID cdssdk.Use
 	}
 
 	_, err := svc.db2.Package().GetUserPackage(tx, userID, objs[0].PackageID)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
 	if err != nil {

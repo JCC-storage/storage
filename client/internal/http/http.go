@@ -1,6 +1,9 @@
 package http
 
-import "gitlink.org.cn/cloudream/common/consts/errorcode"
+import (
+	"gitlink.org.cn/cloudream/common/consts/errorcode"
+	"gitlink.org.cn/cloudream/common/pkgs/mq"
+)
 
 type Response struct {
 	Code    string `json:"code"`
@@ -21,4 +24,12 @@ func Failed(code string, msg string) Response {
 		Code:    code,
 		Message: msg,
 	}
+}
+
+func FailedError(err error) Response {
+	if codeErr, ok := err.(*mq.CodeMessageError); ok {
+		return Failed(codeErr.Code, codeErr.Message)
+	}
+
+	return Failed(errorcode.OperationFailed, err.Error())
 }

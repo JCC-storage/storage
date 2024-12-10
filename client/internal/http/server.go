@@ -45,11 +45,14 @@ func (s *Server) initRouters() {
 
 	rt.GET(cdsapi.ObjectListPath, s.Object().List)
 	rt.GET(cdsapi.ObjectDownloadPath, s.Object().Download)
+	rt.GET(cdsapi.ObjectDownloadByPathPath, s.Object().DownloadByPath)
 	rt.POST(cdsapi.ObjectUploadPath, s.Object().Upload)
 	rt.GET(cdsapi.ObjectGetPackageObjectsPath, s.Object().GetPackageObjects)
 	rt.POST(cdsapi.ObjectUpdateInfoPath, s.Object().UpdateInfo)
+	rt.POST(cdsapi.ObjectUpdateInfoByPathPath, s.Object().UpdateInfoByPath)
 	rt.POST(cdsapi.ObjectMovePath, s.Object().Move)
 	rt.POST(cdsapi.ObjectDeletePath, s.Object().Delete)
+	rt.POST(cdsapi.ObjectDeleteByPathPath, s.Object().DeleteByPath)
 
 	rt.GET(cdsapi.PackageGetPath, s.Package().Get)
 	rt.GET(cdsapi.PackageGetByNamePath, s.Package().GetByName)

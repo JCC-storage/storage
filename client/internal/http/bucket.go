@@ -32,7 +32,7 @@ func (s *BucketService) GetByName(ctx *gin.Context) {
 	bucket, err := s.svc.BucketSvc().GetBucketByName(req.UserID, req.Name)
 	if err != nil {
 		log.Warnf("getting bucket by name: %s", err.Error())
-		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get bucket by name failed"))
+		ctx.JSON(http.StatusOK, FailedError(err))
 		return
 	}
 
@@ -54,7 +54,7 @@ func (s *BucketService) Create(ctx *gin.Context) {
 	bucket, err := s.svc.BucketSvc().CreateBucket(req.UserID, req.Name)
 	if err != nil {
 		log.Warnf("creating bucket: %s", err.Error())
-		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "create bucket failed"))
+		ctx.JSON(http.StatusOK, FailedError(err))
 		return
 	}
 

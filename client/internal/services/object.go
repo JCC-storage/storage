@@ -22,14 +22,14 @@ func (svc *Service) ObjectSvc() *ObjectService {
 	return &ObjectService{Service: svc}
 }
 
-func (svc *ObjectService) List(userID cdssdk.UserID, pkgID cdssdk.PackageID, pathPrefix string) ([]cdssdk.Object, error) {
+func (svc *ObjectService) GetByPath(userID cdssdk.UserID, pkgID cdssdk.PackageID, path string, isPrefix bool) ([]cdssdk.Object, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-	listResp, err := coorCli.GetObjectsWithPrefix(coormq.ReqGetObjectsWithPrefix(userID, pkgID, pathPrefix))
+	listResp, err := coorCli.GetObjectsByPath(coormq.ReqGetObjectsByPath(userID, pkgID, path, isPrefix))
 	if err != nil {
 		return nil, fmt.Errorf("requsting to coodinator: %w", err)
 	}

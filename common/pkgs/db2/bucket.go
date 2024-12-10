@@ -96,7 +96,7 @@ func (db *BucketDB) Create(ctx SQLContext, userID cdssdk.UserID, bucketName stri
 	}
 
 	if bucketID > 0 {
-		return 0, fmt.Errorf("bucket name exists")
+		return 0, gorm.ErrDuplicatedKey
 	}
 
 	newBucket := cdssdk.Bucket{Name: bucketName, CreatorID: userID}

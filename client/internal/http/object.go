@@ -38,7 +38,7 @@ func (s *ObjectService) List(ctx *gin.Context) {
 		return
 	}
 
-	objs, err := s.svc.ObjectSvc().List(req.UserID, req.PackageID, req.PathPrefix)
+	objs, err := s.svc.ObjectSvc().GetByPath(req.UserID, req.PackageID, req.Path, req.IsPrefix)
 	if err != nil {
 		log.Warnf("listing objects: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("listing objects: %v", err)))
@@ -155,6 +155,61 @@ func (s *ObjectService) Download(ctx *gin.Context) {
 	}
 }
 
+func (s *ObjectService) DownloadByPath(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Object.DownloadByPath")
+
+	var req cdsapi.ObjectDownloadByPath
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		log.Warnf("binding body: %s", err.Error())
+		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
+		return
+	}
+
+	obj, err := s.svc.ObjectSvc().GetByPath(req.UserID, req.PackageID, req.Path, false)
+	if err != nil {
+		log.Warnf("getting object by path: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get object by path failed"))
+		return
+	}
+
+	if len(obj) == 0 {
+		log.Warnf("object not found: %s", req.Path)
+		ctx.JSON(http.StatusOK, Failed(errorcode.DataNotFound, "object not found"))
+		return
+	}
+
+	off := req.Offset
+	len := int64(-1)
+	if req.Length != nil {
+		len = *req.Length
+	}
+
+	file, err := s.svc.ObjectSvc().Download(req.UserID, downloader.DownloadReqeust{
+		ObjectID: obj[0].ObjectID,
+		Offset:   off,
+		Length:   len,
+	})
+	if err != nil {
+		log.Warnf("downloading object: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "download object failed"))
+		return
+	}
+	defer file.File.Close()
+
+	ctx.Header("Content-Disposition", "attachment; filename="+url.PathEscape(path.Base(file.Object.Path)))
+	ctx.Header("Content-Type", "application/octet-stream")
+	ctx.Header("Content-Transfer-Encoding", "binary")
+
+	n, err := io.Copy(ctx.Writer, file.File)
+	if err != nil {
+		log.Warnf("copying file: %s", err.Error())
+	}
+
+	if config.Cfg().StorageID > 0 {
+		s.svc.AccessStat.AddAccessCounter(file.Object.ObjectID, file.Object.PackageID, config.Cfg().StorageID, float64(n)/float64(file.Object.Size))
+	}
+}
+
 func (s *ObjectService) UpdateInfo(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Object.UpdateInfo")
 
@@ -173,6 +228,43 @@ func (s *ObjectService) UpdateInfo(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectUpdateInfoResp{Successes: sucs}))
+}
+
+func (s *ObjectService) UpdateInfoByPath(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Object.UpdateInfoByPath")
+
+	var req cdsapi.ObjectUpdateInfoByPath
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Warnf("binding body: %s", err.Error())
+		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
+		return
+	}
+
+	obj, err := s.svc.ObjectSvc().GetByPath(req.UserID, req.PackageID, req.Path, true)
+	if err != nil {
+		log.Warnf("getting object by path: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get object by path failed"))
+		return
+	}
+	if len(obj) == 0 {
+		log.Warnf("object not found: %s", req.Path)
+		ctx.JSON(http.StatusOK, Failed(errorcode.DataNotFound, "object not found"))
+		return
+	}
+
+	sucs, err := s.svc.ObjectSvc().UpdateInfo(req.UserID, []cdsapi.UpdatingObject{{
+		ObjectID:   obj[0].ObjectID,
+		UpdateTime: req.UpdateTime,
+	}})
+	if err != nil {
+		log.Warnf("updating objects: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "update objects failed"))
+		return
+	}
+	if len(sucs) == 0 {
+	}
+
+	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectUpdateInfoByPathResp{}))
 }
 
 func (s *ObjectService) Move(ctx *gin.Context) {
@@ -206,6 +298,37 @@ func (s *ObjectService) Delete(ctx *gin.Context) {
 	}
 
 	err := s.svc.ObjectSvc().Delete(req.UserID, req.ObjectIDs)
+	if err != nil {
+		log.Warnf("deleting objects: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "delete objects failed"))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, OK(nil))
+}
+
+func (s *ObjectService) DeleteByPath(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Object.DeleteByPath")
+
+	var req cdsapi.ObjectDeleteByPath
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Warnf("binding body: %s", err.Error())
+		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
+		return
+	}
+
+	obj, err := s.svc.ObjectSvc().GetByPath(req.UserID, req.PackageID, req.Path, false)
+	if err != nil {
+		log.Warnf("getting object by path: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get object by path failed"))
+		return
+	}
+	if len(obj) == 0 {
+		ctx.JSON(http.StatusOK, OK(nil))
+		return
+	}
+
+	err = s.svc.ObjectSvc().Delete(req.UserID, []cdssdk.ObjectID{obj[0].ObjectID})
 	if err != nil {
 		log.Warnf("deleting objects: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "delete objects failed"))

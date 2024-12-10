@@ -5,7 +5,6 @@ import (
 
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/model"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
@@ -23,27 +22,27 @@ func (svc *Service) BucketSvc() *BucketService {
 // userID: 用户的唯一标识
 // bucketID: 桶的唯一标识
 // 返回值: 桶的信息和可能发生的错误
-func (svc *BucketService) GetBucket(userID cdssdk.UserID, bucketID cdssdk.BucketID) (model.Bucket, error) {
+func (svc *BucketService) GetBucket(userID cdssdk.UserID, bucketID cdssdk.BucketID) (cdssdk.Bucket, error) {
 	// TODO: 此函数尚未实现
 	panic("not implement yet")
 }
 
-func (svc *BucketService) GetBucketByName(userID cdssdk.UserID, bucketName string) (model.Bucket, error) {
+func (svc *BucketService) GetBucketByName(userID cdssdk.UserID, bucketName string) (cdssdk.Bucket, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
-		return model.Bucket{}, fmt.Errorf("new coordinator client: %w", err)
+		return cdssdk.Bucket{}, fmt.Errorf("new coordinator client: %w", err)
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
 	resp, err := coorCli.GetBucketByName(coormq.ReqGetBucketByName(userID, bucketName))
 	if err != nil {
-		return model.Bucket{}, fmt.Errorf("get bucket by name failed, err: %w", err)
+		return cdssdk.Bucket{}, err
 	}
 
 	return resp.Bucket, nil
 }
 
-func (svc *BucketService) GetUserBuckets(userID cdssdk.UserID) ([]model.Bucket, error) {
+func (svc *BucketService) GetUserBuckets(userID cdssdk.UserID) ([]cdssdk.Bucket, error) {
 	// 从CoordinatorMQPool中获取Coordinator客户端
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
@@ -64,7 +63,7 @@ func (svc *BucketService) GetUserBuckets(userID cdssdk.UserID) ([]model.Bucket, 
 // userID: 用户的唯一标识
 // bucketID: 桶的唯一标识
 // 返回值: 桶的所有包列表和可能发生的错误
-func (svc *BucketService) GetBucketPackages(userID cdssdk.UserID, bucketID cdssdk.BucketID) ([]model.Package, error) {
+func (svc *BucketService) GetBucketPackages(userID cdssdk.UserID, bucketID cdssdk.BucketID) ([]cdssdk.Package, error) {
 	// 获取Coordinator客户端
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
@@ -91,7 +90,7 @@ func (svc *BucketService) CreateBucket(userID cdssdk.UserID, bucketName string) 
 	// 请求Coordinator创建新桶
 	resp, err := coorCli.CreateBucket(coormq.NewCreateBucket(userID, bucketName))
 	if err != nil {
-		return cdssdk.Bucket{}, fmt.Errorf("creating bucket: %w", err)
+		return cdssdk.Bucket{}, err
 	}
 
 	return resp.Bucket, nil
