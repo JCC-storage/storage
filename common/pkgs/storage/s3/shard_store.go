@@ -247,7 +247,7 @@ func (s *ShardStore) onCreateFinished(tempFilePath string, size int64, hash cdss
 
 	_, err := s.cli.CopyObject(context.Background(), &s3.CopyObjectInput{
 		Bucket:     aws.String(s.bucket),
-		CopySource: aws.String(tempFilePath),
+		CopySource: aws.String(JoinKey(s.bucket, tempFilePath)),
 		Key:        aws.String(newPath),
 	})
 	if err != nil {
