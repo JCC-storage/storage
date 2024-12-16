@@ -197,10 +197,9 @@ func (s *ShardStore) createWithCalcSha256(stream io.Reader) (types.FileInfo, err
 	counter := io2.NewCounter(hashStr)
 
 	_, err := s.cli.PutObject(context.TODO(), &s3.PutObjectInput{
-		Bucket:            aws.String(s.bucket),
-		Key:               aws.String(key),
-		Body:              counter,
-		ChecksumAlgorithm: s3types.ChecksumAlgorithmSha256,
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+		Body:   counter,
 	})
 	if err != nil {
 		log.Warnf("uploading file %v: %v", key, err)
