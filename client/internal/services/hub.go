@@ -2,10 +2,12 @@ package services
 
 import (
 	"fmt"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
+	datamapmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/datamap"
 )
 
 // HubService 是关于节点操作的服务结构体
@@ -44,4 +46,21 @@ func (svc *HubService) GetHubs(hubIDs []cdssdk.HubID) ([]cdssdk.Hub, error) {
 
 	// 返回获取到的节点信息
 	return getResp.Hubs, nil
+}
+
+// GetHubStat 根据提供的节点ID列表,获取中心的总数据量
+
+func (svc *HubService) GetHubStat(hubID cdssdk.HubID) (stgmod.HubStat, error) {
+	datamapCli, err := stgglb.DatamapMQPool.Acquire()
+	if err != nil {
+		return stgmod.HubStat{}, fmt.Errorf("new coordinator client: %w", err)
+	}
+	defer stgglb.DatamapMQPool.Release(datamapCli)
+
+	getResp, err := datamapCli.GetHubStat(datamapmq.NewGetHubStat(hubID))
+	if err != nil {
+		return stgmod.HubStat{}, fmt.Errorf("requesting to coordinator: %w", err)
+	}
+
+	return getResp.HubStat, nil
 }
