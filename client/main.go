@@ -37,7 +37,7 @@ func main() {
 	}
 
 	stgglb.InitLocal(&config.Cfg().Local)
-	stgglb.InitMQPool(&config.Cfg().RabbitMQ)
+	stgglb.InitMQPool(config.Cfg().RabbitMQ)
 	stgglb.InitAgentRPCPool(&config.Cfg().AgentGRPC)
 
 	// 连接性信息收集

@@ -35,7 +35,7 @@ func main() {
 		logger.Fatalf("new db failed, err: %s", err.Error())
 	}
 
-	stgglb.InitMQPool(&config.Cfg().RabbitMQ)
+	stgglb.InitMQPool(config.Cfg().RabbitMQ)
 
 	stgglb.InitAgentRPCPool(&agtrpc.PoolConfig{})
 
@@ -54,7 +54,7 @@ func main() {
 	eventExecutor := event.NewExecutor(db, distlockSvc, stgMgr)
 	go serveEventExecutor(&eventExecutor)
 
-	agtSvr, err := scmq.NewServer(mq.NewService(&eventExecutor), &config.Cfg().RabbitMQ)
+	agtSvr, err := scmq.NewServer(mq.NewService(&eventExecutor), config.Cfg().RabbitMQ)
 	if err != nil {
 		logger.Fatalf("new agent server failed, err: %s", err.Error())
 	}

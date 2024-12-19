@@ -20,18 +20,17 @@ type Server struct {
 	rabbitSvr mq.RabbitMQServer
 }
 
-func NewServer(svc Service, id cdssdk.HubID, cfg *mymq.Config) (*Server, error) {
+func NewServer(svc Service, id cdssdk.HubID, cfg mq.Config) (*Server, error) {
 	srv := &Server{
 		service: svc,
 	}
 
 	rabbitSvr, err := mq.NewRabbitMQServer(
-		cfg.MakeConnectingURL(),
+		cfg,
 		mymq.MakeAgentQueueName(int64(id)),
 		func(msg *mq.Message) (*mq.Message, error) {
 			return msgDispatcher.Handle(srv.service, msg)
 		},
-		cfg.Param,
 	)
 	if err != nil {
 		return nil, err

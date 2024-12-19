@@ -3,13 +3,13 @@ package config
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/distlock"
 	log "gitlink.org.cn/cloudream/common/pkgs/logger"
+	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	c "gitlink.org.cn/cloudream/common/utils/config"
 	stgmodels "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/grpc"
-	stgmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq"
 )
 
 type Config struct {
@@ -18,7 +18,7 @@ type Config struct {
 	Local        stgmodels.LocalMachineInfo `json:"local"`
 	GRPC         *grpc.Config               `json:"grpc"`
 	Logger       log.Config                 `json:"logger"`
-	RabbitMQ     stgmq.Config               `json:"rabbitMQ"`
+	RabbitMQ     mq.Config                  `json:"rabbitMQ"`
 	DistLock     distlock.Config            `json:"distlock"`
 	Connectivity connectivity.Config        `json:"connectivity"`
 	Downloader   downloader.Config          `json:"downloader"`
