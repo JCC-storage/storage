@@ -52,5 +52,6 @@ type GetHubTransResp struct {
 }
 
 func (client *Client) GetHubTrans(msg *GetHubTrans) (*GetHubTransResp, error) {
+	//获取到传输统计之后
 	return mq.Request(Service.GetHubTrans, client.rabbitCli, msg)
 }

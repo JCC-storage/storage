@@ -53,14 +53,16 @@ func (svc *HubService) GetHubs(hubIDs []cdssdk.HubID) ([]cdssdk.Hub, error) {
 func (svc *HubService) GetHubStat(hubID cdssdk.HubID) (stgmod.HubStat, error) {
 	datamapCli, err := stgglb.DatamapMQPool.Acquire()
 	if err != nil {
-		return stgmod.HubStat{}, fmt.Errorf("new coordinator client: %w", err)
+		return stgmod.HubStat{}, fmt.Errorf("new datamap client: %w", err)
 	}
 	defer stgglb.DatamapMQPool.Release(datamapCli)
 
 	getResp, err := datamapCli.GetHubStat(datamapmq.NewGetHubStat(hubID))
 	if err != nil {
-		return stgmod.HubStat{}, fmt.Errorf("requesting to coordinator: %w", err)
+		return stgmod.HubStat{}, fmt.Errorf("requesting to datamap: %w", err)
 	}
 
 	return getResp.HubStat, nil
 }
+
+//
