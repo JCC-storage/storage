@@ -110,7 +110,7 @@ func (*PackageDB) GetUserPackageByName(ctx SQLContext, userID cdssdk.UserID, buc
 	return ret, err
 }
 
-func (db *PackageDB) Create(ctx SQLContext, bucketID cdssdk.BucketID, name string) (cdssdk.PackageID, error) {
+func (db *PackageDB) Create(ctx SQLContext, bucketID cdssdk.BucketID, name string) (cdssdk.Package, error) {
 	var packageID int64
 	err := ctx.Table("Package").
 		Select("PackageID").
@@ -118,18 +118,18 @@ func (db *PackageDB) Create(ctx SQLContext, bucketID cdssdk.BucketID, name strin
 		Scan(&packageID).Error
 
 	if err != nil {
-		return 0, err
+		return cdssdk.Package{}, err
 	}
 	if packageID != 0 {
-		return 0, gorm.ErrDuplicatedKey
+		return cdssdk.Package{}, gorm.ErrDuplicatedKey
 	}
 
 	newPackage := cdssdk.Package{Name: name, BucketID: bucketID, State: cdssdk.PackageStateNormal}
 	if err := ctx.Create(&newPackage).Error; err != nil {
-		return 0, fmt.Errorf("insert package failed, err: %w", err)
+		return cdssdk.Package{}, fmt.Errorf("insert package failed, err: %w", err)
 	}
 
-	return newPackage.PackageID, nil
+	return newPackage, nil
 }
 
 // SoftDelete 设置一个对象被删除，并将相关数据删除

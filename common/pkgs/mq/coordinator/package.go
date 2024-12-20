@@ -20,6 +20,8 @@ type PackageService interface {
 
 	DeletePackage(msg *DeletePackage) (*DeletePackageResp, *mq.CodeMessage)
 
+	ClonePackage(msg *ClonePackage) (*ClonePackageResp, *mq.CodeMessage)
+
 	GetPackageCachedStorages(msg *GetPackageCachedStorages) (*GetPackageCachedStoragesResp, *mq.CodeMessage)
 
 	GetPackageLoadedStorages(msg *GetPackageLoadedStorages) (*GetPackageLoadedStoragesResp, *mq.CodeMessage)
@@ -184,6 +186,39 @@ func NewDeletePackageResp() *DeletePackageResp {
 }
 func (client *Client) DeletePackage(msg *DeletePackage) (*DeletePackageResp, error) {
 	return mq.Request(Service.DeletePackage, client.rabbitCli, msg)
+}
+
+// 克隆Package
+var _ = Register(Service.ClonePackage)
+
+type ClonePackage struct {
+	mq.MessageBodyBase
+	UserID    cdssdk.UserID    `json:"userID"`
+	PackageID cdssdk.PackageID `json:"packageID"`
+	BucketID  cdssdk.BucketID  `json:"bucketID"`
+	Name      string           `json:"name"`
+}
+type ClonePackageResp struct {
+	mq.MessageBodyBase
+	Package cdssdk.Package `json:"package"`
+}
+
+func ReqClonePackage(userID cdssdk.UserID, packageID cdssdk.PackageID, bucketID cdssdk.BucketID, name string) *ClonePackage {
+	return &ClonePackage{
+		UserID:    userID,
+		PackageID: packageID,
+		BucketID:  bucketID,
+		Name:      name,
+	}
+}
+func RespClonePackage(pkg cdssdk.Package) *ClonePackageResp {
+	return &ClonePackageResp{
+		Package: pkg,
+	}
+}
+
+func (client *Client) ClonePackage(msg *ClonePackage) (*ClonePackageResp, error) {
+	return mq.Request(Service.ClonePackage, client.rabbitCli, msg)
 }
 
 // 根据PackageID获取object分布情况

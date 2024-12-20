@@ -172,6 +172,28 @@ func (s *PackageService) Delete(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, OK(nil))
 }
 
+func (s *PackageService) Clone(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Package.Clone")
+
+	var req cdsapi.PackageClone
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Warnf("binding body: %s", err.Error())
+		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
+		return
+	}
+
+	pkg, err := s.svc.PackageSvc().Clone(req.UserID, req.PackageID, req.BucketID, req.Name)
+	if err != nil {
+		log.Warnf("cloning package: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "clone package failed"))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, OK(cdsapi.PackageCloneResp{
+		Package: pkg,
+	}))
+}
+
 func (s *PackageService) ListBucketPackages(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Package.ListBucketPackages")
 

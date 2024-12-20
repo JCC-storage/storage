@@ -106,6 +106,21 @@ func (svc *PackageService) DeletePackage(userID cdssdk.UserID, packageID cdssdk.
 	return nil
 }
 
+func (svc *PackageService) Clone(userID cdssdk.UserID, packageID cdssdk.PackageID, bucketID cdssdk.BucketID, name string) (cdssdk.Package, error) {
+	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
+	if err != nil {
+		return cdssdk.Package{}, fmt.Errorf("new coordinator client: %w", err)
+	}
+	defer stgglb.CoordinatorMQPool.Release(coorCli)
+
+	resp, err := coorCli.ClonePackage(coormq.ReqClonePackage(userID, packageID, bucketID, name))
+	if err != nil {
+		return cdssdk.Package{}, fmt.Errorf("cloning package: %w", err)
+	}
+
+	return resp.Package, nil
+}
+
 // GetCachedStorages 获取指定包的缓存节点信息
 func (svc *PackageService) GetCachedStorages(userID cdssdk.UserID, packageID cdssdk.PackageID) (cdssdk.PackageCachingInfo, error) {
 	// 从协调器MQ池中获取客户端
