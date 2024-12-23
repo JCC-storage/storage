@@ -1,9 +1,8 @@
 package models
 
 import (
-	"time"
-
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"time"
 )
 
 type RequestID int64
@@ -92,71 +91,12 @@ type Relationship struct {
 
 //数据库结构定义
 
-type Hub struct {
-	HubID   cdssdk.HubID          `gorm:"column:HubID; primaryKey; type:bigint; autoIncrement" json:"hubID"`
-	Name    string                `gorm:"column:Name; type:varchar(255); not null" json:"name"`
-	Address cdssdk.HubAddressInfo `gorm:"column:Address; type:json; serializer:union" json:"address"`
-}
-
-func (Hub) TableName() string {
-	return "Hub"
-}
-
-type Storage struct {
-	StorageID    cdssdk.StorageID `gorm:"column:StorageID; primaryKey; type:bigint; autoIncrement" json:"storageID"`
-	HubID        cdssdk.HubID     `gorm:"column:HubID; type:bigint; not null" json:"hubID"`
-	DataCount    int64            `gorm:"column:DataCount; type:bigint; not null" json:"dataCount"`
-	NewDataCount int64            `gorm:"column:NewDataCount; type:bigint; not null" json:"newDataCount"`
-	Timestamp    time.Time        `gorm:"column:Timestamp; type:datatime; not null" json:"timestamp"`
-}
-
-func (Storage) TableName() string {
-	return "Storage"
-}
-
-type HubRequest struct {
-	RequestID        int64        `gorm:"column:HubID; primaryKey; type:bigint; autoIncrement" json:"hubID"`
-	SourceHubID      cdssdk.HubID `gorm:"column:SourceHubID; type:bigint; not null" json:"sourceHubID"`
-	TargetHubID      cdssdk.HubID `gorm:"column:TargetHubID; type:bigint; not null" json:"targetHubID"`
-	DataTransfer     int64        `gorm:"column:DataTransfer; type:bigint; not null" json:"dataTransfer"`
-	RequestCount     int64        `gorm:"column:RequestCount; type:bigint; not null" json:"requestCount"`
-	FailedRequest    int64        `gorm:"column:FailedRequest; type:bigint; not null" json:"failedRequest"`
-	AvgTransferCount int64        `gorm:"column:AvgTransferCount; type:bigint; not null" json:"avgTransferCount"`
-	MaxTransferCount int64        `gorm:"column:MaxTransferCount; type:bigint; not null" json:"maxTransferCount"`
-	MinTransferCount int64        `gorm:"column:MinTransferCount; type:bigint; not null" json:"minTransferCount"`
-	StartTimestamp   time.Time    `gorm:"column:StartTimestamp; type:datatime; not null" json:"startTimestamp"`
-	EndTimestamp     time.Time    `gorm:"column:EndTimestamp; type:datatime; not null" json:"endTimestamp"`
-}
-
 func (HubRequest) TableName() string {
 	return "HubRequest"
 }
 
-type Object struct {
-	ObjectID       cdssdk.ObjectID  `gorm:"column:ObjectID; primaryKey; type:bigint; autoIncrement" json:"objectID"`
-	PackageID      cdssdk.PackageID `gorm:"column:PackageID; type:bigint; not null" json:"packageID"`
-	Path           string           `gorm:"column:Path; type:varchar(1024); not null" json:"path"`
-	Size           int64            `gorm:"column:Size; type:bigint; not null" json:"size"`
-	FileHash       string           `gorm:"column:FileHash; type:varchar(255); not null" json:"fileHash"`
-	Status         Status           `gorm:"column:Status; type:tinyint; not null" json:"status"`
-	FaultTolerance float64          `gorm:"column:faultTolerance; type:float; not null" json:"faultTolerance"`
-	Redundancy     float64          `gorm:"column:redundancy; type:float; not null" json:"redundancy"`
-	AvgAccessCost  float64          `gorm:"column:avgAccessCost; type:float; not null" json:"avgAccessCost"`
-	Timestamp      time.Time        `gorm:"column:Timestamp; type:datatime; not null" json:"timestamp"`
-}
-
 func (Object) TableName() string {
 	return "Object"
-}
-
-type BlockDistribution struct {
-	BlockID   int64            `gorm:"column:BlockID; primaryKey; type:bigint; autoIncrement" json:"blockID"`
-	ObjectID  cdssdk.ObjectID  `gorm:"column:ObjectID; type:bigint; not null" json:"objectID"`
-	Type      string           `gorm:"column:Type; type:varchar(1024); not null" json:"type"`
-	Index     int64            `gorm:"column:Index; type:bigint; not null" json:"index"`
-	StorageID cdssdk.StorageID `gorm:"column:StorageID; type:bigint; not null" json:"storageID"`
-	Status    Status           `gorm:"column:Status; type:tinyint; not null" json:"status"`
-	Timestamp time.Time        `gorm:"column:Timestamp; type:datatime; not null" json:"timestamp"`
 }
 
 func (BlockDistribution) TableName() string {

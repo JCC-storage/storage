@@ -1,37 +1,31 @@
 package db
 
 import (
-	"github.com/sirupsen/logrus"
-	"gitlink.org.cn/cloudream/storage/datamap/internal/db/config"
+	"fmt"
+	"gitlink.org.cn/cloudream/storage/datamap/internal/config"
+	"gitlink.org.cn/cloudream/storage/datamap/internal/models"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
-type DB struct {
-	db *gorm.DB
-}
+// 全局数据库连接实例
+var DB *gorm.DB
 
-func NewDB(cfg *config.Config) (*DB, error) {
-	mydb, err := gorm.Open(mysql.Open(cfg.MakeSourceString()), &gorm.Config{})
+func InitDB(cfg config.DatabaseConfig) (*gorm.DB, error) {
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName)
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		logrus.Fatalf("failed to connect to database: %v", err)
+		return nil, err
 	}
 
-	return &DB{
-		db: mydb,
-	}, nil
-}
+	// 自动迁移表结构
+	db.AutoMigrate(
+		&models.Hub{},
+		&models.Storage{},
+		&models.HubRequest{},
+		&models.BlockDistribution{},
+	)
 
-func (db *DB) DoTx(do func(tx SQLContext) error) error {
-	return db.db.Transaction(func(tx *gorm.DB) error {
-		return do(SQLContext{tx})
-	})
-}
-
-type SQLContext struct {
-	*gorm.DB
-}
-
-func (db *DB) DefCtx() SQLContext {
-	return SQLContext{db.db}
+	return db, nil
 }

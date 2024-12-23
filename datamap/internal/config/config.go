@@ -1,26 +1,54 @@
 package config
 
 import (
-	"gitlink.org.cn/cloudream/common/pkgs/distlock"
-	log "gitlink.org.cn/cloudream/common/pkgs/logger"
-	c "gitlink.org.cn/cloudream/common/utils/config"
-	db "gitlink.org.cn/cloudream/storage/common/pkgs/db2/config"
-	stgmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq"
+	"github.com/spf13/viper"
 )
 
 type Config struct {
-	Logger   log.Config      `json:"logger"`
-	DB       db.Config       `json:"db"`
-	RabbitMQ stgmq.Config    `json:"rabbitMQ"`
-	DistLock distlock.Config `json:"distlock"`
+	Database DatabaseConfig
+	RabbitMQ RabbitMQConfig
+	Server   ServerConfig
 }
 
-var cfg Config
-
-func Init() error {
-	return c.DefaultLoad("datamap", &cfg)
+type DatabaseConfig struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	DBName   string
 }
 
-func Cfg() *Config {
-	return &cfg
+type RabbitMQConfig struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+}
+
+type ServerConfig struct {
+	Port string
+}
+
+func LoadConfig() *Config {
+	viper.SetConfigFile(".env")
+	viper.ReadInConfig()
+
+	return &Config{
+		Database: DatabaseConfig{
+			Host:     viper.GetString("DB_HOST"),
+			Port:     viper.GetString("DB_PORT"),
+			User:     viper.GetString("DB_USER"),
+			Password: viper.GetString("DB_PASSWORD"),
+			DBName:   viper.GetString("DB_NAME"),
+		},
+		RabbitMQ: RabbitMQConfig{
+			Host:     viper.GetString("RABBITMQ_HOST"),
+			Port:     viper.GetString("RABBITMQ_PORT"),
+			User:     viper.GetString("RABBITMQ_USER"),
+			Password: viper.GetString("RABBITMQ_PASSWORD"),
+		},
+		Server: ServerConfig{
+			Port: viper.GetString("SERVER_PORT"),
+		},
+	}
 }

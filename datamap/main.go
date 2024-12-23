@@ -1,16 +1,29 @@
 package main
 
 import (
-	"fmt"
-	"os"
-
 	"gitlink.org.cn/cloudream/storage/datamap/internal/config"
+	"gitlink.org.cn/cloudream/storage/datamap/internal/db"
+	"gitlink.org.cn/cloudream/storage/datamap/internal/mq"
+	"gitlink.org.cn/cloudream/storage/datamap/internal/server"
+	"log"
 )
 
 func main() {
-	err := config.Init()
+	// 加载配置
+	cfg := config.LoadConfig()
+
+	// 初始化数据库
+	dbConn, err := db.InitDB(cfg.Database)
 	if err != nil {
-		fmt.Printf("init config failed, err: %s", err.Error())
-		os.Exit(1)
+		log.Fatalf("Failed to initialize database: %v", err)
 	}
+
+	// 初始化RabbitMQ
+	mqConn, err := mq.InitMQ(cfg.RabbitMQ)
+	if err != nil {
+		log.Fatalf("Failed to initialize RabbitMQ: %v", err)
+	}
+
+	// 启动Gin服务
+	server.StartServer(dbConn, mqConn)
 }

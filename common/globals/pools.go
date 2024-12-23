@@ -5,7 +5,6 @@ import (
 	stgmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq"
 	agtmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/agent"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
-	datamap "gitlink.org.cn/cloudream/storage/common/pkgs/mq/datamap"
 	scmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/scanner"
 )
 
@@ -14,8 +13,6 @@ var AgentMQPool agtmq.Pool
 var CoordinatorMQPool coormq.Pool
 
 var ScannerMQPool scmq.Pool
-
-var DatamapMQPool datamap.Pool
 
 // InitMQPool
 //
@@ -28,7 +25,6 @@ func InitMQPool(cfg *stgmq.Config) {
 
 	ScannerMQPool = scmq.NewPool(cfg)
 
-	DatamapMQPool = datamap.NewPool(cfg)
 }
 
 var AgentRPCPool *agtrpc.Pool
