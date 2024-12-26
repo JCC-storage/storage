@@ -15,7 +15,7 @@ func init() {
 	cmd := cobra.Command{
 		Use:   "load",
 		Short: "Load data from CDS to a storage service",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(3),
 		Run: func(cmd *cobra.Command, args []string) {
 			cmdCtx := GetCmdCtx(cmd)
 
@@ -30,9 +30,9 @@ func init() {
 					fmt.Printf("Invalid storage ID: %s\n", args[1])
 				}
 
-				loadByID(cmdCtx, cdssdk.PackageID(pkgID), cdssdk.StorageID(stgID))
+				loadByID(cmdCtx, cdssdk.PackageID(pkgID), cdssdk.StorageID(stgID), args[2])
 			} else {
-				loadByPath(cmdCtx, args[0], args[1])
+				loadByPath(cmdCtx, args[0], args[1], args[2])
 			}
 		},
 	}
@@ -40,7 +40,7 @@ func init() {
 	rootCmd.AddCommand(&cmd)
 }
 
-func loadByPath(cmdCtx *CommandContext, pkgPath string, stgName string) {
+func loadByPath(cmdCtx *CommandContext, pkgPath string, stgName string, rootPath string) {
 	userID := cdssdk.UserID(1)
 
 	comps := strings.Split(strings.Trim(pkgPath, cdssdk.ObjectPathSeparator), cdssdk.ObjectPathSeparator)
@@ -61,29 +61,18 @@ func loadByPath(cmdCtx *CommandContext, pkgPath string, stgName string) {
 		return
 	}
 
-	loadByID(cmdCtx, pkg.PackageID, stg.StorageID)
+	loadByID(cmdCtx, pkg.PackageID, stg.StorageID, rootPath)
 }
 
-func loadByID(cmdCtx *CommandContext, pkgID cdssdk.PackageID, stgID cdssdk.StorageID) {
+func loadByID(cmdCtx *CommandContext, pkgID cdssdk.PackageID, stgID cdssdk.StorageID, rootPath string) {
 	userID := cdssdk.UserID(1)
 	startTime := time.Now()
 
-	hubID, taskID, err := cmdCtx.Cmdline.Svc.StorageSvc().StartStorageLoadPackage(userID, pkgID, stgID)
+	err := cmdCtx.Cmdline.Svc.StorageSvc().LoadPackage(userID, pkgID, stgID, rootPath)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	for {
-		complete, fullPath, err := cmdCtx.Cmdline.Svc.StorageSvc().WaitStorageLoadPackage(hubID, taskID, time.Second*10)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		if complete {
-			fmt.Printf("Package loaded to: %s in %v\n", fullPath, time.Since(startTime))
-			break
-		}
-	}
+	fmt.Printf("Package loaded to: %v:%v in %v\n", stgID, rootPath, time.Since(startTime))
 }

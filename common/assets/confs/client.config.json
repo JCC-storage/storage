@@ -34,8 +34,10 @@
     },
     "downloader": {
         "maxStripCacheCount": 100,
-        "highLatencyHub": 35,
         "ecStripPrefetchCount": 1
+    },
+    "downloadStrategy": {
+        "highLatencyHub": 35
     },
     "storageID": 0
 }

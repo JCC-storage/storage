@@ -26,7 +26,7 @@ func (svc *Service) GetDatabaseAll(msg *coormq.GetDatabaseAll) (*coormq.GetDatab
 		}
 
 		for _, bkt := range bkts {
-			ps, err := svc.db2.Package().GetBucketPackages(tx, msg.UserID, bkt.BucketID)
+			ps, err := svc.db2.Package().GetUserBucketPackages(tx, msg.UserID, bkt.BucketID)
 			if err != nil {
 				return fmt.Errorf("get bucket packages: %w", err)
 			}

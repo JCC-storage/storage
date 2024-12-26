@@ -38,7 +38,7 @@ func RawStream() StreamIndex {
 	}
 }
 
-func ECSrteam(index int) StreamIndex {
+func ECStream(index int) StreamIndex {
 	return StreamIndex{
 		Type:  StreamIndexEC,
 		Index: index,
@@ -195,20 +195,16 @@ func (t *ToShardStore) GetRange() exec.Range {
 }
 
 type LoadToShared struct {
-	Hub       cdssdk.Hub
-	Storage   cdssdk.Storage
-	UserID    cdssdk.UserID
-	PackageID cdssdk.PackageID
-	Path      string
+	Hub        cdssdk.Hub
+	Storage    cdssdk.Storage
+	ObjectPath string
 }
 
-func NewLoadToShared(hub cdssdk.Hub, storage cdssdk.Storage, userID cdssdk.UserID, packageID cdssdk.PackageID, path string) *LoadToShared {
+func NewLoadToShared(hub cdssdk.Hub, storage cdssdk.Storage, objectPath string) *LoadToShared {
 	return &LoadToShared{
-		Hub:       hub,
-		Storage:   storage,
-		UserID:    userID,
-		PackageID: packageID,
-		Path:      path,
+		Hub:        hub,
+		Storage:    storage,
+		ObjectPath: objectPath,
 	}
 }
 

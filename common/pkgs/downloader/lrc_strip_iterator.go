@@ -17,7 +17,7 @@ type LRCStripIterator struct {
 	downloder           *Downloader
 	object              cdssdk.Object
 	blocks              []downloadBlock
-	red                 *cdssdk.LRCRedundancy
+	red                 cdssdk.LRCRedundancy
 	curStripIndex       int64
 	cache               *StripCache
 	dataChan            chan dataChanEntry
@@ -26,7 +26,7 @@ type LRCStripIterator struct {
 	inited              bool
 }
 
-func NewLRCStripIterator(downloder *Downloader, object cdssdk.Object, blocks []downloadBlock, red *cdssdk.LRCRedundancy, beginStripIndex int64, cache *StripCache, maxPrefetch int) *LRCStripIterator {
+func NewLRCStripIterator(downloder *Downloader, object cdssdk.Object, blocks []downloadBlock, red cdssdk.LRCRedundancy, beginStripIndex int64, cache *StripCache, maxPrefetch int) *LRCStripIterator {
 	if maxPrefetch <= 0 {
 		maxPrefetch = 1
 	}

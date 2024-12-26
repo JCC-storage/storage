@@ -28,7 +28,7 @@ type StripIterator struct {
 	downloader               *Downloader
 	object                   cdssdk.Object
 	blocks                   []downloadBlock
-	red                      *cdssdk.ECRedundancy
+	red                      cdssdk.ECRedundancy
 	curStripIndex            int64
 	cache                    *StripCache
 	dataChan                 chan dataChanEntry
@@ -46,7 +46,7 @@ type dataChanEntry struct {
 	Error    error
 }
 
-func NewStripIterator(downloader *Downloader, object cdssdk.Object, blocks []downloadBlock, red *cdssdk.ECRedundancy, beginStripIndex int64, cache *StripCache, maxPrefetch int) *StripIterator {
+func NewStripIterator(downloader *Downloader, object cdssdk.Object, blocks []downloadBlock, red cdssdk.ECRedundancy, beginStripIndex int64, cache *StripCache, maxPrefetch int) *StripIterator {
 	if maxPrefetch <= 0 {
 		maxPrefetch = 1
 	}
@@ -199,10 +199,10 @@ func (s *StripIterator) readStrip(stripIndex int64, buf []byte) (int, error) {
 		}
 
 		ft := ioswitch2.NewFromTo()
-		ft.ECParam = s.red
+		ft.ECParam = &s.red
 		for _, b := range s.blocks {
 			stg := b.Storage
-			ft.AddFrom(ioswitch2.NewFromShardstore(b.Block.FileHash, *stg.MasterHub, stg.Storage, ioswitch2.ECSrteam(b.Block.Index)))
+			ft.AddFrom(ioswitch2.NewFromShardstore(b.Block.FileHash, *stg.MasterHub, stg.Storage, ioswitch2.ECStream(b.Block.Index)))
 		}
 
 		toExec, hd := ioswitch2.NewToDriverWithRange(ioswitch2.RawStream(), exec.Range{

@@ -14,6 +14,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock/reqbuilder"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/metacache"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
 )
@@ -22,13 +23,15 @@ type Uploader struct {
 	distlock     *distlock.Service
 	connectivity *connectivity.Collector
 	stgMgr       *svcmgr.Manager
+	stgMeta      *metacache.StorageMeta
 }
 
-func NewUploader(distlock *distlock.Service, connectivity *connectivity.Collector, stgMgr *svcmgr.Manager) *Uploader {
+func NewUploader(distlock *distlock.Service, connectivity *connectivity.Collector, stgMgr *svcmgr.Manager, stgMeta *metacache.StorageMeta) *Uploader {
 	return &Uploader{
 		distlock:     distlock,
 		connectivity: connectivity,
 		stgMgr:       stgMgr,
+		stgMeta:      stgMeta,
 	}
 }
 
@@ -54,8 +57,8 @@ func (u *Uploader) BeginUpdate(userID cdssdk.UserID, pkgID cdssdk.PackageID, aff
 		delay := time.Duration(math.MaxInt64)
 
 		con, ok := cons[stg.MasterHub.HubID]
-		if ok && con.Delay != nil {
-			delay = *con.Delay
+		if ok && con.Latency != nil {
+			delay = *con.Latency
 		}
 
 		userStgs = append(userStgs, UploadStorageInfo{
@@ -110,20 +113,17 @@ func (w *Uploader) chooseUploadStorage(storages []UploadStorageInfo, stgAffinity
 	return storages[0]
 }
 
-func (u *Uploader) BeginCreateLoad(userID cdssdk.UserID, bktID cdssdk.BucketID, pkgName string, loadTo []cdssdk.StorageID) (*CreateLoadUploader, error) {
+func (u *Uploader) BeginCreateLoad(userID cdssdk.UserID, bktID cdssdk.BucketID, pkgName string, loadTo []cdssdk.StorageID, loadToPath []string) (*CreateLoadUploader, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-	getStgs, err := coorCli.GetStorageDetails(coormq.ReqGetStorageDetails(loadTo))
-	if err != nil {
-		return nil, fmt.Errorf("getting storages: %w", err)
-	}
+	getStgs := u.stgMeta.GetMany(loadTo)
 
 	targetStgs := make([]stgmod.StorageDetail, len(loadTo))
-	for i, stg := range getStgs.Storages {
+	for i, stg := range getStgs {
 		if stg == nil {
 			return nil, fmt.Errorf("storage %v not found", loadTo[i])
 		}
@@ -139,7 +139,6 @@ func (u *Uploader) BeginCreateLoad(userID cdssdk.UserID, bktID cdssdk.BucketID, 
 	for _, stg := range targetStgs {
 		reqBld.Shard().Buzy(stg.Storage.StorageID)
 		reqBld.Storage().Buzy(stg.Storage.StorageID)
-		reqBld.Metadata().StoragePackage().CreateOne(userID, stg.Storage.StorageID, createPkg.Package.PackageID)
 	}
 	lock, err := reqBld.MutexLock(u.distlock)
 	if err != nil {
@@ -150,6 +149,7 @@ func (u *Uploader) BeginCreateLoad(userID cdssdk.UserID, bktID cdssdk.BucketID, 
 		pkg:        createPkg.Package,
 		userID:     userID,
 		targetStgs: targetStgs,
+		loadRoots:  loadToPath,
 		uploader:   u,
 		distlock:   lock,
 	}, nil

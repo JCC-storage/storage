@@ -1,9 +1,7 @@
 package http
 
 import (
-	"fmt"
 	"net/http"
-	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -32,37 +30,14 @@ func (s *StorageService) LoadPackage(ctx *gin.Context) {
 		return
 	}
 
-	hubID, taskID, err := s.svc.StorageSvc().StartStorageLoadPackage(req.UserID, req.PackageID, req.StorageID)
+	err := s.svc.StorageSvc().LoadPackage(req.UserID, req.PackageID, req.StorageID, req.RootPath)
 	if err != nil {
-		log.Warnf("start storage load package: %s", err.Error())
-		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("start loading: %v", err)))
+		log.Warnf("loading package: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "loading package failed"))
 		return
 	}
 
-	for {
-		complete, ret, err := s.svc.StorageSvc().WaitStorageLoadPackage(hubID, taskID, time.Second*10)
-		if complete {
-			if err != nil {
-				log.Warnf("loading complete with: %s", err.Error())
-				ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("loading complete with: %v", err)))
-				return
-			}
-
-			ctx.JSON(http.StatusOK, OK(cdsapi.StorageLoadPackageResp{
-				FullPath:    filepath.Join(ret.RemoteBase, ret.PackagePath),
-				PackagePath: ret.PackagePath,
-				LocalBase:   ret.LocalBase,
-				RemoteBase:  ret.RemoteBase,
-			}))
-			return
-		}
-
-		if err != nil {
-			log.Warnf("wait loadding: %s", err.Error())
-			ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("wait loading: %v", err)))
-			return
-		}
-	}
+	ctx.JSON(http.StatusOK, OK(cdsapi.StorageLoadPackageResp{}))
 }
 
 func (s *StorageService) CreatePackage(ctx *gin.Context) {

@@ -80,7 +80,7 @@ type GetHubs struct {
 }
 type GetHubsResp struct {
 	mq.MessageBodyBase
-	Hubs []cdssdk.Hub `json:"hubs"`
+	Hubs []*cdssdk.Hub `json:"hubs"`
 }
 
 func NewGetHubs(hubIDs []cdssdk.HubID) *GetHubs {
@@ -88,7 +88,7 @@ func NewGetHubs(hubIDs []cdssdk.HubID) *GetHubs {
 		HubIDs: hubIDs,
 	}
 }
-func NewGetHubsResp(hubs []cdssdk.Hub) *GetHubsResp {
+func NewGetHubsResp(hubs []*cdssdk.Hub) *GetHubsResp {
 	return &GetHubsResp{
 		Hubs: hubs,
 	}
@@ -96,7 +96,7 @@ func NewGetHubsResp(hubs []cdssdk.Hub) *GetHubsResp {
 func (r *GetHubsResp) GetHub(id cdssdk.HubID) *cdssdk.Hub {
 	for _, n := range r.Hubs {
 		if n.HubID == id {
-			return &n
+			return n
 		}
 	}
 

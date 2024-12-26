@@ -141,13 +141,7 @@ func startTickEvent(tickExecutor *tickevent.Executor) {
 
 	tickExecutor.Start(tickevent.NewBatchAllAgentCheckShardStore(), interval, tickevent.StartOption{RandomStartDelayMs: 60 * 1000})
 
-	tickExecutor.Start(tickevent.NewBatchCheckAllPackage(), interval, tickevent.StartOption{RandomStartDelayMs: 60 * 1000})
-
 	tickExecutor.Start(tickevent.NewStorageGC(), interval, tickevent.StartOption{RandomStartDelayMs: 60 * 1000})
-
-	// tickExecutor.Start(tickevent.NewBatchCheckAllRepCount(), interval, tickevent.StartOption{RandomStartDelayMs: 60 * 1000})
-
-	tickExecutor.Start(tickevent.NewBatchCheckAllStorage(), interval, tickevent.StartOption{RandomStartDelayMs: 60 * 1000})
 
 	tickExecutor.Start(tickevent.NewCheckAgentState(), 5*60*1000, tickevent.StartOption{RandomStartDelayMs: 60 * 1000})
 

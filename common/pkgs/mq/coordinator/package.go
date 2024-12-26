@@ -20,9 +20,9 @@ type PackageService interface {
 
 	DeletePackage(msg *DeletePackage) (*DeletePackageResp, *mq.CodeMessage)
 
-	GetPackageCachedStorages(msg *GetPackageCachedStorages) (*GetPackageCachedStoragesResp, *mq.CodeMessage)
+	ClonePackage(msg *ClonePackage) (*ClonePackageResp, *mq.CodeMessage)
 
-	GetPackageLoadedStorages(msg *GetPackageLoadedStorages) (*GetPackageLoadedStoragesResp, *mq.CodeMessage)
+	GetPackageCachedStorages(msg *GetPackageCachedStorages) (*GetPackageCachedStoragesResp, *mq.CodeMessage)
 }
 
 // 获取Package基本信息
@@ -186,6 +186,39 @@ func (client *Client) DeletePackage(msg *DeletePackage) (*DeletePackageResp, err
 	return mq.Request(Service.DeletePackage, client.rabbitCli, msg)
 }
 
+// 克隆Package
+var _ = Register(Service.ClonePackage)
+
+type ClonePackage struct {
+	mq.MessageBodyBase
+	UserID    cdssdk.UserID    `json:"userID"`
+	PackageID cdssdk.PackageID `json:"packageID"`
+	BucketID  cdssdk.BucketID  `json:"bucketID"`
+	Name      string           `json:"name"`
+}
+type ClonePackageResp struct {
+	mq.MessageBodyBase
+	Package cdssdk.Package `json:"package"`
+}
+
+func ReqClonePackage(userID cdssdk.UserID, packageID cdssdk.PackageID, bucketID cdssdk.BucketID, name string) *ClonePackage {
+	return &ClonePackage{
+		UserID:    userID,
+		PackageID: packageID,
+		BucketID:  bucketID,
+		Name:      name,
+	}
+}
+func RespClonePackage(pkg cdssdk.Package) *ClonePackageResp {
+	return &ClonePackageResp{
+		Package: pkg,
+	}
+}
+
+func (client *Client) ClonePackage(msg *ClonePackage) (*ClonePackageResp, error) {
+	return mq.Request(Service.ClonePackage, client.rabbitCli, msg)
+}
+
 // 根据PackageID获取object分布情况
 var _ = Register(Service.GetPackageCachedStorages)
 
@@ -224,35 +257,4 @@ func ReqGetPackageCachedStoragesResp(stgInfos []cdssdk.StoragePackageCachingInfo
 
 func (client *Client) GetPackageCachedStorages(msg *GetPackageCachedStorages) (*GetPackageCachedStoragesResp, error) {
 	return mq.Request(Service.GetPackageCachedStorages, client.rabbitCli, msg)
-}
-
-// 根据PackageID获取storage分布情况
-var _ = Register(Service.GetPackageLoadedStorages)
-
-type GetPackageLoadedStorages struct {
-	mq.MessageBodyBase
-	UserID    cdssdk.UserID    `json:"userID"`
-	PackageID cdssdk.PackageID `json:"packageID"`
-}
-
-type GetPackageLoadedStoragesResp struct {
-	mq.MessageBodyBase
-	StorageIDs []cdssdk.StorageID `json:"storageIDs"`
-}
-
-func ReqGetPackageLoadedStorages(userID cdssdk.UserID, packageID cdssdk.PackageID) *GetPackageLoadedStorages {
-	return &GetPackageLoadedStorages{
-		UserID:    userID,
-		PackageID: packageID,
-	}
-}
-
-func NewGetPackageLoadedStoragesResp(stgIDs []cdssdk.StorageID) *GetPackageLoadedStoragesResp {
-	return &GetPackageLoadedStoragesResp{
-		StorageIDs: stgIDs,
-	}
-}
-
-func (client *Client) GetPackageLoadedStorages(msg *GetPackageLoadedStorages) (*GetPackageLoadedStoragesResp, error) {
-	return mq.Request(Service.GetPackageLoadedStorages, client.rabbitCli, msg)
 }

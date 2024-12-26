@@ -515,7 +515,7 @@ func (t *CheckPackageRedundancy) noneToEC(ctx ExecuteContext, obj stgmod.ObjectD
 	ft.ECParam = red
 	ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *srcStg.Storage.MasterHub, srcStg.Storage.Storage, ioswitch2.RawStream()))
 	for i := 0; i < red.N; i++ {
-		ft.AddTo(ioswitch2.NewToShardStore(*uploadStgs[i].Storage.MasterHub, uploadStgs[i].Storage, ioswitch2.ECSrteam(i), fmt.Sprintf("%d", i)))
+		ft.AddTo(ioswitch2.NewToShardStore(*uploadStgs[i].Storage.MasterHub, uploadStgs[i].Storage, ioswitch2.ECStream(i), fmt.Sprintf("%d", i)))
 	}
 	plans := exec.NewPlanBuilder()
 	err := parser.Parse(ft, plans)
@@ -745,7 +745,7 @@ func (t *CheckPackageRedundancy) ecToRep(ctx ExecuteContext, obj stgmod.ObjectDe
 		ft.ECParam = srcRed
 
 		for i2, block := range chosenBlocks {
-			ft.AddFrom(ioswitch2.NewFromShardstore(block.FileHash, *chosenBlockStg[i2].MasterHub, chosenBlockStg[i2].Storage, ioswitch2.ECSrteam(block.Index)))
+			ft.AddFrom(ioswitch2.NewFromShardstore(block.FileHash, *chosenBlockStg[i2].MasterHub, chosenBlockStg[i2].Storage, ioswitch2.ECStream(block.Index)))
 		}
 
 		len := obj.Object.Size
@@ -841,11 +841,11 @@ func (t *CheckPackageRedundancy) ecToEC(ctx ExecuteContext, obj stgmod.ObjectDet
 		ft := ioswitch2.NewFromTo()
 		ft.ECParam = srcRed
 		for i2, block := range chosenBlocks {
-			ft.AddFrom(ioswitch2.NewFromShardstore(block.FileHash, *chosenBlockStg[i2].MasterHub, chosenBlockStg[i2].Storage, ioswitch2.ECSrteam(block.Index)))
+			ft.AddFrom(ioswitch2.NewFromShardstore(block.FileHash, *chosenBlockStg[i2].MasterHub, chosenBlockStg[i2].Storage, ioswitch2.ECStream(block.Index)))
 		}
 
 		// 输出只需要自己要保存的那一块
-		ft.AddTo(ioswitch2.NewToShardStore(*stg.Storage.MasterHub, stg.Storage, ioswitch2.ECSrteam(i), fmt.Sprintf("%d", i)))
+		ft.AddTo(ioswitch2.NewToShardStore(*stg.Storage.MasterHub, stg.Storage, ioswitch2.ECStream(i), fmt.Sprintf("%d", i)))
 
 		err := parser.Parse(ft, planBlder)
 		if err != nil {

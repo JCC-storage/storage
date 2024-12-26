@@ -27,7 +27,7 @@ func (svc *Service) HubSvc() *HubService {
 //
 //	[]cdssdk.Hub - 获取到的节点信息列表
 //	error - 如果过程中发生错误，则返回错误信息
-func (svc *HubService) GetHubs(hubIDs []cdssdk.HubID) ([]cdssdk.Hub, error) {
+func (svc *HubService) GetHubs(hubIDs []cdssdk.HubID) ([]*cdssdk.Hub, error) {
 	// 从协调器MQ池中获取一个客户端实例
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {

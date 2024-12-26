@@ -16,12 +16,9 @@ func init() {
 }
 
 type SharedLoad struct {
-	Input          exec.VarID       `json:"input"`
-	StorageID      cdssdk.StorageID `json:"storageID"`
-	UserID         cdssdk.UserID    `json:"userID"`
-	PackageID      cdssdk.PackageID `json:"packageID"`
-	Path           string           `json:"path"`
-	FullPathOutput exec.VarID       `json:"fullPathOutput"`
+	Input      exec.VarID
+	StorageID  cdssdk.StorageID
+	ObjectPath string
 }
 
 func (o *SharedLoad) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
@@ -46,44 +43,29 @@ func (o *SharedLoad) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 	}
 	defer input.Stream.Close()
 
-	fullPath, err := store.WritePackageObject(o.UserID, o.PackageID, o.Path, input.Stream)
-	if err != nil {
-		return fmt.Errorf("writing file to shard store: %w", err)
-	}
-
-	if o.FullPathOutput > 0 {
-		e.PutVar(o.FullPathOutput, &exec.StringValue{
-			Value: fullPath,
-		})
-	}
-	return nil
+	return store.Write(o.ObjectPath, input.Stream)
 }
 
 func (o *SharedLoad) String() string {
-	return fmt.Sprintf("SharedLoad %v -> %v:%v/%v/%v", o.Input, o.StorageID, o.UserID, o.PackageID, o.Path)
+	return fmt.Sprintf("SharedLoad %v -> %v:%v", o.Input, o.StorageID, o.ObjectPath)
 }
 
 type SharedLoadNode struct {
 	dag.NodeBase
-	To        ioswitch2.To
-	StorageID cdssdk.StorageID
-	UserID    cdssdk.UserID
-	PackageID cdssdk.PackageID
-	Path      string
+	To         ioswitch2.To
+	StorageID  cdssdk.StorageID
+	ObjectPath string
 }
 
-func (b *GraphNodeBuilder) NewSharedLoad(to ioswitch2.To, stgID cdssdk.StorageID, userID cdssdk.UserID, packageID cdssdk.PackageID, path string) *SharedLoadNode {
+func (b *GraphNodeBuilder) NewSharedLoad(to ioswitch2.To, stgID cdssdk.StorageID, objPath string) *SharedLoadNode {
 	node := &SharedLoadNode{
-		To:        to,
-		StorageID: stgID,
-		UserID:    userID,
-		PackageID: packageID,
-		Path:      path,
+		To:         to,
+		StorageID:  stgID,
+		ObjectPath: objPath,
 	}
 	b.AddNode(node)
 
 	node.InputStreams().Init(1)
-	node.OutputValues().Init(node, 1)
 	return node
 }
 
@@ -102,17 +84,10 @@ func (t *SharedLoadNode) Input() dag.StreamInputSlot {
 	}
 }
 
-func (t *SharedLoadNode) FullPathVar() *dag.ValueVar {
-	return t.OutputValues().Get(0)
-}
-
 func (t *SharedLoadNode) GenerateOp() (exec.Op, error) {
 	return &SharedLoad{
-		Input:          t.InputStreams().Get(0).VarID,
-		StorageID:      t.StorageID,
-		UserID:         t.UserID,
-		PackageID:      t.PackageID,
-		Path:           t.Path,
-		FullPathOutput: t.OutputValues().Get(0).VarID,
+		Input:      t.InputStreams().Get(0).VarID,
+		StorageID:  t.StorageID,
+		ObjectPath: t.ObjectPath,
 	}, nil
 }

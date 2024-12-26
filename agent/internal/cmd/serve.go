@@ -19,7 +19,9 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader/strategy"
 	agtrpc "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/metacache"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/uploader"
 
@@ -87,15 +89,15 @@ func serve(configPath string) {
 		hubCons := make([]cdssdk.HubConnectivity, 0, len(cons))
 		for _, con := range cons {
 			var delay *float32
-			if con.Delay != nil {
-				v := float32(con.Delay.Microseconds()) / 1000
+			if con.Latency != nil {
+				v := float32(con.Latency.Microseconds()) / 1000
 				delay = &v
 			}
 
 			hubCons = append(hubCons, cdssdk.HubConnectivity{
 				FromHubID: *stgglb.Local.HubID,
 				ToHubID:   con.ToHubID,
-				Delay:     delay,
+				Latency:   delay,
 				TestTime:  con.TestTime,
 			})
 		}
@@ -106,6 +108,13 @@ func serve(configPath string) {
 		}
 	})
 	conCol.CollectInPlace()
+
+	// 初始化元数据缓存服务
+	metacacheHost := metacache.NewHost()
+	go metacacheHost.Serve()
+	stgMeta := metacacheHost.AddStorageMeta()
+	hubMeta := metacacheHost.AddHubMeta()
+	conMeta := metacacheHost.AddConnectivity()
 
 	// 启动访问统计服务
 	acStat := accessstat.NewAccessStat(accessstat.Config{
@@ -120,11 +129,14 @@ func serve(configPath string) {
 		logger.Fatalf("new ipfs failed, err: %s", err.Error())
 	}
 
+	// 初始化下载策略选择器
+	strgSel := strategy.NewSelector(config.Cfg().DownloadStrategy, stgMeta, hubMeta, conMeta)
+
 	// 初始化下载器
-	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol, stgMgr)
+	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol, stgMgr, strgSel)
 
 	// 初始化上传器
-	uploader := uploader.NewUploader(distlock, &conCol, stgMgr)
+	uploader := uploader.NewUploader(distlock, &conCol, stgMgr, stgMeta)
 
 	// 初始化任务管理器
 	taskMgr := task.NewManager(distlock, &conCol, &dlder, acStat, stgMgr, uploader)

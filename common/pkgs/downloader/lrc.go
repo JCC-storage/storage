@@ -6,43 +6,29 @@ import (
 
 	"gitlink.org.cn/cloudream/common/pkgs/iterator"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
-	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/io2"
 	"gitlink.org.cn/cloudream/common/utils/math2"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader/strategy"
 )
 
-func (iter *DownloadObjectIterator) downloadLRCObject(req downloadReqeust2, red *cdssdk.LRCRedundancy) (io.ReadCloser, error) {
-	allStgs, err := iter.sortDownloadStorages(req)
-	if err != nil {
-		return nil, err
-	}
-
-	var blocks []downloadBlock
-	selectedBlkIdx := make(map[int]bool)
-	for _, stg := range allStgs {
-		for _, b := range stg.Blocks {
-			if b.Index >= red.M() || selectedBlkIdx[b.Index] {
-				continue
-			}
-			blocks = append(blocks, downloadBlock{
-				Storage: stg.Storage,
-				Block:   b,
-			})
-			selectedBlkIdx[b.Index] = true
-		}
-	}
-	if len(blocks) < red.K {
-		return nil, fmt.Errorf("not enough blocks to download lrc object")
-	}
-
-	var logStrs []any = []any{"downloading lrc object from blocks: "}
-	for i, b := range blocks {
+func (iter *DownloadObjectIterator) downloadLRCReconstruct(req downloadReqeust2, strg strategy.LRCReconstructStrategy) (io.ReadCloser, error) {
+	var logStrs []any = []any{fmt.Sprintf("downloading lrc object %v from: ", req.Raw.ObjectID)}
+	for i, b := range strg.Blocks {
 		if i > 0 {
 			logStrs = append(logStrs, ", ")
 		}
-		logStrs = append(logStrs, fmt.Sprintf("%v@%v", b.Block.Index, b.Storage.Storage.String()))
+
+		logStrs = append(logStrs, fmt.Sprintf("%v@%v", b.Index, strg.Storages[i].Storage.String()))
 	}
 	logger.Debug(logStrs...)
+
+	downloadBlks := make([]downloadBlock, len(strg.Blocks))
+	for i, b := range strg.Blocks {
+		downloadBlks[i] = downloadBlock{
+			Block:   b,
+			Storage: strg.Storages[i],
+		}
+	}
 
 	pr, pw := io.Pipe()
 	go func() {
@@ -52,8 +38,8 @@ func (iter *DownloadObjectIterator) downloadLRCObject(req downloadReqeust2, red 
 			totalReadLen = math2.Min(req.Raw.Length, totalReadLen)
 		}
 
-		firstStripIndex := readPos / int64(red.K) / int64(red.ChunkSize)
-		stripIter := NewLRCStripIterator(iter.downloader, req.Detail.Object, blocks, red, firstStripIndex, iter.downloader.strips, iter.downloader.cfg.ECStripPrefetchCount)
+		firstStripIndex := readPos / int64(strg.Redundancy.K) / int64(strg.Redundancy.ChunkSize)
+		stripIter := NewLRCStripIterator(iter.downloader, req.Detail.Object, downloadBlks, strg.Redundancy, firstStripIndex, iter.downloader.strips, iter.downloader.cfg.ECStripPrefetchCount)
 		defer stripIter.Close()
 
 		for totalReadLen > 0 {
@@ -68,7 +54,7 @@ func (iter *DownloadObjectIterator) downloadLRCObject(req downloadReqeust2, red 
 			}
 
 			readRelativePos := readPos - strip.Position
-			nextStripPos := strip.Position + int64(red.K)*int64(red.ChunkSize)
+			nextStripPos := strip.Position + int64(strg.Redundancy.K)*int64(strg.Redundancy.ChunkSize)
 			curReadLen := math2.Min(totalReadLen, nextStripPos-readPos)
 
 			err = io2.WriteAll(pw, strip.Data[readRelativePos:readRelativePos+curReadLen])
