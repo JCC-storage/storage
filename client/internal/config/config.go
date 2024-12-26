@@ -9,18 +9,20 @@ import (
 	stgmodels "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader/strategy"
 	agtrpc "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
 )
 
 type Config struct {
-	Local        stgmodels.LocalMachineInfo `json:"local"`
-	AgentGRPC    agtrpc.PoolConfig          `json:"agentGRPC"`
-	Logger       logger.Config              `json:"logger"`
-	RabbitMQ     mq.Config                  `json:"rabbitMQ"`
-	DistLock     distlock.Config            `json:"distlock"`
-	Connectivity connectivity.Config        `json:"connectivity"`
-	Downloader   downloader.Config          `json:"downloader"`
-	StorageID    cdssdk.StorageID           `json:"storageID"` // TODO 进行访问量统计时，当前客户端所属的存储ID。临时解决方案。
+	Local            stgmodels.LocalMachineInfo `json:"local"`
+	AgentGRPC        agtrpc.PoolConfig          `json:"agentGRPC"`
+	Logger           logger.Config              `json:"logger"`
+	RabbitMQ         mq.Config                  `json:"rabbitMQ"`
+	DistLock         distlock.Config            `json:"distlock"`
+	Connectivity     connectivity.Config        `json:"connectivity"`
+	Downloader       downloader.Config          `json:"downloader"`
+	DownloadStrategy strategy.Config            `json:"downloadStrategy"`
+	StorageID        cdssdk.StorageID           `json:"storageID"` // TODO 进行访问量统计时，当前客户端所属的存储ID。临时解决方案。
 }
 
 var cfg Config

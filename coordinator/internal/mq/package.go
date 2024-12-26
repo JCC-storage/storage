@@ -123,23 +123,9 @@ func (svc *Service) DeletePackage(msg *coormq.DeletePackage) (*coormq.DeletePack
 			return fmt.Errorf("package is not available to the user")
 		}
 
-		err := svc.db2.Package().SoftDelete(tx, msg.PackageID)
+		err := svc.db2.Package().DeleteComplete(tx, msg.PackageID)
 		if err != nil {
-			return fmt.Errorf("soft delete package: %w", err)
-		}
-
-		err = svc.db2.Package().DeleteUnused(tx, msg.PackageID)
-		if err != nil {
-			logger.WithField("UserID", msg.UserID).
-				WithField("PackageID", msg.PackageID).
-				Warnf("deleting unused package: %w", err.Error())
-		}
-
-		err = svc.db2.PackageAccessStat().DeleteByPackageID(tx, msg.PackageID)
-		if err != nil {
-			logger.WithField("UserID", msg.UserID).
-				WithField("PackageID", msg.PackageID).
-				Warnf("deleting package access stat: %w", err.Error())
+			return fmt.Errorf("deleting package: %w", err)
 		}
 
 		return nil
@@ -272,26 +258,6 @@ func (svc *Service) GetPackageCachedStorages(msg *coormq.GetPackageCachedStorage
 		return stgInfos[i].StorageID < stgInfos[j].StorageID
 	})
 	return mq.ReplyOK(coormq.ReqGetPackageCachedStoragesResp(stgInfos, packageSize))
-}
-
-func (svc *Service) GetPackageLoadedStorages(msg *coormq.GetPackageLoadedStorages) (*coormq.GetPackageLoadedStoragesResp, *mq.CodeMessage) {
-	storages, err := svc.db2.StoragePackage().FindPackageStorages(svc.db2.DefCtx(), msg.PackageID)
-	if err != nil {
-		logger.WithField("PackageID", msg.PackageID).
-			Warnf("get storages by packageID failed, err: %s", err.Error())
-		return nil, mq.Failed(errorcode.OperationFailed, "get storages by packageID failed")
-	}
-
-	uniqueStgIDs := make(map[cdssdk.StorageID]bool)
-	var stgIDs []cdssdk.StorageID
-	for _, stg := range storages {
-		if !uniqueStgIDs[stg.StorageID] {
-			uniqueStgIDs[stg.StorageID] = true
-			stgIDs = append(stgIDs, stg.StorageID)
-		}
-	}
-
-	return mq.ReplyOK(coormq.NewGetPackageLoadedStoragesResp(stgIDs))
 }
 
 func (svc *Service) AddAccessStat(msg *coormq.AddAccessStat) {

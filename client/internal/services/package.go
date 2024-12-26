@@ -143,20 +143,3 @@ func (svc *PackageService) GetCachedStorages(userID cdssdk.UserID, packageID cds
 	}
 	return tmp, nil
 }
-
-// GetLoadedStorages 获取指定包加载的节点列表
-func (svc *PackageService) GetLoadedStorages(userID cdssdk.UserID, packageID cdssdk.PackageID) ([]cdssdk.StorageID, error) {
-	// 从协调器MQ池中获取客户端
-	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
-	if err != nil {
-		return nil, fmt.Errorf("new coordinator client: %w", err)
-	}
-	defer stgglb.CoordinatorMQPool.Release(coorCli)
-
-	// 向协调器请求获取加载指定包的节点ID列表
-	resp, err := coorCli.GetPackageLoadedStorages(coormq.ReqGetPackageLoadedStorages(userID, packageID))
-	if err != nil {
-		return nil, fmt.Errorf("get package loaded storages: %w", err)
-	}
-	return resp.StorageIDs, nil
-}

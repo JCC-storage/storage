@@ -29,26 +29,34 @@ func init() {
 
 			packageName := args[2]
 			storageIDs := make([]cdssdk.StorageID, 0)
-			for _, sID := range args[3:] {
-				sID, err := strconv.ParseInt(sID, 10, 64)
+			rootPathes := make([]string, 0)
+			for _, dst := range args[3:] {
+				comps := strings.Split(dst, ":")
+				if len(comps) != 2 {
+					fmt.Println("invalid storage destination: ", dst)
+					return
+				}
+
+				sID, err := strconv.ParseInt(comps[0], 10, 64)
 				if err != nil {
 					fmt.Println(err)
 					return
 				}
 				storageIDs = append(storageIDs, cdssdk.StorageID(sID))
+				rootPathes = append(rootPathes, comps[1])
 			}
 
-			newloadp(cmdCtx, localPath, cdssdk.BucketID(bktID), packageName, storageIDs)
+			newloadp(cmdCtx, localPath, cdssdk.BucketID(bktID), packageName, storageIDs, rootPathes)
 		},
 	}
 
 	rootCmd.AddCommand(cmd)
 }
 
-func newloadp(cmdCtx *CommandContext, path string, bucketID cdssdk.BucketID, packageName string, storageIDs []cdssdk.StorageID) {
+func newloadp(cmdCtx *CommandContext, path string, bucketID cdssdk.BucketID, packageName string, storageIDs []cdssdk.StorageID, rootPathes []string) {
 	userID := cdssdk.UserID(1)
 
-	up, err := cmdCtx.Cmdline.Svc.Uploader.BeginCreateLoad(userID, bucketID, packageName, storageIDs)
+	up, err := cmdCtx.Cmdline.Svc.Uploader.BeginCreateLoad(userID, bucketID, packageName, storageIDs, rootPathes)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -94,7 +102,7 @@ func newloadp(cmdCtx *CommandContext, path string, bucketID cdssdk.BucketID, pac
 	}
 
 	wr := table.NewWriter()
-	wr.AppendHeader(table.Row{"ID", "Name", "FileCount", "TotalSize", "LoadedDirs"})
-	wr.AppendRow(table.Row{ret.Package.PackageID, ret.Package.Name, fileCount, totalSize, strings.Join(ret.LoadedDirs, "\n")})
+	wr.AppendHeader(table.Row{"ID", "Name", "FileCount", "TotalSize"})
+	wr.AppendRow(table.Row{ret.Package.PackageID, ret.Package.Name, fileCount, totalSize})
 	fmt.Println(wr.Render())
 }

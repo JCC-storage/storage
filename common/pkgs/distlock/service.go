@@ -24,7 +24,7 @@ func initProviders() []distlock.PathProvider {
 
 	provs = append(provs, initMetadataLockProviders()...)
 
-	provs = append(provs, initIPFSLockProviders()...)
+	provs = append(provs, initShardLockProviders()...)
 
 	provs = append(provs, initStorageLockProviders()...)
 
@@ -45,12 +45,11 @@ func initMetadataLockProviders() []distlock.PathProvider {
 		distlock.NewPathProvider(lockprovider.NewMetadataLock(), lockprovider.MetadataLockPathPrefix, "ObjectRep"),
 		distlock.NewPathProvider(lockprovider.NewMetadataLock(), lockprovider.MetadataLockPathPrefix, "ObjectBlock"),
 		distlock.NewPathProvider(lockprovider.NewMetadataLock(), lockprovider.MetadataLockPathPrefix, "Cache"),
-		distlock.NewPathProvider(lockprovider.NewMetadataLock(), lockprovider.MetadataLockPathPrefix, "StoragePackage"),
 		distlock.NewPathProvider(lockprovider.NewMetadataLock(), lockprovider.MetadataLockPathPrefix, "Location"),
 	}
 }
 
-func initIPFSLockProviders() []distlock.PathProvider {
+func initShardLockProviders() []distlock.PathProvider {
 	return []distlock.PathProvider{
 		distlock.NewPathProvider(lockprovider.NewShardStoreLock(), lockprovider.ShardStoreLockPathPrefix, trie.WORD_ANY),
 	}

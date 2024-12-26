@@ -57,12 +57,21 @@ func (*PackageDB) BatchGetAllPackageIDs(ctx SQLContext, start int, count int) ([
 	return ret, err
 }
 
-func (db *PackageDB) GetBucketPackages(ctx SQLContext, userID cdssdk.UserID, bucketID cdssdk.BucketID) ([]model.Package, error) {
+func (db *PackageDB) GetUserBucketPackages(ctx SQLContext, userID cdssdk.UserID, bucketID cdssdk.BucketID) ([]model.Package, error) {
 	var ret []model.Package
 	err := ctx.Table("UserBucket").
 		Select("Package.*").
 		Joins("JOIN Package ON UserBucket.BucketID = Package.BucketID").
 		Where("UserBucket.UserID = ? AND UserBucket.BucketID = ?", userID, bucketID).
+		Find(&ret).Error
+	return ret, err
+}
+
+func (db *PackageDB) GetBucketPackages(ctx SQLContext, bucketID cdssdk.BucketID) ([]model.Package, error) {
+	var ret []model.Package
+	err := ctx.Table("Package").
+		Select("Package.*").
+		Where("BucketID = ?", bucketID).
 		Find(&ret).Error
 	return ret, err
 }
@@ -132,19 +141,15 @@ func (db *PackageDB) Create(ctx SQLContext, bucketID cdssdk.BucketID, name strin
 	return newPackage, nil
 }
 
-// SoftDelete 设置一个对象被删除，并将相关数据删除
-func (db *PackageDB) SoftDelete(ctx SQLContext, packageID cdssdk.PackageID) error {
-	obj, err := db.GetByID(ctx, packageID)
-	if err != nil {
-		return fmt.Errorf("get package failed, err: %w", err)
-	}
+func (*PackageDB) Delete(ctx SQLContext, packageID cdssdk.PackageID) error {
+	err := ctx.Delete(&model.Package{}, "PackageID = ?", packageID).Error
+	return err
+}
 
-	if obj.State != cdssdk.PackageStateNormal {
-		return nil
-	}
-
-	if err := db.ChangeState(ctx, packageID, cdssdk.PackageStateDeleted); err != nil {
-		return fmt.Errorf("change package state failed, err: %w", err)
+// 删除与Package相关的所有数据
+func (db *PackageDB) DeleteComplete(ctx SQLContext, packageID cdssdk.PackageID) error {
+	if err := db.Package().Delete(ctx, packageID); err != nil {
+		return fmt.Errorf("delete package state: %w", err)
 	}
 
 	if err := db.ObjectAccessStat().DeleteInPackage(ctx, packageID); err != nil {
@@ -163,21 +168,11 @@ func (db *PackageDB) SoftDelete(ctx SQLContext, packageID cdssdk.PackageID) erro
 		return fmt.Errorf("deleting objects in package: %w", err)
 	}
 
-	if _, err := db.StoragePackage().SetAllPackageDeleted(ctx, packageID); err != nil {
-		return fmt.Errorf("set storage package deleted failed, err: %w", err)
+	if err := db.PackageAccessStat().DeleteByPackageID(ctx, packageID); err != nil {
+		return fmt.Errorf("deleting package access stat: %w", err)
 	}
 
 	return nil
-}
-
-// DeleteUnused 删除一个已经是Deleted状态，且不再被使用的对象
-func (PackageDB) DeleteUnused(ctx SQLContext, packageID cdssdk.PackageID) error {
-	err := ctx.Exec("DELETE FROM Package WHERE PackageID = ? AND State = ? AND NOT EXISTS (SELECT StorageID FROM StoragePackage WHERE PackageID = ?)",
-		packageID,
-		cdssdk.PackageStateDeleted,
-		packageID,
-	).Error
-	return err
 }
 
 func (*PackageDB) ChangeState(ctx SQLContext, packageID cdssdk.PackageID, state string) error {

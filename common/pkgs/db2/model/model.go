@@ -67,24 +67,6 @@ func (Cache) TableName() string {
 	return "Cache"
 }
 
-const (
-	StoragePackageStateNormal   = "Normal"
-	StoragePackageStateDeleted  = "Deleted"
-	StoragePackageStateOutdated = "Outdated"
-)
-
-// Storage当前加载的Package
-type StoragePackage struct {
-	StorageID cdssdk.StorageID `gorm:"column:StorageID; primaryKey; type:bigint" json:"storageID"`
-	PackageID cdssdk.PackageID `gorm:"column:PackageID; primaryKey; type:bigint" json:"packageID"`
-	UserID    cdssdk.UserID    `gorm:"column:UserID; primaryKey; type:bigint" json:"userID"`
-	State     string           `gorm:"column:State; type:varchar(255); not null" json:"state"`
-}
-
-func (StoragePackage) TableName() string {
-	return "StoragePackage"
-}
-
 type Location struct {
 	LocationID cdssdk.LocationID `gorm:"column:LocationID; primaryKey; type:bigint; autoIncrement" json:"locationID"`
 	Name       string            `gorm:"column:Name; type:varchar(255); not null" json:"name"`

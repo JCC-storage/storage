@@ -23,8 +23,6 @@ type PackageService interface {
 	ClonePackage(msg *ClonePackage) (*ClonePackageResp, *mq.CodeMessage)
 
 	GetPackageCachedStorages(msg *GetPackageCachedStorages) (*GetPackageCachedStoragesResp, *mq.CodeMessage)
-
-	GetPackageLoadedStorages(msg *GetPackageLoadedStorages) (*GetPackageLoadedStoragesResp, *mq.CodeMessage)
 }
 
 // 获取Package基本信息
@@ -259,35 +257,4 @@ func ReqGetPackageCachedStoragesResp(stgInfos []cdssdk.StoragePackageCachingInfo
 
 func (client *Client) GetPackageCachedStorages(msg *GetPackageCachedStorages) (*GetPackageCachedStoragesResp, error) {
 	return mq.Request(Service.GetPackageCachedStorages, client.rabbitCli, msg)
-}
-
-// 根据PackageID获取storage分布情况
-var _ = Register(Service.GetPackageLoadedStorages)
-
-type GetPackageLoadedStorages struct {
-	mq.MessageBodyBase
-	UserID    cdssdk.UserID    `json:"userID"`
-	PackageID cdssdk.PackageID `json:"packageID"`
-}
-
-type GetPackageLoadedStoragesResp struct {
-	mq.MessageBodyBase
-	StorageIDs []cdssdk.StorageID `json:"storageIDs"`
-}
-
-func ReqGetPackageLoadedStorages(userID cdssdk.UserID, packageID cdssdk.PackageID) *GetPackageLoadedStorages {
-	return &GetPackageLoadedStorages{
-		UserID:    userID,
-		PackageID: packageID,
-	}
-}
-
-func NewGetPackageLoadedStoragesResp(stgIDs []cdssdk.StorageID) *GetPackageLoadedStoragesResp {
-	return &GetPackageLoadedStoragesResp{
-		StorageIDs: stgIDs,
-	}
-}
-
-func (client *Client) GetPackageLoadedStorages(msg *GetPackageLoadedStorages) (*GetPackageLoadedStoragesResp, error) {
-	return mq.Request(Service.GetPackageLoadedStorages, client.rabbitCli, msg)
 }

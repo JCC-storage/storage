@@ -113,26 +113,5 @@ func (db *BucketDB) Create(ctx SQLContext, userID cdssdk.UserID, bucketName stri
 }
 
 func (db *BucketDB) Delete(ctx SQLContext, bucketID cdssdk.BucketID) error {
-	if err := ctx.Exec("DELETE FROM UserBucket WHERE BucketID = ?", bucketID).Error; err != nil {
-		return fmt.Errorf("delete user bucket failed, err: %w", err)
-	}
-
-	if err := ctx.Exec("DELETE FROM Bucket WHERE BucketID = ?", bucketID).Error; err != nil {
-		return fmt.Errorf("delete bucket failed, err: %w", err)
-	}
-
-	var pkgIDs []cdssdk.PackageID
-	if err := ctx.Table("Package").Select("PackageID").Where("BucketID = ?", bucketID).Find(&pkgIDs).Error; err != nil {
-		return fmt.Errorf("query package failed, err: %w", err)
-	}
-
-	for _, pkgID := range pkgIDs {
-		if err := db.Package().SoftDelete(ctx, pkgID); err != nil {
-			return fmt.Errorf("set package selected failed, err: %w", err)
-		}
-
-		// 失败也没关系，会有定时任务再次尝试
-		db.Package().DeleteUnused(ctx, pkgID)
-	}
-	return nil
+	return ctx.Delete(&cdssdk.Bucket{}, "BucketID = ?", bucketID).Error
 }

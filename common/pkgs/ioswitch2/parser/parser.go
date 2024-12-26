@@ -236,7 +236,7 @@ func extend(ctx *ParseContext) error {
 				for i := 0; i < ctx.Ft.ECParam.K; i++ {
 					ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
 						Stream:      splitNode.SubStream(i),
-						StreamIndex: ioswitch2.ECSrteam(i),
+						StreamIndex: ioswitch2.ECStream(i),
 					})
 				}
 			}
@@ -276,14 +276,14 @@ func extend(ctx *ParseContext) error {
 			for i := 0; i < ctx.Ft.ECParam.N; i++ {
 				ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
 					Stream:      mulNode.NewOutput(i),
-					StreamIndex: ioswitch2.ECSrteam(i),
+					StreamIndex: ioswitch2.ECStream(i),
 				})
 			}
 
 			joinNode := ctx.DAG.NewChunkedJoin(ctx.Ft.ECParam.ChunkSize)
 			for i := 0; i < ctx.Ft.ECParam.K; i++ {
 				// 不可能找不到流
-				joinNode.AddInput(findOutputStream(ctx, ioswitch2.ECSrteam(i)))
+				joinNode.AddInput(findOutputStream(ctx, ioswitch2.ECStream(i)))
 			}
 			ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
 				Stream:      joinNode.Joined(),
@@ -317,14 +317,14 @@ func extend(ctx *ParseContext) error {
 				mulNode.AddInput(splitNode.SubStream(i), i)
 				ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
 					Stream:      splitNode.SubStream(i),
-					StreamIndex: ioswitch2.ECSrteam(i),
+					StreamIndex: ioswitch2.ECStream(i),
 				})
 			}
 
 			for i := 0; i < ctx.Ft.ECParam.N; i++ {
 				ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
 					Stream:      mulNode.NewOutput(i),
-					StreamIndex: ioswitch2.ECSrteam(i),
+					StreamIndex: ioswitch2.ECStream(i),
 				})
 			}
 		}
@@ -471,7 +471,7 @@ func buildToNode(ctx *ParseContext, t ioswitch2.To) (ops2.ToNode, error) {
 		return n, nil
 
 	case *ioswitch2.LoadToShared:
-		n := ctx.DAG.NewSharedLoad(t, t.Storage.StorageID, t.UserID, t.PackageID, t.Path)
+		n := ctx.DAG.NewSharedLoad(t, t.Storage.StorageID, t.ObjectPath)
 
 		if err := setEnvByAddress(n, t.Hub, t.Hub.Address); err != nil {
 			return nil, err

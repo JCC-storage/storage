@@ -103,7 +103,13 @@ func (s *PackageService) CreateLoad(ctx *gin.Context) {
 		return
 	}
 
-	up, err := s.svc.Uploader.BeginCreateLoad(req.Info.UserID, req.Info.BucketID, req.Info.Name, req.Info.LoadTo)
+	if len(req.Info.LoadTo) != len(req.Info.LoadToPath) {
+		log.Warnf("load to and load to path count not match")
+		ctx.JSON(http.StatusOK, Failed(errorcode.BadArgument, "load to and load to path count not match"))
+		return
+	}
+
+	up, err := s.svc.Uploader.BeginCreateLoad(req.Info.UserID, req.Info.BucketID, req.Info.Name, req.Info.LoadTo, req.Info.LoadToPath)
 	if err != nil {
 		log.Warnf("begin package create load: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("begin package create load: %v", err)))
@@ -149,7 +155,7 @@ func (s *PackageService) CreateLoad(ctx *gin.Context) {
 		objs[i] = ret.Objects[pathes[i]]
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdsapi.PackageCreateLoadResp{Package: ret.Package, Objects: objs, LoadedDirs: ret.LoadedDirs}))
+	ctx.JSON(http.StatusOK, OK(cdsapi.PackageCreateLoadResp{Package: ret.Package, Objects: objs}))
 
 }
 func (s *PackageService) Delete(ctx *gin.Context) {
@@ -235,27 +241,4 @@ func (s *PackageService) GetCachedStorages(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, OK(cdsapi.PackageGetCachedStoragesResp{PackageCachingInfo: resp}))
-}
-
-// GetLoadedStorages 处理获取包的加载节点的HTTP请求。
-func (s *PackageService) GetLoadedStorages(ctx *gin.Context) {
-	log := logger.WithField("HTTP", "Package.GetLoadedStorages")
-
-	var req cdsapi.PackageGetLoadedStoragesReq
-	if err := ctx.ShouldBindQuery(&req); err != nil {
-		log.Warnf("binding query: %s", err.Error())
-		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
-		return
-	}
-
-	stgIDs, err := s.svc.PackageSvc().GetLoadedStorages(req.UserID, req.PackageID)
-	if err != nil {
-		log.Warnf("get package loaded storages failed: %s", err.Error())
-		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get package loaded storages failed"))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, OK(cdsapi.PackageGetLoadedStoragesResp{
-		StorageIDs: stgIDs,
-	}))
 }
