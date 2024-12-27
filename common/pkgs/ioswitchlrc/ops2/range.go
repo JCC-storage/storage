@@ -81,7 +81,7 @@ func (o *Range) String() string {
 
 type RangeNode struct {
 	dag.NodeBase
-	Range exec.Range
+	Range math2.Range
 }
 
 func (b *GraphNodeBuilder) NewRange() *RangeNode {
@@ -93,7 +93,7 @@ func (b *GraphNodeBuilder) NewRange() *RangeNode {
 	return node
 }
 
-func (t *RangeNode) RangeStream(input *dag.StreamVar, rng exec.Range) *dag.StreamVar {
+func (t *RangeNode) RangeStream(input *dag.StreamVar, rng math2.Range) *dag.StreamVar {
 	input.To(t, 0)
 	t.Range = rng
 	return t.OutputStreams().Get(0)

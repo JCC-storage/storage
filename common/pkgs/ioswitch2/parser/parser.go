@@ -28,7 +28,7 @@ type ParseContext struct {
 	// 这个范围是基于整个文件的，且上下界都取整到条带大小的整数倍，因此上界是有可能超过文件大小的。
 	ToNodes        map[ioswitch2.To]ops2.ToNode
 	IndexedStreams []IndexedStream
-	StreamRange    exec.Range
+	StreamRange    math2.Range
 	UseEC          bool // 是否使用纠删码
 	UseSegment     bool // 是否使用分段
 }
@@ -163,7 +163,7 @@ func checkEncodingParams(ctx *ParseContext) error {
 
 // 计算输入流的打开范围。如果From或者To中包含EC的流，则会将打开范围扩大到条带大小的整数倍。
 func calcStreamRange(ctx *ParseContext) {
-	rng := exec.NewRange(math.MaxInt64, 0)
+	rng := math2.NewRange(math.MaxInt64, 0)
 
 	for _, to := range ctx.Ft.Toes {
 		strIdx := to.GetStreamIndex()
@@ -350,14 +350,14 @@ func extend(ctx *ParseContext) error {
 }
 
 func buildFromNode(ctx *ParseContext, f ioswitch2.From) (ops2.FromNode, error) {
-	var repRange exec.Range
+	var repRange math2.Range
 	repRange.Offset = ctx.StreamRange.Offset
 	if ctx.StreamRange.Length != nil {
 		repRngLen := *ctx.StreamRange.Length
 		repRange.Length = &repRngLen
 	}
 
-	var blkRange exec.Range
+	var blkRange math2.Range
 	if ctx.UseEC {
 		blkRange.Offset = ctx.StreamRange.Offset / int64(ctx.Ft.ECParam.ChunkSize*ctx.Ft.ECParam.K) * int64(ctx.Ft.ECParam.ChunkSize)
 		if ctx.StreamRange.Length != nil {
@@ -1026,7 +1026,7 @@ func generateRange(ctx *ParseContext) {
 			n := ctx.DAG.NewRange()
 			toInput := toNode.Input()
 			*n.Env() = *toInput.Var().Src.Env()
-			rnged := n.RangeStream(toInput.Var(), exec.Range{
+			rnged := n.RangeStream(toInput.Var(), math2.Range{
 				Offset: toRng.Offset - ctx.StreamRange.Offset,
 				Length: toRng.Length,
 			})
@@ -1042,7 +1042,7 @@ func generateRange(ctx *ParseContext) {
 			n := ctx.DAG.NewRange()
 			toInput := toNode.Input()
 			*n.Env() = *toInput.Var().Src.Env()
-			rnged := n.RangeStream(toInput.Var(), exec.Range{
+			rnged := n.RangeStream(toInput.Var(), math2.Range{
 				Offset: toRng.Offset - blkStart,
 				Length: toRng.Length,
 			})

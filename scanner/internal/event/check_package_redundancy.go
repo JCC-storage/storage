@@ -10,6 +10,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/utils/math2"
 	"gitlink.org.cn/cloudream/common/utils/sort2"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
@@ -749,7 +750,7 @@ func (t *CheckPackageRedundancy) ecToRep(ctx ExecuteContext, obj stgmod.ObjectDe
 		}
 
 		len := obj.Object.Size
-		ft.AddTo(ioswitch2.NewToShardStoreWithRange(*uploadStgs[i].Storage.MasterHub, uploadStgs[i].Storage, ioswitch2.RawStream(), fmt.Sprintf("%d", i), exec.Range{
+		ft.AddTo(ioswitch2.NewToShardStoreWithRange(*uploadStgs[i].Storage.MasterHub, uploadStgs[i].Storage, ioswitch2.RawStream(), fmt.Sprintf("%d", i), math2.Range{
 			Offset: 0,
 			Length: &len,
 		}))

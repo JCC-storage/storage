@@ -3,6 +3,7 @@ package ioswitch2
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/utils/math2"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 )
 
@@ -14,7 +15,7 @@ type To interface {
 	// To所需要的文件流的范围。具体含义与DataIndex有关系：
 	// 如果DataIndex == -1，则表示在整个文件的范围。
 	// 如果DataIndex >= 0，则表示在文件的某个分片的范围。
-	GetRange() exec.Range
+	GetRange() math2.Range
 	GetStreamIndex() StreamIndex
 }
 
@@ -96,7 +97,7 @@ type FromDriver struct {
 
 func NewFromDriver(strIdx StreamIndex) (*FromDriver, *exec.DriverWriteStream) {
 	handle := &exec.DriverWriteStream{
-		RangeHint: &exec.Range{},
+		RangeHint: &math2.Range{},
 	}
 	return &FromDriver{
 		Handle:      handle,
@@ -131,7 +132,7 @@ func (f *FromShardstore) GetStreamIndex() StreamIndex {
 type ToDriver struct {
 	Handle      *exec.DriverReadStream
 	StreamIndex StreamIndex
-	Range       exec.Range
+	Range       math2.Range
 }
 
 func NewToDriver(strIdx StreamIndex) (*ToDriver, *exec.DriverReadStream) {
@@ -142,7 +143,7 @@ func NewToDriver(strIdx StreamIndex) (*ToDriver, *exec.DriverReadStream) {
 	}, &str
 }
 
-func NewToDriverWithRange(strIdx StreamIndex, rng exec.Range) (*ToDriver, *exec.DriverReadStream) {
+func NewToDriverWithRange(strIdx StreamIndex, rng math2.Range) (*ToDriver, *exec.DriverReadStream) {
 	str := exec.DriverReadStream{}
 	return &ToDriver{
 		Handle:      &str,
@@ -155,7 +156,7 @@ func (t *ToDriver) GetStreamIndex() StreamIndex {
 	return t.StreamIndex
 }
 
-func (t *ToDriver) GetRange() exec.Range {
+func (t *ToDriver) GetRange() math2.Range {
 	return t.Range
 }
 
@@ -163,7 +164,7 @@ type ToShardStore struct {
 	Hub              cdssdk.Hub
 	Storage          stgmod.StorageDetail
 	StreamIndex      StreamIndex
-	Range            exec.Range
+	Range            math2.Range
 	FileHashStoreKey string
 }
 
@@ -176,7 +177,7 @@ func NewToShardStore(hub cdssdk.Hub, stg stgmod.StorageDetail, strIdx StreamInde
 	}
 }
 
-func NewToShardStoreWithRange(hub cdssdk.Hub, stg stgmod.StorageDetail, streamIndex StreamIndex, fileHashStoreKey string, rng exec.Range) *ToShardStore {
+func NewToShardStoreWithRange(hub cdssdk.Hub, stg stgmod.StorageDetail, streamIndex StreamIndex, fileHashStoreKey string, rng math2.Range) *ToShardStore {
 	return &ToShardStore{
 		Hub:              hub,
 		Storage:          stg,
@@ -190,7 +191,7 @@ func (t *ToShardStore) GetStreamIndex() StreamIndex {
 	return t.StreamIndex
 }
 
-func (t *ToShardStore) GetRange() exec.Range {
+func (t *ToShardStore) GetRange() math2.Range {
 	return t.Range
 }
 
@@ -214,6 +215,6 @@ func (t *LoadToShared) GetStreamIndex() StreamIndex {
 	}
 }
 
-func (t *LoadToShared) GetRange() exec.Range {
-	return exec.Range{}
+func (t *LoadToShared) GetRange() math2.Range {
+	return math2.Range{}
 }

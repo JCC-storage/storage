@@ -9,6 +9,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/iterator"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/utils/math2"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/parser"
@@ -205,7 +206,7 @@ func (s *StripIterator) readStrip(stripIndex int64, buf []byte) (int, error) {
 			ft.AddFrom(ioswitch2.NewFromShardstore(b.Block.FileHash, *stg.MasterHub, stg.Storage, ioswitch2.ECStream(b.Block.Index)))
 		}
 
-		toExec, hd := ioswitch2.NewToDriverWithRange(ioswitch2.RawStream(), exec.Range{
+		toExec, hd := ioswitch2.NewToDriverWithRange(ioswitch2.RawStream(), math2.Range{
 			Offset: stripIndex * s.red.StripSize(),
 		})
 		ft.AddTo(toExec)

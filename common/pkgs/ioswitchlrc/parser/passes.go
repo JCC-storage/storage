@@ -5,7 +5,6 @@ import (
 	"math"
 
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/dag"
-	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/math2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc"
@@ -17,7 +16,7 @@ import (
 func calcStreamRange(ctx *GenerateContext) {
 	stripSize := int64(ctx.LRC.ChunkSize * ctx.LRC.K)
 
-	rng := exec.Range{
+	rng := math2.Range{
 		Offset: math.MaxInt64,
 	}
 
@@ -49,8 +48,8 @@ func calcStreamRange(ctx *GenerateContext) {
 }
 
 func buildFromNode(ctx *GenerateContext, f ioswitchlrc.From) (ops2.FromNode, error) {
-	var repRange exec.Range
-	var blkRange exec.Range
+	var repRange math2.Range
+	var blkRange math2.Range
 
 	repRange.Offset = ctx.StreamRange.Offset
 	blkRange.Offset = ctx.StreamRange.Offset / int64(ctx.LRC.ChunkSize*ctx.LRC.K) * int64(ctx.LRC.ChunkSize)
@@ -234,7 +233,7 @@ func generateRange(ctx *GenerateContext) {
 			n := ctx.DAG.NewRange()
 			toInput := toNode.Input()
 			*n.Env() = *toInput.Var().Src.Env()
-			rnged := n.RangeStream(toInput.Var(), exec.Range{
+			rnged := n.RangeStream(toInput.Var(), math2.Range{
 				Offset: toRng.Offset - ctx.StreamRange.Offset,
 				Length: toRng.Length,
 			})
@@ -250,7 +249,7 @@ func generateRange(ctx *GenerateContext) {
 			n := ctx.DAG.NewRange()
 			toInput := toNode.Input()
 			*n.Env() = *toInput.Var().Src.Env()
-			rnged := n.RangeStream(toInput.Var(), exec.Range{
+			rnged := n.RangeStream(toInput.Var(), math2.Range{
 				Offset: toRng.Offset - blkStart,
 				Length: toRng.Length,
 			})

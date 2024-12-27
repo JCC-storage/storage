@@ -119,7 +119,7 @@ func (i *DownloadObjectIterator) downloadDirect(req downloadReqeust2, strg strat
 	ft := ioswitch2.NewFromTo()
 
 	toExec, handle := ioswitch2.NewToDriver(ioswitch2.RawStream())
-	toExec.Range = exec.Range{
+	toExec.Range = math2.Range{
 		Offset: req.Raw.Offset,
 	}
 	if req.Raw.Length != -1 {

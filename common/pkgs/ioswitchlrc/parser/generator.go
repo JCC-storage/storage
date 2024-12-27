@@ -7,6 +7,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/plan"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/utils/math2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc/ops2"
 )
@@ -16,7 +17,7 @@ type GenerateContext struct {
 	DAG         *ops2.GraphNodeBuilder
 	To          []ioswitchlrc.To
 	ToNodes     map[ioswitchlrc.To]ops2.ToNode
-	StreamRange exec.Range
+	StreamRange math2.Range
 }
 
 // 输入一个完整文件，从这个完整文件产生任意文件块（也可再产生完整文件）。
