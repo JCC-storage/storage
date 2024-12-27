@@ -63,7 +63,7 @@ func (s *ObjectService) Upload(ctx *gin.Context) {
 		return
 	}
 
-	up, err := s.svc.Uploader.BeginUpdate(req.Info.UserID, req.Info.PackageID, req.Info.Affinity)
+	up, err := s.svc.Uploader.BeginUpdate(req.Info.UserID, req.Info.PackageID, req.Info.Affinity, req.Info.LoadTo, req.Info.LoadToPath)
 	if err != nil {
 		log.Warnf("begin update: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("begin update: %v", err)))

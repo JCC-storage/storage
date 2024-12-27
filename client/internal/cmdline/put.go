@@ -68,7 +68,7 @@ func init() {
 				storageAff = cdssdk.StorageID(stgID)
 			}
 
-			up, err := cmdCtx.Cmdline.Svc.Uploader.BeginUpdate(userID, pkg.PackageID, storageAff)
+			up, err := cmdCtx.Cmdline.Svc.Uploader.BeginUpdate(userID, pkg.PackageID, storageAff, nil, nil)
 			if err != nil {
 				fmt.Printf("begin updating package: %v\n", err)
 				return

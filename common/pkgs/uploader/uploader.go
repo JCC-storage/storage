@@ -24,6 +24,8 @@ type Uploader struct {
 	connectivity *connectivity.Collector
 	stgMgr       *svcmgr.Manager
 	stgMeta      *metacache.StorageMeta
+	loadTo       []cdssdk.StorageID
+	loadToPath   []string
 }
 
 func NewUploader(distlock *distlock.Service, connectivity *connectivity.Collector, stgMgr *svcmgr.Manager, stgMeta *metacache.StorageMeta) *Uploader {
@@ -35,7 +37,7 @@ func NewUploader(distlock *distlock.Service, connectivity *connectivity.Collecto
 	}
 }
 
-func (u *Uploader) BeginUpdate(userID cdssdk.UserID, pkgID cdssdk.PackageID, affinity cdssdk.StorageID) (*UpdateUploader, error) {
+func (u *Uploader) BeginUpdate(userID cdssdk.UserID, pkgID cdssdk.PackageID, affinity cdssdk.StorageID, loadTo []cdssdk.StorageID, loadToPath []string) (*UpdateUploader, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
@@ -72,6 +74,24 @@ func (u *Uploader) BeginUpdate(userID cdssdk.UserID, pkgID cdssdk.PackageID, aff
 		return nil, fmt.Errorf("user no available storages")
 	}
 
+	loadToStgs := make([]stgmod.StorageDetail, len(loadTo))
+	for i, stgID := range loadTo {
+		stg, ok := lo.Find(getUserStgsResp.Storages, func(stg stgmod.StorageDetail) bool {
+			return stg.Storage.StorageID == stgID
+		})
+		if !ok {
+			return nil, fmt.Errorf("load to storage %v not found", stgID)
+		}
+		if stg.MasterHub == nil {
+			return nil, fmt.Errorf("load to storage %v has no master hub", stgID)
+		}
+		if stg.Storage.SharedStore == nil {
+			return nil, fmt.Errorf("load to storage %v has no shared store", stgID)
+		}
+
+		loadToStgs[i] = stg
+	}
+
 	target := u.chooseUploadStorage(userStgs, affinity)
 
 	// 给上传节点的IPFS加锁
@@ -83,10 +103,12 @@ func (u *Uploader) BeginUpdate(userID cdssdk.UserID, pkgID cdssdk.PackageID, aff
 	}
 
 	return &UpdateUploader{
-		uploader:  u,
-		pkgID:     pkgID,
-		targetStg: target.Storage,
-		distMutex: distMutex,
+		uploader:   u,
+		pkgID:      pkgID,
+		targetStg:  target.Storage,
+		distMutex:  distMutex,
+		loadToStgs: loadToStgs,
+		loadToPath: loadToPath,
 	}, nil
 }
 
