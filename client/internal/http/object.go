@@ -48,6 +48,26 @@ func (s *ObjectService) List(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectListResp{Objects: objs}))
 }
 
+func (s *ObjectService) ListByIDs(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Object.ListByIDs")
+
+	var req cdsapi.ObjectListByIDs
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Warnf("binding body: %s", err.Error())
+		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
+		return
+	}
+
+	objs, err := s.svc.ObjectSvc().GetByIDs(req.UserID, req.ObjectIDs)
+	if err != nil {
+		log.Warnf("listing objects: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("listing objects: %v", err)))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectListByIDsResp{Objects: objs}))
+}
+
 type ObjectUploadReq struct {
 	Info  cdsapi.ObjectUploadInfo `form:"info" binding:"required"`
 	Files []*multipart.FileHeader `form:"files"`

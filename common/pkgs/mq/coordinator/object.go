@@ -10,6 +10,8 @@ import (
 )
 
 type ObjectService interface {
+	GetObjects(msg *GetObjects) (*GetObjectsResp, *mq.CodeMessage)
+
 	GetObjectsByPath(msg *GetObjectsByPath) (*GetObjectsByPathResp, *mq.CodeMessage)
 
 	GetPackageObjects(msg *GetPackageObjects) (*GetPackageObjectsResp, *mq.CodeMessage)
@@ -29,6 +31,33 @@ type ObjectService interface {
 	GetDatabaseAll(msg *GetDatabaseAll) (*GetDatabaseAllResp, *mq.CodeMessage)
 
 	AddAccessStat(msg *AddAccessStat)
+}
+
+var _ = Register(Service.GetObjects)
+
+type GetObjects struct {
+	mq.MessageBodyBase
+	UserID    cdssdk.UserID     `json:"userID"`
+	ObjectIDs []cdssdk.ObjectID `json:"objectIDs"`
+}
+type GetObjectsResp struct {
+	mq.MessageBodyBase
+	Objects []*cdssdk.Object `json:"objects"`
+}
+
+func ReqGetObjects(userID cdssdk.UserID, objectIDs []cdssdk.ObjectID) *GetObjects {
+	return &GetObjects{
+		UserID:    userID,
+		ObjectIDs: objectIDs,
+	}
+}
+func RespGetObjects(objects []*cdssdk.Object) *GetObjectsResp {
+	return &GetObjectsResp{
+		Objects: objects,
+	}
+}
+func (client *Client) GetObjects(msg *GetObjects) (*GetObjectsResp, error) {
+	return mq.Request(Service.GetObjects, client.rabbitCli, msg)
 }
 
 // 查询指定前缀的Object，返回的Objects会按照ObjectID升序

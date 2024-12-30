@@ -18,6 +18,41 @@ import (
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
+func (svc *Service) GetObjects(msg *coormq.GetObjects) (*coormq.GetObjectsResp, *mq.CodeMessage) {
+	var ret []*cdssdk.Object
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
+		// TODO 应该检查用户是否有每一个Object所在Package的权限
+		objs, err := svc.db2.Object().BatchGet(tx, msg.ObjectIDs)
+		if err != nil {
+			return err
+		}
+
+		objMp := make(map[cdssdk.ObjectID]cdssdk.Object)
+		for _, obj := range objs {
+			objMp[obj.ObjectID] = obj
+		}
+
+		for _, objID := range msg.ObjectIDs {
+			o, ok := objMp[objID]
+			if ok {
+				ret = append(ret, &o)
+			} else {
+				ret = append(ret, nil)
+			}
+		}
+
+		return err
+	})
+	if err != nil {
+		logger.WithField("UserID", msg.UserID).
+			Warn(err.Error())
+
+		return nil, mq.Failed(errorcode.OperationFailed, "get objects failed")
+	}
+
+	return mq.ReplyOK(coormq.RespGetObjects(ret))
+}
+
 func (svc *Service) GetObjectsByPath(msg *coormq.GetObjectsByPath) (*coormq.GetObjectsByPathResp, *mq.CodeMessage) {
 	var objs []cdssdk.Object
 	err := svc.db2.DoTx(func(tx db2.SQLContext) error {

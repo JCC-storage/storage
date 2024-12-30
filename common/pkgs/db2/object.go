@@ -20,7 +20,7 @@ func (db *DB) Object() *ObjectDB {
 	return &ObjectDB{DB: db}
 }
 
-func (db *ObjectDB) GetByID(ctx SQLContext, objectID cdssdk.ObjectID) (model.Object, error) {
+func (db *ObjectDB) GetByID(ctx SQLContext, objectID cdssdk.ObjectID) (cdssdk.Object, error) {
 	var ret cdssdk.Object
 	err := ctx.Table("Object").Where("ObjectID = ?", objectID).First(&ret).Error
 	return ret, err
@@ -57,7 +57,7 @@ func (db *ObjectDB) BatchTestObjectID(ctx SQLContext, objectIDs []cdssdk.ObjectI
 	return avaiIDMap, nil
 }
 
-func (db *ObjectDB) BatchGet(ctx SQLContext, objectIDs []cdssdk.ObjectID) ([]model.Object, error) {
+func (db *ObjectDB) BatchGet(ctx SQLContext, objectIDs []cdssdk.ObjectID) ([]cdssdk.Object, error) {
 	if len(objectIDs) == 0 {
 		return nil, nil
 	}
@@ -128,7 +128,7 @@ func (db *ObjectDB) BatchUpdateColumns(ctx SQLContext, objs []cdssdk.Object, col
 	}).Create(objs).Error
 }
 
-func (db *ObjectDB) GetPackageObjects(ctx SQLContext, packageID cdssdk.PackageID) ([]model.Object, error) {
+func (db *ObjectDB) GetPackageObjects(ctx SQLContext, packageID cdssdk.PackageID) ([]cdssdk.Object, error) {
 	var ret []cdssdk.Object
 	err := ctx.Table("Object").Where("PackageID = ?", packageID).Order("ObjectID ASC").Find(&ret).Error
 	return ret, err

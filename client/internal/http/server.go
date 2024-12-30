@@ -44,6 +44,7 @@ func (s *Server) initRouters() {
 	// initTemp(rt, s)
 
 	rt.GET(cdsapi.ObjectListPath, s.Object().List)
+	rt.POST(cdsapi.ObjectListByIDsPath, s.Object().ListByIDs)
 	rt.GET(cdsapi.ObjectDownloadPath, s.Object().Download)
 	rt.GET(cdsapi.ObjectDownloadByPathPath, s.Object().DownloadByPath)
 	rt.POST(cdsapi.ObjectUploadPath, s.Object().Upload)
