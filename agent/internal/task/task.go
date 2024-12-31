@@ -16,7 +16,7 @@ type TaskContext struct {
 	connectivity *connectivity.Collector
 	downloader   *downloader.Downloader
 	accessStat   *accessstat.AccessStat
-	stgMgr       *svcmgr.Manager
+	stgMgr       *svcmgr.AgentPool
 	uploader     *uploader.Uploader
 }
 
@@ -35,7 +35,7 @@ type Task = task.Task[TaskContext]
 // CompleteOption 类型定义了任务完成时的选项，可用于定制化任务完成的处理方式
 type CompleteOption = task.CompleteOption
 
-func NewManager(distlock *distlock.Service, connectivity *connectivity.Collector, downloader *downloader.Downloader, accessStat *accessstat.AccessStat, stgMgr *svcmgr.Manager, uploader *uploader.Uploader) Manager {
+func NewManager(distlock *distlock.Service, connectivity *connectivity.Collector, downloader *downloader.Downloader, accessStat *accessstat.AccessStat, stgMgr *svcmgr.AgentPool, uploader *uploader.Uploader) Manager {
 	return task.NewManager(TaskContext{
 		distlock:     distlock,
 		connectivity: connectivity,

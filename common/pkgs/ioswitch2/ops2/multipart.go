@@ -48,7 +48,12 @@ type MultipartInitiator struct {
 }
 
 func (o *MultipartInitiator) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
-	initiator, err := factory.CreateComponent[types.MultipartInitiator](o.Storage)
+	blder := factory.GetBuilder(o.Storage)
+	if blder == nil {
+		return fmt.Errorf("unsupported storage type: %T", o.Storage.Storage.Type)
+	}
+
+	initiator, err := blder.CreateMultipartInitiator(o.Storage)
 	if err != nil {
 		return err
 	}
@@ -113,6 +118,11 @@ type MultipartUpload struct {
 }
 
 func (o *MultipartUpload) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
+	blder := factory.GetBuilder(o.Storage)
+	if blder == nil {
+		return fmt.Errorf("unsupported storage type: %T", o.Storage.Storage.Type)
+	}
+
 	uploadArgs, err := exec.BindVar[*MultipartUploadArgsValue](e, ctx.Context, o.UploadArgs)
 	if err != nil {
 		return err
@@ -124,7 +134,7 @@ func (o *MultipartUpload) Execute(ctx *exec.ExecContext, e *exec.Executor) error
 	}
 	defer partStr.Stream.Close()
 
-	uploader, err := factory.CreateComponent[types.MultipartUploader](o.Storage)
+	uploader, err := blder.CreateMultipartUploader(o.Storage)
 	if err != nil {
 		return err
 	}

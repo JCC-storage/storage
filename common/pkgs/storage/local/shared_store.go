@@ -11,13 +11,13 @@ import (
 )
 
 type SharedStore struct {
-	svc *Service
+	agt *Agent
 	cfg cdssdk.LocalSharedStorage
 }
 
-func NewSharedStore(svc *Service, cfg cdssdk.LocalSharedStorage) (*SharedStore, error) {
+func NewSharedStore(agt *Agent, cfg cdssdk.LocalSharedStorage) (*SharedStore, error) {
 	return &SharedStore{
-		svc: svc,
+		agt: agt,
 		cfg: cfg,
 	}, nil
 }
@@ -52,5 +52,5 @@ func (s *SharedStore) Write(objPath string, stream io.Reader) error {
 }
 
 func (s *SharedStore) getLogger() logger.Logger {
-	return logger.WithField("SharedStore", "Local").WithField("Storage", s.svc.Detail.Storage.String())
+	return logger.WithField("SharedStore", "Local").WithField("Storage", s.agt.Detail.Storage.String())
 }

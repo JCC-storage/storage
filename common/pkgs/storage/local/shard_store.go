@@ -23,7 +23,7 @@ const (
 )
 
 type ShardStore struct {
-	svc              *Service
+	agt              *Agent
 	cfg              cdssdk.LocalShardStorage
 	absRoot          string
 	lock             sync.Mutex
@@ -31,14 +31,14 @@ type ShardStore struct {
 	done             chan any
 }
 
-func NewShardStore(svc *Service, cfg cdssdk.LocalShardStorage) (*ShardStore, error) {
+func NewShardStore(svc *Agent, cfg cdssdk.LocalShardStorage) (*ShardStore, error) {
 	absRoot, err := filepath.Abs(cfg.Root)
 	if err != nil {
 		return nil, fmt.Errorf("get abs root: %w", err)
 	}
 
 	return &ShardStore{
-		svc:              svc,
+		agt:              svc,
 		cfg:              cfg,
 		absRoot:          absRoot,
 		workingTempFiles: make(map[string]bool),
@@ -411,7 +411,7 @@ func (s *ShardStore) BypassUploaded(info types.BypassFileInfo) error {
 }
 
 func (s *ShardStore) getLogger() logger.Logger {
-	return logger.WithField("ShardStore", "Local").WithField("Storage", s.svc.Detail.Storage.String())
+	return logger.WithField("ShardStore", "Local").WithField("Storage", s.agt.Detail.Storage.String())
 }
 
 func (s *ShardStore) getFileDirFromHash(hash cdssdk.FileHash) string {

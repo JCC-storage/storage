@@ -15,7 +15,7 @@ import (
 type ExecuteArgs struct {
 	DB       *db2.DB
 	DistLock *distlock.Service
-	StgMgr   *svcmgr.Manager
+	StgMgr   *svcmgr.AgentPool
 }
 
 type Executor = event.Executor[ExecuteArgs]
@@ -26,7 +26,7 @@ type Event = event.Event[ExecuteArgs]
 
 type ExecuteOption = event.ExecuteOption
 
-func NewExecutor(db *db2.DB, distLock *distlock.Service, stgMgr *svcmgr.Manager) Executor {
+func NewExecutor(db *db2.DB, distLock *distlock.Service, stgMgr *svcmgr.AgentPool) Executor {
 	return event.NewExecutor(ExecuteArgs{
 		DB:       db,
 		DistLock: distLock,

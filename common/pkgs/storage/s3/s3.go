@@ -2,13 +2,11 @@ package s3
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/common/utils/reflect2"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/factory/reg"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
@@ -16,13 +14,15 @@ import (
 )
 
 func init() {
-	reg.RegisterBuilder[*cdssdk.COSType](createService, createComponent)
-	reg.RegisterBuilder[*cdssdk.OSSType](createService, createComponent)
-	reg.RegisterBuilder[*cdssdk.OBSType](createService, createComponent)
+	reg.RegisterBuilder[*cdssdk.COSType](&builder{})
+	reg.RegisterBuilder[*cdssdk.OSSType](&builder{})
+	reg.RegisterBuilder[*cdssdk.OBSType](&builder{})
 }
 
-func createService(detail stgmod.StorageDetail) (types.StorageService, error) {
-	svc := &Service{
+type builder struct{}
+
+func (b *builder) CreateAgent(detail stgmod.StorageDetail) (types.StorageAgent, error) {
+	agt := &Agent{
 		Detail: detail,
 	}
 
@@ -37,7 +37,7 @@ func createService(detail stgmod.StorageDetail) (types.StorageService, error) {
 			return nil, err
 		}
 
-		store, err := NewShardStore(svc, cli, bkt, *cfg, ShardStoreOption{
+		store, err := NewShardStore(agt, cli, bkt, *cfg, ShardStoreOption{
 			// 目前对接的存储服务都不支持从上传接口直接获取到Sha256
 			UseAWSSha256: false,
 		})
@@ -45,49 +45,45 @@ func createService(detail stgmod.StorageDetail) (types.StorageService, error) {
 			return nil, err
 		}
 
-		svc.ShardStore = store
+		agt.ShardStore = store
 	}
 
-	return svc, nil
+	return agt, nil
 }
 
-func createComponent(detail stgmod.StorageDetail, typ reflect.Type) (any, error) {
-	switch typ {
-	case reflect2.TypeOf[types.MultipartInitiator]():
-		feat := utils.FindFeature[*cdssdk.MultipartUploadFeature](detail)
-		if feat == nil {
-			return nil, fmt.Errorf("feature %T not found", cdssdk.MultipartUploadFeature{})
-		}
-
-		cli, bkt, err := createS3Client(detail.Storage.Type)
-		if err != nil {
-			return nil, err
-		}
-
-		return &MultipartInitiator{
-			cli:     cli,
-			bucket:  bkt,
-			tempDir: feat.TempDir,
-		}, nil
-
-	case reflect2.TypeOf[types.MultipartUploader]():
-		feat := utils.FindFeature[*cdssdk.MultipartUploadFeature](detail)
-		if feat == nil {
-			return nil, fmt.Errorf("feature %T not found", cdssdk.MultipartUploadFeature{})
-		}
-
-		cli, bkt, err := createS3Client(detail.Storage.Type)
-		if err != nil {
-			return nil, err
-		}
-
-		return &MultipartUploader{
-			cli:    cli,
-			bucket: bkt,
-		}, nil
+func (b *builder) CreateMultipartInitiator(detail stgmod.StorageDetail) (types.MultipartInitiator, error) {
+	feat := utils.FindFeature[*cdssdk.MultipartUploadFeature](detail)
+	if feat == nil {
+		return nil, fmt.Errorf("feature %T not found", cdssdk.MultipartUploadFeature{})
 	}
 
-	return nil, fmt.Errorf("unsupported component type %v", typ)
+	cli, bkt, err := createS3Client(detail.Storage.Type)
+	if err != nil {
+		return nil, err
+	}
+
+	return &MultipartInitiator{
+		cli:     cli,
+		bucket:  bkt,
+		tempDir: feat.TempDir,
+	}, nil
+}
+
+func (b *builder) CreateMultipartUploader(detail stgmod.StorageDetail) (types.MultipartUploader, error) {
+	feat := utils.FindFeature[*cdssdk.MultipartUploadFeature](detail)
+	if feat == nil {
+		return nil, fmt.Errorf("feature %T not found", cdssdk.MultipartUploadFeature{})
+	}
+
+	cli, bkt, err := createS3Client(detail.Storage.Type)
+	if err != nil {
+		return nil, err
+	}
+
+	return &MultipartUploader{
+		cli:    cli,
+		bucket: bkt,
+	}, nil
 }
 
 func createS3Client(addr cdssdk.StorageType) (*s3.Client, string, error) {

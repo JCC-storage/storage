@@ -55,9 +55,9 @@ func serve(configPath string) {
 	hubCfg := downloadHubConfig()
 
 	// 初始化存储服务管理器
-	stgMgr := svcmgr.NewManager()
+	stgAgts := svcmgr.NewPool()
 	for _, stg := range hubCfg.Storages {
-		err := stgMgr.CreateService(stg)
+		err := stgAgts.SetupAgent(stg)
 		if err != nil {
 			fmt.Printf("init storage %v: %v", stg.Storage.String(), err)
 			os.Exit(1)
@@ -68,7 +68,7 @@ func serve(configPath string) {
 	worker := exec.NewWorker()
 
 	// 初始化HTTP服务
-	httpSvr, err := http.NewServer(config.Cfg().ListenAddr, http.NewService(&worker, stgMgr))
+	httpSvr, err := http.NewServer(config.Cfg().ListenAddr, http.NewService(&worker, stgAgts))
 	if err != nil {
 		logger.Fatalf("new http server failed, err: %s", err.Error())
 	}
@@ -133,17 +133,17 @@ func serve(configPath string) {
 	strgSel := strategy.NewSelector(config.Cfg().DownloadStrategy, stgMeta, hubMeta, conMeta)
 
 	// 初始化下载器
-	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol, stgMgr, strgSel)
+	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol, stgAgts, strgSel)
 
 	// 初始化上传器
-	uploader := uploader.NewUploader(distlock, &conCol, stgMgr, stgMeta)
+	uploader := uploader.NewUploader(distlock, &conCol, stgAgts, stgMeta)
 
 	// 初始化任务管理器
-	taskMgr := task.NewManager(distlock, &conCol, &dlder, acStat, stgMgr, uploader)
+	taskMgr := task.NewManager(distlock, &conCol, &dlder, acStat, stgAgts, uploader)
 
 	// 启动命令服务器
 	// TODO 需要设计AgentID持久化机制
-	agtSvr, err := agtmq.NewServer(cmdsvc.NewService(&taskMgr, stgMgr), config.Cfg().ID, config.Cfg().RabbitMQ)
+	agtSvr, err := agtmq.NewServer(cmdsvc.NewService(&taskMgr, stgAgts), config.Cfg().ID, config.Cfg().RabbitMQ)
 	if err != nil {
 		logger.Fatalf("new agent server failed, err: %s", err.Error())
 	}
@@ -159,7 +159,7 @@ func serve(configPath string) {
 		logger.Fatalf("listen on %s failed, err: %s", listenAddr, err.Error())
 	}
 	s := grpc.NewServer()
-	agtrpc.RegisterAgentServer(s, grpcsvc.NewService(&worker, stgMgr))
+	agtrpc.RegisterAgentServer(s, grpcsvc.NewService(&worker, stgAgts))
 	go serveGRPC(s, lis)
 
 	go serveDistLock(distlock)

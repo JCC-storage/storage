@@ -99,7 +99,7 @@ func main() {
 	go serveAccessStat(acStat)
 
 	// 存储管理器
-	stgMgr := svcmgr.NewManager()
+	stgMgr := svcmgr.NewPool()
 
 	// 任务管理器
 	taskMgr := task.NewManager(distlockSvc, &conCol, stgMgr)

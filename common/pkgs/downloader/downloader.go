@@ -42,11 +42,11 @@ type Downloader struct {
 	strips   *StripCache
 	cfg      Config
 	conn     *connectivity.Collector
-	stgMgr   *svcmgr.Manager
+	stgMgr   *svcmgr.AgentPool
 	selector *strategy.Selector
 }
 
-func NewDownloader(cfg Config, conn *connectivity.Collector, stgMgr *svcmgr.Manager, sel *strategy.Selector) Downloader {
+func NewDownloader(cfg Config, conn *connectivity.Collector, stgMgr *svcmgr.AgentPool, sel *strategy.Selector) Downloader {
 	if cfg.MaxStripCacheCount == 0 {
 		cfg.MaxStripCacheCount = DefaultMaxStripCacheCount
 	}

@@ -44,7 +44,7 @@ type BypassToShardStore struct {
 }
 
 func (o *BypassToShardStore) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
-	svcMgr, err := exec.GetValueByType[*svcmgr.Manager](ctx)
+	svcMgr, err := exec.GetValueByType[*svcmgr.AgentPool](ctx)
 	if err != nil {
 		return err
 	}

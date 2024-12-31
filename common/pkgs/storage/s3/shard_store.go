@@ -30,7 +30,7 @@ type ShardStoreOption struct {
 }
 
 type ShardStore struct {
-	svc              *Service
+	svc              *Agent
 	cli              *s3.Client
 	bucket           string
 	cfg              cdssdk.S3ShardStorage
@@ -40,7 +40,7 @@ type ShardStore struct {
 	done             chan any
 }
 
-func NewShardStore(svc *Service, cli *s3.Client, bkt string, cfg cdssdk.S3ShardStorage, opt ShardStoreOption) (*ShardStore, error) {
+func NewShardStore(svc *Agent, cli *s3.Client, bkt string, cfg cdssdk.S3ShardStorage, opt ShardStoreOption) (*ShardStore, error) {
 	return &ShardStore{
 		svc:              svc,
 		cli:              cli,

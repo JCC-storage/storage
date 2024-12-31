@@ -48,7 +48,7 @@ func main() {
 	go serveDistLock(distlockSvc)
 
 	// 启动存储服务管理器
-	stgMgr := svcmgr.NewManager()
+	stgMgr := svcmgr.NewPool()
 
 	// 启动事件执行器
 	eventExecutor := event.NewExecutor(db, distlockSvc, stgMgr)

@@ -11,9 +11,6 @@ import (
 var StorageBuilders = make(map[reflect.Type]types.StorageBuilder)
 
 // 注册针对指定存储服务类型的Builder
-func RegisterBuilder[T cdssdk.StorageType](createSvc types.StorageServiceBuilder, createComp types.StorageComponentBuilder) {
-	StorageBuilders[reflect2.TypeOf[T]()] = types.StorageBuilder{
-		CreateService:   createSvc,
-		CreateComponent: createComp,
-	}
+func RegisterBuilder[T cdssdk.StorageType](builder types.StorageBuilder) {
+	StorageBuilders[reflect2.TypeOf[T]()] = builder
 }

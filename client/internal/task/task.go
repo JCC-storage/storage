@@ -11,7 +11,7 @@ import (
 type TaskContext struct {
 	distlock     *distlock.Service
 	connectivity *connectivity.Collector
-	stgMgr       *svcmgr.Manager
+	stgMgr       *svcmgr.AgentPool
 }
 
 // CompleteFn 类型定义了任务完成时的回调函数，用于设置任务的执行结果
@@ -31,7 +31,7 @@ type CompleteOption = task.CompleteOption
 
 // NewManager 创建一个新的任务管理器实例，接受一个分布式锁服务和一个网络连接状态收集器作为参数
 // 返回一个初始化好的任务管理器实例
-func NewManager(distlock *distlock.Service, connectivity *connectivity.Collector, stgMgr *svcmgr.Manager) Manager {
+func NewManager(distlock *distlock.Service, connectivity *connectivity.Collector, stgMgr *svcmgr.AgentPool) Manager {
 	return task.NewManager(TaskContext{
 		distlock:     distlock,
 		connectivity: connectivity,

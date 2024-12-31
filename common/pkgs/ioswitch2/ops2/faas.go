@@ -1,5 +1,6 @@
 package ops2
 
+/*
 import (
 	"fmt"
 
@@ -19,7 +20,7 @@ type InternalFaaSGalMultiply struct {
 }
 
 func (o *InternalFaaSGalMultiply) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
-	stgMgr, err := exec.GetValueByType[*svcmgr.Manager](ctx)
+	stgMgr, err := exec.GetValueByType[*svcmgr.AgentPool](ctx)
 	if err != nil {
 		return err
 	}
@@ -58,3 +59,4 @@ func (o *InternalFaaSGalMultiply) Execute(ctx *exec.ExecContext, e *exec.Executo
 	exec.PutArray(e, o.OutputFilePathes, outputVars)
 	return nil
 }
+*/

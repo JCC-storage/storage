@@ -22,13 +22,13 @@ import (
 type Uploader struct {
 	distlock     *distlock.Service
 	connectivity *connectivity.Collector
-	stgMgr       *svcmgr.Manager
+	stgMgr       *svcmgr.AgentPool
 	stgMeta      *metacache.StorageMeta
 	loadTo       []cdssdk.StorageID
 	loadToPath   []string
 }
 
-func NewUploader(distlock *distlock.Service, connectivity *connectivity.Collector, stgMgr *svcmgr.Manager, stgMeta *metacache.StorageMeta) *Uploader {
+func NewUploader(distlock *distlock.Service, connectivity *connectivity.Collector, stgMgr *svcmgr.AgentPool, stgMeta *metacache.StorageMeta) *Uploader {
 	return &Uploader{
 		distlock:     distlock,
 		connectivity: connectivity,

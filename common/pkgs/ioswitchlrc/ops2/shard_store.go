@@ -41,7 +41,7 @@ func (o *ShardRead) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 		Debugf("reading from shard store")
 	defer logger.Debugf("reading from shard store finished")
 
-	stgMgr, err := exec.GetValueByType[*svcmgr.Manager](ctx)
+	stgMgr, err := exec.GetValueByType[*svcmgr.AgentPool](ctx)
 	if err != nil {
 		return fmt.Errorf("getting storage manager: %w", err)
 	}
@@ -83,7 +83,7 @@ func (o *ShardWrite) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 		Debugf("writting file to shard store")
 	defer logger.Debugf("write to shard store finished")
 
-	stgMgr, err := exec.GetValueByType[*svcmgr.Manager](ctx)
+	stgMgr, err := exec.GetValueByType[*svcmgr.AgentPool](ctx)
 	if err != nil {
 		return fmt.Errorf("getting storage manager: %w", err)
 	}

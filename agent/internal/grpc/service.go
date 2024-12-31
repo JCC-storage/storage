@@ -9,10 +9,10 @@ import (
 type Service struct {
 	agentserver.AgentServer
 	swWorker *exec.Worker
-	stgMgr   *svcmgr.Manager
+	stgMgr   *svcmgr.AgentPool
 }
 
-func NewService(swWorker *exec.Worker, stgMgr *svcmgr.Manager) *Service {
+func NewService(swWorker *exec.Worker, stgMgr *svcmgr.AgentPool) *Service {
 	return &Service{
 		swWorker: swWorker,
 		stgMgr:   stgMgr,

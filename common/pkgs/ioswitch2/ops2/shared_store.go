@@ -27,7 +27,7 @@ func (o *SharedLoad) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 		Debugf("load file to shared store")
 	defer logger.Debugf("load file to shared store finished")
 
-	stgMgr, err := exec.GetValueByType[*svcmgr.Manager](ctx)
+	stgMgr, err := exec.GetValueByType[*svcmgr.AgentPool](ctx)
 	if err != nil {
 		return fmt.Errorf("getting storage manager: %w", err)
 	}

@@ -7,10 +7,10 @@ import (
 
 type Service struct {
 	taskManager *task.Manager
-	stgMgr      *svcmgr.Manager
+	stgMgr      *svcmgr.AgentPool
 }
 
-func NewService(taskMgr *task.Manager, stgMgr *svcmgr.Manager) *Service {
+func NewService(taskMgr *task.Manager, stgMgr *svcmgr.AgentPool) *Service {
 	return &Service{
 		taskManager: taskMgr,
 		stgMgr:      stgMgr,
