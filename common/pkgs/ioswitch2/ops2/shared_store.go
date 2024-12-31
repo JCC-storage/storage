@@ -8,7 +8,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/agtpool"
 )
 
 func init() {
@@ -27,12 +27,12 @@ func (o *SharedLoad) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 		Debugf("load file to shared store")
 	defer logger.Debugf("load file to shared store finished")
 
-	stgMgr, err := exec.GetValueByType[*svcmgr.AgentPool](ctx)
+	stgAgts, err := exec.GetValueByType[*agtpool.AgentPool](ctx)
 	if err != nil {
 		return fmt.Errorf("getting storage manager: %w", err)
 	}
 
-	store, err := stgMgr.GetSharedStore(o.StorageID)
+	store, err := stgAgts.GetSharedStore(o.StorageID)
 	if err != nil {
 		return fmt.Errorf("getting shard store of storage %v: %w", o.StorageID, err)
 	}

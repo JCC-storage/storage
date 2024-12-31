@@ -18,7 +18,7 @@ func init() {
 type builder struct{}
 
 func (b *builder) CreateAgent(detail stgmod.StorageDetail) (types.StorageAgent, error) {
-	agt := &Agent{
+	agt := &agent{
 		Detail: detail,
 	}
 

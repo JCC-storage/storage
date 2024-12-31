@@ -218,7 +218,7 @@ func (s *StripIterator) readStrip(stripIndex int64, buf []byte) (int, error) {
 		}
 
 		exeCtx := exec.NewExecContext()
-		exec.SetValueByType(exeCtx, s.downloader.stgMgr)
+		exec.SetValueByType(exeCtx, s.downloader.stgAgts)
 		exec := plans.Execute(exeCtx)
 
 		ctx, cancel := context.WithCancel(context.Background())

@@ -56,7 +56,7 @@ func (u *CreateLoadUploader) Upload(pa string, size int64, stream io.Reader) err
 	}
 
 	exeCtx := exec.NewExecContext()
-	exec.SetValueByType(exeCtx, u.uploader.stgMgr)
+	exec.SetValueByType(exeCtx, u.uploader.stgAgts)
 	exec := plans.Execute(exeCtx)
 	exec.BeginWrite(io.NopCloser(stream), hd)
 	ret, err := exec.Wait(context.TODO())

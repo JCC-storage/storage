@@ -5,13 +5,13 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
-type Agent struct {
+type agent struct {
 	Detail      stgmod.StorageDetail
 	ShardStore  *ShardStore
 	SharedStore *SharedStore
 }
 
-func (s *Agent) Start(ch *types.StorageEventChan) {
+func (s *agent) Start(ch *types.StorageEventChan) {
 	if s.ShardStore != nil {
 		s.ShardStore.Start(ch)
 	}
@@ -21,7 +21,7 @@ func (s *Agent) Start(ch *types.StorageEventChan) {
 	}
 }
 
-func (s *Agent) Stop() {
+func (s *agent) Stop() {
 	if s.ShardStore != nil {
 		s.ShardStore.Stop()
 	}
@@ -31,11 +31,11 @@ func (s *Agent) Stop() {
 	}
 }
 
-func (s *Agent) Info() stgmod.StorageDetail {
+func (s *agent) Info() stgmod.StorageDetail {
 	return s.Detail
 }
 
-func (a *Agent) GetShardStore() (types.ShardStore, error) {
+func (a *agent) GetShardStore() (types.ShardStore, error) {
 	if a.ShardStore == nil {
 		return nil, types.ErrUnsupported
 	}
@@ -43,7 +43,7 @@ func (a *Agent) GetShardStore() (types.ShardStore, error) {
 	return a.ShardStore, nil
 }
 
-func (a *Agent) GetSharedStore() (types.SharedStore, error) {
+func (a *agent) GetSharedStore() (types.SharedStore, error) {
 	if a.SharedStore == nil {
 		return nil, types.ErrUnsupported
 	}

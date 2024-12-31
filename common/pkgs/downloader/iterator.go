@@ -136,7 +136,7 @@ func (i *DownloadObjectIterator) downloadDirect(req downloadReqeust2, strg strat
 	}
 
 	exeCtx := exec.NewExecContext()
-	exec.SetValueByType(exeCtx, i.downloader.stgMgr)
+	exec.SetValueByType(exeCtx, i.downloader.stgAgts)
 	exec := plans.Execute(exeCtx)
 	go exec.Wait(context.TODO())
 

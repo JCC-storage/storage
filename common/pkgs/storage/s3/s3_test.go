@@ -19,8 +19,8 @@ func Test_S3(t *testing.T) {
 	Convey("OBS", t, func() {
 		cli, bkt, err := createS3Client(&cdssdk.OBSType{
 			Region:   "cn-north-4",
-			AK:       "CANMDYKXIWRDR0IYDB32",
-			SK:       "V67yEYpu7ol2NT8nhLlNF1g9k5hq2VwIP5N5jIoQ",
+			AK:       "*",
+			SK:       "*",
 			Endpoint: "https://obs.cn-north-4.myhuaweicloud.com",
 			Bucket:   "pcm3-bucket3",
 		})

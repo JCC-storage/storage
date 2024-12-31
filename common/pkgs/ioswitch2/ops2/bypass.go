@@ -6,7 +6,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/dag"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/agtpool"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
@@ -44,12 +44,12 @@ type BypassToShardStore struct {
 }
 
 func (o *BypassToShardStore) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
-	svcMgr, err := exec.GetValueByType[*svcmgr.AgentPool](ctx)
+	stgAgts, err := exec.GetValueByType[*agtpool.AgentPool](ctx)
 	if err != nil {
 		return err
 	}
 
-	shardStore, err := svcMgr.GetShardStore(o.StorageID)
+	shardStore, err := stgAgts.GetShardStore(o.StorageID)
 	if err != nil {
 		return err
 	}

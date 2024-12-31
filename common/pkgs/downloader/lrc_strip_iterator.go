@@ -114,7 +114,7 @@ func (s *LRCStripIterator) downloading() {
 	}
 
 	exeCtx := exec.NewExecContext()
-	exec.SetValueByType(exeCtx, s.downloder.stgMgr)
+	exec.SetValueByType(exeCtx, s.downloder.stgAgts)
 
 	exec := plans.Execute(exeCtx)
 

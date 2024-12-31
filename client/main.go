@@ -21,7 +21,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader/strategy"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/metacache"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/agtpool"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/uploader"
 )
 
@@ -99,18 +99,18 @@ func main() {
 	go serveAccessStat(acStat)
 
 	// 存储管理器
-	stgMgr := svcmgr.NewPool()
+	stgAgts := agtpool.NewPool()
 
 	// 任务管理器
-	taskMgr := task.NewManager(distlockSvc, &conCol, stgMgr)
+	taskMgr := task.NewManager(distlockSvc, &conCol, stgAgts)
 
 	strgSel := strategy.NewSelector(config.Cfg().DownloadStrategy, stgMeta, hubMeta, conMeta)
 
 	// 下载器
-	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol, stgMgr, strgSel)
+	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol, stgAgts, strgSel)
 
 	// 上传器
-	uploader := uploader.NewUploader(distlockSvc, &conCol, stgMgr, stgMeta)
+	uploader := uploader.NewUploader(distlockSvc, &conCol, stgAgts, stgMeta)
 
 	svc, err := services.NewService(distlockSvc, &taskMgr, &dlder, acStat, uploader, strgSel, stgMeta)
 	if err != nil {

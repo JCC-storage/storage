@@ -11,11 +11,11 @@ import (
 )
 
 type SharedStore struct {
-	agt *Agent
+	agt *agent
 	cfg cdssdk.LocalSharedStorage
 }
 
-func NewSharedStore(agt *Agent, cfg cdssdk.LocalSharedStorage) (*SharedStore, error) {
+func NewSharedStore(agt *agent, cfg cdssdk.LocalSharedStorage) (*SharedStore, error) {
 	return &SharedStore{
 		agt: agt,
 		cfg: cfg,

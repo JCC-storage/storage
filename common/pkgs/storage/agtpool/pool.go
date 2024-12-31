@@ -1,4 +1,4 @@
-package svcmgr
+package agtpool
 
 import (
 	"fmt"

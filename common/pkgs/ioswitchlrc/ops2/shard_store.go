@@ -11,7 +11,7 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/io2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/agtpool"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
@@ -41,12 +41,12 @@ func (o *ShardRead) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 		Debugf("reading from shard store")
 	defer logger.Debugf("reading from shard store finished")
 
-	stgMgr, err := exec.GetValueByType[*svcmgr.AgentPool](ctx)
+	stgAgts, err := exec.GetValueByType[*agtpool.AgentPool](ctx)
 	if err != nil {
 		return fmt.Errorf("getting storage manager: %w", err)
 	}
 
-	store, err := stgMgr.GetShardStore(o.StorageID)
+	store, err := stgAgts.GetShardStore(o.StorageID)
 	if err != nil {
 		return fmt.Errorf("getting shard store of storage %v: %w", o.StorageID, err)
 	}
@@ -83,12 +83,12 @@ func (o *ShardWrite) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 		Debugf("writting file to shard store")
 	defer logger.Debugf("write to shard store finished")
 
-	stgMgr, err := exec.GetValueByType[*svcmgr.AgentPool](ctx)
+	stgAgts, err := exec.GetValueByType[*agtpool.AgentPool](ctx)
 	if err != nil {
 		return fmt.Errorf("getting storage manager: %w", err)
 	}
 
-	store, err := stgMgr.GetShardStore(o.StorageID)
+	store, err := stgAgts.GetShardStore(o.StorageID)
 	if err != nil {
 		return fmt.Errorf("getting shard store of storage %v: %w", o.StorageID, err)
 	}

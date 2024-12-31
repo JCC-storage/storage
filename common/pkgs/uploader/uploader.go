@@ -16,23 +16,23 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock/reqbuilder"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/metacache"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/agtpool"
 )
 
 type Uploader struct {
 	distlock     *distlock.Service
 	connectivity *connectivity.Collector
-	stgMgr       *svcmgr.AgentPool
+	stgAgts      *agtpool.AgentPool
 	stgMeta      *metacache.StorageMeta
 	loadTo       []cdssdk.StorageID
 	loadToPath   []string
 }
 
-func NewUploader(distlock *distlock.Service, connectivity *connectivity.Collector, stgMgr *svcmgr.AgentPool, stgMeta *metacache.StorageMeta) *Uploader {
+func NewUploader(distlock *distlock.Service, connectivity *connectivity.Collector, stgAgts *agtpool.AgentPool, stgMeta *metacache.StorageMeta) *Uploader {
 	return &Uploader{
 		distlock:     distlock,
 		connectivity: connectivity,
-		stgMgr:       stgMgr,
+		stgAgts:      stgAgts,
 		stgMeta:      stgMeta,
 	}
 }

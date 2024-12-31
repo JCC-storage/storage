@@ -22,7 +22,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader/strategy"
 	agtrpc "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/metacache"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/agtpool"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/uploader"
 
 	"google.golang.org/grpc"
@@ -55,7 +55,7 @@ func serve(configPath string) {
 	hubCfg := downloadHubConfig()
 
 	// 初始化存储服务管理器
-	stgAgts := svcmgr.NewPool()
+	stgAgts := agtpool.NewPool()
 	for _, stg := range hubCfg.Storages {
 		err := stgAgts.SetupAgent(stg)
 		if err != nil {
