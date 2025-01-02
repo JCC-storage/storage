@@ -85,6 +85,41 @@ func (db *ObjectDB) BatchGetByPackagePath(ctx SQLContext, pkgID cdssdk.PackageID
 	return objs, nil
 }
 
+// 仅返回查询到的对象
+func (db *ObjectDB) BatchGetDetails(ctx SQLContext, objectIDs []cdssdk.ObjectID) ([]stgmod.ObjectDetail, error) {
+	var objs []cdssdk.Object
+
+	err := ctx.Table("Object").Where("ObjectID IN ?", objectIDs).Order("ObjectID ASC").Find(&objs).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// 获取所有的 ObjectBlock
+	var allBlocks []stgmod.ObjectBlock
+	err = ctx.Table("ObjectBlock").Where("ObjectID IN ?", objectIDs).Order("ObjectID, `Index` ASC").Find(&allBlocks).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// 获取所有的 PinnedObject
+	var allPinnedObjs []cdssdk.PinnedObject
+	err = ctx.Table("PinnedObject").Where("ObjectID IN ?", objectIDs).Order("ObjectID ASC").Find(&allPinnedObjs).Error
+	if err != nil {
+		return nil, err
+	}
+
+	details := make([]stgmod.ObjectDetail, len(objs))
+	for i, obj := range objs {
+		details[i] = stgmod.ObjectDetail{
+			Object: obj,
+		}
+	}
+
+	stgmod.DetailsFillObjectBlocks(details, allBlocks)
+	stgmod.DetailsFillPinnedAt(details, allPinnedObjs)
+	return details, nil
+}
+
 func (db *ObjectDB) Create(ctx SQLContext, obj cdssdk.Object) (cdssdk.ObjectID, error) {
 	err := ctx.Table("Object").Create(&obj).Error
 	if err != nil {

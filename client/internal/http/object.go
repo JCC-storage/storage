@@ -358,6 +358,26 @@ func (s *ObjectService) DeleteByPath(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, OK(nil))
 }
 
+func (s *ObjectService) Clone(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Object.Clone")
+
+	var req cdsapi.ObjectClone
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Warnf("binding body: %s", err.Error())
+		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
+		return
+	}
+
+	objs, err := s.svc.ObjectSvc().Clone(req.UserID, req.Clonings)
+	if err != nil {
+		log.Warnf("cloning object: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "clone object failed"))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectCloneResp{Objects: objs}))
+}
+
 func (s *ObjectService) GetPackageObjects(ctx *gin.Context) {
 	log := logger.WithField("HTTP", "Object.GetPackageObjects")
 

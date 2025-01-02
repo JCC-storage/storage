@@ -113,6 +113,21 @@ func (svc *ObjectService) Delete(userID cdssdk.UserID, objectIDs []cdssdk.Object
 	return nil
 }
 
+func (svc *ObjectService) Clone(userID cdssdk.UserID, clonings []cdsapi.CloningObject) ([]*cdssdk.Object, error) {
+	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
+	if err != nil {
+		return nil, fmt.Errorf("new coordinator client: %w", err)
+	}
+	defer stgglb.CoordinatorMQPool.Release(coorCli)
+
+	resp, err := coorCli.CloneObjects(coormq.ReqCloneObjects(userID, clonings))
+	if err != nil {
+		return nil, fmt.Errorf("requsting to coodinator: %w", err)
+	}
+
+	return resp.Objects, nil
+}
+
 // GetPackageObjects 获取包中的对象列表。
 // userID: 用户ID。
 // packageID: 包ID。

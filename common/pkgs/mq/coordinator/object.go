@@ -28,6 +28,8 @@ type ObjectService interface {
 
 	DeleteObjects(msg *DeleteObjects) (*DeleteObjectsResp, *mq.CodeMessage)
 
+	CloneObjects(msg *CloneObjects) (*CloneObjectsResp, *mq.CodeMessage)
+
 	GetDatabaseAll(msg *GetDatabaseAll) (*GetDatabaseAllResp, *mq.CodeMessage)
 
 	AddAccessStat(msg *AddAccessStat)
@@ -283,6 +285,34 @@ func RespDeleteObjects() *DeleteObjectsResp {
 }
 func (client *Client) DeleteObjects(msg *DeleteObjects) (*DeleteObjectsResp, error) {
 	return mq.Request(Service.DeleteObjects, client.rabbitCli, msg)
+}
+
+// 克隆Object
+var _ = Register(Service.CloneObjects)
+
+type CloneObjects struct {
+	mq.MessageBodyBase
+	UserID   cdssdk.UserID          `json:"userID"`
+	Clonings []cdsapi.CloningObject `json:"clonings"`
+}
+type CloneObjectsResp struct {
+	mq.MessageBodyBase
+	Objects []*cdssdk.Object `json:"objects"`
+}
+
+func ReqCloneObjects(userID cdssdk.UserID, clonings []cdsapi.CloningObject) *CloneObjects {
+	return &CloneObjects{
+		UserID:   userID,
+		Clonings: clonings,
+	}
+}
+func RespCloneObjects(objects []*cdssdk.Object) *CloneObjectsResp {
+	return &CloneObjectsResp{
+		Objects: objects,
+	}
+}
+func (client *Client) CloneObjects(msg *CloneObjects) (*CloneObjectsResp, error) {
+	return mq.Request(Service.CloneObjects, client.rabbitCli, msg)
 }
 
 // 增加访问计数
