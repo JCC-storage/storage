@@ -17,6 +17,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/metacache"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/agtpool"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/factory"
 )
 
 type Uploader struct {
@@ -85,7 +86,7 @@ func (u *Uploader) BeginUpdate(userID cdssdk.UserID, pkgID cdssdk.PackageID, aff
 		if stg.MasterHub == nil {
 			return nil, fmt.Errorf("load to storage %v has no master hub", stgID)
 		}
-		if stg.Storage.SharedStore == nil {
+		if factory.GetBuilder(stg).HasSharedStore() {
 			return nil, fmt.Errorf("load to storage %v has no shared store", stgID)
 		}
 

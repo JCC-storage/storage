@@ -14,25 +14,33 @@ import (
 )
 
 func init() {
-	reg.RegisterBuilder[*cdssdk.COSType](&builder{})
-	reg.RegisterBuilder[*cdssdk.OSSType](&builder{})
-	reg.RegisterBuilder[*cdssdk.OBSType](&builder{})
+	reg.RegisterBuilder[*cdssdk.COSType](newBuilder)
+	reg.RegisterBuilder[*cdssdk.OSSType](newBuilder)
+	reg.RegisterBuilder[*cdssdk.OBSType](newBuilder)
 }
 
-type builder struct{}
+type builder struct {
+	detail stgmod.StorageDetail
+}
 
-func (b *builder) CreateAgent(detail stgmod.StorageDetail) (types.StorageAgent, error) {
+func newBuilder(detail stgmod.StorageDetail) types.StorageBuilder {
+	return &builder{
+		detail: detail,
+	}
+}
+
+func (b *builder) CreateAgent() (types.StorageAgent, error) {
 	agt := &Agent{
-		Detail: detail,
+		Detail: b.detail,
 	}
 
-	if detail.Storage.ShardStore != nil {
-		cfg, ok := detail.Storage.ShardStore.(*cdssdk.S3ShardStorage)
+	if b.detail.Storage.ShardStore != nil {
+		cfg, ok := b.detail.Storage.ShardStore.(*cdssdk.S3ShardStorage)
 		if !ok {
-			return nil, fmt.Errorf("invalid shard store type %T for local storage", detail.Storage.ShardStore)
+			return nil, fmt.Errorf("invalid shard store type %T for local storage", b.detail.Storage.ShardStore)
 		}
 
-		cli, bkt, err := createS3Client(detail.Storage.Type)
+		cli, bkt, err := createS3Client(b.detail.Storage.Type)
 		if err != nil {
 			return nil, err
 		}
@@ -51,38 +59,23 @@ func (b *builder) CreateAgent(detail stgmod.StorageDetail) (types.StorageAgent, 
 	return agt, nil
 }
 
-func (b *builder) CreateMultipartInitiator(detail stgmod.StorageDetail) (types.MultipartInitiator, error) {
-	feat := utils.FindFeature[*cdssdk.MultipartUploadFeature](detail)
-	if feat == nil {
-		return nil, fmt.Errorf("feature %T not found", cdssdk.MultipartUploadFeature{})
-	}
-
-	cli, bkt, err := createS3Client(detail.Storage.Type)
-	if err != nil {
-		return nil, err
-	}
-
-	return &MultipartInitiator{
-		cli:     cli,
-		bucket:  bkt,
-		tempDir: feat.TempDir,
-	}, nil
+func (b *builder) HasShardStore() bool {
+	return b.detail.Storage.ShardStore != nil
 }
 
-func (b *builder) CreateMultipartUploader(detail stgmod.StorageDetail) (types.MultipartUploader, error) {
-	feat := utils.FindFeature[*cdssdk.MultipartUploadFeature](detail)
+func (b *builder) HasSharedStore() bool {
+	return false
+}
+
+func (b *builder) CreateMultiparter() (types.Multiparter, error) {
+	feat := utils.FindFeature[*cdssdk.MultipartUploadFeature](b.detail)
 	if feat == nil {
 		return nil, fmt.Errorf("feature %T not found", cdssdk.MultipartUploadFeature{})
 	}
 
-	cli, bkt, err := createS3Client(detail.Storage.Type)
-	if err != nil {
-		return nil, err
-	}
-
-	return &MultipartUploader{
-		cli:    cli,
-		bucket: bkt,
+	return &Multiparter{
+		detail: b.detail,
+		feat:   feat,
 	}, nil
 }
 

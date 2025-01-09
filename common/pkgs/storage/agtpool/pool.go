@@ -1,7 +1,6 @@
 package agtpool
 
 import (
-	"fmt"
 	"sync"
 
 	"gitlink.org.cn/cloudream/common/pkgs/async"
@@ -39,11 +38,7 @@ func (m *AgentPool) SetupAgent(detail stgmod.StorageDetail) error {
 	stg := &storage{}
 
 	bld := factory.GetBuilder(detail)
-	if bld == nil {
-		return fmt.Errorf("unsupported storage type: %T", detail.Storage.Type)
-	}
-
-	svc, err := bld.CreateAgent(detail)
+	svc, err := bld.CreateAgent()
 	if err != nil {
 		return err
 	}

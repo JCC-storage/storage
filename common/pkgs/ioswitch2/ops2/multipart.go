@@ -49,24 +49,21 @@ type MultipartInitiator struct {
 
 func (o *MultipartInitiator) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 	blder := factory.GetBuilder(o.Storage)
-	if blder == nil {
-		return fmt.Errorf("unsupported storage type: %T", o.Storage.Storage.Type)
-	}
-
-	initiator, err := blder.CreateMultipartInitiator(o.Storage)
+	multi, err := blder.CreateMultiparter()
 	if err != nil {
 		return err
 	}
-	defer initiator.Abort()
 
-	// 启动一个新的上传任务
-	initState, err := initiator.Initiate(ctx.Context)
+	// 启动一个新的上传任务W
+	multiTask, err := multi.Initiate(ctx.Context)
 	if err != nil {
 		return err
 	}
+	defer multiTask.Abort()
+
 	// 分发上传参数
 	e.PutVar(o.UploadArgs, &MultipartUploadArgsValue{
-		InitState: initState,
+		InitState: multiTask.InitState(),
 	})
 
 	// 收集分片上传结果
@@ -81,7 +78,7 @@ func (o *MultipartInitiator) Execute(ctx *exec.ExecContext, e *exec.Executor) er
 	}
 
 	// 合并分片
-	fileInfo, err := initiator.JoinParts(ctx.Context, partInfos)
+	fileInfo, err := multiTask.JoinParts(ctx.Context, partInfos)
 	if err != nil {
 		return fmt.Errorf("completing multipart upload: %v", err)
 	}
@@ -98,7 +95,7 @@ func (o *MultipartInitiator) Execute(ctx *exec.ExecContext, e *exec.Executor) er
 	}
 
 	if cb.Commited {
-		initiator.Complete()
+		multiTask.Complete()
 	}
 
 	return nil
@@ -119,10 +116,6 @@ type MultipartUpload struct {
 
 func (o *MultipartUpload) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 	blder := factory.GetBuilder(o.Storage)
-	if blder == nil {
-		return fmt.Errorf("unsupported storage type: %T", o.Storage.Storage.Type)
-	}
-
 	uploadArgs, err := exec.BindVar[*MultipartUploadArgsValue](e, ctx.Context, o.UploadArgs)
 	if err != nil {
 		return err
@@ -134,13 +127,13 @@ func (o *MultipartUpload) Execute(ctx *exec.ExecContext, e *exec.Executor) error
 	}
 	defer partStr.Stream.Close()
 
-	uploader, err := blder.CreateMultipartUploader(o.Storage)
+	multi, err := blder.CreateMultiparter()
 	if err != nil {
 		return err
 	}
 
 	startTime := time.Now()
-	uploadedInfo, err := uploader.UploadPart(ctx.Context, uploadArgs.InitState, o.PartSize, o.PartNumber, partStr.Stream)
+	uploadedInfo, err := multi.UploadPart(ctx.Context, uploadArgs.InitState, o.PartSize, o.PartNumber, partStr.Stream)
 	if err != nil {
 		return err
 	}

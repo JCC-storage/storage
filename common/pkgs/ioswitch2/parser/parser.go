@@ -12,8 +12,8 @@ import (
 	"gitlink.org.cn/cloudream/common/utils/math2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/ops2"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/factory"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/utils"
 )
 
 type IndexedStream struct {
@@ -914,15 +914,15 @@ func useMultipartUploadToShardStore(ctx *ParseContext) {
 		}
 
 		// Join的目的地必须支持MultipartUpload功能才能替换成分片上传
-		multiUpload := utils.FindFeature[*cdssdk.MultipartUploadFeature](shardNode.Storage)
-		if multiUpload == nil {
+		multiUpload, err := factory.GetBuilder(shardNode.Storage).CreateMultiparter()
+		if err != nil {
 			return true
 		}
 
 		// Join的每一个段的大小必须超过最小分片大小。
 		// 目前只支持拆分超过最大分片的流，不支持合并多个小段流以达到最小分片大小。
 		for _, size := range joinNode.Segments {
-			if size < multiUpload.MinPartSize {
+			if size < multiUpload.MinPartSize() {
 				return true
 			}
 		}
@@ -934,10 +934,10 @@ func useMultipartUploadToShardStore(ctx *ParseContext) {
 		for i, size := range joinNode.Segments {
 			joinInput := joinNode.InputSlot(i)
 
-			if size > multiUpload.MaxPartSize {
+			if size > multiUpload.MaxPartSize() {
 				// 如果一个分段的大小大于最大分片大小，则需要拆分为多个小段上传
 				// 拆分以及上传指令直接在流的产生节点执行
-				splits := math2.SplitLessThan(size, multiUpload.MaxPartSize)
+				splits := math2.SplitLessThan(size, multiUpload.MaxPartSize())
 				splitNode := ctx.DAG.NewSegmentSplit(splits)
 				splitNode.Env().CopyFrom(joinInput.Var().Src.Env())
 

@@ -2,7 +2,6 @@ package local
 
 import (
 	"fmt"
-	"path/filepath"
 
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
@@ -12,20 +11,26 @@ import (
 )
 
 func init() {
-	reg.RegisterBuilder[*cdssdk.LocalStorageType](&builder{})
+	reg.RegisterBuilder[*cdssdk.LocalStorageType](func(detail stgmod.StorageDetail) types.StorageBuilder {
+		return &builder{
+			detail: detail,
+		}
+	})
 }
 
-type builder struct{}
+type builder struct {
+	detail stgmod.StorageDetail
+}
 
-func (b *builder) CreateAgent(detail stgmod.StorageDetail) (types.StorageAgent, error) {
+func (b *builder) CreateAgent() (types.StorageAgent, error) {
 	agt := &agent{
-		Detail: detail,
+		Detail: b.detail,
 	}
 
-	if detail.Storage.ShardStore != nil {
-		local, ok := detail.Storage.ShardStore.(*cdssdk.LocalShardStorage)
+	if b.detail.Storage.ShardStore != nil {
+		local, ok := b.detail.Storage.ShardStore.(*cdssdk.LocalShardStorage)
 		if !ok {
-			return nil, fmt.Errorf("invalid shard store type %T for local storage", detail.Storage.ShardStore)
+			return nil, fmt.Errorf("invalid shard store type %T for local storage", b.detail.Storage.ShardStore)
 		}
 
 		store, err := NewShardStore(agt, *local)
@@ -36,10 +41,10 @@ func (b *builder) CreateAgent(detail stgmod.StorageDetail) (types.StorageAgent, 
 		agt.ShardStore = store
 	}
 
-	if detail.Storage.SharedStore != nil {
-		local, ok := detail.Storage.SharedStore.(*cdssdk.LocalSharedStorage)
+	if b.detail.Storage.SharedStore != nil {
+		local, ok := b.detail.Storage.SharedStore.(*cdssdk.LocalSharedStorage)
 		if !ok {
-			return nil, fmt.Errorf("invalid shared store type %T for local storage", detail.Storage.SharedStore)
+			return nil, fmt.Errorf("invalid shared store type %T for local storage", b.detail.Storage.SharedStore)
 		}
 
 		store, err := NewSharedStore(agt, *local)
@@ -53,27 +58,21 @@ func (b *builder) CreateAgent(detail stgmod.StorageDetail) (types.StorageAgent, 
 	return agt, nil
 }
 
-func (b *builder) CreateMultipartInitiator(detail stgmod.StorageDetail) (types.MultipartInitiator, error) {
-	feat := utils.FindFeature[*cdssdk.MultipartUploadFeature](detail)
-	if feat == nil {
-		return nil, fmt.Errorf("feature %T not found", cdssdk.MultipartUploadFeature{})
-	}
-
-	absTempDir, err := filepath.Abs(feat.TempDir)
-	if err != nil {
-		return nil, fmt.Errorf("get abs temp dir %v: %v", feat.TempDir, err)
-	}
-
-	return &MultipartInitiator{
-		absTempDir: absTempDir,
-	}, nil
+func (b *builder) HasShardStore() bool {
+	return b.detail.Storage.ShardStore != nil
 }
 
-func (b *builder) CreateMultipartUploader(detail stgmod.StorageDetail) (types.MultipartUploader, error) {
-	feat := utils.FindFeature[*cdssdk.MultipartUploadFeature](detail)
+func (b *builder) HasSharedStore() bool {
+	return b.detail.Storage.SharedStore != nil
+}
+
+func (b *builder) CreateMultiparter() (types.Multiparter, error) {
+	feat := utils.FindFeature[*cdssdk.MultipartUploadFeature](b.detail)
 	if feat == nil {
 		return nil, fmt.Errorf("feature %T not found", cdssdk.MultipartUploadFeature{})
 	}
 
-	return &MultipartUploader{}, nil
+	return &Multiparter{
+		feat: feat,
+	}, nil
 }
