@@ -105,7 +105,7 @@ func (svc *StorageService) LoadPackage(userID cdssdk.UserID, packageID cdssdk.Pa
 
 		ft.AddTo(ioswitch2.NewLoadToShared(*destStg.MasterHub, destStg.Storage, path.Join(rootPath, obj.Object.Path)))
 		// 顺便保存到同存储服务的分片存储中
-		if factory.GetBuilder(*destStg).HasShardStore() {
+		if factory.GetBuilder(*destStg).ShardStoreDesc().Enabled() {
 			ft.AddTo(ioswitch2.NewToShardStore(*destStg.MasterHub, *destStg, ioswitch2.RawStream(), ""))
 			pinned = append(pinned, obj.Object.ObjectID)
 		}

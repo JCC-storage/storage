@@ -32,7 +32,7 @@ func (svc *CacheService) StartCacheMovePackage(userID cdssdk.UserID, packageID c
 		return 0, "", fmt.Errorf("get storage detail: %w", err)
 	}
 
-	if !factory.GetBuilder(*getStg.Storages[0]).HasShardStore() {
+	if !factory.GetBuilder(*getStg.Storages[0]).ShardStoreDesc().Enabled() {
 		return 0, "", fmt.Errorf("shard storage is not enabled")
 	}
 

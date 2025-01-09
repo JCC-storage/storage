@@ -43,9 +43,23 @@ type StorageBuilder interface {
 	// 创建一个在MasterHub上长期运行的存储服务
 	CreateAgent() (StorageAgent, error)
 	// 是否支持分片存储服务
-	HasShardStore() bool
+	ShardStoreDesc() ShardStoreDesc
 	// 是否支持共享存储服务
-	HasSharedStore() bool
+	SharedStoreDesc() SharedStoreDesc
 	// 创建一个分片上传组件
 	CreateMultiparter() (Multiparter, error)
+}
+
+type ShardStoreDesc interface {
+	// 是否已启动
+	Enabled() bool
+	// 是否能旁路上传
+	HasBypassNotifier() bool
+}
+
+type SharedStoreDesc interface {
+	// 是否已启动
+	Enabled() bool
+	// 是否能旁路上传
+	HasBypassNotifier() bool
 }

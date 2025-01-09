@@ -22,6 +22,18 @@ const (
 	BlocksDir = "blocks"
 )
 
+type ShardStoreDesc struct {
+	builder *builder
+}
+
+func (s *ShardStoreDesc) Enabled() bool {
+	return s.builder.detail.Storage.ShardStore != nil
+}
+
+func (s *ShardStoreDesc) HasBypassNotifier() bool {
+	return true
+}
+
 type ShardStore struct {
 	agt              *agent
 	cfg              cdssdk.LocalShardStorage

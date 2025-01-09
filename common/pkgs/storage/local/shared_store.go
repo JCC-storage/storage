@@ -10,6 +10,18 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
+type SharedStoreDesc struct {
+	builder *builder
+}
+
+func (d *SharedStoreDesc) Enabled() bool {
+	return d.builder.detail.Storage.SharedStore != nil
+}
+
+func (d *SharedStoreDesc) HasBypassNotifier() bool {
+	return false
+}
+
 type SharedStore struct {
 	agt *agent
 	cfg cdssdk.LocalSharedStorage

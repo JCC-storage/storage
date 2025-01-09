@@ -59,12 +59,12 @@ func (b *builder) CreateAgent() (types.StorageAgent, error) {
 	return agt, nil
 }
 
-func (b *builder) HasShardStore() bool {
-	return b.detail.Storage.ShardStore != nil
+func (b *builder) ShardStoreDesc() types.ShardStoreDesc {
+	return &ShardStoreDesc{builder: b}
 }
 
-func (b *builder) HasSharedStore() bool {
-	return false
+func (b *builder) SharedStoreDesc() types.SharedStoreDesc {
+	return &SharedStoreDesc{}
 }
 
 func (b *builder) CreateMultiparter() (types.Multiparter, error) {

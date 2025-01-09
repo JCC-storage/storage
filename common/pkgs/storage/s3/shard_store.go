@@ -25,6 +25,18 @@ const (
 	BlocksDir = "blocks"
 )
 
+type ShardStoreDesc struct {
+	builder *builder
+}
+
+func (s *ShardStoreDesc) Enabled() bool {
+	return s.builder.detail.Storage.ShardStore != nil
+}
+
+func (s *ShardStoreDesc) HasBypassNotifier() bool {
+	return true
+}
+
 type ShardStoreOption struct {
 	UseAWSSha256 bool // 能否直接使用AWS提供的SHA256校验，如果不行，则使用本地计算。默认使用本地计算。
 }
