@@ -30,7 +30,11 @@ func (s *ShardStoreDesc) Enabled() bool {
 	return s.builder.detail.Storage.ShardStore != nil
 }
 
-func (s *ShardStoreDesc) HasBypassNotifier() bool {
+func (s *ShardStoreDesc) HasBypassWrite() bool {
+	return true
+}
+
+func (s *ShardStoreDesc) HasBypassRead() bool {
 	return true
 }
 
@@ -420,6 +424,26 @@ func (s *ShardStore) BypassUploaded(info types.BypassFileInfo) error {
 	}
 
 	return nil
+}
+
+func (s *ShardStore) BypassRead(fileHash cdssdk.FileHash) (types.BypassFilePath, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	filePath := s.getFilePathFromHash(fileHash)
+	stat, err := os.Stat(filePath)
+	if err != nil {
+		return types.BypassFilePath{}, err
+	}
+
+	return types.BypassFilePath{
+		Path: filePath,
+		Info: types.FileInfo{
+			Hash:        fileHash,
+			Size:        stat.Size(),
+			Description: filePath,
+		},
+	}, nil
 }
 
 func (s *ShardStore) getLogger() logger.Logger {

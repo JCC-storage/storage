@@ -33,8 +33,12 @@ func (s *ShardStoreDesc) Enabled() bool {
 	return s.builder.detail.Storage.ShardStore != nil
 }
 
-func (s *ShardStoreDesc) HasBypassNotifier() bool {
+func (s *ShardStoreDesc) HasBypassWrite() bool {
 	return true
+}
+
+func (s *ShardStoreDesc) HasBypassRead() bool {
+	return false
 }
 
 type ShardStoreOption struct {

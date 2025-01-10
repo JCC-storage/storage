@@ -3,12 +3,11 @@ package s3
 import (
 	"fmt"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/factory/reg"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/s3/obs"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/utils"
 )
@@ -20,6 +19,7 @@ func init() {
 }
 
 type builder struct {
+	types.EmptyBuilder
 	detail stgmod.StorageDetail
 }
 
@@ -86,22 +86,7 @@ func createS3Client(addr cdssdk.StorageType) (*s3.Client, string, error) {
 	// case *cdssdk.OSSType:
 
 	case *cdssdk.OBSType:
-		awsConfig := aws.Config{}
-
-		cre := aws.Credentials{
-			AccessKeyID:     addr.AK,
-			SecretAccessKey: addr.SK,
-		}
-		awsConfig.Credentials = &credentials.StaticCredentialsProvider{Value: cre}
-		awsConfig.Region = addr.Region
-
-		options := []func(*s3.Options){}
-		options = append(options, func(s3Opt *s3.Options) {
-			s3Opt.BaseEndpoint = &addr.Endpoint
-		})
-
-		cli := s3.NewFromConfig(awsConfig, options...)
-		return cli, addr.Bucket, nil
+		return obs.CreateS2Client(addr)
 
 	default:
 		return nil, "", fmt.Errorf("unsupported storage type %T", addr)

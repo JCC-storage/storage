@@ -18,7 +18,7 @@ func (d *SharedStoreDesc) Enabled() bool {
 	return d.builder.detail.Storage.SharedStore != nil
 }
 
-func (d *SharedStoreDesc) HasBypassNotifier() bool {
+func (d *SharedStoreDesc) HasBypassWrite() bool {
 	return false
 }
 

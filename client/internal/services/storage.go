@@ -92,18 +92,18 @@ func (svc *StorageService) LoadPackage(userID cdssdk.UserID, packageID cdssdk.Pa
 		ft := ioswitch2.NewFromTo()
 		switch strg := strg.(type) {
 		case *strategy.DirectStrategy:
-			ft.AddFrom(ioswitch2.NewFromShardstore(strg.Detail.Object.FileHash, *strg.Storage.MasterHub, strg.Storage.Storage, ioswitch2.RawStream()))
+			ft.AddFrom(ioswitch2.NewFromShardstore(strg.Detail.Object.FileHash, *strg.Storage.MasterHub, strg.Storage, ioswitch2.RawStream()))
 
 		case *strategy.ECReconstructStrategy:
 			for i, b := range strg.Blocks {
-				ft.AddFrom(ioswitch2.NewFromShardstore(b.FileHash, *strg.Storages[i].MasterHub, strg.Storages[i].Storage, ioswitch2.ECStream(b.Index)))
+				ft.AddFrom(ioswitch2.NewFromShardstore(b.FileHash, *strg.Storages[i].MasterHub, strg.Storages[i], ioswitch2.ECStream(b.Index)))
 				ft.ECParam = &strg.Redundancy
 			}
 		default:
 			return fmt.Errorf("unsupported download strategy: %T", strg)
 		}
 
-		ft.AddTo(ioswitch2.NewLoadToShared(*destStg.MasterHub, destStg.Storage, path.Join(rootPath, obj.Object.Path)))
+		ft.AddTo(ioswitch2.NewLoadToShared(*destStg.MasterHub, *destStg, path.Join(rootPath, obj.Object.Path)))
 		// 顺便保存到同存储服务的分片存储中
 		if factory.GetBuilder(*destStg).ShardStoreDesc().Enabled() {
 			ft.AddTo(ioswitch2.NewToShardStore(*destStg.MasterHub, *destStg, ioswitch2.RawStream(), ""))

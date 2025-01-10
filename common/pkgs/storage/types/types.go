@@ -48,18 +48,22 @@ type StorageBuilder interface {
 	SharedStoreDesc() SharedStoreDesc
 	// 创建一个分片上传组件
 	CreateMultiparter() (Multiparter, error)
+	// 创建一个存储服务直传组件
+	CreateS2STransfer() (S2STransfer, error)
 }
 
 type ShardStoreDesc interface {
 	// 是否已启动
 	Enabled() bool
 	// 是否能旁路上传
-	HasBypassNotifier() bool
+	HasBypassWrite() bool
+	// 是否能旁路读取
+	HasBypassRead() bool
 }
 
 type SharedStoreDesc interface {
 	// 是否已启动
 	Enabled() bool
 	// 是否能旁路上传
-	HasBypassNotifier() bool
+	HasBypassWrite() bool
 }

@@ -203,7 +203,7 @@ func (s *StripIterator) readStrip(stripIndex int64, buf []byte) (int, error) {
 		ft.ECParam = &s.red
 		for _, b := range s.blocks {
 			stg := b.Storage
-			ft.AddFrom(ioswitch2.NewFromShardstore(b.Block.FileHash, *stg.MasterHub, stg.Storage, ioswitch2.ECStream(b.Block.Index)))
+			ft.AddFrom(ioswitch2.NewFromShardstore(b.Block.FileHash, *stg.MasterHub, stg, ioswitch2.ECStream(b.Block.Index)))
 		}
 
 		toExec, hd := ioswitch2.NewToDriverWithRange(ioswitch2.RawStream(), math2.Range{

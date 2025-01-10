@@ -741,7 +741,7 @@ func (t *CleanPinned) makePlansForRepObject(allStgInfos map[cdssdk.StorageID]*st
 				ft := ioswitch2.NewFromTo()
 
 				fromStg := allStgInfos[obj.Blocks[0].StorageID]
-				ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *fromStg.MasterHub, fromStg.Storage, ioswitch2.RawStream()))
+				ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *fromStg.MasterHub, *fromStg, ioswitch2.RawStream()))
 				toStg := allStgInfos[solu.blockList[i].StorageID]
 				ft.AddTo(ioswitch2.NewToShardStore(*toStg.MasterHub, *toStg, ioswitch2.RawStream(), fmt.Sprintf("%d.0", obj.Object.ObjectID)))
 
@@ -799,7 +799,7 @@ func (t *CleanPinned) makePlansForECObject(allStgInfos map[cdssdk.StorageID]*stg
 	for id, idxs := range reconstrct {
 		ft := ioswitch2.NewFromTo()
 		ft.ECParam = ecRed
-		ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *allStgInfos[id].MasterHub, allStgInfos[id].Storage, ioswitch2.RawStream()))
+		ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *allStgInfos[id].MasterHub, *allStgInfos[id], ioswitch2.RawStream()))
 
 		for _, i := range *idxs {
 			ft.AddTo(ioswitch2.NewToShardStore(*allStgInfos[id].MasterHub, *allStgInfos[id], ioswitch2.ECStream(i), fmt.Sprintf("%d.%d", obj.Object.ObjectID, i)))

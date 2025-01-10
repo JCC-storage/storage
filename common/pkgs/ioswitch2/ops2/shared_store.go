@@ -7,6 +7,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/agtpool"
 )
@@ -53,14 +54,14 @@ func (o *SharedLoad) String() string {
 type SharedLoadNode struct {
 	dag.NodeBase
 	To         ioswitch2.To
-	StorageID  cdssdk.StorageID
+	Storage    stgmod.StorageDetail
 	ObjectPath string
 }
 
-func (b *GraphNodeBuilder) NewSharedLoad(to ioswitch2.To, stgID cdssdk.StorageID, objPath string) *SharedLoadNode {
+func (b *GraphNodeBuilder) NewSharedLoad(to ioswitch2.To, stg stgmod.StorageDetail, objPath string) *SharedLoadNode {
 	node := &SharedLoadNode{
 		To:         to,
-		StorageID:  stgID,
+		Storage:    stg,
 		ObjectPath: objPath,
 	}
 	b.AddNode(node)
@@ -87,7 +88,7 @@ func (t *SharedLoadNode) Input() dag.StreamInputSlot {
 func (t *SharedLoadNode) GenerateOp() (exec.Op, error) {
 	return &SharedLoad{
 		Input:      t.InputStreams().Get(0).VarID,
-		StorageID:  t.StorageID,
+		StorageID:  t.Storage.Storage.StorageID,
 		ObjectPath: t.ObjectPath,
 	}, nil
 }

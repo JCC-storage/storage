@@ -7,6 +7,6 @@ func (d *SharedStoreDesc) Enabled() bool {
 	return false
 }
 
-func (d *SharedStoreDesc) HasBypassNotifier() bool {
+func (d *SharedStoreDesc) HasBypassWrite() bool {
 	return false
 }

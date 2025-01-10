@@ -127,7 +127,7 @@ func (i *DownloadObjectIterator) downloadDirect(req downloadReqeust2, strg strat
 		toExec.Range.Length = &len
 	}
 
-	ft.AddFrom(ioswitch2.NewFromShardstore(req.Detail.Object.FileHash, *strg.Storage.MasterHub, strg.Storage.Storage, ioswitch2.RawStream())).AddTo(toExec)
+	ft.AddFrom(ioswitch2.NewFromShardstore(req.Detail.Object.FileHash, *strg.Storage.MasterHub, strg.Storage, ioswitch2.RawStream())).AddTo(toExec)
 	strHandle = handle
 
 	plans := exec.NewPlanBuilder()

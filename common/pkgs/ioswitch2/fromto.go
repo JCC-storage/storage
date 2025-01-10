@@ -112,11 +112,11 @@ func (f *FromDriver) GetStreamIndex() StreamIndex {
 type FromShardstore struct {
 	FileHash    cdssdk.FileHash
 	Hub         cdssdk.Hub
-	Storage     cdssdk.Storage
+	Storage     stgmod.StorageDetail
 	StreamIndex StreamIndex
 }
 
-func NewFromShardstore(fileHash cdssdk.FileHash, hub cdssdk.Hub, storage cdssdk.Storage, strIdx StreamIndex) *FromShardstore {
+func NewFromShardstore(fileHash cdssdk.FileHash, hub cdssdk.Hub, storage stgmod.StorageDetail, strIdx StreamIndex) *FromShardstore {
 	return &FromShardstore{
 		FileHash:    fileHash,
 		Hub:         hub,
@@ -197,11 +197,11 @@ func (t *ToShardStore) GetRange() math2.Range {
 
 type LoadToShared struct {
 	Hub        cdssdk.Hub
-	Storage    cdssdk.Storage
+	Storage    stgmod.StorageDetail
 	ObjectPath string
 }
 
-func NewLoadToShared(hub cdssdk.Hub, storage cdssdk.Storage, objectPath string) *LoadToShared {
+func NewLoadToShared(hub cdssdk.Hub, storage stgmod.StorageDetail, objectPath string) *LoadToShared {
 	return &LoadToShared{
 		Hub:        hub,
 		Storage:    storage,

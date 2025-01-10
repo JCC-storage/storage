@@ -76,3 +76,14 @@ func (b *builder) CreateMultiparter() (types.Multiparter, error) {
 		feat: feat,
 	}, nil
 }
+
+func (b *builder) CreateS2STransfer() (types.S2STransfer, error) {
+	feat := utils.FindFeature[*cdssdk.S2STransferFeature](b.detail)
+	if feat == nil {
+		return nil, fmt.Errorf("feature %T not found", cdssdk.S2STransferFeature{})
+	}
+
+	return &S2STransfer{
+		detail: b.detail,
+	}, nil
+}

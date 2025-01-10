@@ -166,12 +166,18 @@ func (b *GraphNodeBuilder) NewMultipartInitiator(storage stgmod.StorageDetail) *
 	return node
 }
 
-func (n *MultipartInitiatorNode) UploadArgsVar() *dag.ValueVar {
-	return n.OutputValues().Get(0)
+func (n *MultipartInitiatorNode) UploadArgsVar() dag.ValueOutputSlot {
+	return dag.ValueOutputSlot{
+		Node:  n,
+		Index: 0,
+	}
 }
 
-func (n *MultipartInitiatorNode) BypassFileInfoVar() *dag.ValueVar {
-	return n.OutputValues().Get(1)
+func (n *MultipartInitiatorNode) BypassFileInfoVar() dag.ValueOutputSlot {
+	return dag.ValueOutputSlot{
+		Node:  n,
+		Index: 1,
+	}
 }
 
 func (n *MultipartInitiatorNode) BypassCallbackSlot() dag.ValueInputSlot {
@@ -191,9 +197,9 @@ func (n *MultipartInitiatorNode) AppendPartInfoSlot() dag.ValueInputSlot {
 func (n *MultipartInitiatorNode) GenerateOp() (exec.Op, error) {
 	return &MultipartInitiator{
 		Storage:          n.Storage,
-		UploadArgs:       n.UploadArgsVar().VarID,
+		UploadArgs:       n.UploadArgsVar().Var().VarID,
 		UploadedParts:    n.InputValues().GetVarIDsStart(1),
-		BypassFileOutput: n.BypassFileInfoVar().VarID,
+		BypassFileOutput: n.BypassFileInfoVar().Var().VarID,
 		BypassCallback:   n.BypassCallbackSlot().Var().VarID,
 	}, nil
 }
@@ -226,8 +232,11 @@ func (n *MultipartUploadNode) UploadArgsSlot() dag.ValueInputSlot {
 	}
 }
 
-func (n *MultipartUploadNode) UploadResultVar() *dag.ValueVar {
-	return n.OutputValues().Get(0)
+func (n *MultipartUploadNode) UploadResultVar() dag.ValueOutputSlot {
+	return dag.ValueOutputSlot{
+		Node:  n,
+		Index: 0,
+	}
 }
 
 func (n *MultipartUploadNode) PartStreamSlot() dag.StreamInputSlot {
@@ -241,7 +250,7 @@ func (n *MultipartUploadNode) GenerateOp() (exec.Op, error) {
 	return &MultipartUpload{
 		Storage:      n.Storage,
 		UploadArgs:   n.UploadArgsSlot().Var().VarID,
-		UploadResult: n.UploadResultVar().VarID,
+		UploadResult: n.UploadResultVar().Var().VarID,
 		PartStream:   n.PartStreamSlot().Var().VarID,
 		PartNumber:   n.PartNumber,
 		PartSize:     n.PartSize,

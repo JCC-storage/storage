@@ -27,6 +27,7 @@ type ParseContext struct {
 	// 为了产生所有To所需的数据范围，而需要From打开的范围。
 	// 这个范围是基于整个文件的，且上下界都取整到条带大小的整数倍，因此上界是有可能超过文件大小的。
 	ToNodes        map[ioswitch2.To]ops2.ToNode
+	FromNodes      map[ioswitch2.From]ops2.FromNode
 	IndexedStreams []IndexedStream
 	StreamRange    math2.Range
 	UseEC          bool // 是否使用纠删码
@@ -35,9 +36,10 @@ type ParseContext struct {
 
 func Parse(ft ioswitch2.FromTo, blder *exec.PlanBuilder) error {
 	ctx := ParseContext{
-		Ft:      ft,
-		DAG:     ops2.NewGraphNodeBuilder(),
-		ToNodes: make(map[ioswitch2.To]ops2.ToNode),
+		Ft:        ft,
+		DAG:       ops2.NewGraphNodeBuilder(),
+		ToNodes:   make(map[ioswitch2.To]ops2.ToNode),
+		FromNodes: make(map[ioswitch2.From]ops2.FromNode),
 	}
 
 	// 分成两个阶段：
@@ -105,6 +107,7 @@ func Parse(ft ioswitch2.FromTo, blder *exec.PlanBuilder) error {
 
 	// 下面这些只需要执行一次，但需要按顺序
 	removeUnusedFromNode(&ctx)
+	useS2STransfer(&ctx)
 	useMultipartUploadToShardStore(&ctx)
 	dropUnused(&ctx)
 	storeShardWriteResult(&ctx)
@@ -221,6 +224,7 @@ func extend(ctx *ParseContext) error {
 		if err != nil {
 			return err
 		}
+		ctx.FromNodes[fr] = frNode
 
 		ctx.IndexedStreams = append(ctx.IndexedStreams, IndexedStream{
 			Stream:      frNode.Output().Var(),
@@ -368,7 +372,7 @@ func buildFromNode(ctx *ParseContext, f ioswitch2.From) (ops2.FromNode, error) {
 
 	switch f := f.(type) {
 	case *ioswitch2.FromShardstore:
-		t := ctx.DAG.NewShardRead(f, f.Storage.StorageID, types.NewOpen(f.FileHash))
+		t := ctx.DAG.NewShardRead(f, f.Storage.Storage.StorageID, types.NewOpen(f.FileHash))
 
 		if f.StreamIndex.IsRaw() {
 			t.Open.WithNullableLength(repRange.Offset, repRange.Length)
@@ -471,7 +475,7 @@ func buildToNode(ctx *ParseContext, t ioswitch2.To) (ops2.ToNode, error) {
 		return n, nil
 
 	case *ioswitch2.LoadToShared:
-		n := ctx.DAG.NewSharedLoad(t, t.Storage.StorageID, t.ObjectPath)
+		n := ctx.DAG.NewSharedLoad(t, t.Storage, t.ObjectPath)
 
 		if err := setEnvByAddress(n, t.Hub, t.Hub.Address); err != nil {
 			return nil, err
@@ -979,9 +983,7 @@ func useMultipartUploadToShardStore(ctx *ParseContext) {
 		// 最后删除Join指令和ToShardStore指令
 		ctx.DAG.RemoveNode(joinNode)
 		ctx.DAG.RemoveNode(shardNode)
-		// 因为ToShardStore已经被替换，所以对应的To也要删除。
-		// 虽然会跳过后续的Range过程，但由于之前做的流范围判断，不加Range也可以
-		ctx.Ft.Toes = lo2.Remove(ctx.Ft.Toes, shardNode.GetTo())
+		delete(ctx.ToNodes, shardNode.GetTo())
 		return true
 	})
 }
@@ -1008,17 +1010,14 @@ func storeShardWriteResult(ctx *ParseContext) {
 		storeNode := ctx.DAG.NewStore()
 		storeNode.Env().ToEnvDriver()
 
-		storeNode.Store(n.FileHashStoreKey, n.FileHashVar())
+		storeNode.Store(n.FileHashStoreKey, n.FileHashVar().Var())
 		return true
 	})
 }
 
 // 生成Range指令。StreamRange可能超过文件总大小，但Range指令会在数据量不够时不报错而是正常返回
 func generateRange(ctx *ParseContext) {
-	for i := 0; i < len(ctx.Ft.Toes); i++ {
-		to := ctx.Ft.Toes[i]
-		toNode := ctx.ToNodes[to]
-
+	for to, toNode := range ctx.ToNodes {
 		toStrIdx := to.GetStreamIndex()
 		toRng := to.GetRange()
 
