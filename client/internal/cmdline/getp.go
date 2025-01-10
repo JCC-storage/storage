@@ -52,7 +52,7 @@ func getpByPath(cmdCtx *CommandContext, path string, output string) {
 		return
 	}
 
-	pkg, err := cmdCtx.Cmdline.Svc.PackageSvc().GetByName(userID, comps[0], comps[1])
+	pkg, err := cmdCtx.Cmdline.Svc.PackageSvc().GetByFullName(userID, comps[0], comps[1])
 	if err != nil {
 		fmt.Println(err)
 		return

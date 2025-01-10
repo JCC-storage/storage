@@ -46,24 +46,24 @@ func (s *PackageService) Get(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, OK(cdsapi.PackageGetResp{Package: *pkg}))
 }
 
-func (s *PackageService) GetByName(ctx *gin.Context) {
-	log := logger.WithField("HTTP", "Package.GetByName")
+func (s *PackageService) GetByFullName(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Package.GetByFullName")
 
-	var req cdsapi.PackageGetByName
+	var req cdsapi.PackageGetByFullName
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.Warnf("binding query: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
 		return
 	}
 
-	pkg, err := s.svc.PackageSvc().GetByName(req.UserID, req.BucketName, req.PackageName)
+	pkg, err := s.svc.PackageSvc().GetByFullName(req.UserID, req.BucketName, req.PackageName)
 	if err != nil {
 		log.Warnf("getting package by name: %s", err.Error())
 		ctx.JSON(http.StatusOK, FailedError(err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdsapi.PackageGetByNameResp{Package: *pkg}))
+	ctx.JSON(http.StatusOK, OK(cdsapi.PackageGetByFullNameResp{Package: *pkg}))
 }
 
 // Create 处理创建新包的HTTP请求。

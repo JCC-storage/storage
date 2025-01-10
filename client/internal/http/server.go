@@ -43,7 +43,9 @@ func (s *Server) initRouters() {
 
 	// initTemp(rt, s)
 
-	rt.GET(cdsapi.ObjectListPath, s.Object().List)
+	s.routeV1(s.engine)
+
+	rt.GET(cdsapi.ObjectListPathByPath, s.Object().ListByPath)
 	rt.POST(cdsapi.ObjectListByIDsPath, s.Object().ListByIDs)
 	rt.GET(cdsapi.ObjectDownloadPath, s.Object().Download)
 	rt.GET(cdsapi.ObjectDownloadByPathPath, s.Object().DownloadByPath)
@@ -57,7 +59,7 @@ func (s *Server) initRouters() {
 	rt.POST(cdsapi.ObjectClonePath, s.Object().Clone)
 
 	rt.GET(cdsapi.PackageGetPath, s.Package().Get)
-	rt.GET(cdsapi.PackageGetByNamePath, s.Package().GetByName)
+	rt.GET(cdsapi.PackageGetByFullNamePath, s.Package().GetByFullName)
 	rt.POST(cdsapi.PackageCreatePath, s.Package().Create)
 	rt.POST(cdsapi.PackageCreateLoadPath, s.Package().CreateLoad)
 	rt.POST(cdsapi.PackageDeletePath, s.Package().Delete)
@@ -75,4 +77,42 @@ func (s *Server) initRouters() {
 	rt.POST(cdsapi.BucketCreatePath, s.Bucket().Create)
 	rt.POST(cdsapi.BucketDeletePath, s.Bucket().Delete)
 	rt.GET(cdsapi.BucketListUserBucketsPath, s.Bucket().ListUserBuckets)
+
+}
+
+func (s *Server) routeV1(eg *gin.Engine) {
+	v1 := eg.Group("/v1")
+
+	v1.GET(cdsapi.ObjectListPathByPath, s.Object().ListByPath)
+	v1.POST(cdsapi.ObjectListByIDsPath, s.Object().ListByIDs)
+	v1.GET(cdsapi.ObjectDownloadPath, s.Object().Download)
+	v1.GET(cdsapi.ObjectDownloadByPathPath, s.Object().DownloadByPath)
+	v1.POST(cdsapi.ObjectUploadPath, s.Object().Upload)
+	v1.GET(cdsapi.ObjectGetPackageObjectsPath, s.Object().GetPackageObjects)
+	v1.POST(cdsapi.ObjectUpdateInfoPath, s.Object().UpdateInfo)
+	v1.POST(cdsapi.ObjectUpdateInfoByPathPath, s.Object().UpdateInfoByPath)
+	v1.POST(cdsapi.ObjectMovePath, s.Object().Move)
+	v1.POST(cdsapi.ObjectDeletePath, s.Object().Delete)
+	v1.POST(cdsapi.ObjectDeleteByPathPath, s.Object().DeleteByPath)
+	v1.POST(cdsapi.ObjectClonePath, s.Object().Clone)
+
+	v1.GET(cdsapi.PackageGetPath, s.Package().Get)
+	v1.GET(cdsapi.PackageGetByFullNamePath, s.Package().GetByFullName)
+	v1.POST(cdsapi.PackageCreatePath, s.Package().Create)
+	v1.POST(cdsapi.PackageCreateLoadPath, s.Package().CreateLoad)
+	v1.POST(cdsapi.PackageDeletePath, s.Package().Delete)
+	v1.POST(cdsapi.PackageClonePath, s.Package().Clone)
+	v1.GET(cdsapi.PackageListBucketPackagesPath, s.Package().ListBucketPackages)
+	v1.GET(cdsapi.PackageGetCachedStoragesPath, s.Package().GetCachedStorages)
+
+	v1.POST(cdsapi.StorageLoadPackagePath, s.Storage().LoadPackage)
+	v1.POST(cdsapi.StorageCreatePackagePath, s.Storage().CreatePackage)
+	v1.GET(cdsapi.StorageGetPath, s.Storage().Get)
+
+	v1.POST(cdsapi.CacheMovePackagePath, s.Cache().MovePackage)
+
+	v1.GET(cdsapi.BucketGetByNamePath, s.Bucket().GetByName)
+	v1.POST(cdsapi.BucketCreatePath, s.Bucket().Create)
+	v1.POST(cdsapi.BucketDeletePath, s.Bucket().Delete)
+	v1.GET(cdsapi.BucketListUserBucketsPath, s.Bucket().ListUserBuckets)
 }

@@ -28,10 +28,10 @@ func (s *Server) Object() *ObjectService {
 	}
 }
 
-func (s *ObjectService) List(ctx *gin.Context) {
-	log := logger.WithField("HTTP", "Object.List")
+func (s *ObjectService) ListByPath(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Object.ListByPath")
 
-	var req cdsapi.ObjectList
+	var req cdsapi.ObjectListByPath
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -45,7 +45,7 @@ func (s *ObjectService) List(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectListResp{Objects: objs}))
+	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectListByPathResp{Objects: objs}))
 }
 
 func (s *ObjectService) ListByIDs(ctx *gin.Context) {

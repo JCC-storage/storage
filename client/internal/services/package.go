@@ -36,7 +36,7 @@ func (svc *PackageService) Get(userID cdssdk.UserID, packageID cdssdk.PackageID)
 	return &getResp.Package, nil
 }
 
-func (svc *PackageService) GetByName(userID cdssdk.UserID, bucketName string, packageName string) (*cdssdk.Package, error) {
+func (svc *PackageService) GetByFullName(userID cdssdk.UserID, bucketName string, packageName string) (*cdssdk.Package, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
 		return nil, fmt.Errorf("new coordinator client: %w", err)
