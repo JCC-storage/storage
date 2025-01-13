@@ -22,7 +22,10 @@ type Config struct {
 	Connectivity     connectivity.Config        `json:"connectivity"`
 	Downloader       downloader.Config          `json:"downloader"`
 	DownloadStrategy strategy.Config            `json:"downloadStrategy"`
-	StorageID        cdssdk.StorageID           `json:"storageID"` // TODO 进行访问量统计时，当前客户端所属的存储ID。临时解决方案。
+	StorageID        cdssdk.StorageID           `json:"storageID"`     // TODO 进行访问量统计时，当前客户端所属的存储ID。临时解决方案。
+	AuthAccessKey    string                     `json:"authAccessKey"` // TODO 临时办法
+	AuthSecretKey    string                     `json:"authSecretKey"`
+	MaxHTTPBodySize  int64                      `json:"maxHttpBodySize"`
 }
 
 var cfg Config

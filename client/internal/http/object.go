@@ -158,6 +158,11 @@ func (s *ObjectService) Download(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "download object failed"))
 		return
 	}
+	if file.File == nil {
+		log.Warnf("object not found: %d", req.ObjectID)
+		ctx.JSON(http.StatusOK, Failed(errorcode.DataNotFound, "object not found"))
+		return
+	}
 	defer file.File.Close()
 
 	ctx.Header("Content-Disposition", "attachment; filename="+url.PathEscape(path.Base(file.Object.Path)))

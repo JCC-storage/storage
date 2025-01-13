@@ -39,5 +39,8 @@
     "downloadStrategy": {
         "highLatencyHub": 35
     },
-    "storageID": 0
+    "storageID": 0,
+    "authAccessKey": "",
+    "authSecretKey": "",
+    "maxHttpBodySize": 5242880
 }

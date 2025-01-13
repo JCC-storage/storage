@@ -11,15 +11,17 @@ type Server struct {
 	engine     *gin.Engine
 	listenAddr string
 	svc        *services.Service
+	awsAuth    *AWSAuth
 }
 
-func NewServer(listenAddr string, svc *services.Service) (*Server, error) {
+func NewServer(listenAddr string, svc *services.Service, awsAuth *AWSAuth) (*Server, error) {
 	engine := gin.New()
 
 	return &Server{
 		engine:     engine,
 		listenAddr: listenAddr,
 		svc:        svc,
+		awsAuth:    awsAuth,
 	}, nil
 }
 
@@ -83,36 +85,36 @@ func (s *Server) initRouters() {
 func (s *Server) routeV1(eg *gin.Engine) {
 	v1 := eg.Group("/v1")
 
-	v1.GET(cdsapi.ObjectListPathByPath, s.Object().ListByPath)
-	v1.POST(cdsapi.ObjectListByIDsPath, s.Object().ListByIDs)
-	v1.GET(cdsapi.ObjectDownloadPath, s.Object().Download)
-	v1.GET(cdsapi.ObjectDownloadByPathPath, s.Object().DownloadByPath)
-	v1.POST(cdsapi.ObjectUploadPath, s.Object().Upload)
-	v1.GET(cdsapi.ObjectGetPackageObjectsPath, s.Object().GetPackageObjects)
-	v1.POST(cdsapi.ObjectUpdateInfoPath, s.Object().UpdateInfo)
-	v1.POST(cdsapi.ObjectUpdateInfoByPathPath, s.Object().UpdateInfoByPath)
-	v1.POST(cdsapi.ObjectMovePath, s.Object().Move)
-	v1.POST(cdsapi.ObjectDeletePath, s.Object().Delete)
-	v1.POST(cdsapi.ObjectDeleteByPathPath, s.Object().DeleteByPath)
-	v1.POST(cdsapi.ObjectClonePath, s.Object().Clone)
+	v1.GET(cdsapi.ObjectListPathByPath, s.awsAuth.Auth, s.Object().ListByPath)
+	v1.POST(cdsapi.ObjectListByIDsPath, s.awsAuth.Auth, s.Object().ListByIDs)
+	v1.GET(cdsapi.ObjectDownloadPath, s.awsAuth.Auth, s.Object().Download)
+	v1.GET(cdsapi.ObjectDownloadByPathPath, s.awsAuth.Auth, s.Object().DownloadByPath)
+	v1.POST(cdsapi.ObjectUploadPath, s.awsAuth.AuthWithoutBody, s.Object().Upload)
+	v1.GET(cdsapi.ObjectGetPackageObjectsPath, s.awsAuth.Auth, s.Object().GetPackageObjects)
+	v1.POST(cdsapi.ObjectUpdateInfoPath, s.awsAuth.Auth, s.Object().UpdateInfo)
+	v1.POST(cdsapi.ObjectUpdateInfoByPathPath, s.awsAuth.Auth, s.Object().UpdateInfoByPath)
+	v1.POST(cdsapi.ObjectMovePath, s.awsAuth.Auth, s.Object().Move)
+	v1.POST(cdsapi.ObjectDeletePath, s.awsAuth.Auth, s.Object().Delete)
+	v1.POST(cdsapi.ObjectDeleteByPathPath, s.awsAuth.Auth, s.Object().DeleteByPath)
+	v1.POST(cdsapi.ObjectClonePath, s.awsAuth.Auth, s.Object().Clone)
 
-	v1.GET(cdsapi.PackageGetPath, s.Package().Get)
-	v1.GET(cdsapi.PackageGetByFullNamePath, s.Package().GetByFullName)
-	v1.POST(cdsapi.PackageCreatePath, s.Package().Create)
-	v1.POST(cdsapi.PackageCreateLoadPath, s.Package().CreateLoad)
-	v1.POST(cdsapi.PackageDeletePath, s.Package().Delete)
-	v1.POST(cdsapi.PackageClonePath, s.Package().Clone)
-	v1.GET(cdsapi.PackageListBucketPackagesPath, s.Package().ListBucketPackages)
-	v1.GET(cdsapi.PackageGetCachedStoragesPath, s.Package().GetCachedStorages)
+	v1.GET(cdsapi.PackageGetPath, s.awsAuth.Auth, s.Package().Get)
+	v1.GET(cdsapi.PackageGetByFullNamePath, s.awsAuth.Auth, s.Package().GetByFullName)
+	v1.POST(cdsapi.PackageCreatePath, s.awsAuth.Auth, s.Package().Create)
+	v1.POST(cdsapi.PackageCreateLoadPath, s.awsAuth.Auth, s.Package().CreateLoad)
+	v1.POST(cdsapi.PackageDeletePath, s.awsAuth.Auth, s.Package().Delete)
+	v1.POST(cdsapi.PackageClonePath, s.awsAuth.Auth, s.Package().Clone)
+	v1.GET(cdsapi.PackageListBucketPackagesPath, s.awsAuth.Auth, s.Package().ListBucketPackages)
+	v1.GET(cdsapi.PackageGetCachedStoragesPath, s.awsAuth.Auth, s.Package().GetCachedStorages)
 
-	v1.POST(cdsapi.StorageLoadPackagePath, s.Storage().LoadPackage)
-	v1.POST(cdsapi.StorageCreatePackagePath, s.Storage().CreatePackage)
-	v1.GET(cdsapi.StorageGetPath, s.Storage().Get)
+	v1.POST(cdsapi.StorageLoadPackagePath, s.awsAuth.Auth, s.Storage().LoadPackage)
+	v1.POST(cdsapi.StorageCreatePackagePath, s.awsAuth.Auth, s.Storage().CreatePackage)
+	v1.GET(cdsapi.StorageGetPath, s.awsAuth.Auth, s.Storage().Get)
 
-	v1.POST(cdsapi.CacheMovePackagePath, s.Cache().MovePackage)
+	v1.POST(cdsapi.CacheMovePackagePath, s.awsAuth.Auth, s.Cache().MovePackage)
 
-	v1.GET(cdsapi.BucketGetByNamePath, s.Bucket().GetByName)
-	v1.POST(cdsapi.BucketCreatePath, s.Bucket().Create)
-	v1.POST(cdsapi.BucketDeletePath, s.Bucket().Delete)
-	v1.GET(cdsapi.BucketListUserBucketsPath, s.Bucket().ListUserBuckets)
+	v1.GET(cdsapi.BucketGetByNamePath, s.awsAuth.Auth, s.Bucket().GetByName)
+	v1.POST(cdsapi.BucketCreatePath, s.awsAuth.Auth, s.Bucket().Create)
+	v1.POST(cdsapi.BucketDeletePath, s.awsAuth.Auth, s.Bucket().Delete)
+	v1.GET(cdsapi.BucketListUserBucketsPath, s.awsAuth.Auth, s.Bucket().ListUserBuckets)
 }

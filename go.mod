@@ -7,14 +7,12 @@ toolchain go1.23.2
 replace gitlink.org.cn/cloudream/common v0.0.0 => ../common
 
 require (
-	github.com/aliyun/aliyun-oss-go-sdk v3.0.2+incompatible
 	github.com/aws/aws-sdk-go-v2 v1.32.6
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.47
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.71.0
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/hashicorp/golang-lru/v2 v2.0.5
-	github.com/huaweicloud/huaweicloud-sdk-go-obs v3.24.9+incompatible
 	github.com/inhies/go-bytesize v0.0.0-20220417184213-4913239db9cf
 	github.com/jedib0t/go-pretty/v6 v6.4.7
 	github.com/klauspost/reedsolomon v1.11.8
@@ -22,7 +20,6 @@ require (
 	github.com/samber/lo v1.38.1
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/spf13/cobra v1.8.0
-	github.com/tencentyun/cos-go-sdk-v5 v0.7.56
 	gitlink.org.cn/cloudream/common v0.0.0
 	google.golang.org/grpc v1.57.0
 	google.golang.org/protobuf v1.31.0
@@ -39,14 +36,10 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.6 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.18.6 // indirect
 	github.com/aws/smithy-go v1.22.1 // indirect
-	github.com/clbanning/mxj v1.8.4 // indirect
-	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/google/uuid v1.3.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
-	github.com/mozillazg/go-httpheader v0.2.1 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
-	golang.org/x/time v0.7.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
