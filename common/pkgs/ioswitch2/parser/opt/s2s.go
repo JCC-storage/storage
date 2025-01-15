@@ -1,13 +1,14 @@
-package parser
+package opt
 
 import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/ops2"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/parser/state"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/factory"
 )
 
 // 将直接从一个存储服务传到另一个存储服务的过程换成S2S传输
-func useS2STransfer(ctx *ParseContext) {
+func UseS2STransfer(ctx *state.GenerateState) {
 	// S2S传输暂不支持只传文件的一部分
 	if ctx.StreamRange.Offset != 0 || ctx.StreamRange.Length != nil {
 		return

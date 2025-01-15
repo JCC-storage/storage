@@ -49,7 +49,7 @@ func Encode(fr ioswitchlrc.From, toes []ioswitchlrc.To, blder *exec.PlanBuilder)
 	generateClone(&ctx)
 	generateRange(&ctx)
 
-	return plan.Generate(ctx.DAG.Graph, blder)
+	return plan.Compile(ctx.DAG.Graph, blder)
 }
 
 func buildDAGEncode(ctx *GenerateContext, fr ioswitchlrc.From, toes []ioswitchlrc.To) error {
@@ -146,7 +146,7 @@ func ReconstructAny(frs []ioswitchlrc.From, toes []ioswitchlrc.To, blder *exec.P
 	generateClone(&ctx)
 	generateRange(&ctx)
 
-	return plan.Generate(ctx.DAG.Graph, blder)
+	return plan.Compile(ctx.DAG.Graph, blder)
 }
 
 func buildDAGReconstructAny(ctx *GenerateContext, frs []ioswitchlrc.From, toes []ioswitchlrc.To) error {
@@ -267,7 +267,7 @@ func ReconstructGroup(frs []ioswitchlrc.From, toes []ioswitchlrc.To, blder *exec
 	generateClone(&ctx)
 	generateRange(&ctx)
 
-	return plan.Generate(ctx.DAG.Graph, blder)
+	return plan.Compile(ctx.DAG.Graph, blder)
 }
 
 func buildDAGReconstructGroup(ctx *GenerateContext, frs []ioswitchlrc.From, toes []ioswitchlrc.To) error {
