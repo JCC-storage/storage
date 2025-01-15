@@ -29,9 +29,6 @@ func listenQueues(conn *amqp.Connection) {
 		"datamap_hubtransfer",
 		"datamap_blocktransfer",
 		"datamap_blockdistribution",
-		"datamap_objectchange",
-		"datamap_packagechange",
-		"datamap_bucketchange",
 	}
 
 	for _, queue := range queues {
@@ -58,22 +55,60 @@ func listenQueues(conn *amqp.Connection) {
 
 func processMessage(queue string, body []byte) {
 	switch queue {
+	case "datamap_hubinfo":
+		var data stgmod.HubInfo
+
+		if err := json.Unmarshal(body, &data); err != nil {
+			log.Printf("Failed to unmarshal HubInfo: %v, body: %s", err, body)
+			return
+		}
+		models.ProcessHubInfo(data)
 	case "datamap_storageinfo":
-		var data stgmod.HubStat
-		json.Unmarshal(body, &data)
-		models.ProcessHubStat(data)
-	case "datamap_hubtransfer":
-		var data stgmod.HubTrans
-		json.Unmarshal(body, &data)
-		models.ProcessHubTrans(data)
+		var data stgmod.StorageInfo
+		if err := json.Unmarshal(body, &data); err != nil {
+			log.Printf("Failed to unmarshal StorageInfo: %v, body: %s", err, body)
+			return
+		}
+		//models.ProcessStorageInfo(data)
+	case "datamap_storagestats":
+		var data stgmod.StorageStats
+		if err := json.Unmarshal(body, &data); err != nil {
+			log.Printf("Failed to unmarshal StorageStats: %v, body: %s", err, body)
+			return
+		}
+		//models.ProcessStorageInfo(data)
+	case "datamap_hubtransferstats":
+		var data stgmod.HubTransferStats
+		err := json.Unmarshal(body, &data)
+		if err != nil {
+			log.Printf("Failed to unmarshal HubTransferStats: %v, body: %s", err, body)
+			return
+		}
+		models.ProcessHubTransfer(data)
+	case "datamap_hubstoragetransferstats":
+		var data stgmod.HubStorageTransferStats
+		err := json.Unmarshal(body, &data)
+		if err != nil {
+			log.Printf("Failed to unmarshal HubStorageTransferStats: %v, body: %s", err, body)
+			return
+		}
+		//models.ProcessHubTransfer(data)
 	case "datamap_blocktransfer":
-		var data stgmod.Object
-		json.Unmarshal(body, &data)
-		models.ProcessBlockTransInfo(data)
+		var data stgmod.BlockTransfer
+		err := json.Unmarshal(body, &data)
+		if err != nil {
+			log.Printf("Failed to unmarshal BlockTransfer: %v, body: %s", err, body)
+			return
+		}
+		models.ProcessBlockTransfer(data)
 	case "datamap_blockdistribution":
-		var data stgmod.BlockTransInfo
-		json.Unmarshal(body, &data)
-		models.ProcessBlockDistributionInfo(data)
+		var data stgmod.BlockDistribution
+		err := json.Unmarshal(body, &data)
+		if err != nil {
+			log.Printf("Failed to unmarshal BlockDistribution: %v, body: %s", err, body)
+			return
+		}
+		models.ProcessBlockDistribution(data)
 	default:
 		log.Printf("Unknown queue: %s", queue)
 	}

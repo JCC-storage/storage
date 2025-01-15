@@ -3,6 +3,7 @@ package main
 import (
 	"gitlink.org.cn/cloudream/storage/datamap/internal/config"
 	"gitlink.org.cn/cloudream/storage/datamap/internal/db"
+	"gitlink.org.cn/cloudream/storage/datamap/internal/models"
 	"gitlink.org.cn/cloudream/storage/datamap/internal/mq"
 	"gitlink.org.cn/cloudream/storage/datamap/internal/server"
 	"log"
@@ -17,6 +18,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
+
+	models.InitDB(dbConn)
 
 	// 初始化RabbitMQ
 	mqConn, err := mq.InitMQ(cfg.RabbitMQ)

@@ -4,7 +4,6 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gorm.io/gorm"
-	"log"
 	"time"
 )
 
@@ -21,50 +20,52 @@ type Object struct {
 	Timestamp      time.Time        `gorm:"column:Timestamp; type:datatime; not null" json:"timestamp"`
 }
 
-// BlockTransferRepository 块传输记录的 Repository
-type BlockTransferRepository struct {
+func (Object) TableName() string {
+	return "object"
+}
+
+// ObjectRepository 块传输记录的 Repository
+type ObjectRepository struct {
 	repo *GormRepository
 }
 
-// NewBlockTransferRepository 创建 BlockTransferRepository 实例
-func NewBlockTransferRepository(db *gorm.DB) *BlockTransferRepository {
-	return &BlockTransferRepository{repo: NewGormRepository(db)}
+// NewObjectRepository 创建 ObjectRepository 实例
+func NewObjectRepository(db *gorm.DB) *ObjectRepository {
+	return &ObjectRepository{repo: NewGormRepository(db)}
 }
 
-// CreateBlockTransfer 创建块传输记录
-func (r *BlockTransferRepository) CreateBlockTransfer(transfer *Object) error {
-	return r.repo.Create(transfer)
+// CreateObject 创建块传输记录
+func (r *ObjectRepository) CreateObject(object *Object) error {
+	return r.repo.Create(object)
 }
 
-// GetAllBlockTransfers 获取所有块传输记录
-func (r *BlockTransferRepository) GetAllBlockTransfers() ([]Object, error) {
-	var transfers []Object
-	err := r.repo.GetAll(&transfers)
+// GetObjectByID 查询单个Object
+func (r *ObjectRepository) GetObjectByID(objectID int64) (*Object, error) {
+	var object Object
+	query := "SELECT * FROM object WHERE ObjectID = ?"
+	err := r.repo.db.Raw(query, objectID).First(&object).Error
 	if err != nil {
 		return nil, err
 	}
-	return transfers, nil
+	return &object, nil
 }
 
-// ProcessBlockTransInfo 处理 BlockTransInfo 数据
-func ProcessBlockTransInfo(data stgmod.Object) {
-	repo := NewBlockTransferRepository(db)
-	//TODO 数据待调整
-	transfer := &Object{
-		ObjectID:       0,
-		PackageID:      0,
-		Path:           data.Path,
-		Size:           0,
-		FileHash:       "",
-		Status:         0,
-		FaultTolerance: 0,
-		Redundancy:     0,
-		AvgAccessCost:  0,
-		Timestamp:      time.Time{},
-	}
-	err := repo.CreateBlockTransfer(transfer)
+// UpdateObject 更新块传输记录
+func (r *ObjectRepository) UpdateObject(object *Object) error {
+	return r.repo.Update(object)
+}
+
+// GetAllObjects 获取所有块传输记录
+func (r *ObjectRepository) GetAllObjects() ([]Object, error) {
+	var objects []Object
+	err := r.repo.GetAll(&objects)
 	if err != nil {
-		log.Printf("Failed to create block transfer record: %v", err)
+		return nil, err
 	}
+	return objects, nil
+}
+
+// ProcessObject 处理 Object 数据
+func ProcessObject(data stgmod.ObjectChange) {
 
 }

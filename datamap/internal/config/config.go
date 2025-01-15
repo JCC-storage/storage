@@ -30,7 +30,7 @@ type ServerConfig struct {
 }
 
 func LoadConfig() *Config {
-	viper.SetConfigFile(".env")
+	viper.SetConfigFile("C:\\Users\\Administrator\\workspace\\workspace\\storage\\datamap\\.env")
 	viper.ReadInConfig()
 
 	return &Config{

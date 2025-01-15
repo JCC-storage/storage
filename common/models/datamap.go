@@ -1,55 +1,118 @@
 package stgmod
 
-import "time"
+import (
+	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"time"
+)
 
-// HubStat 中心信息 每天一次，各节点统计自身当前的总数据量
+// HubInfo 节点信息
+
+type SourceHub struct {
+	Type string `json:"type"`
+}
+
+type HubInfoBody struct {
+	HubID   int        `json:"hubID"`
+	HubInfo cdssdk.Hub `json:"hubInfo"`
+	Type    string     `json:"type"`
+}
+
+type HubInfo struct {
+	Timestamp time.Time   `json:"timestamp"`
+	Source    SourceHub   `json:"source"`
+	Category  string      `json:"category"`
+	Body      HubInfoBody `json:"body"`
+}
+
+//StorageInfo 节点信息
+
+type SourceStorage struct {
+	Type string `json:"type"`
+}
+
+type StorageInfoBody struct {
+	StorageID   int64          `json:"storageID"`
+	StorageInfo cdssdk.Storage `json:"storageInfo"`
+	Type        string         `json:"type"`
+}
+
+type StorageInfo struct {
+	Timestamp time.Time       `json:"timestamp"`
+	Source    SourceStorage   `json:"source"`
+	Category  string          `json:"category"`
+	Body      StorageInfoBody `json:"body"`
+}
+
+// StorageStats 节点信息数据
 
 type Source struct {
 	Type    string `json:"type"`
 	HubID   string `json:"hubID"`
 	HubName string `json:"hubName"`
 }
-type HubStatBody struct {
-	MasterHubID      int    `json:"masterHubID"`
-	MasterHubAddress string `json:"masterHubAddress"`
-	StorageID        int    `json:"storageID"`
-	DataCount        int    `json:"dataCount"`
-}
-type HubStat struct {
-	Timestamp time.Time   `json:"timestamp"`
-	Source    Source      `json:"source"`
-	Category  string      `json:"category"`
-	Body      HubStatBody `json:"body"`
+
+type StorageStatsBody struct {
+	StorageID int64 `json:"storageID"`
+	DataCount int64 `json:"dataCount"`
 }
 
-// HubTrans 节点传输信息
+type StorageStats struct {
+	Timestamp time.Time        `json:"timestamp"`
+	Source    Source           `json:"source"`
+	Category  string           `json:"category"`
+	Body      StorageStatsBody `json:"body"`
+}
+
+// HubTransferStats 节点传输信息
 // 每天一次，各节点统计自身当天向外部各个节点传输的总数据量
 
-type HubTransBody struct {
-	SourceHubID        int64     `json:"sourceHubID"`
-	TargetHubID        int64     `json:"targetHubID"`
-	DataTransferCount  int64     `json:"dataTransferCount"`
-	RequestCount       int64     `json:"requestCount"`
-	FailedRequestCount int64     `json:"failedRequestCount"`
-	AvgTransferCount   int64     `json:"avgTransferCount"`
-	MaxTransferCount   int64     `json:"maxTransferCount"`
-	MinTransferCount   int64     `json:"minTransferCount"`
-	StartTimestamp     time.Time `json:"startTimestamp"`
-	EndTimestamp       time.Time `json:"endTimestamp"`
+type DataTrans struct {
+	TotalTransfer      int64 `json:"totalTransfer"`
+	RequestCount       int64 `json:"requestCount"`
+	FailedRequestCount int64 `json:"failedRequestCount"`
+	AvgTransfer        int64 `json:"avgTransfer"`
+	MaxTransfer        int64 `json:"maxTransfer"`
+	MinTransfer        int64 `json:"minTransfer"`
 }
-type HubTrans struct {
-	Timestamp time.Time    `json:"timestamp"`
-	Source    Source       `json:"source"`
-	Category  string       `json:"category"`
-	Body      HubTransBody `json:"body"`
+type HubTransferStatsBody struct {
+	SourceHubID    int64     `json:"sourceHubID"`
+	TargetHubID    int64     `json:"targetHubID"`
+	Send           DataTrans `json:"send"`
+	StartTimestamp time.Time `json:"startTimestamp"`
+	EndTimestamp   time.Time `json:"endTimestamp"`
+}
+type HubTransferStats struct {
+	Timestamp time.Time            `json:"timestamp"`
+	Source    Source               `json:"source"`
+	Category  string               `json:"category"`
+	Body      HubTransferStatsBody `json:"body"`
 }
 
-// BlockTransInfo 块传输信息
+//hubStorageTransferStats 节点-中心间传输信息
+
+type HubStorageTransferStatsBody struct {
+	HubID          int64     `json:"hubID"`
+	StorageID      int64     `json:"storageID"`
+	Send           DataTrans `json:"send"`
+	Receive        DataTrans `json:"receive"`
+	StartTimestamp time.Time `json:"startTimestamp"`
+	EndTimestamp   time.Time `json:"endTimestamp"`
+}
+
+type HubStorageTransferStats struct {
+	Timestamp time.Time                   `json:"timestamp"`
+	Source    Source                      `json:"source"`
+	Category  string                      `json:"category"`
+	Body      HubStorageTransferStatsBody `json:"body"`
+}
+
+// blockTransfer 块传输信息
 /*实时日志，当对象的块信息发生变化时推送，共有4种变化类型：
 拷贝
 编解码(一变多、多变一、多变多)
 删除
 更新*/
+
 type Block struct {
 	BlockType string `json:"blockType"`
 	Index     string `json:"index"`
@@ -68,68 +131,63 @@ type BlockChange struct {
 	SourceStorageID   string         `json:"sourceStorageID"`
 	TargetStorageID   string         `json:"targetStorageID"`
 	DataTransferCount string         `json:"dataTransferCount"`
-	Timestamp         string         `json:"timestamp"`
+	Timestamp         time.Time      `json:"timestamp"`
 	SourceBlocks      []Block        `json:"sourceBlocks,omitempty"`
 	TargetBlocks      []Block        `json:"targetBlocks,omitempty"`
 	DataTransfers     []DataTransfer `json:"dataTransfers,omitempty"`
 	Blocks            []Block        `json:"blocks,omitempty"`
 }
 
-type BlockTransInfoBody struct {
+type BlockTransferBody struct {
 	Type         string        `json:"type"`
 	ObjectID     string        `json:"objectID"`
 	PackageID    string        `json:"packageID"`
 	BlockChanges []BlockChange `json:"blockChanges"`
 }
 
-type BlockTransInfo struct {
-	Timestamp time.Time          `json:"timestamp"`
-	Source    Source             `json:"source"`
-	Category  string             `json:"category"`
-	Body      BlockTransInfoBody `json:"body"`
+type BlockTransfer struct {
+	Timestamp time.Time         `json:"timestamp"`
+	Source    Source            `json:"source"`
+	Category  string            `json:"category"`
+	Body      BlockTransferBody `json:"body"`
 }
 
 // BlockDistribution 块传输信息
 // 每天一次，在调整完成后，将当天调整前后的布局情况一起推送
-type BlockDistribution struct {
+
+type BlockDistributionObjectInfo struct {
 	Type      string `json:"type"`
 	Index     string `json:"index"`
 	StorageID string `json:"storageID"`
 }
 
-type Object struct {
-	ObjectID          string              `json:"objectID"`
-	PackageID         string              `json:"packageID"`
-	Path              string              `json:"path"`
-	Size              int64               `json:"size"`
-	FileHash          string              `json:"fileHash"`
-	FaultTolerance    string              `json:"faultTolerance"`
-	Redundancy        string              `json:"redundancy"`
-	AvgAccessCost     string              `json:"avgAccessCost"`
-	BlockDistribution []BlockDistribution `json:"blockDistribution"`
-	DataTransfers     []DataTransfer      `json:"dataTransfers"`
+type BlockDistributionObject struct {
+	ObjectID          int64                         `json:"objectID"`
+	PackageID         int64                         `json:"packageID"`
+	Path              string                        `json:"path"`
+	Size              int64                         `json:"size"`
+	FileHash          string                        `json:"fileHash"`
+	FaultTolerance    string                        `json:"faultTolerance"`
+	Redundancy        string                        `json:"redundancy"`
+	AvgAccessCost     string                        `json:"avgAccessCost"`
+	BlockDistribution []BlockDistributionObjectInfo `json:"blockDistribution"`
+	DataTransfers     []DataTransfer                `json:"dataTransfers"`
 }
 type BlockDistributionBody struct {
-	Timestamp     time.Time      `json:"timestamp"`
-	Type          string         `json:"type"`
-	ObjectID      string         `json:"objectID"`
-	PackageID     string         `json:"packageID"`
-	SourceBlocks  []Block        `json:"sourceBlocks,omitempty"`
-	TargetBlocks  []Block        `json:"targetBlocks,omitempty"`
-	DataTransfers []DataTransfer `json:"dataTransfers,omitempty"`
-	Blocks        []Block        `json:"blocks,omitempty"`
+	Timestamp time.Time               `json:"timestamp"`
+	Object    BlockDistributionObject `json:"object,omitempty"`
 }
 
-type BlockDistributionInfo struct {
+type BlockDistribution struct {
 	Timestamp time.Time             `json:"timestamp"`
 	Source    Source                `json:"source"`
 	Category  string                `json:"category"`
 	Body      BlockDistributionBody `json:"body"`
 }
 
-// ObjectUpdateInfo Object变化信息
+// ObjectChange Object变化信息
 
-type ObjectUpdateInfoBody struct {
+type ObjectChangeBody struct {
 	Type              string              `json:"type"`
 	ObjectID          string              `json:"objectID"`
 	PackageID         string              `json:"packageID"`
@@ -138,41 +196,41 @@ type ObjectUpdateInfoBody struct {
 	BlockDistribution []BlockDistribution `json:"blockDistribution"`
 	Timestamp         string              `json:"timestamp"`
 }
-type ObjectUpdateInfo struct {
-	Timestamp time.Time            `json:"timestamp"`
-	Source    Source               `json:"source"`
-	Category  string               `json:"category"`
-	Body      ObjectUpdateInfoBody `json:"body"`
+type ObjectChange struct {
+	Timestamp time.Time        `json:"timestamp"`
+	Source    Source           `json:"source"`
+	Category  string           `json:"category"`
+	Body      ObjectChangeBody `json:"body"`
 }
 
-// PackageUpdateInfo package变化信息
+// PackageChange package变化信息
 
-type PackageUpdateInfoBody struct {
+type PackageChangeBody struct {
 	Type        string `json:"type"`
 	PackageID   string `json:"packageID"`
 	PackageName string `json:"packageName"`
 	BucketID    string `json:"bucketID"`
 	Timestamp   string `json:"timestamp"`
 }
-type PackageUpdateInfo struct {
-	Timestamp time.Time             `json:"timestamp"`
-	Source    Source                `json:"source"`
-	Category  string                `json:"category"`
-	Body      PackageUpdateInfoBody `json:"body"`
+type PackageChange struct {
+	Timestamp time.Time         `json:"timestamp"`
+	Source    Source            `json:"source"`
+	Category  string            `json:"category"`
+	Body      PackageChangeBody `json:"body"`
 }
 
-// BucketUpdateInfo bucket变化信息
+// BucketChange bucket变化信息
 
-type BucketUpdateInfoBody struct {
+type BucketChangeBody struct {
 	Type       string `json:"type"`
 	BucketID   string `json:"bucketID"`
 	BucketName string `json:"bucketName"`
 	Timestamp  string `json:"timestamp"`
 }
 
-type BucketUpdateInfo struct {
-	Timestamp time.Time            `json:"timestamp"`
-	Source    Source               `json:"source"`
-	Category  string               `json:"category"`
-	Body      BucketUpdateInfoBody `json:"body"`
+type BucketChange struct {
+	Timestamp time.Time        `json:"timestamp"`
+	Source    Source           `json:"source"`
+	Category  string           `json:"category"`
+	Body      BucketChangeBody `json:"body"`
 }

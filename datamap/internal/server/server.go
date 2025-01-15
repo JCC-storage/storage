@@ -11,9 +11,10 @@ import (
 func StartServer(db *gorm.DB, mq *amqp.Connection) {
 	r := gin.Default()
 
+	handlers.SetDB(db)
 	// 注册HTTP接口
-	r.GET("/storage", handlers.GetStorageData)
-	r.GET("/block-distribution", handlers.GetBlockDistributionData)
+	r.GET("/hubInfo", handlers.GetHubInfo)
+	r.GET("/dataTransfer/:objectID", handlers.GetDataTransfer)
 
 	// 启动服务
 	if err := r.Run(":8080"); err != nil {
