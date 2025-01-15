@@ -79,6 +79,20 @@ func (b *builder) CreateMultiparter() (types.Multiparter, error) {
 	}, nil
 }
 
+func (b *builder) CreateS2STransfer() (types.S2STransfer, error) {
+	feat := utils.FindFeature[*cdssdk.S2STransferFeature](b.detail)
+	if feat == nil {
+		return nil, fmt.Errorf("feature %T not found", cdssdk.S2STransferFeature{})
+	}
+
+	switch addr := b.detail.Storage.Type.(type) {
+	case *cdssdk.OBSType:
+		return obs.NewS2STransfer(addr, feat), nil
+	default:
+		return nil, fmt.Errorf("unsupported storage type %T", addr)
+	}
+}
+
 func createS3Client(addr cdssdk.StorageType) (*s3.Client, string, error) {
 	switch addr := addr.(type) {
 	// case *cdssdk.COSType:

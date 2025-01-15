@@ -59,7 +59,7 @@ func (o *BypassToShardStore) Execute(ctx *exec.ExecContext, e *exec.Executor) er
 
 	br, ok := shardStore.(types.BypassWrite)
 	if !ok {
-		return fmt.Errorf("shard store %v not support bypass", o.StorageID)
+		return fmt.Errorf("shard store %v not support bypass write", o.StorageID)
 	}
 
 	fileInfo, err := exec.BindVar[*BypassFileInfoValue](e, ctx.Context, o.BypassFileInfo)
@@ -110,7 +110,7 @@ func (o *BypassFromShardStore) Execute(ctx *exec.ExecContext, e *exec.Executor) 
 
 	br, ok := shardStore.(types.BypassRead)
 	if !ok {
-		return fmt.Errorf("shard store %v not support bypass", o.StorageID)
+		return fmt.Errorf("shard store %v not support bypass read", o.StorageID)
 	}
 
 	path, err := br.BypassRead(o.FileHash)

@@ -17,6 +17,7 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/io2"
 	"gitlink.org.cn/cloudream/common/utils/os2"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/s3/utils"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
@@ -38,7 +39,7 @@ func (s *ShardStoreDesc) HasBypassWrite() bool {
 }
 
 func (s *ShardStoreDesc) HasBypassRead() bool {
-	return false
+	return true
 }
 
 type ShardStoreOption struct {
@@ -98,7 +99,7 @@ func (s *ShardStore) removeUnusedTempFiles() {
 	for {
 		resp, err := s.cli.ListObjects(context.Background(), &s3.ListObjectsInput{
 			Bucket: aws.String(s.bucket),
-			Prefix: aws.String(JoinKey(s.cfg.Root, TempDir, "/")),
+			Prefix: aws.String(utils.JoinKey(s.cfg.Root, TempDir, "/")),
 			Marker: marker,
 		})
 
@@ -108,7 +109,7 @@ func (s *ShardStore) removeUnusedTempFiles() {
 		}
 
 		for _, obj := range resp.Contents {
-			objName := BaseKey(*obj.Key)
+			objName := utils.BaseKey(*obj.Key)
 
 			if s.workingTempFiles[objName] {
 				continue
@@ -194,7 +195,7 @@ func (s *ShardStore) createWithAwsSha256(stream io.Reader) (types.FileInfo, erro
 		return types.FileInfo{}, errors.New("SHA256 checksum not found in response")
 	}
 
-	hash, err := DecodeBase64Hash(*resp.ChecksumSHA256)
+	hash, err := utils.DecodeBase64Hash(*resp.ChecksumSHA256)
 	if err != nil {
 		log.Warnf("decode SHA256 checksum %v: %v", *resp.ChecksumSHA256, err)
 		s.onCreateFailed(key, fileName)
@@ -234,11 +235,11 @@ func (s *ShardStore) createTempFile() (string, string) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	tmpDir := JoinKey(s.cfg.Root, TempDir)
+	tmpDir := utils.JoinKey(s.cfg.Root, TempDir)
 	tmpName := os2.GenerateRandomFileName(20)
 
 	s.workingTempFiles[tmpName] = true
-	return JoinKey(tmpDir, tmpName), tmpName
+	return utils.JoinKey(tmpDir, tmpName), tmpName
 }
 
 func (s *ShardStore) onCreateFinished(tempFilePath string, size int64, hash cdssdk.FileHash) (types.FileInfo, error) {
@@ -258,11 +259,11 @@ func (s *ShardStore) onCreateFinished(tempFilePath string, size int64, hash cdss
 	log.Debugf("write file %v finished, size: %v, hash: %v", tempFilePath, size, hash)
 
 	blockDir := s.getFileDirFromHash(hash)
-	newPath := JoinKey(blockDir, string(hash))
+	newPath := utils.JoinKey(blockDir, string(hash))
 
 	_, err := s.cli.CopyObject(context.Background(), &s3.CopyObjectInput{
 		Bucket:     aws.String(s.bucket),
-		CopySource: aws.String(JoinKey(s.bucket, tempFilePath)),
+		CopySource: aws.String(utils.JoinKey(s.bucket, tempFilePath)),
 		Key:        aws.String(newPath),
 	})
 	if err != nil {
@@ -342,7 +343,7 @@ func (s *ShardStore) ListAll() ([]types.FileInfo, error) {
 
 	var infos []types.FileInfo
 
-	blockDir := JoinKey(s.cfg.Root, BlocksDir)
+	blockDir := utils.JoinKey(s.cfg.Root, BlocksDir)
 
 	var marker *string
 	for {
@@ -358,7 +359,7 @@ func (s *ShardStore) ListAll() ([]types.FileInfo, error) {
 		}
 
 		for _, obj := range resp.Contents {
-			key := BaseKey(*obj.Key)
+			key := utils.BaseKey(*obj.Key)
 
 			fileHash, err := cdssdk.ParseHash(key)
 			if err != nil {
@@ -391,7 +392,7 @@ func (s *ShardStore) GC(avaiables []cdssdk.FileHash) error {
 		avais[hash] = true
 	}
 
-	blockDir := JoinKey(s.cfg.Root, BlocksDir)
+	blockDir := utils.JoinKey(s.cfg.Root, BlocksDir)
 
 	var deletes []s3types.ObjectIdentifier
 	var marker *string
@@ -408,7 +409,7 @@ func (s *ShardStore) GC(avaiables []cdssdk.FileHash) error {
 		}
 
 		for _, obj := range resp.Contents {
-			key := BaseKey(*obj.Key)
+			key := utils.BaseKey(*obj.Key)
 			fileHash, err := cdssdk.ParseHash(key)
 			if err != nil {
 				continue
@@ -456,6 +457,20 @@ func (s *ShardStore) Stats() types.Stats {
 	}
 }
 
+func (s *ShardStore) getLogger() logger.Logger {
+	return logger.WithField("ShardStore", "S3").WithField("Storage", s.svc.Detail.Storage.String())
+}
+
+func (s *ShardStore) getFileDirFromHash(hash cdssdk.FileHash) string {
+	return utils.JoinKey(s.cfg.Root, BlocksDir, hash.GetHashPrefix(2))
+}
+
+func (s *ShardStore) getFilePathFromHash(hash cdssdk.FileHash) string {
+	return utils.JoinKey(s.cfg.Root, BlocksDir, hash.GetHashPrefix(2), string(hash))
+}
+
+var _ types.BypassWrite = (*ShardStore)(nil)
+
 func (s *ShardStore) BypassUploaded(info types.BypassFileInfo) error {
 	if info.FileHash == "" {
 		return fmt.Errorf("empty file hash is not allowed by this shard store")
@@ -476,10 +491,10 @@ func (s *ShardStore) BypassUploaded(info types.BypassFileInfo) error {
 	log.Debugf("%v bypass uploaded, size: %v, hash: %v", info.TempFilePath, info.Size, info.FileHash)
 
 	blockDir := s.getFileDirFromHash(info.FileHash)
-	newPath := JoinKey(blockDir, string(info.FileHash))
+	newPath := utils.JoinKey(blockDir, string(info.FileHash))
 
 	_, err := s.cli.CopyObject(context.Background(), &s3.CopyObjectInput{
-		CopySource: aws.String(JoinKey(s.bucket, info.TempFilePath)),
+		CopySource: aws.String(utils.JoinKey(s.bucket, info.TempFilePath)),
 		Bucket:     aws.String(s.bucket),
 		Key:        aws.String(newPath),
 	})
@@ -491,14 +506,28 @@ func (s *ShardStore) BypassUploaded(info types.BypassFileInfo) error {
 	return nil
 }
 
-func (s *ShardStore) getLogger() logger.Logger {
-	return logger.WithField("ShardStore", "S3").WithField("Storage", s.svc.Detail.Storage.String())
-}
+var _ types.BypassRead = (*ShardStore)(nil)
 
-func (s *ShardStore) getFileDirFromHash(hash cdssdk.FileHash) string {
-	return JoinKey(s.cfg.Root, BlocksDir, hash.GetHashPrefix(2))
-}
+func (s *ShardStore) BypassRead(fileHash cdssdk.FileHash) (types.BypassFilePath, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-func (s *ShardStore) getFilePathFromHash(hash cdssdk.FileHash) string {
-	return JoinKey(s.cfg.Root, BlocksDir, hash.GetHashPrefix(2), string(hash))
+	filePath := s.getFilePathFromHash(fileHash)
+	info, err := s.cli.HeadObject(context.TODO(), &s3.HeadObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(filePath),
+	})
+	if err != nil {
+		s.getLogger().Warnf("get file %v: %v", filePath, err)
+		return types.BypassFilePath{}, err
+	}
+
+	return types.BypassFilePath{
+		Path: filePath,
+		Info: types.FileInfo{
+			Hash:        fileHash,
+			Size:        *info.ContentLength,
+			Description: filePath,
+		},
+	}, nil
 }

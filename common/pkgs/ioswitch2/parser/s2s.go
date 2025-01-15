@@ -19,7 +19,12 @@ func useS2STransfer(ctx *ParseContext) {
 			continue
 		}
 
-		s2s, err := factory.GetBuilder(fromShard.Storage).CreateS2STransfer()
+		fromStgBld := factory.GetBuilder(fromShard.Storage)
+		if !fromStgBld.ShardStoreDesc().HasBypassRead() {
+			continue
+		}
+
+		s2s, err := fromStgBld.CreateS2STransfer()
 		if err != nil {
 			continue
 		}
@@ -40,6 +45,12 @@ func useS2STransfer(ctx *ParseContext) {
 
 			switch dstNode := dstNode.(type) {
 			case *ops2.ShardWriteNode:
+				dstStgBld := factory.GetBuilder(dstNode.Storage)
+				if !dstStgBld.ShardStoreDesc().HasBypassWrite() {
+					failed = true
+					break
+				}
+
 				if !s2s.CanTransfer(dstNode.Storage) {
 					failed = true
 					break

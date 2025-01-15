@@ -394,6 +394,20 @@ func (s *ShardStore) Stats() types.Stats {
 	}
 }
 
+func (s *ShardStore) getLogger() logger.Logger {
+	return logger.WithField("ShardStore", "Local").WithField("Storage", s.agt.Detail.Storage.String())
+}
+
+func (s *ShardStore) getFileDirFromHash(hash cdssdk.FileHash) string {
+	return filepath.Join(s.absRoot, BlocksDir, hash.GetHashPrefix(2))
+}
+
+func (s *ShardStore) getFilePathFromHash(hash cdssdk.FileHash) string {
+	return filepath.Join(s.absRoot, BlocksDir, hash.GetHashPrefix(2), string(hash))
+}
+
+var _ types.BypassWrite = (*ShardStore)(nil)
+
 func (s *ShardStore) BypassUploaded(info types.BypassFileInfo) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -426,6 +440,8 @@ func (s *ShardStore) BypassUploaded(info types.BypassFileInfo) error {
 	return nil
 }
 
+var _ types.BypassRead = (*ShardStore)(nil)
+
 func (s *ShardStore) BypassRead(fileHash cdssdk.FileHash) (types.BypassFilePath, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -444,16 +460,4 @@ func (s *ShardStore) BypassRead(fileHash cdssdk.FileHash) (types.BypassFilePath,
 			Description: filePath,
 		},
 	}, nil
-}
-
-func (s *ShardStore) getLogger() logger.Logger {
-	return logger.WithField("ShardStore", "Local").WithField("Storage", s.agt.Detail.Storage.String())
-}
-
-func (s *ShardStore) getFileDirFromHash(hash cdssdk.FileHash) string {
-	return filepath.Join(s.absRoot, BlocksDir, hash.GetHashPrefix(2))
-}
-
-func (s *ShardStore) getFilePathFromHash(hash cdssdk.FileHash) string {
-	return filepath.Join(s.absRoot, BlocksDir, hash.GetHashPrefix(2), string(hash))
 }

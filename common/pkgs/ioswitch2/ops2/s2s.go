@@ -61,7 +61,7 @@ func (o *S2STransfer) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 }
 
 func (o *S2STransfer) String() string {
-	return fmt.Sprintf("S2STransfer(%v@%v -> %v:%v)", o.Src.Storage.String(), o.SrcPath, o.Dst.Storage.String(), o.Output)
+	return fmt.Sprintf("S2STransfer %v:%v -> %v:%v", o.Src.Storage.String(), o.SrcPath, o.Dst.Storage.String(), o.Output)
 }
 
 type S2STransferNode struct {
@@ -75,6 +75,7 @@ func (b *GraphNodeBuilder) NewS2STransfer(src stgmod.StorageDetail, dst stgmod.S
 		Src: src,
 		Dst: dst,
 	}
+	b.AddNode(n)
 
 	n.OutputValues().Init(n, 1)
 	n.InputValues().Init(2)
