@@ -34,8 +34,13 @@
     },
     "downloader": {
         "maxStripCacheCount": 100,
-        "highLatencyHub": 35,
         "ecStripPrefetchCount": 1
     },
-    "storageID": 0
+    "downloadStrategy": {
+        "highLatencyHub": 35
+    },
+    "storageID": 0,
+    "authAccessKey": "",
+    "authSecretKey": "",
+    "maxHttpBodySize": 5242880
 }

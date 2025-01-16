@@ -22,8 +22,24 @@ const (
 	BlocksDir = "blocks"
 )
 
+type ShardStoreDesc struct {
+	builder *builder
+}
+
+func (s *ShardStoreDesc) Enabled() bool {
+	return s.builder.detail.Storage.ShardStore != nil
+}
+
+func (s *ShardStoreDesc) HasBypassWrite() bool {
+	return true
+}
+
+func (s *ShardStoreDesc) HasBypassRead() bool {
+	return true
+}
+
 type ShardStore struct {
-	svc              *Service
+	agt              *agent
 	cfg              cdssdk.LocalShardStorage
 	absRoot          string
 	lock             sync.Mutex
@@ -31,14 +47,14 @@ type ShardStore struct {
 	done             chan any
 }
 
-func NewShardStore(svc *Service, cfg cdssdk.LocalShardStorage) (*ShardStore, error) {
+func NewShardStore(svc *agent, cfg cdssdk.LocalShardStorage) (*ShardStore, error) {
 	absRoot, err := filepath.Abs(cfg.Root)
 	if err != nil {
 		return nil, fmt.Errorf("get abs root: %w", err)
 	}
 
 	return &ShardStore{
-		svc:              svc,
+		agt:              svc,
 		cfg:              cfg,
 		absRoot:          absRoot,
 		workingTempFiles: make(map[string]bool),
@@ -378,6 +394,20 @@ func (s *ShardStore) Stats() types.Stats {
 	}
 }
 
+func (s *ShardStore) getLogger() logger.Logger {
+	return logger.WithField("ShardStore", "Local").WithField("Storage", s.agt.Detail.Storage.String())
+}
+
+func (s *ShardStore) getFileDirFromHash(hash cdssdk.FileHash) string {
+	return filepath.Join(s.absRoot, BlocksDir, hash.GetHashPrefix(2))
+}
+
+func (s *ShardStore) getFilePathFromHash(hash cdssdk.FileHash) string {
+	return filepath.Join(s.absRoot, BlocksDir, hash.GetHashPrefix(2), string(hash))
+}
+
+var _ types.BypassWrite = (*ShardStore)(nil)
+
 func (s *ShardStore) BypassUploaded(info types.BypassFileInfo) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -410,14 +440,24 @@ func (s *ShardStore) BypassUploaded(info types.BypassFileInfo) error {
 	return nil
 }
 
-func (s *ShardStore) getLogger() logger.Logger {
-	return logger.WithField("ShardStore", "Local").WithField("Storage", s.svc.Detail.Storage.String())
-}
+var _ types.BypassRead = (*ShardStore)(nil)
 
-func (s *ShardStore) getFileDirFromHash(hash cdssdk.FileHash) string {
-	return filepath.Join(s.absRoot, BlocksDir, hash.GetHashPrefix(2))
-}
+func (s *ShardStore) BypassRead(fileHash cdssdk.FileHash) (types.BypassFilePath, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-func (s *ShardStore) getFilePathFromHash(hash cdssdk.FileHash) string {
-	return filepath.Join(s.absRoot, BlocksDir, hash.GetHashPrefix(2), string(hash))
+	filePath := s.getFilePathFromHash(fileHash)
+	stat, err := os.Stat(filePath)
+	if err != nil {
+		return types.BypassFilePath{}, err
+	}
+
+	return types.BypassFilePath{
+		Path: filePath,
+		Info: types.FileInfo{
+			Hash:        fileHash,
+			Size:        stat.Size(),
+			Description: filePath,
+		},
+	}, nil
 }

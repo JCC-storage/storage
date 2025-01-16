@@ -9,15 +9,15 @@
         "level": "debug"
     },
     "db": {
-        "address": "106.75.6.194:3306",
-        "account": "root",
-        "password": "cloudream123456",
+        "address": "127.0.0.1:3306",
+        "account": "",
+        "password": "",
         "databaseName": "cloudream"
     },
     "rabbitMQ": {
-        "address": "106.75.6.194:5672",
-        "account": "cloudream",
-        "password": "cloudream123456",
+        "address": "127.0.0.1:5672",
+        "account": "",
+        "password": "",
         "vhost": "/",
         "param": {
             "retryNum": 5,
@@ -25,7 +25,7 @@
         }
     },
     "distlock": {
-        "etcdAddress": "106.75.6.194:2379",
+        "etcdAddress": "127.0.0.1:2379",
         "etcdUsername": "",
         "etcdPassword": "",
         "etcdLockLeaseTimeSec": 5,

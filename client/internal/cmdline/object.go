@@ -33,7 +33,7 @@ var _ = MustAddCmd(func(ctx CommandContext, packageID cdssdk.PackageID, rootPath
 		storageAff = storageAffinity[0]
 	}
 
-	up, err := ctx.Cmdline.Svc.Uploader.BeginUpdate(userID, packageID, storageAff)
+	up, err := ctx.Cmdline.Svc.Uploader.BeginUpdate(userID, packageID, storageAff, nil, nil)
 	if err != nil {
 		return fmt.Errorf("begin updating package: %w", err)
 	}

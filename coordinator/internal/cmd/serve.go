@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	stgmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq"
-
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
@@ -32,7 +30,7 @@ func serve(configPath string) {
 		logger.Fatalf("new db2 failed, err: %s", err.Error())
 	}
 
-	coorSvr, err := coormq.NewServer(mymq.NewService(db2), &config.Cfg().RabbitMQ)
+	coorSvr, err := coormq.NewServer(mymq.NewService(db2), config.Cfg().RabbitMQ)
 	if err != nil {
 		logger.Fatalf("new coordinator server failed, err: %s", err.Error())
 	}
@@ -48,7 +46,7 @@ func serve(configPath string) {
 	<-forever
 }
 
-func serveCoorServer(server *coormq.Server, cfg stgmq.Config) {
+func serveCoorServer(server *coormq.Server, cfg mq.Config) {
 	logger.Info("start serving command server")
 
 	ch := server.Start(cfg)

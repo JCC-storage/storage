@@ -2,11 +2,8 @@ package local
 
 import (
 	"fmt"
-	"path/filepath"
-	"reflect"
 
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/common/utils/reflect2"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/factory/reg"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
@@ -14,70 +11,79 @@ import (
 )
 
 func init() {
-	reg.RegisterBuilder[*cdssdk.LocalStorageType](createService, createComponent)
+	reg.RegisterBuilder[*cdssdk.LocalStorageType](func(detail stgmod.StorageDetail) types.StorageBuilder {
+		return &builder{
+			detail: detail,
+		}
+	})
 }
 
-func createService(detail stgmod.StorageDetail) (types.StorageService, error) {
-	svc := &Service{
-		Detail: detail,
+type builder struct {
+	detail stgmod.StorageDetail
+}
+
+func (b *builder) CreateAgent() (types.StorageAgent, error) {
+	agt := &agent{
+		Detail: b.detail,
 	}
 
-	if detail.Storage.ShardStore != nil {
-		local, ok := detail.Storage.ShardStore.(*cdssdk.LocalShardStorage)
+	if b.detail.Storage.ShardStore != nil {
+		local, ok := b.detail.Storage.ShardStore.(*cdssdk.LocalShardStorage)
 		if !ok {
-			return nil, fmt.Errorf("invalid shard store type %T for local storage", detail.Storage.ShardStore)
+			return nil, fmt.Errorf("invalid shard store type %T for local storage", b.detail.Storage.ShardStore)
 		}
 
-		store, err := NewShardStore(svc, *local)
+		store, err := NewShardStore(agt, *local)
 		if err != nil {
 			return nil, err
 		}
 
-		svc.ShardStore = store
+		agt.ShardStore = store
 	}
 
-	if detail.Storage.SharedStore != nil {
-		local, ok := detail.Storage.SharedStore.(*cdssdk.LocalSharedStorage)
+	if b.detail.Storage.SharedStore != nil {
+		local, ok := b.detail.Storage.SharedStore.(*cdssdk.LocalSharedStorage)
 		if !ok {
-			return nil, fmt.Errorf("invalid shared store type %T for local storage", detail.Storage.SharedStore)
+			return nil, fmt.Errorf("invalid shared store type %T for local storage", b.detail.Storage.SharedStore)
 		}
 
-		store, err := NewSharedStore(svc, *local)
+		store, err := NewSharedStore(agt, *local)
 		if err != nil {
 			return nil, err
 		}
 
-		svc.SharedStore = store
+		agt.SharedStore = store
 	}
 
-	return svc, nil
+	return agt, nil
 }
 
-func createComponent(detail stgmod.StorageDetail, typ reflect.Type) (any, error) {
-	switch typ {
-	case reflect2.TypeOf[types.MultipartInitiator]():
-		feat := utils.FindFeature[*cdssdk.MultipartUploadFeature](detail)
-		if feat == nil {
-			return nil, fmt.Errorf("feature %T not found", cdssdk.MultipartUploadFeature{})
-		}
+func (b *builder) ShardStoreDesc() types.ShardStoreDesc {
+	return &ShardStoreDesc{builder: b}
+}
 
-		absTempDir, err := filepath.Abs(feat.TempDir)
-		if err != nil {
-			return nil, fmt.Errorf("get abs temp dir %v: %v", feat.TempDir, err)
-		}
+func (b *builder) SharedStoreDesc() types.SharedStoreDesc {
+	return &SharedStoreDesc{builder: b}
+}
 
-		return &MultipartInitiator{
-			absTempDir: absTempDir,
-		}, nil
-
-	case reflect2.TypeOf[types.MultipartUploader]():
-		feat := utils.FindFeature[*cdssdk.MultipartUploadFeature](detail)
-		if feat == nil {
-			return nil, fmt.Errorf("feature %T not found", cdssdk.MultipartUploadFeature{})
-		}
-
-		return &MultipartUploader{}, nil
+func (b *builder) CreateMultiparter() (types.Multiparter, error) {
+	feat := utils.FindFeature[*cdssdk.MultipartUploadFeature](b.detail)
+	if feat == nil {
+		return nil, fmt.Errorf("feature %T not found", cdssdk.MultipartUploadFeature{})
 	}
 
-	return nil, fmt.Errorf("unsupported component type %v", typ)
+	return &Multiparter{
+		feat: feat,
+	}, nil
+}
+
+func (b *builder) CreateS2STransfer() (types.S2STransfer, error) {
+	feat := utils.FindFeature[*cdssdk.S2STransferFeature](b.detail)
+	if feat == nil {
+		return nil, fmt.Errorf("feature %T not found", cdssdk.S2STransferFeature{})
+	}
+
+	return &S2STransfer{
+		detail: b.detail,
+	}, nil
 }

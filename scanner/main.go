@@ -10,7 +10,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
 	agtrpc "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
 	scmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/scanner"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/agtpool"
 	"gitlink.org.cn/cloudream/storage/scanner/internal/config"
 	"gitlink.org.cn/cloudream/storage/scanner/internal/event"
 	"gitlink.org.cn/cloudream/storage/scanner/internal/mq"
@@ -35,7 +35,7 @@ func main() {
 		logger.Fatalf("new db failed, err: %s", err.Error())
 	}
 
-	stgglb.InitMQPool(&config.Cfg().RabbitMQ)
+	stgglb.InitMQPool(config.Cfg().RabbitMQ)
 
 	stgglb.InitAgentRPCPool(&agtrpc.PoolConfig{})
 
@@ -48,13 +48,13 @@ func main() {
 	go serveDistLock(distlockSvc)
 
 	// 启动存储服务管理器
-	stgMgr := svcmgr.NewManager()
+	stgAgts := agtpool.NewPool()
 
 	// 启动事件执行器
-	eventExecutor := event.NewExecutor(db, distlockSvc, stgMgr)
+	eventExecutor := event.NewExecutor(db, distlockSvc, stgAgts)
 	go serveEventExecutor(&eventExecutor)
 
-	agtSvr, err := scmq.NewServer(mq.NewService(&eventExecutor), &config.Cfg().RabbitMQ)
+	agtSvr, err := scmq.NewServer(mq.NewService(&eventExecutor), config.Cfg().RabbitMQ)
 	if err != nil {
 		logger.Fatalf("new agent server failed, err: %s", err.Error())
 	}
@@ -141,13 +141,7 @@ func startTickEvent(tickExecutor *tickevent.Executor) {
 
 	tickExecutor.Start(tickevent.NewBatchAllAgentCheckShardStore(), interval, tickevent.StartOption{RandomStartDelayMs: 60 * 1000})
 
-	tickExecutor.Start(tickevent.NewBatchCheckAllPackage(), interval, tickevent.StartOption{RandomStartDelayMs: 60 * 1000})
-
 	tickExecutor.Start(tickevent.NewStorageGC(), interval, tickevent.StartOption{RandomStartDelayMs: 60 * 1000})
-
-	// tickExecutor.Start(tickevent.NewBatchCheckAllRepCount(), interval, tickevent.StartOption{RandomStartDelayMs: 60 * 1000})
-
-	tickExecutor.Start(tickevent.NewBatchCheckAllStorage(), interval, tickevent.StartOption{RandomStartDelayMs: 60 * 1000})
 
 	tickExecutor.Start(tickevent.NewCheckAgentState(), 5*60*1000, tickevent.StartOption{RandomStartDelayMs: 60 * 1000})
 

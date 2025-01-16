@@ -18,8 +18,10 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader/strategy"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/metacache"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/agtpool"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/uploader"
 )
 
@@ -37,7 +39,7 @@ func main() {
 	}
 
 	stgglb.InitLocal(&config.Cfg().Local)
-	stgglb.InitMQPool(&config.Cfg().RabbitMQ)
+	stgglb.InitMQPool(config.Cfg().RabbitMQ)
 	stgglb.InitAgentRPCPool(&config.Cfg().AgentGRPC)
 
 	// 连接性信息收集
@@ -57,13 +59,13 @@ func main() {
 		consMap := make(map[cdssdk.HubID]connectivity.Connectivity)
 		for _, con := range getCons.Connectivities {
 			var delay *time.Duration
-			if con.Delay != nil {
-				d := time.Duration(*con.Delay * float32(time.Millisecond))
+			if con.Latency != nil {
+				d := time.Duration(*con.Latency * float32(time.Millisecond))
 				delay = &d
 			}
 			consMap[con.FromHubID] = connectivity.Connectivity{
 				ToHubID: con.ToHubID,
-				Delay:   delay,
+				Latency: delay,
 			}
 		}
 		conCol = connectivity.NewCollectorWithInitData(&config.Cfg().Connectivity, nil, consMap)
@@ -74,6 +76,12 @@ func main() {
 		conCol = connectivity.NewCollector(&config.Cfg().Connectivity, nil)
 		conCol.CollectInPlace()
 	}
+
+	metaCacheHost := metacache.NewHost()
+	go metaCacheHost.Serve()
+	stgMeta := metaCacheHost.AddStorageMeta()
+	hubMeta := metaCacheHost.AddHubMeta()
+	conMeta := metaCacheHost.AddConnectivity()
 
 	// 分布式锁
 	distlockSvc, err := distlock.NewService(&config.Cfg().DistLock)
@@ -91,18 +99,20 @@ func main() {
 	go serveAccessStat(acStat)
 
 	// 存储管理器
-	stgMgr := svcmgr.NewManager()
+	stgAgts := agtpool.NewPool()
 
 	// 任务管理器
-	taskMgr := task.NewManager(distlockSvc, &conCol, stgMgr)
+	taskMgr := task.NewManager(distlockSvc, &conCol, stgAgts)
+
+	strgSel := strategy.NewSelector(config.Cfg().DownloadStrategy, stgMeta, hubMeta, conMeta)
 
 	// 下载器
-	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol, stgMgr)
+	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol, stgAgts, strgSel)
 
 	// 上传器
-	uploader := uploader.NewUploader(distlockSvc, &conCol, stgMgr)
+	uploader := uploader.NewUploader(distlockSvc, &conCol, stgAgts, stgMeta)
 
-	svc, err := services.NewService(distlockSvc, &taskMgr, &dlder, acStat, uploader)
+	svc, err := services.NewService(distlockSvc, &taskMgr, &dlder, acStat, uploader, strgSel, stgMeta)
 	if err != nil {
 		logger.Warnf("new services failed, err: %s", err.Error())
 		os.Exit(1)

@@ -3,6 +3,7 @@ package cmdline
 import (
 	"fmt"
 
+	"gitlink.org.cn/cloudream/storage/client/internal/config"
 	"gitlink.org.cn/cloudream/storage/client/internal/http"
 )
 
@@ -17,8 +18,13 @@ func ServeHTTP(ctx CommandContext, args []string) error {
 		listenAddr = args[0]
 	}
 
+	awsAuth, err := http.NewAWSAuth(config.Cfg().AuthAccessKey, config.Cfg().AuthSecretKey)
+	if err != nil {
+		return fmt.Errorf("new aws auth: %w", err)
+	}
+
 	// 创建一个新的HTTP服务器实例。
-	httpSvr, err := http.NewServer(listenAddr, ctx.Cmdline.Svc)
+	httpSvr, err := http.NewServer(listenAddr, ctx.Cmdline.Svc, awsAuth)
 	if err != nil {
 		return fmt.Errorf("new http server: %w", err)
 	}

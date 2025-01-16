@@ -12,7 +12,7 @@ import (
 )
 
 func (svc *Service) CheckCache(msg *agtmq.CheckCache) (*agtmq.CheckCacheResp, *mq.CodeMessage) {
-	store, err := svc.stgMgr.GetShardStore(msg.StorageID)
+	store, err := svc.stgAgts.GetShardStore(msg.StorageID)
 	if err != nil {
 		return nil, mq.Failed(errorcode.OperationFailed, fmt.Sprintf("get shard store of storage %v: %v", msg.StorageID, err))
 	}
@@ -31,7 +31,7 @@ func (svc *Service) CheckCache(msg *agtmq.CheckCache) (*agtmq.CheckCacheResp, *m
 }
 
 func (svc *Service) CacheGC(msg *agtmq.CacheGC) (*agtmq.CacheGCResp, *mq.CodeMessage) {
-	store, err := svc.stgMgr.GetShardStore(msg.StorageID)
+	store, err := svc.stgAgts.GetShardStore(msg.StorageID)
 	if err != nil {
 		return nil, mq.Failed(errorcode.OperationFailed, fmt.Sprintf("get shard store of storage %v: %v", msg.StorageID, err))
 	}

@@ -13,7 +13,7 @@ import (
 
 type Connectivity struct {
 	ToHubID  cdssdk.HubID
-	Delay    *time.Duration
+	Latency  *time.Duration
 	TestTime time.Time
 }
 
@@ -52,17 +52,6 @@ func NewCollectorWithInitData(cfg *Config, onCollected func(collector *Collector
 	return rpt
 }
 
-func (r *Collector) Get(hubID cdssdk.HubID) *Connectivity {
-	r.lock.RLock()
-	defer r.lock.RUnlock()
-
-	con, ok := r.connectivities[hubID]
-	if ok {
-		return &con
-	}
-
-	return nil
-}
 func (r *Collector) GetAll() map[cdssdk.HubID]Connectivity {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
@@ -101,8 +90,8 @@ func (r *Collector) serve() {
 
 	// 为了防止同时启动的节点会集中进行Ping，所以第一次上报间隔为0-TestInterval秒之间随机
 	startup := true
-	firstReportDelay := time.Duration(float64(r.cfg.TestInterval) * float64(time.Second) * rand.Float64())
-	ticker := time.NewTicker(firstReportDelay)
+	firstReportLatency := time.Duration(float64(r.cfg.TestInterval) * float64(time.Second) * rand.Float64())
+	ticker := time.NewTicker(firstReportLatency)
 
 loop:
 	for {
@@ -150,7 +139,7 @@ func (r *Collector) testing() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			cons[tmpIdx] = r.ping(tmpHub)
+			cons[tmpIdx] = r.ping(*tmpHub)
 		}()
 	}
 
@@ -190,7 +179,7 @@ func (r *Collector) ping(hub cdssdk.Hub) Connectivity {
 
 		return Connectivity{
 			ToHubID:  hub.HubID,
-			Delay:    nil,
+			Latency:  nil,
 			TestTime: time.Now(),
 		}
 	}
@@ -200,7 +189,7 @@ func (r *Collector) ping(hub cdssdk.Hub) Connectivity {
 		log.Warnf("new agent %v:%v rpc client: %w", ip, port, err)
 		return Connectivity{
 			ToHubID:  hub.HubID,
-			Delay:    nil,
+			Latency:  nil,
 			TestTime: time.Now(),
 		}
 	}
@@ -212,13 +201,13 @@ func (r *Collector) ping(hub cdssdk.Hub) Connectivity {
 		log.Warnf("pre ping: %v", err)
 		return Connectivity{
 			ToHubID:  hub.HubID,
-			Delay:    nil,
+			Latency:  nil,
 			TestTime: time.Now(),
 		}
 	}
 
 	// 后几次ping计算延迟
-	var avgDelay time.Duration
+	var avgLatency time.Duration
 	for i := 0; i < 3; i++ {
 		start := time.Now()
 		err = agtCli.Ping()
@@ -226,22 +215,22 @@ func (r *Collector) ping(hub cdssdk.Hub) Connectivity {
 			log.Warnf("ping: %v", err)
 			return Connectivity{
 				ToHubID:  hub.HubID,
-				Delay:    nil,
+				Latency:  nil,
 				TestTime: time.Now(),
 			}
 		}
 
-		delay := time.Since(start)
-		avgDelay += delay
+		latency := time.Since(start)
+		avgLatency += latency
 
 		// 每次ping之间间隔1秒
 		<-time.After(time.Second)
 	}
-	delay := avgDelay / 3
+	latency := avgLatency / 3
 
 	return Connectivity{
 		ToHubID:  hub.HubID,
-		Delay:    &delay,
+		Latency:  &latency,
 		TestTime: time.Now(),
 	}
 }

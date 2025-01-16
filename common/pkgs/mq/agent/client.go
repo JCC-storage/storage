@@ -13,8 +13,8 @@ type Client struct {
 	id        cdssdk.HubID
 }
 
-func NewClient(id cdssdk.HubID, cfg *stgmq.Config) (*Client, error) {
-	rabbitCli, err := mq.NewRabbitMQTransport(cfg.MakeConnectingURL(), stgmq.MakeAgentQueueName(int64(id)), "")
+func NewClient(id cdssdk.HubID, cfg mq.Config) (*Client, error) {
+	rabbitCli, err := mq.NewRabbitMQTransport(cfg, stgmq.MakeAgentQueueName(int64(id)), "")
 	if err != nil {
 		return nil, err
 	}
@@ -35,12 +35,12 @@ type Pool interface {
 }
 
 type pool struct {
-	mqcfg   *stgmq.Config
+	mqcfg   mq.Config
 	shareds map[cdssdk.HubID]*Client
 	lock    sync.Mutex
 }
 
-func NewPool(mqcfg *stgmq.Config) Pool {
+func NewPool(mqcfg mq.Config) Pool {
 	return &pool{
 		mqcfg:   mqcfg,
 		shareds: make(map[cdssdk.HubID]*Client),

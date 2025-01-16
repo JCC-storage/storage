@@ -15,18 +15,17 @@ type Server struct {
 	rabbitSvr mq.RabbitMQServer
 }
 
-func NewServer(svc Service, cfg *mymq.Config) (*Server, error) {
+func NewServer(svc Service, cfg mq.Config) (*Server, error) {
 	srv := &Server{
 		service: svc,
 	}
 
 	rabbitSvr, err := mq.NewRabbitMQServer(
-		cfg.MakeConnectingURL(),
+		cfg,
 		mymq.SCANNER_QUEUE_NAME,
 		func(msg *mq.Message) (*mq.Message, error) {
 			return msgDispatcher.Handle(srv.service, msg)
 		},
-		cfg.Param,
 	)
 	if err != nil {
 		return nil, err

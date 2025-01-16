@@ -19,8 +19,10 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader/strategy"
 	agtrpc "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/metacache"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/agtpool"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/uploader"
 
 	"google.golang.org/grpc"
@@ -46,16 +48,16 @@ func serve(configPath string) {
 	}
 
 	stgglb.InitLocal(&config.Cfg().Local)
-	stgglb.InitMQPool(&config.Cfg().RabbitMQ)
+	stgglb.InitMQPool(config.Cfg().RabbitMQ)
 	stgglb.InitAgentRPCPool(&agtrpc.PoolConfig{})
 
 	// 获取Hub配置
 	hubCfg := downloadHubConfig()
 
 	// 初始化存储服务管理器
-	stgMgr := svcmgr.NewManager()
+	stgAgts := agtpool.NewPool()
 	for _, stg := range hubCfg.Storages {
-		err := stgMgr.CreateService(stg)
+		err := stgAgts.SetupAgent(stg)
 		if err != nil {
 			fmt.Printf("init storage %v: %v", stg.Storage.String(), err)
 			os.Exit(1)
@@ -66,7 +68,7 @@ func serve(configPath string) {
 	worker := exec.NewWorker()
 
 	// 初始化HTTP服务
-	httpSvr, err := http.NewServer(config.Cfg().ListenAddr, http.NewService(&worker, stgMgr))
+	httpSvr, err := http.NewServer(config.Cfg().ListenAddr, http.NewService(&worker, stgAgts))
 	if err != nil {
 		logger.Fatalf("new http server failed, err: %s", err.Error())
 	}
@@ -87,15 +89,15 @@ func serve(configPath string) {
 		hubCons := make([]cdssdk.HubConnectivity, 0, len(cons))
 		for _, con := range cons {
 			var delay *float32
-			if con.Delay != nil {
-				v := float32(con.Delay.Microseconds()) / 1000
+			if con.Latency != nil {
+				v := float32(con.Latency.Microseconds()) / 1000
 				delay = &v
 			}
 
 			hubCons = append(hubCons, cdssdk.HubConnectivity{
 				FromHubID: *stgglb.Local.HubID,
 				ToHubID:   con.ToHubID,
-				Delay:     delay,
+				Latency:   delay,
 				TestTime:  con.TestTime,
 			})
 		}
@@ -106,6 +108,13 @@ func serve(configPath string) {
 		}
 	})
 	conCol.CollectInPlace()
+
+	// 初始化元数据缓存服务
+	metacacheHost := metacache.NewHost()
+	go metacacheHost.Serve()
+	stgMeta := metacacheHost.AddStorageMeta()
+	hubMeta := metacacheHost.AddHubMeta()
+	conMeta := metacacheHost.AddConnectivity()
 
 	// 启动访问统计服务
 	acStat := accessstat.NewAccessStat(accessstat.Config{
@@ -120,18 +129,21 @@ func serve(configPath string) {
 		logger.Fatalf("new ipfs failed, err: %s", err.Error())
 	}
 
+	// 初始化下载策略选择器
+	strgSel := strategy.NewSelector(config.Cfg().DownloadStrategy, stgMeta, hubMeta, conMeta)
+
 	// 初始化下载器
-	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol, stgMgr)
+	dlder := downloader.NewDownloader(config.Cfg().Downloader, &conCol, stgAgts, strgSel)
 
 	// 初始化上传器
-	uploader := uploader.NewUploader(distlock, &conCol, stgMgr)
+	uploader := uploader.NewUploader(distlock, &conCol, stgAgts, stgMeta)
 
 	// 初始化任务管理器
-	taskMgr := task.NewManager(distlock, &conCol, &dlder, acStat, stgMgr, uploader)
+	taskMgr := task.NewManager(distlock, &conCol, &dlder, acStat, stgAgts, uploader)
 
 	// 启动命令服务器
 	// TODO 需要设计AgentID持久化机制
-	agtSvr, err := agtmq.NewServer(cmdsvc.NewService(&taskMgr, stgMgr), config.Cfg().ID, &config.Cfg().RabbitMQ)
+	agtSvr, err := agtmq.NewServer(cmdsvc.NewService(&taskMgr, stgAgts), config.Cfg().ID, config.Cfg().RabbitMQ)
 	if err != nil {
 		logger.Fatalf("new agent server failed, err: %s", err.Error())
 	}
@@ -147,7 +159,7 @@ func serve(configPath string) {
 		logger.Fatalf("listen on %s failed, err: %s", listenAddr, err.Error())
 	}
 	s := grpc.NewServer()
-	agtrpc.RegisterAgentServer(s, grpcsvc.NewService(&worker, stgMgr))
+	agtrpc.RegisterAgentServer(s, grpcsvc.NewService(&worker, stgAgts))
 	go serveGRPC(s, lis)
 
 	go serveDistLock(distlock)

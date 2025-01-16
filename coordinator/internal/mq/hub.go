@@ -57,27 +57,39 @@ func (svc *Service) GetUserHubs(msg *coormq.GetUserHubs) (*coormq.GetUserHubsRes
 }
 
 func (svc *Service) GetHubs(msg *coormq.GetHubs) (*coormq.GetHubsResp, *mq.CodeMessage) {
-	var hubs []cdssdk.Hub
+	var hubs []*cdssdk.Hub
 
 	if msg.HubIDs == nil {
-		var err error
-		hubs, err = svc.db2.Hub().GetAllHubs(svc.db2.DefCtx())
+		get, err := svc.db2.Hub().GetAllHubs(svc.db2.DefCtx())
 		if err != nil {
 			logger.Warnf("getting all hubs: %s", err.Error())
 			return nil, mq.Failed(errorcode.OperationFailed, "get all hub failed")
 		}
+		for _, hub := range get {
+			h := hub
+			hubs = append(hubs, &h)
+		}
 
 	} else {
 		// 可以不用事务
-		for _, id := range msg.HubIDs {
-			hub, err := svc.db2.Hub().GetByID(svc.db2.DefCtx(), id)
-			if err != nil {
-				logger.WithField("HubID", id).
-					Warnf("query hub failed, err: %s", err.Error())
-				return nil, mq.Failed(errorcode.OperationFailed, "query hub failed")
-			}
+		get, err := svc.db2.Hub().BatchGetByID(svc.db2.DefCtx(), msg.HubIDs)
+		if err != nil {
+			logger.Warnf("batch get hubs by id: %s", err.Error())
+			return nil, mq.Failed(errorcode.OperationFailed, fmt.Sprintf("batch get hubs by id: %v", err))
+		}
 
-			hubs = append(hubs, hub)
+		getMp := make(map[cdssdk.HubID]cdssdk.Hub)
+		for _, hub := range get {
+			getMp[hub.HubID] = hub
+		}
+
+		for _, id := range msg.HubIDs {
+			if hub, ok := getMp[id]; ok {
+				h := hub
+				hubs = append(hubs, &h)
+			} else {
+				hubs = append(hubs, nil)
+			}
 		}
 	}
 

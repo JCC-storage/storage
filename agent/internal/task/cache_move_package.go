@@ -39,7 +39,7 @@ func (t *CacheMovePackage) do(ctx TaskContext) error {
 	log.Debugf("begin with %v", logger.FormatStruct(t))
 	defer log.Debugf("end")
 
-	store, err := ctx.stgMgr.GetShardStore(t.storageID)
+	store, err := ctx.stgAgts.GetShardStore(t.storageID)
 	if err != nil {
 		return fmt.Errorf("get shard store of storage %v: %w", t.storageID, err)
 	}

@@ -10,8 +10,9 @@ import (
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader/strategy"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/agtpool"
 )
 
 const (
@@ -38,23 +39,25 @@ type Downloading struct {
 }
 
 type Downloader struct {
-	strips *StripCache
-	cfg    Config
-	conn   *connectivity.Collector
-	stgMgr *svcmgr.Manager
+	strips   *StripCache
+	cfg      Config
+	conn     *connectivity.Collector
+	stgAgts  *agtpool.AgentPool
+	selector *strategy.Selector
 }
 
-func NewDownloader(cfg Config, conn *connectivity.Collector, stgMgr *svcmgr.Manager) Downloader {
+func NewDownloader(cfg Config, conn *connectivity.Collector, stgAgts *agtpool.AgentPool, sel *strategy.Selector) Downloader {
 	if cfg.MaxStripCacheCount == 0 {
 		cfg.MaxStripCacheCount = DefaultMaxStripCacheCount
 	}
 
 	ch, _ := lru.New[ECStripKey, ObjectECStrip](cfg.MaxStripCacheCount)
 	return Downloader{
-		strips: ch,
-		cfg:    cfg,
-		conn:   conn,
-		stgMgr: stgMgr,
+		strips:   ch,
+		cfg:      cfg,
+		conn:     conn,
+		stgAgts:  stgAgts,
+		selector: sel,
 	}
 }
 

@@ -4,28 +4,21 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"math"
 	"reflect"
-	"time"
 
-	"github.com/samber/lo"
-
-	"gitlink.org.cn/cloudream/common/pkgs/bitmap"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 
 	"gitlink.org.cn/cloudream/common/utils/io2"
 	"gitlink.org.cn/cloudream/common/utils/math2"
-	"gitlink.org.cn/cloudream/common/utils/sort2"
-	"gitlink.org.cn/cloudream/storage/common/consts"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader/strategy"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/parser"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/iterator"
-	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
 type downloadStorageInfo struct {
@@ -39,15 +32,10 @@ type DownloadContext struct {
 	Distlock *distlock.Service
 }
 type DownloadObjectIterator struct {
-	OnClosing func()
-
+	OnClosing    func()
 	downloader   *Downloader
 	reqs         []downloadReqeust2
 	currentIndex int
-	inited       bool
-
-	coorCli     *coormq.Client
-	allStorages map[cdssdk.StorageID]stgmod.StorageDetail
 }
 
 func NewDownloadObjectIterator(downloader *Downloader, downloadObjs []downloadReqeust2) *DownloadObjectIterator {
@@ -58,68 +46,11 @@ func NewDownloadObjectIterator(downloader *Downloader, downloadObjs []downloadRe
 }
 
 func (i *DownloadObjectIterator) MoveNext() (*Downloading, error) {
-	if !i.inited {
-		if err := i.init(); err != nil {
-			return nil, err
-		}
-
-		i.inited = true
-	}
-
 	if i.currentIndex >= len(i.reqs) {
 		return nil, iterator.ErrNoMoreItem
 	}
 
-	item, err := i.doMove()
-	i.currentIndex++
-	return item, err
-}
-
-func (i *DownloadObjectIterator) init() error {
-	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
-	if err != nil {
-		return fmt.Errorf("new coordinator client: %w", err)
-	}
-	i.coorCli = coorCli
-
-	allStgIDsMp := make(map[cdssdk.StorageID]bool)
-	for _, obj := range i.reqs {
-		if obj.Detail == nil {
-			continue
-		}
-
-		for _, p := range obj.Detail.PinnedAt {
-			allStgIDsMp[p] = true
-		}
-
-		for _, b := range obj.Detail.Blocks {
-			allStgIDsMp[b.StorageID] = true
-		}
-	}
-
-	stgIDs := lo.Keys(allStgIDsMp)
-	getStgs, err := coorCli.GetStorageDetails(coormq.ReqGetStorageDetails(stgIDs))
-	if err != nil {
-		return fmt.Errorf("getting storage details: %w", err)
-	}
-
-	i.allStorages = make(map[cdssdk.StorageID]stgmod.StorageDetail)
-	for idx, s := range getStgs.Storages {
-		if s == nil {
-			return fmt.Errorf("storage %v not found", stgIDs[idx])
-		}
-		if s.Storage.ShardStore == nil {
-			return fmt.Errorf("storage %v has no shard store", stgIDs[idx])
-		}
-
-		i.allStorages[s.Storage.StorageID] = *s
-	}
-
-	return nil
-}
-
-func (iter *DownloadObjectIterator) doMove() (*Downloading, error) {
-	req := iter.reqs[iter.currentIndex]
+	req := i.reqs[i.currentIndex]
 	if req.Detail == nil {
 		return &Downloading{
 			Object:  nil,
@@ -128,57 +59,51 @@ func (iter *DownloadObjectIterator) doMove() (*Downloading, error) {
 		}, nil
 	}
 
-	switch red := req.Detail.Object.Redundancy.(type) {
-	case *cdssdk.NoneRedundancy:
-		reader, err := iter.downloadNoneOrRepObject(req)
+	destHub := cdssdk.HubID(0)
+	if stgglb.Local.HubID != nil {
+		destHub = *stgglb.Local.HubID
+	}
+
+	strg, err := i.downloader.selector.Select(strategy.Request{
+		Detail:       *req.Detail,
+		Range:        math2.NewRange(req.Raw.Offset, req.Raw.Length),
+		DestHub:      destHub,
+		DestLocation: stgglb.Local.LocationID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("selecting download strategy: %w", err)
+	}
+
+	var reader io.ReadCloser
+	switch strg := strg.(type) {
+	case *strategy.DirectStrategy:
+		reader, err = i.downloadDirect(req, *strg)
 		if err != nil {
 			return nil, fmt.Errorf("downloading object %v: %w", req.Raw.ObjectID, err)
 		}
 
-		return &Downloading{
-			Object:  &req.Detail.Object,
-			File:    reader,
-			Request: req.Raw,
-		}, nil
-
-	case *cdssdk.RepRedundancy:
-		reader, err := iter.downloadNoneOrRepObject(req)
-		if err != nil {
-			return nil, fmt.Errorf("downloading rep object %v: %w", req.Raw.ObjectID, err)
-		}
-
-		return &Downloading{
-			Object:  &req.Detail.Object,
-			File:    reader,
-			Request: req.Raw,
-		}, nil
-
-	case *cdssdk.ECRedundancy:
-		reader, err := iter.downloadECObject(req, red)
+	case *strategy.ECReconstructStrategy:
+		reader, err = i.downloadECReconstruct(req, *strg)
 		if err != nil {
 			return nil, fmt.Errorf("downloading ec object %v: %w", req.Raw.ObjectID, err)
 		}
 
-		return &Downloading{
-			Object:  &req.Detail.Object,
-			File:    reader,
-			Request: req.Raw,
-		}, nil
-
-	case *cdssdk.LRCRedundancy:
-		reader, err := iter.downloadLRCObject(req, red)
+	case *strategy.LRCReconstructStrategy:
+		reader, err = i.downloadLRCReconstruct(req, *strg)
 		if err != nil {
 			return nil, fmt.Errorf("downloading lrc object %v: %w", req.Raw.ObjectID, err)
 		}
 
-		return &Downloading{
-			Object:  &req.Detail.Object,
-			File:    reader,
-			Request: req.Raw,
-		}, nil
+	default:
+		return nil, fmt.Errorf("unsupported strategy type: %v", reflect.TypeOf(strg))
 	}
 
-	return nil, fmt.Errorf("unsupported redundancy type: %v of object %v", reflect.TypeOf(req.Detail.Object.Redundancy), req.Raw.ObjectID)
+	i.currentIndex++
+	return &Downloading{
+		Object:  &req.Detail.Object,
+		File:    reader,
+		Request: req.Raw,
+	}, nil
 }
 
 func (i *DownloadObjectIterator) Close() {
@@ -187,208 +112,14 @@ func (i *DownloadObjectIterator) Close() {
 	}
 }
 
-func (iter *DownloadObjectIterator) downloadNoneOrRepObject(obj downloadReqeust2) (io.ReadCloser, error) {
-	allStgs, err := iter.sortDownloadStorages(obj)
-	if err != nil {
-		return nil, err
-	}
+func (i *DownloadObjectIterator) downloadDirect(req downloadReqeust2, strg strategy.DirectStrategy) (io.ReadCloser, error) {
+	logger.Debugf("downloading object %v from storage %v", req.Raw.ObjectID, strg.Storage.Storage.String())
 
-	bsc, blocks := iter.getMinReadingBlockSolution(allStgs, 1)
-	osc, stg := iter.getMinReadingObjectSolution(allStgs, 1)
-	if bsc < osc {
-		logger.Debugf("downloading object %v from storage %v", obj.Raw.ObjectID, blocks[0].Storage.Storage.String())
-		return iter.downloadFromStorage(&blocks[0].Storage, obj)
-	}
-
-	if osc == math.MaxFloat64 {
-		// bsc >= osc，如果osc是MaxFloat64，那么bsc也一定是，也就意味着没有足够块来恢复文件
-		return nil, fmt.Errorf("no storage has this object")
-	}
-
-	logger.Debugf("downloading object %v from storage %v", obj.Raw.ObjectID, stg.Storage.String())
-	return iter.downloadFromStorage(stg, obj)
-}
-
-func (iter *DownloadObjectIterator) downloadECObject(req downloadReqeust2, ecRed *cdssdk.ECRedundancy) (io.ReadCloser, error) {
-	allStorages, err := iter.sortDownloadStorages(req)
-	if err != nil {
-		return nil, err
-	}
-
-	bsc, blocks := iter.getMinReadingBlockSolution(allStorages, ecRed.K)
-	osc, stg := iter.getMinReadingObjectSolution(allStorages, ecRed.K)
-
-	if bsc < osc {
-		var logStrs []any = []any{fmt.Sprintf("downloading ec object %v from blocks: ", req.Raw.ObjectID)}
-		for i, b := range blocks {
-			if i > 0 {
-				logStrs = append(logStrs, ", ")
-			}
-			logStrs = append(logStrs, fmt.Sprintf("%v@%v", b.Block.Index, b.Storage.Storage.String()))
-		}
-		logger.Debug(logStrs...)
-
-		pr, pw := io.Pipe()
-		go func() {
-			readPos := req.Raw.Offset
-			totalReadLen := req.Detail.Object.Size - req.Raw.Offset
-			if req.Raw.Length >= 0 {
-				totalReadLen = math2.Min(req.Raw.Length, totalReadLen)
-			}
-
-			firstStripIndex := readPos / ecRed.StripSize()
-			stripIter := NewStripIterator(iter.downloader, req.Detail.Object, blocks, ecRed, firstStripIndex, iter.downloader.strips, iter.downloader.cfg.ECStripPrefetchCount)
-			defer stripIter.Close()
-
-			for totalReadLen > 0 {
-				strip, err := stripIter.MoveNext()
-				if err == iterator.ErrNoMoreItem {
-					pw.CloseWithError(io.ErrUnexpectedEOF)
-					return
-				}
-				if err != nil {
-					pw.CloseWithError(err)
-					return
-				}
-
-				readRelativePos := readPos - strip.Position
-				curReadLen := math2.Min(totalReadLen, ecRed.StripSize()-readRelativePos)
-
-				err = io2.WriteAll(pw, strip.Data[readRelativePos:readRelativePos+curReadLen])
-				if err != nil {
-					pw.CloseWithError(err)
-					return
-				}
-
-				totalReadLen -= curReadLen
-				readPos += curReadLen
-			}
-			pw.Close()
-		}()
-
-		return pr, nil
-	}
-
-	// bsc >= osc，如果osc是MaxFloat64，那么bsc也一定是，也就意味着没有足够块来恢复文件
-	if osc == math.MaxFloat64 {
-		return nil, fmt.Errorf("no enough blocks to reconstruct the object %v , want %d, get only %d", req.Raw.ObjectID, ecRed.K, len(blocks))
-	}
-
-	logger.Debugf("downloading ec object %v from storage %v", req.Raw.ObjectID, stg.Storage.String())
-	return iter.downloadFromStorage(stg, req)
-}
-
-func (iter *DownloadObjectIterator) sortDownloadStorages(req downloadReqeust2) ([]*downloadStorageInfo, error) {
-	var stgIDs []cdssdk.StorageID
-	for _, id := range req.Detail.PinnedAt {
-		if !lo.Contains(stgIDs, id) {
-			stgIDs = append(stgIDs, id)
-		}
-	}
-	for _, b := range req.Detail.Blocks {
-		if !lo.Contains(stgIDs, b.StorageID) {
-			stgIDs = append(stgIDs, b.StorageID)
-		}
-	}
-
-	downloadStorageMap := make(map[cdssdk.StorageID]*downloadStorageInfo)
-	for _, id := range req.Detail.PinnedAt {
-		storage, ok := downloadStorageMap[id]
-		if !ok {
-			mod := iter.allStorages[id]
-			storage = &downloadStorageInfo{
-				Storage:      mod,
-				ObjectPinned: true,
-				Distance:     iter.getStorageDistance(mod),
-			}
-			downloadStorageMap[id] = storage
-		}
-
-		storage.ObjectPinned = true
-	}
-
-	for _, b := range req.Detail.Blocks {
-		storage, ok := downloadStorageMap[b.StorageID]
-		if !ok {
-			mod := iter.allStorages[b.StorageID]
-			storage = &downloadStorageInfo{
-				Storage:  mod,
-				Distance: iter.getStorageDistance(mod),
-			}
-			downloadStorageMap[b.StorageID] = storage
-		}
-
-		storage.Blocks = append(storage.Blocks, b)
-	}
-
-	return sort2.Sort(lo.Values(downloadStorageMap), func(left, right *downloadStorageInfo) int {
-		return sort2.Cmp(left.Distance, right.Distance)
-	}), nil
-}
-
-func (iter *DownloadObjectIterator) getMinReadingBlockSolution(sortedStgs []*downloadStorageInfo, k int) (float64, []downloadBlock) {
-	gotBlocksMap := bitmap.Bitmap64(0)
-	var gotBlocks []downloadBlock
-	dist := float64(0.0)
-	for _, n := range sortedStgs {
-		for _, b := range n.Blocks {
-			if !gotBlocksMap.Get(b.Index) {
-				gotBlocks = append(gotBlocks, downloadBlock{
-					Storage: n.Storage,
-					Block:   b,
-				})
-				gotBlocksMap.Set(b.Index, true)
-				dist += n.Distance
-			}
-
-			if len(gotBlocks) >= k {
-				return dist, gotBlocks
-			}
-		}
-	}
-
-	return math.MaxFloat64, gotBlocks
-}
-
-func (iter *DownloadObjectIterator) getMinReadingObjectSolution(sortedStgs []*downloadStorageInfo, k int) (float64, *stgmod.StorageDetail) {
-	dist := math.MaxFloat64
-	var downloadStg *stgmod.StorageDetail
-	for _, n := range sortedStgs {
-		if n.ObjectPinned && float64(k)*n.Distance < dist {
-			dist = float64(k) * n.Distance
-			stg := n.Storage
-			downloadStg = &stg
-		}
-	}
-
-	return dist, downloadStg
-}
-
-func (iter *DownloadObjectIterator) getStorageDistance(stg stgmod.StorageDetail) float64 {
-	if stgglb.Local.HubID != nil {
-		if stg.MasterHub.HubID == *stgglb.Local.HubID {
-			return consts.StorageDistanceSameStorage
-		}
-	}
-
-	if stg.MasterHub.LocationID == stgglb.Local.LocationID {
-		return consts.StorageDistanceSameLocation
-	}
-
-	c := iter.downloader.conn.Get(stg.MasterHub.HubID)
-	if c == nil || c.Delay == nil || *c.Delay > time.Duration(float64(time.Millisecond)*iter.downloader.cfg.HighLatencyHubMs) {
-		return consts.HubDistanceHighLatencyHub
-	}
-
-	return consts.StorageDistanceOther
-}
-
-func (iter *DownloadObjectIterator) downloadFromStorage(stg *stgmod.StorageDetail, req downloadReqeust2) (io.ReadCloser, error) {
 	var strHandle *exec.DriverReadStream
 	ft := ioswitch2.NewFromTo()
 
 	toExec, handle := ioswitch2.NewToDriver(ioswitch2.RawStream())
-	toExec.Range = exec.Range{
+	toExec.Range = math2.Range{
 		Offset: req.Raw.Offset,
 	}
 	if req.Raw.Length != -1 {
@@ -396,7 +127,7 @@ func (iter *DownloadObjectIterator) downloadFromStorage(stg *stgmod.StorageDetai
 		toExec.Range.Length = &len
 	}
 
-	ft.AddFrom(ioswitch2.NewFromShardstore(req.Detail.Object.FileHash, *stg.MasterHub, stg.Storage, ioswitch2.RawStream())).AddTo(toExec)
+	ft.AddFrom(ioswitch2.NewFromShardstore(req.Detail.Object.FileHash, *strg.Storage.MasterHub, strg.Storage, ioswitch2.RawStream())).AddTo(toExec)
 	strHandle = handle
 
 	plans := exec.NewPlanBuilder()
@@ -405,9 +136,69 @@ func (iter *DownloadObjectIterator) downloadFromStorage(stg *stgmod.StorageDetai
 	}
 
 	exeCtx := exec.NewExecContext()
-	exec.SetValueByType(exeCtx, iter.downloader.stgMgr)
+	exec.SetValueByType(exeCtx, i.downloader.stgAgts)
 	exec := plans.Execute(exeCtx)
 	go exec.Wait(context.TODO())
 
 	return exec.BeginRead(strHandle)
+}
+
+func (i *DownloadObjectIterator) downloadECReconstruct(req downloadReqeust2, strg strategy.ECReconstructStrategy) (io.ReadCloser, error) {
+	var logStrs []any = []any{fmt.Sprintf("downloading ec object %v from: ", req.Raw.ObjectID)}
+	for i, b := range strg.Blocks {
+		if i > 0 {
+			logStrs = append(logStrs, ", ")
+		}
+
+		logStrs = append(logStrs, fmt.Sprintf("%v@%v", b.Index, strg.Storages[i].Storage.String()))
+	}
+	logger.Debug(logStrs...)
+
+	downloadBlks := make([]downloadBlock, len(strg.Blocks))
+	for i, b := range strg.Blocks {
+		downloadBlks[i] = downloadBlock{
+			Block:   b,
+			Storage: strg.Storages[i],
+		}
+	}
+
+	pr, pw := io.Pipe()
+	go func() {
+		readPos := req.Raw.Offset
+		totalReadLen := req.Detail.Object.Size - req.Raw.Offset
+		if req.Raw.Length >= 0 {
+			totalReadLen = math2.Min(req.Raw.Length, totalReadLen)
+		}
+
+		firstStripIndex := readPos / strg.Redundancy.StripSize()
+		stripIter := NewStripIterator(i.downloader, req.Detail.Object, downloadBlks, strg.Redundancy, firstStripIndex, i.downloader.strips, i.downloader.cfg.ECStripPrefetchCount)
+		defer stripIter.Close()
+
+		for totalReadLen > 0 {
+			strip, err := stripIter.MoveNext()
+			if err == iterator.ErrNoMoreItem {
+				pw.CloseWithError(io.ErrUnexpectedEOF)
+				return
+			}
+			if err != nil {
+				pw.CloseWithError(err)
+				return
+			}
+
+			readRelativePos := readPos - strip.Position
+			curReadLen := math2.Min(totalReadLen, strg.Redundancy.StripSize()-readRelativePos)
+
+			err = io2.WriteAll(pw, strip.Data[readRelativePos:readRelativePos+curReadLen])
+			if err != nil {
+				pw.CloseWithError(err)
+				return
+			}
+
+			totalReadLen -= curReadLen
+			readPos += curReadLen
+		}
+		pw.Close()
+	}()
+
+	return pr, nil
 }

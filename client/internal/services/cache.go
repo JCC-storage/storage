@@ -9,6 +9,7 @@ import (
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	agtmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/agent"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/factory"
 )
 
 type CacheService struct {
@@ -31,7 +32,7 @@ func (svc *CacheService) StartCacheMovePackage(userID cdssdk.UserID, packageID c
 		return 0, "", fmt.Errorf("get storage detail: %w", err)
 	}
 
-	if getStg.Storages[0].Storage.ShardStore == nil {
+	if !factory.GetBuilder(*getStg.Storages[0]).ShardStoreDesc().Enabled() {
 		return 0, "", fmt.Errorf("shard storage is not enabled")
 	}
 

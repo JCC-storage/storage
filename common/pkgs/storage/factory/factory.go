@@ -1,10 +1,8 @@
 package factory
 
 import (
-	"fmt"
 	"reflect"
 
-	"gitlink.org.cn/cloudream/common/utils/reflect2"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/factory/reg"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
@@ -14,35 +12,15 @@ import (
 	_ "gitlink.org.cn/cloudream/storage/common/pkgs/storage/s3"
 )
 
-func CreateService(detail stgmod.StorageDetail) (types.StorageService, error) {
+// 此函数永远不会返回nil。如果找不到对应的Builder，则会返回EmptyBuilder，
+// 此Builder的所有函数都会返回否定值或者封装后的ErrUnsupported错误（需要使用errors.Is检查）
+func GetBuilder(detail stgmod.StorageDetail) types.StorageBuilder {
 	typ := reflect.TypeOf(detail.Storage.Type)
-	bld, ok := reg.StorageBuilders[typ]
+
+	ctor, ok := reg.StorageBuilders[typ]
 	if !ok {
-		return nil, fmt.Errorf("unsupported storage type: %T", detail.Storage.Type)
+		return &types.EmptyBuilder{}
 	}
 
-	return bld.CreateService(detail)
-}
-
-func CreateComponent[T any](detail stgmod.StorageDetail) (T, error) {
-	typ := reflect.TypeOf(detail.Storage.Type)
-	bld, ok := reg.StorageBuilders[typ]
-	if !ok {
-		var def T
-		return def, fmt.Errorf("unsupported storage type: %T", detail.Storage.Type)
-	}
-
-	comp, err := bld.CreateComponent(detail, reflect2.TypeOf[T]())
-	if err != nil {
-		var def T
-		return def, err
-	}
-
-	c, ok := comp.(T)
-	if !ok {
-		var def T
-		return def, fmt.Errorf("invalid component type: %T", comp)
-	}
-
-	return c, nil
+	return ctor(detail)
 }

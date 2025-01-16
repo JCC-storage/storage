@@ -48,20 +48,22 @@ type MultipartInitiator struct {
 }
 
 func (o *MultipartInitiator) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
-	initiator, err := factory.CreateComponent[types.MultipartInitiator](o.Storage)
+	blder := factory.GetBuilder(o.Storage)
+	multi, err := blder.CreateMultiparter()
 	if err != nil {
 		return err
 	}
-	defer initiator.Abort()
 
-	// 启动一个新的上传任务
-	initState, err := initiator.Initiate(ctx.Context)
+	// 启动一个新的上传任务W
+	multiTask, err := multi.Initiate(ctx.Context)
 	if err != nil {
 		return err
 	}
+	defer multiTask.Abort()
+
 	// 分发上传参数
 	e.PutVar(o.UploadArgs, &MultipartUploadArgsValue{
-		InitState: initState,
+		InitState: multiTask.InitState(),
 	})
 
 	// 收集分片上传结果
@@ -76,7 +78,7 @@ func (o *MultipartInitiator) Execute(ctx *exec.ExecContext, e *exec.Executor) er
 	}
 
 	// 合并分片
-	fileInfo, err := initiator.JoinParts(ctx.Context, partInfos)
+	fileInfo, err := multiTask.JoinParts(ctx.Context, partInfos)
 	if err != nil {
 		return fmt.Errorf("completing multipart upload: %v", err)
 	}
@@ -93,7 +95,7 @@ func (o *MultipartInitiator) Execute(ctx *exec.ExecContext, e *exec.Executor) er
 	}
 
 	if cb.Commited {
-		initiator.Complete()
+		multiTask.Complete()
 	}
 
 	return nil
@@ -113,6 +115,7 @@ type MultipartUpload struct {
 }
 
 func (o *MultipartUpload) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
+	blder := factory.GetBuilder(o.Storage)
 	uploadArgs, err := exec.BindVar[*MultipartUploadArgsValue](e, ctx.Context, o.UploadArgs)
 	if err != nil {
 		return err
@@ -124,13 +127,13 @@ func (o *MultipartUpload) Execute(ctx *exec.ExecContext, e *exec.Executor) error
 	}
 	defer partStr.Stream.Close()
 
-	uploader, err := factory.CreateComponent[types.MultipartUploader](o.Storage)
+	multi, err := blder.CreateMultiparter()
 	if err != nil {
 		return err
 	}
 
 	startTime := time.Now()
-	uploadedInfo, err := uploader.UploadPart(ctx.Context, uploadArgs.InitState, o.PartSize, o.PartNumber, partStr.Stream)
+	uploadedInfo, err := multi.UploadPart(ctx.Context, uploadArgs.InitState, o.PartSize, o.PartNumber, partStr.Stream)
 	if err != nil {
 		return err
 	}
@@ -163,12 +166,18 @@ func (b *GraphNodeBuilder) NewMultipartInitiator(storage stgmod.StorageDetail) *
 	return node
 }
 
-func (n *MultipartInitiatorNode) UploadArgsVar() *dag.ValueVar {
-	return n.OutputValues().Get(0)
+func (n *MultipartInitiatorNode) UploadArgsVar() dag.ValueOutputSlot {
+	return dag.ValueOutputSlot{
+		Node:  n,
+		Index: 0,
+	}
 }
 
-func (n *MultipartInitiatorNode) BypassFileInfoVar() *dag.ValueVar {
-	return n.OutputValues().Get(1)
+func (n *MultipartInitiatorNode) BypassFileInfoVar() dag.ValueOutputSlot {
+	return dag.ValueOutputSlot{
+		Node:  n,
+		Index: 1,
+	}
 }
 
 func (n *MultipartInitiatorNode) BypassCallbackSlot() dag.ValueInputSlot {
@@ -188,9 +197,9 @@ func (n *MultipartInitiatorNode) AppendPartInfoSlot() dag.ValueInputSlot {
 func (n *MultipartInitiatorNode) GenerateOp() (exec.Op, error) {
 	return &MultipartInitiator{
 		Storage:          n.Storage,
-		UploadArgs:       n.UploadArgsVar().VarID,
+		UploadArgs:       n.UploadArgsVar().Var().VarID,
 		UploadedParts:    n.InputValues().GetVarIDsStart(1),
-		BypassFileOutput: n.BypassFileInfoVar().VarID,
+		BypassFileOutput: n.BypassFileInfoVar().Var().VarID,
 		BypassCallback:   n.BypassCallbackSlot().Var().VarID,
 	}, nil
 }
@@ -223,8 +232,11 @@ func (n *MultipartUploadNode) UploadArgsSlot() dag.ValueInputSlot {
 	}
 }
 
-func (n *MultipartUploadNode) UploadResultVar() *dag.ValueVar {
-	return n.OutputValues().Get(0)
+func (n *MultipartUploadNode) UploadResultVar() dag.ValueOutputSlot {
+	return dag.ValueOutputSlot{
+		Node:  n,
+		Index: 0,
+	}
 }
 
 func (n *MultipartUploadNode) PartStreamSlot() dag.StreamInputSlot {
@@ -238,7 +250,7 @@ func (n *MultipartUploadNode) GenerateOp() (exec.Op, error) {
 	return &MultipartUpload{
 		Storage:      n.Storage,
 		UploadArgs:   n.UploadArgsSlot().Var().VarID,
-		UploadResult: n.UploadResultVar().VarID,
+		UploadResult: n.UploadResultVar().Var().VarID,
 		PartStream:   n.PartStreamSlot().Var().VarID,
 		PartNumber:   n.PartNumber,
 		PartSize:     n.PartSize,

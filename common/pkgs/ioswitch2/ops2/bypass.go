@@ -6,7 +6,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/dag"
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/agtpool"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
@@ -14,6 +14,9 @@ func init() {
 	exec.UseOp[*BypassToShardStore]()
 	exec.UseVarValue[*BypassFileInfoValue]()
 	exec.UseVarValue[*BypassHandleResultValue]()
+
+	exec.UseOp[*BypassFromShardStore]()
+	exec.UseVarValue[*BypassFilePathValue]()
 }
 
 type BypassFileInfoValue struct {
@@ -44,19 +47,19 @@ type BypassToShardStore struct {
 }
 
 func (o *BypassToShardStore) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
-	svcMgr, err := exec.GetValueByType[*svcmgr.Manager](ctx)
+	stgAgts, err := exec.GetValueByType[*agtpool.AgentPool](ctx)
 	if err != nil {
 		return err
 	}
 
-	shardStore, err := svcMgr.GetShardStore(o.StorageID)
+	shardStore, err := stgAgts.GetShardStore(o.StorageID)
 	if err != nil {
 		return err
 	}
 
-	notifier, ok := shardStore.(types.BypassNotifier)
+	br, ok := shardStore.(types.BypassWrite)
 	if !ok {
-		return fmt.Errorf("shard store %v not support bypass", o.StorageID)
+		return fmt.Errorf("shard store %v not support bypass write", o.StorageID)
 	}
 
 	fileInfo, err := exec.BindVar[*BypassFileInfoValue](e, ctx.Context, o.BypassFileInfo)
@@ -64,7 +67,7 @@ func (o *BypassToShardStore) Execute(ctx *exec.ExecContext, e *exec.Executor) er
 		return err
 	}
 
-	err = notifier.BypassUploaded(fileInfo.BypassFileInfo)
+	err = br.BypassUploaded(fileInfo.BypassFileInfo)
 	if err != nil {
 		return err
 	}
@@ -78,6 +81,52 @@ func (o *BypassToShardStore) String() string {
 	return fmt.Sprintf("BypassToShardStore[StorageID:%v] Info: %v, Callback: %v", o.StorageID, o.BypassFileInfo, o.BypassCallback)
 }
 
+type BypassFilePathValue struct {
+	types.BypassFilePath
+}
+
+func (v *BypassFilePathValue) Clone() exec.VarValue {
+	return &BypassFilePathValue{
+		BypassFilePath: v.BypassFilePath,
+	}
+}
+
+type BypassFromShardStore struct {
+	StorageID cdssdk.StorageID
+	FileHash  cdssdk.FileHash
+	Output    exec.VarID
+}
+
+func (o *BypassFromShardStore) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
+	stgAgts, err := exec.GetValueByType[*agtpool.AgentPool](ctx)
+	if err != nil {
+		return err
+	}
+
+	shardStore, err := stgAgts.GetShardStore(o.StorageID)
+	if err != nil {
+		return err
+	}
+
+	br, ok := shardStore.(types.BypassRead)
+	if !ok {
+		return fmt.Errorf("shard store %v not support bypass read", o.StorageID)
+	}
+
+	path, err := br.BypassRead(o.FileHash)
+	if err != nil {
+		return err
+	}
+
+	e.PutVar(o.Output, &BypassFilePathValue{BypassFilePath: path})
+	return nil
+}
+
+func (o *BypassFromShardStore) String() string {
+	return fmt.Sprintf("BypassFromShardStore[StorageID:%v] FileHash: %v, Output: %v", o.StorageID, o.FileHash, o.Output)
+}
+
+// 旁路写入
 type BypassToShardStoreNode struct {
 	dag.NodeBase
 	StorageID        cdssdk.StorageID
@@ -103,19 +152,58 @@ func (n *BypassToShardStoreNode) BypassFileInfoSlot() dag.ValueInputSlot {
 	}
 }
 
-func (n *BypassToShardStoreNode) BypassCallbackVar() *dag.ValueVar {
-	return n.OutputValues().Get(0)
+func (n *BypassToShardStoreNode) BypassCallbackVar() dag.ValueOutputSlot {
+	return dag.ValueOutputSlot{
+		Node:  n,
+		Index: 0,
+	}
 }
 
-func (n *BypassToShardStoreNode) FileHashVar() *dag.ValueVar {
-	return n.OutputValues().Get(1)
+func (n *BypassToShardStoreNode) FileHashVar() dag.ValueOutputSlot {
+	return dag.ValueOutputSlot{
+		Node:  n,
+		Index: 1,
+	}
 }
 
 func (t *BypassToShardStoreNode) GenerateOp() (exec.Op, error) {
 	return &BypassToShardStore{
 		StorageID:      t.StorageID,
 		BypassFileInfo: t.BypassFileInfoSlot().Var().VarID,
-		BypassCallback: t.BypassCallbackVar().VarID,
-		FileHash:       t.FileHashVar().VarID,
+		BypassCallback: t.BypassCallbackVar().Var().VarID,
+		FileHash:       t.FileHashVar().Var().VarID,
+	}, nil
+}
+
+// 旁路读取
+type BypassFromShardStoreNode struct {
+	dag.NodeBase
+	StorageID cdssdk.StorageID
+	FileHash  cdssdk.FileHash
+}
+
+func (b *GraphNodeBuilder) NewBypassFromShardStore(storageID cdssdk.StorageID, fileHash cdssdk.FileHash) *BypassFromShardStoreNode {
+	node := &BypassFromShardStoreNode{
+		StorageID: storageID,
+		FileHash:  fileHash,
+	}
+	b.AddNode(node)
+
+	node.OutputValues().Init(node, 1)
+	return node
+}
+
+func (n *BypassFromShardStoreNode) FilePathVar() dag.ValueOutputSlot {
+	return dag.ValueOutputSlot{
+		Node:  n,
+		Index: 0,
+	}
+}
+
+func (n *BypassFromShardStoreNode) GenerateOp() (exec.Op, error) {
+	return &BypassFromShardStore{
+		StorageID: n.StorageID,
+		FileHash:  n.FileHash,
+		Output:    n.FilePathVar().Var().VarID,
 	}, nil
 }

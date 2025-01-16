@@ -28,18 +28,17 @@ type Server struct {
 	rabbitSvr mq.RabbitMQServer
 }
 
-func NewServer(svc Service, cfg *mymq.Config) (*Server, error) {
+func NewServer(svc Service, cfg mq.Config) (*Server, error) {
 	srv := &Server{
 		service: svc,
 	}
 
 	rabbitSvr, err := mq.NewRabbitMQServer(
-		cfg.MakeConnectingURL(),
+		cfg,
 		mymq.COORDINATOR_QUEUE_NAME,
 		func(msg *mq.Message) (*mq.Message, error) {
 			return msgDispatcher.Handle(srv.service, msg)
 		},
-		cfg.Param,
 	)
 	if err != nil {
 		return nil, err
@@ -53,7 +52,7 @@ func (s *Server) Stop() {
 	s.rabbitSvr.Close()
 }
 
-func (s *Server) Start(cfg mymq.Config) *sync2.UnboundChannel[mq.RabbitMQServerEvent] {
+func (s *Server) Start(cfg mq.Config) *sync2.UnboundChannel[mq.RabbitMQServerEvent] {
 	return s.rabbitSvr.Start()
 }
 

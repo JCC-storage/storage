@@ -33,6 +33,16 @@ func (db *ObjectBlockDB) BatchGetByObjectID(ctx SQLContext, objectIDs []cdssdk.O
 	return blocks, err
 }
 
+func (*ObjectBlockDB) GetInPackageID(ctx SQLContext, packageID cdssdk.PackageID) ([]stgmod.ObjectBlock, error) {
+	var rets []stgmod.ObjectBlock
+	err := ctx.Table("ObjectBlock").
+		Joins("INNER JOIN Object ON ObjectBlock.ObjectID = Object.ObjectID").
+		Where("Object.PackageID = ?", packageID).
+		Order("ObjectBlock.ObjectID, ObjectBlock.`Index` ASC").
+		Find(&rets).Error
+	return rets, err
+}
+
 func (db *ObjectBlockDB) Create(ctx SQLContext, objectID cdssdk.ObjectID, index int, stgID cdssdk.StorageID, fileHash cdssdk.FileHash) error {
 	block := stgmod.ObjectBlock{ObjectID: objectID, Index: index, StorageID: stgID, FileHash: fileHash}
 	return ctx.Table("ObjectBlock").Create(&block).Error

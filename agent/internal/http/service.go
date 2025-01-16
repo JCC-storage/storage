@@ -2,17 +2,17 @@ package http
 
 import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/svcmgr"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/agtpool"
 )
 
 type Service struct {
 	swWorker *exec.Worker
-	stgMgr   *svcmgr.Manager
+	stgAgts  *agtpool.AgentPool
 }
 
-func NewService(swWorker *exec.Worker, stgMgr *svcmgr.Manager) *Service {
+func NewService(swWorker *exec.Worker, stgAgts *agtpool.AgentPool) *Service {
 	return &Service{
 		swWorker: swWorker,
-		stgMgr:   stgMgr,
+		stgAgts:  stgAgts,
 	}
 }

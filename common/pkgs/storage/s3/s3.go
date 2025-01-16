@@ -2,42 +2,50 @@ package s3
 
 import (
 	"fmt"
-	"reflect"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gitlink.org.cn/cloudream/common/utils/reflect2"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/factory/reg"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/s3/obs"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/utils"
 )
 
 func init() {
-	reg.RegisterBuilder[*cdssdk.COSType](createService, createComponent)
-	reg.RegisterBuilder[*cdssdk.OSSType](createService, createComponent)
-	reg.RegisterBuilder[*cdssdk.OBSType](createService, createComponent)
+	reg.RegisterBuilder[*cdssdk.COSType](newBuilder)
+	reg.RegisterBuilder[*cdssdk.OSSType](newBuilder)
+	reg.RegisterBuilder[*cdssdk.OBSType](newBuilder)
 }
 
-func createService(detail stgmod.StorageDetail) (types.StorageService, error) {
-	svc := &Service{
-		Detail: detail,
+type builder struct {
+	types.EmptyBuilder
+	detail stgmod.StorageDetail
+}
+
+func newBuilder(detail stgmod.StorageDetail) types.StorageBuilder {
+	return &builder{
+		detail: detail,
+	}
+}
+
+func (b *builder) CreateAgent() (types.StorageAgent, error) {
+	agt := &Agent{
+		Detail: b.detail,
 	}
 
-	if detail.Storage.ShardStore != nil {
-		cfg, ok := detail.Storage.ShardStore.(*cdssdk.S3ShardStorage)
+	if b.detail.Storage.ShardStore != nil {
+		cfg, ok := b.detail.Storage.ShardStore.(*cdssdk.S3ShardStorage)
 		if !ok {
-			return nil, fmt.Errorf("invalid shard store type %T for local storage", detail.Storage.ShardStore)
+			return nil, fmt.Errorf("invalid shard store type %T for local storage", b.detail.Storage.ShardStore)
 		}
 
-		cli, bkt, err := createS3Client(detail.Storage.Type)
+		cli, bkt, err := createS3Client(b.detail.Storage.Type)
 		if err != nil {
 			return nil, err
 		}
 
-		store, err := NewShardStore(svc, cli, bkt, *cfg, ShardStoreOption{
+		store, err := NewShardStore(agt, cli, bkt, *cfg, ShardStoreOption{
 			// 目前对接的存储服务都不支持从上传接口直接获取到Sha256
 			UseAWSSha256: false,
 		})
@@ -45,49 +53,44 @@ func createService(detail stgmod.StorageDetail) (types.StorageService, error) {
 			return nil, err
 		}
 
-		svc.ShardStore = store
+		agt.ShardStore = store
 	}
 
-	return svc, nil
+	return agt, nil
 }
 
-func createComponent(detail stgmod.StorageDetail, typ reflect.Type) (any, error) {
-	switch typ {
-	case reflect2.TypeOf[types.MultipartInitiator]():
-		feat := utils.FindFeature[*cdssdk.MultipartUploadFeature](detail)
-		if feat == nil {
-			return nil, fmt.Errorf("feature %T not found", cdssdk.MultipartUploadFeature{})
-		}
+func (b *builder) ShardStoreDesc() types.ShardStoreDesc {
+	return &ShardStoreDesc{builder: b}
+}
 
-		cli, bkt, err := createS3Client(detail.Storage.Type)
-		if err != nil {
-			return nil, err
-		}
+func (b *builder) SharedStoreDesc() types.SharedStoreDesc {
+	return &SharedStoreDesc{}
+}
 
-		return &MultipartInitiator{
-			cli:     cli,
-			bucket:  bkt,
-			tempDir: feat.TempDir,
-		}, nil
-
-	case reflect2.TypeOf[types.MultipartUploader]():
-		feat := utils.FindFeature[*cdssdk.MultipartUploadFeature](detail)
-		if feat == nil {
-			return nil, fmt.Errorf("feature %T not found", cdssdk.MultipartUploadFeature{})
-		}
-
-		cli, bkt, err := createS3Client(detail.Storage.Type)
-		if err != nil {
-			return nil, err
-		}
-
-		return &MultipartUploader{
-			cli:    cli,
-			bucket: bkt,
-		}, nil
+func (b *builder) CreateMultiparter() (types.Multiparter, error) {
+	feat := utils.FindFeature[*cdssdk.MultipartUploadFeature](b.detail)
+	if feat == nil {
+		return nil, fmt.Errorf("feature %T not found", cdssdk.MultipartUploadFeature{})
 	}
 
-	return nil, fmt.Errorf("unsupported component type %v", typ)
+	return &Multiparter{
+		detail: b.detail,
+		feat:   feat,
+	}, nil
+}
+
+func (b *builder) CreateS2STransfer() (types.S2STransfer, error) {
+	feat := utils.FindFeature[*cdssdk.S2STransferFeature](b.detail)
+	if feat == nil {
+		return nil, fmt.Errorf("feature %T not found", cdssdk.S2STransferFeature{})
+	}
+
+	switch addr := b.detail.Storage.Type.(type) {
+	case *cdssdk.OBSType:
+		return obs.NewS2STransfer(addr, feat), nil
+	default:
+		return nil, fmt.Errorf("unsupported storage type %T", addr)
+	}
 }
 
 func createS3Client(addr cdssdk.StorageType) (*s3.Client, string, error) {
@@ -97,22 +100,7 @@ func createS3Client(addr cdssdk.StorageType) (*s3.Client, string, error) {
 	// case *cdssdk.OSSType:
 
 	case *cdssdk.OBSType:
-		awsConfig := aws.Config{}
-
-		cre := aws.Credentials{
-			AccessKeyID:     addr.AK,
-			SecretAccessKey: addr.SK,
-		}
-		awsConfig.Credentials = &credentials.StaticCredentialsProvider{Value: cre}
-		awsConfig.Region = addr.Region
-
-		options := []func(*s3.Options){}
-		options = append(options, func(s3Opt *s3.Options) {
-			s3Opt.BaseEndpoint = &addr.Endpoint
-		})
-
-		cli := s3.NewFromConfig(awsConfig, options...)
-		return cli, addr.Bucket, nil
+		return obs.CreateS2Client(addr)
 
 	default:
 		return nil, "", fmt.Errorf("unsupported storage type %T", addr)
