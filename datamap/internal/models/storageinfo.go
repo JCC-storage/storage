@@ -1,11 +1,9 @@
 package models
 
 import (
-	"errors"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gorm.io/gorm"
-	"log"
 	"time"
 )
 
@@ -34,6 +32,9 @@ func (r *StorageRepository) CreateStorage(storage *Storage) error {
 
 func (r *StorageRepository) UpdateStorage(storage *Storage) error {
 	return r.repo.Update(storage)
+}
+func (r *StorageRepository) DeleteStorage(storage *Storage) error {
+	return r.repo.Delete(storage, uint(storage.StorageID))
 }
 
 func (r *StorageRepository) GetStorageByID(id int64) (*Storage, error) {
@@ -64,32 +65,32 @@ func (r *StorageRepository) GetAllStorages() ([]Storage, error) {
 	return storages, nil
 }
 
-//ProcessHubStat mq推送各节点统计自身当前的总数据量时的处理逻辑
-
-func ProcessStorageInfo(data stgmod.StorageStats) {
+func ProcessStorageInfo(data stgmod.StorageInfo) {
 	repo := NewStorageRepository(DB)
+	storage := &Storage{
+		StorageID:   cdssdk.StorageID(data.Body.StorageID),
+		StorageName: data.Body.StorageInfo.Name,
+		HubID:       data.Body.StorageInfo.MasterHub,
+		Timestamp:   data.Timestamp,
+	}
 
-	storage, err := repo.GetStorageByID(data.Body.StorageID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			// 插入新记录
-			newStorage := &Storage{
-				StorageID:    cdssdk.StorageID(data.Body.StorageID),
-				DataCount:    data.Body.DataCount,
-				NewDataCount: 0,
-			}
-			repo.CreateStorage(newStorage)
-		} else {
-			log.Printf("Error querying storage: %v", err)
+	switch data.Body.Type {
+	case "add":
+		err := repo.CreateStorage(storage)
+		if err != nil {
+			return
 		}
-	} else {
-		// 更新记录
-		newDataCount := data.Body.DataCount - storage.DataCount
-		storage.DataCount = data.Body.DataCount
-		storage.NewDataCount = newDataCount
+	case "update":
 		err := repo.UpdateStorage(storage)
 		if err != nil {
-			log.Printf("Error update storage: %v", err)
+			return
 		}
+	case "delete":
+		err := repo.DeleteStorage(storage)
+		if err != nil {
+			return
+		}
+	default:
+		return
 	}
 }

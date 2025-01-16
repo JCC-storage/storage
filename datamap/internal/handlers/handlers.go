@@ -31,7 +31,7 @@ func GetHubInfo(c *gin.Context) {
 	storages, _ := repoStorage.GetAllStorages()
 	for _, hub := range hubs {
 		node := models.Node{
-			ID:       int64(hub.HubID),
+			ID:       "hub" + strconv.FormatInt(int64(hub.HubID), 10),
 			NodeType: "hub",
 			Name:     hub.Name,
 			Address:  hub.Address,
@@ -40,7 +40,7 @@ func GetHubInfo(c *gin.Context) {
 	}
 	for _, storage := range storages {
 		node := models.Node{
-			ID:           int64(storage.StorageID),
+			ID:           "storage" + strconv.FormatInt(int64(storage.StorageID), 10),
 			NodeType:     "storage",
 			Name:         storage.StorageName,
 			DataCount:    storage.DataCount,
@@ -55,9 +55,9 @@ func GetHubInfo(c *gin.Context) {
 	for _, hubReq := range hubReqs {
 		edge := models.Edge{
 			SourceType:         hubReq.SourceType,
-			SourceID:           int64(hubReq.SourceID),
+			SourceID:           hubReq.SourceType + strconv.FormatInt(int64(hubReq.SourceID), 10),
 			TargetType:         hubReq.TargetType,
-			TargetID:           int64(hubReq.TargetID),
+			TargetID:           hubReq.TargetType + strconv.FormatInt(int64(hubReq.TargetID), 10),
 			DataTransferCount:  hubReq.DataTransferCount,
 			RequestCount:       hubReq.RequestCount,
 			FailedRequestCount: hubReq.FailedRequestCount,
@@ -116,7 +116,7 @@ func GetDataTransfer(c *gin.Context) {
 			//storage id
 			ComboID: strconv.FormatInt(block.StorageID, 10),
 			//block index
-			Label: strconv.FormatInt(block.Index, 10),
+			Label: block.Type + strconv.FormatInt(block.Index, 10),
 			//block type
 			NodeType: block.Type,
 		}
@@ -126,7 +126,7 @@ func GetDataTransfer(c *gin.Context) {
 		//添加storage combo信息
 		if !containsCombo(combos, strconv.FormatInt(block.StorageID, 10), "storage") {
 			combo := models.Combo{
-				ID:        strconv.FormatInt(block.StorageID, 10),
+				ID:        "storage" + strconv.FormatInt(block.StorageID, 10),
 				Label:     "存储中心" + strconv.FormatInt(block.StorageID, 10),
 				ParentId:  strconv.Itoa(block.Status),
 				ComboType: "storage",
@@ -134,10 +134,23 @@ func GetDataTransfer(c *gin.Context) {
 			combos = append(combos, combo)
 		}
 		//添加state combo信息
-		if !containsCombo(combos, strconv.Itoa(block.Status), "state") {
+		if !containsCombo(combos, "state"+strconv.Itoa(block.Status), "state") {
+			var statusStr string
+			switch block.Status {
+			case 0:
+				statusStr = "实时情况"
+			case 1:
+				statusStr = block.Timestamp.Format("2006-01-02") + "布局调整后"
+			case 2:
+				statusStr = block.Timestamp.Format("2006-01-02") + "布局调整前"
+			case 3:
+				statusStr = block.Timestamp.Format("2006-01-02") + "布局调整后"
+			default:
+				statusStr = "未知状态"
+			}
 			combo := models.Combo{
-				ID:        strconv.Itoa(block.Status),
-				Label:     "存储状态" + string(block.Status),
+				ID:        "state" + strconv.Itoa(block.Status),
+				Label:     statusStr,
 				ComboType: "state",
 			}
 			combos = append(combos, combo)
@@ -147,8 +160,8 @@ func GetDataTransfer(c *gin.Context) {
 	relations, _ := repoStorageTrans.GetStorageTransferCountByObjectID(objectID)
 	for _, relation := range relations {
 		edge := models.DistEdge{
-			Source: strconv.FormatInt(relation.SourceStorageID, 10),
-			Target: strconv.FormatInt(relation.TargetStorageID, 10),
+			Source: "storage" + strconv.FormatInt(relation.SourceStorageID, 10),
+			Target: "storage" + strconv.FormatInt(relation.TargetStorageID, 10),
 		}
 		edges = append(edges, edge)
 	}

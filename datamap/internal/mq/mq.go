@@ -1,8 +1,8 @@
 package mq
 
 import (
-	"encoding/json"
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/streadway/amqp"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/datamap/internal/config"
@@ -25,8 +25,11 @@ func InitMQ(cfg config.RabbitMQConfig) (*amqp.Connection, error) {
 
 func listenQueues(conn *amqp.Connection) {
 	queues := []string{
+		"datamap_hubinfo",
 		"datamap_storageinfo",
-		"datamap_hubtransfer",
+		"datamap_storagestats",
+		"datamap_hubtransferstats",
+		"datamap_hubstoragetransferstats",
 		"datamap_blocktransfer",
 		"datamap_blockdistribution",
 	}
@@ -57,29 +60,28 @@ func processMessage(queue string, body []byte) {
 	switch queue {
 	case "datamap_hubinfo":
 		var data stgmod.HubInfo
-
-		if err := json.Unmarshal(body, &data); err != nil {
+		if err := jsoniter.Unmarshal(body, &data); err != nil {
 			log.Printf("Failed to unmarshal HubInfo: %v, body: %s", err, body)
 			return
 		}
 		models.ProcessHubInfo(data)
 	case "datamap_storageinfo":
 		var data stgmod.StorageInfo
-		if err := json.Unmarshal(body, &data); err != nil {
+		if err := jsoniter.Unmarshal(body, &data); err != nil {
 			log.Printf("Failed to unmarshal StorageInfo: %v, body: %s", err, body)
 			return
 		}
-		//models.ProcessStorageInfo(data)
+		models.ProcessStorageInfo(data)
 	case "datamap_storagestats":
 		var data stgmod.StorageStats
-		if err := json.Unmarshal(body, &data); err != nil {
+		if err := jsoniter.Unmarshal(body, &data); err != nil {
 			log.Printf("Failed to unmarshal StorageStats: %v, body: %s", err, body)
 			return
 		}
 		//models.ProcessStorageInfo(data)
 	case "datamap_hubtransferstats":
 		var data stgmod.HubTransferStats
-		err := json.Unmarshal(body, &data)
+		err := jsoniter.Unmarshal(body, &data)
 		if err != nil {
 			log.Printf("Failed to unmarshal HubTransferStats: %v, body: %s", err, body)
 			return
@@ -87,7 +89,7 @@ func processMessage(queue string, body []byte) {
 		models.ProcessHubTransfer(data)
 	case "datamap_hubstoragetransferstats":
 		var data stgmod.HubStorageTransferStats
-		err := json.Unmarshal(body, &data)
+		err := jsoniter.Unmarshal(body, &data)
 		if err != nil {
 			log.Printf("Failed to unmarshal HubStorageTransferStats: %v, body: %s", err, body)
 			return
@@ -95,7 +97,7 @@ func processMessage(queue string, body []byte) {
 		//models.ProcessHubTransfer(data)
 	case "datamap_blocktransfer":
 		var data stgmod.BlockTransfer
-		err := json.Unmarshal(body, &data)
+		err := jsoniter.Unmarshal(body, &data)
 		if err != nil {
 			log.Printf("Failed to unmarshal BlockTransfer: %v, body: %s", err, body)
 			return
@@ -103,7 +105,7 @@ func processMessage(queue string, body []byte) {
 		models.ProcessBlockTransfer(data)
 	case "datamap_blockdistribution":
 		var data stgmod.BlockDistribution
-		err := json.Unmarshal(body, &data)
+		err := jsoniter.Unmarshal(body, &data)
 		if err != nil {
 			log.Printf("Failed to unmarshal BlockDistribution: %v, body: %s", err, body)
 			return

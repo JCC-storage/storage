@@ -71,5 +71,4 @@ func ProcessHubInfo(data stgmod.HubInfo) {
 	default:
 		return
 	}
-
 }

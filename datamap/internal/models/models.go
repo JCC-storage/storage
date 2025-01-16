@@ -33,7 +33,7 @@ type HubRelationship struct {
 }
 
 type Node struct {
-	ID           int64                 `json:"id"`           // 节点/中心ID
+	ID           string                `json:"id"`           // 节点/中心ID
 	NodeType     string                `json:"nodeType"`     //节点类型 storage/hub
 	Name         string                `json:"name"`         // 节点/中心名称
 	Address      cdssdk.HubAddressInfo `json:"address"`      // 地址
@@ -44,9 +44,9 @@ type Node struct {
 
 type Edge struct {
 	SourceType         string    `json:"sourceType"`         // 源节点类型
-	SourceID           int64     `json:"sourceID"`           // 源节点ID
+	SourceID           string    `json:"source"`             // 源节点ID
 	TargetType         string    `json:"targetType"`         // 目标节点类型
-	TargetID           int64     `json:"targetID"`           // 目标节点ID
+	TargetID           string    `json:"target"`             // 目标节点ID
 	DataTransferCount  int64     `json:"dataTransferCount"`  // 数据传输量
 	RequestCount       int64     `json:"requestCount"`       // 请求数
 	FailedRequestCount int64     `json:"failedRequestCount"` // 失败请求数
