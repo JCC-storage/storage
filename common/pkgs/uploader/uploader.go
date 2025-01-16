@@ -86,7 +86,7 @@ func (u *Uploader) BeginUpdate(userID cdssdk.UserID, pkgID cdssdk.PackageID, aff
 		if stg.MasterHub == nil {
 			return nil, fmt.Errorf("load to storage %v has no master hub", stgID)
 		}
-		if factory.GetBuilder(stg).ShardStoreDesc().Enabled() {
+		if !factory.GetBuilder(stg).SharedStoreDesc().Enabled() {
 			return nil, fmt.Errorf("load to storage %v has no shared store", stgID)
 		}
 
