@@ -41,6 +41,5 @@ func (e *StorageGC) Execute(ctx ExecuteContext) {
 	}
 
 	ctx.Args.EventExecutor.Post(event.NewAgentShardStoreGC(scevt.NewAgentShardStoreGC(e.storageIDs[0])))
-	ctx.Args.EventExecutor.Post(event.NewAgentStorageGC(scevt.NewAgentStorageGC(e.storageIDs[0])))
 	e.storageIDs = e.storageIDs[1:]
 }

@@ -181,26 +181,6 @@ func PackageGetCachedStorages(ctx CommandContext, packageID cdssdk.PackageID) er
 	return nil
 }
 
-// PackageGetLoadedStorages 获取指定包裹的已加载节点信息。
-//
-// 参数:
-//
-//	ctx - 命令上下文。
-//	packageID - 包裹ID。
-//
-// 返回值:
-//
-//	error - 操作过程中发生的任何错误。
-func PackageGetLoadedStorages(ctx CommandContext, packageID cdssdk.PackageID) error {
-	userID := cdssdk.UserID(1)
-	hubIDs, err := ctx.Cmdline.Svc.PackageSvc().GetLoadedStorages(userID, packageID)
-	fmt.Printf("hubIDs: %v\n", hubIDs)
-	if err != nil {
-		return fmt.Errorf("get package %d loaded storages failed, err: %w", packageID, err)
-	}
-	return nil
-}
-
 // 初始化命令行工具的包相关命令。
 func init() {
 	commands.MustAdd(PackageListBucketPackages, "pkg", "ls")
@@ -213,7 +193,4 @@ func init() {
 
 	// 查询package缓存到哪些节点
 	commands.MustAdd(PackageGetCachedStorages, "pkg", "cached")
-
-	// 查询package调度到哪些节点
-	commands.MustAdd(PackageGetLoadedStorages, "pkg", "loaded")
 }

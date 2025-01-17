@@ -85,7 +85,7 @@ func (t *CreatePackage) Execute(task *task.Task[TaskContext], ctx TaskContext, c
 		return
 	}
 
-	up, err := ctx.uploader.BeginUpdate(t.userID, createResp.Package.PackageID, t.stgAffinity)
+	up, err := ctx.uploader.BeginUpdate(t.userID, createResp.Package.PackageID, t.stgAffinity, nil, nil)
 	if err != nil {
 		err = fmt.Errorf("begin update: %w", err)
 		log.Error(err.Error())

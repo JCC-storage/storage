@@ -1,4 +1,4 @@
-package s3
+package utils
 
 import (
 	"encoding/base64"
@@ -11,6 +11,9 @@ func JoinKey(comps ...string) string {
 
 	hasTrailingSlash := true
 	for _, comp := range comps {
+		if comp == "" {
+			continue
+		}
 		if !hasTrailingSlash {
 			sb.WriteString("/")
 		}

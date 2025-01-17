@@ -50,7 +50,7 @@ func (svc *Service) GetUserBuckets(msg *coormq.GetUserBuckets) (*coormq.GetUserB
 }
 
 func (svc *Service) GetBucketPackages(msg *coormq.GetBucketPackages) (*coormq.GetBucketPackagesResp, *mq.CodeMessage) {
-	packages, err := svc.db2.Package().GetBucketPackages(svc.db2.DefCtx(), msg.UserID, msg.BucketID)
+	packages, err := svc.db2.Package().GetUserBucketPackages(svc.db2.DefCtx(), msg.UserID, msg.BucketID)
 
 	if err != nil {
 		logger.WithField("UserID", msg.UserID).
@@ -103,7 +103,23 @@ func (svc *Service) DeleteBucket(msg *coormq.DeleteBucket) (*coormq.DeleteBucket
 			return fmt.Errorf("bucket is not avaiable to the user")
 		}
 
-		err := svc.db2.Bucket().Delete(tx, msg.BucketID)
+		if err := svc.db2.UserBucket().DeleteByBucketID(tx, msg.BucketID); err != nil {
+			return fmt.Errorf("deleting user bucket: %w", err)
+		}
+
+		pkgs, err := svc.db2.Package().GetBucketPackages(tx, msg.BucketID)
+		if err != nil {
+			return fmt.Errorf("getting bucket packages: %w", err)
+		}
+
+		for _, pkg := range pkgs {
+			err := svc.db2.Package().DeleteComplete(tx, pkg.PackageID)
+			if err != nil {
+				return fmt.Errorf("deleting package %v: %w", pkg.PackageID, err)
+			}
+		}
+
+		err = svc.db2.Bucket().Delete(tx, msg.BucketID)
 		if err != nil {
 			return fmt.Errorf("deleting bucket: %w", err)
 		}

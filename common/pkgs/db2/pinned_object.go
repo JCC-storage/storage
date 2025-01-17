@@ -42,8 +42,10 @@ func (*PinnedObjectDB) BatchGetByObjectID(ctx SQLContext, objectIDs []cdssdk.Obj
 }
 
 func (*PinnedObjectDB) TryCreate(ctx SQLContext, stgID cdssdk.StorageID, objectID cdssdk.ObjectID, createTime time.Time) error {
-	err := ctx.Clauses(clause.Insert{Modifier: "ignore"}).Table("PinnedObject").Create(&cdssdk.PinnedObject{StorageID: stgID, ObjectID: objectID, CreateTime: createTime}).Error
-	return err
+	return ctx.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "ObjectID"}, {Name: "StorageID"}},
+		DoUpdates: clause.AssignmentColumns([]string{"CreateTime"}),
+	}).Create(&cdssdk.PinnedObject{StorageID: stgID, ObjectID: objectID, CreateTime: createTime}).Error
 }
 
 func (*PinnedObjectDB) BatchTryCreate(ctx SQLContext, pinneds []cdssdk.PinnedObject) error {
@@ -51,8 +53,10 @@ func (*PinnedObjectDB) BatchTryCreate(ctx SQLContext, pinneds []cdssdk.PinnedObj
 		return nil
 	}
 
-	err := ctx.Clauses(clause.Insert{Modifier: "ignore"}).Table("PinnedObject").Create(pinneds).Error
-	return err
+	return ctx.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "ObjectID"}, {Name: "StorageID"}},
+		DoUpdates: clause.AssignmentColumns([]string{"CreateTime"}),
+	}).Create(&pinneds).Error
 }
 
 func (*PinnedObjectDB) CreateFromPackage(ctx SQLContext, packageID cdssdk.PackageID, stgID cdssdk.StorageID) error {

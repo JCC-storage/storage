@@ -9,6 +9,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/iterator"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/utils/math2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitchlrc/parser"
 )
@@ -17,7 +18,7 @@ type LRCStripIterator struct {
 	downloder           *Downloader
 	object              cdssdk.Object
 	blocks              []downloadBlock
-	red                 *cdssdk.LRCRedundancy
+	red                 cdssdk.LRCRedundancy
 	curStripIndex       int64
 	cache               *StripCache
 	dataChan            chan dataChanEntry
@@ -26,7 +27,7 @@ type LRCStripIterator struct {
 	inited              bool
 }
 
-func NewLRCStripIterator(downloder *Downloader, object cdssdk.Object, blocks []downloadBlock, red *cdssdk.LRCRedundancy, beginStripIndex int64, cache *StripCache, maxPrefetch int) *LRCStripIterator {
+func NewLRCStripIterator(downloder *Downloader, object cdssdk.Object, blocks []downloadBlock, red cdssdk.LRCRedundancy, beginStripIndex int64, cache *StripCache, maxPrefetch int) *LRCStripIterator {
 	if maxPrefetch <= 0 {
 		maxPrefetch = 1
 	}
@@ -101,7 +102,7 @@ func (s *LRCStripIterator) downloading() {
 		froms = append(froms, ioswitchlrc.NewFromStorage(b.Block.FileHash, *stg.MasterHub, stg.Storage, b.Block.Index))
 	}
 
-	toExec, hd := ioswitchlrc.NewToDriverWithRange(-1, exec.Range{
+	toExec, hd := ioswitchlrc.NewToDriverWithRange(-1, math2.Range{
 		Offset: s.curStripIndex * int64(s.red.ChunkSize*s.red.K),
 	})
 
@@ -113,7 +114,7 @@ func (s *LRCStripIterator) downloading() {
 	}
 
 	exeCtx := exec.NewExecContext()
-	exec.SetValueByType(exeCtx, s.downloder.stgMgr)
+	exec.SetValueByType(exeCtx, s.downloder.stgAgts)
 
 	exec := plans.Execute(exeCtx)
 

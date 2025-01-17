@@ -10,6 +10,20 @@ type BypassFileInfo struct {
 	Size         int64
 }
 
-type BypassNotifier interface {
+// 不通过ShardStore上传文件，但上传完成后需要通知ShardStore。
+// 也可以用于共享存储。
+type BypassWrite interface {
 	BypassUploaded(info BypassFileInfo) error
+}
+
+// 描述指定文件在分片存储中的路径。可以考虑设计成interface。
+type BypassFilePath struct {
+	Path string
+	Info FileInfo
+}
+
+// 不通过ShardStore读取文件，但需要它返回文件的路径。
+// 仅用于分片存储。
+type BypassRead interface {
+	BypassRead(fileHash cdssdk.FileHash) (BypassFilePath, error)
 }

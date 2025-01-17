@@ -29,7 +29,7 @@ func (s *Service) ExecuteIOPlan(ctx context.Context, req *agtrpc.ExecuteIOPlanRe
 	defer s.swWorker.Remove(sw)
 
 	execCtx := exec.NewWithContext(ctx)
-	exec.SetValueByType(execCtx, s.stgMgr)
+	exec.SetValueByType(execCtx, s.stgAgts)
 	_, err = sw.Run(execCtx)
 	if err != nil {
 		log.Warnf("running io plan: %v", err)

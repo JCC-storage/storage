@@ -37,6 +37,21 @@ func (svc *ObjectService) GetByPath(userID cdssdk.UserID, pkgID cdssdk.PackageID
 	return listResp.Objects, nil
 }
 
+func (svc *ObjectService) GetByIDs(userID cdssdk.UserID, objectIDs []cdssdk.ObjectID) ([]*cdssdk.Object, error) {
+	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
+	if err != nil {
+		return nil, fmt.Errorf("new coordinator client: %w", err)
+	}
+	defer stgglb.CoordinatorMQPool.Release(coorCli)
+
+	listResp, err := coorCli.GetObjects(coormq.ReqGetObjects(userID, objectIDs))
+	if err != nil {
+		return nil, fmt.Errorf("requsting to coodinator: %w", err)
+	}
+
+	return listResp.Objects, nil
+}
+
 func (svc *ObjectService) UpdateInfo(userID cdssdk.UserID, updatings []cdsapi.UpdatingObject) ([]cdssdk.ObjectID, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
@@ -96,6 +111,21 @@ func (svc *ObjectService) Delete(userID cdssdk.UserID, objectIDs []cdssdk.Object
 	}
 
 	return nil
+}
+
+func (svc *ObjectService) Clone(userID cdssdk.UserID, clonings []cdsapi.CloningObject) ([]*cdssdk.Object, error) {
+	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
+	if err != nil {
+		return nil, fmt.Errorf("new coordinator client: %w", err)
+	}
+	defer stgglb.CoordinatorMQPool.Release(coorCli)
+
+	resp, err := coorCli.CloneObjects(coormq.ReqCloneObjects(userID, clonings))
+	if err != nil {
+		return nil, fmt.Errorf("requsting to coodinator: %w", err)
+	}
+
+	return resp.Objects, nil
 }
 
 // GetPackageObjects 获取包中的对象列表。

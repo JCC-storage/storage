@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"path"
 	"sync"
 	"time"
 
@@ -16,13 +17,13 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/ops2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/parser"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/utils"
 )
 
 type CreateLoadUploader struct {
 	pkg        cdssdk.Package
 	userID     cdssdk.UserID
 	targetStgs []stgmod.StorageDetail
+	loadRoots  []string
 	uploader   *Uploader
 	distlock   *distlock.Mutex
 	successes  []coormq.AddObjectEntry
@@ -31,21 +32,20 @@ type CreateLoadUploader struct {
 }
 
 type CreateLoadResult struct {
-	Package    cdssdk.Package
-	Objects    map[string]cdssdk.Object
-	LoadedDirs []string
+	Package cdssdk.Package
+	Objects map[string]cdssdk.Object
 }
 
-func (u *CreateLoadUploader) Upload(path string, size int64, stream io.Reader) error {
+func (u *CreateLoadUploader) Upload(pa string, size int64, stream io.Reader) error {
 	uploadTime := time.Now()
 	stgIDs := make([]cdssdk.StorageID, 0, len(u.targetStgs))
 
 	ft := ioswitch2.FromTo{}
 	fromExec, hd := ioswitch2.NewFromDriver(ioswitch2.RawStream())
 	ft.AddFrom(fromExec)
-	for _, stg := range u.targetStgs {
+	for i, stg := range u.targetStgs {
 		ft.AddTo(ioswitch2.NewToShardStore(*stg.MasterHub, stg, ioswitch2.RawStream(), "fileHash"))
-		ft.AddTo(ioswitch2.NewLoadToShared(*stg.MasterHub, stg.Storage, u.userID, u.pkg.PackageID, path))
+		ft.AddTo(ioswitch2.NewLoadToShared(*stg.MasterHub, stg, path.Join(u.loadRoots[i], pa)))
 		stgIDs = append(stgIDs, stg.Storage.StorageID)
 	}
 
@@ -56,7 +56,7 @@ func (u *CreateLoadUploader) Upload(path string, size int64, stream io.Reader) e
 	}
 
 	exeCtx := exec.NewExecContext()
-	exec.SetValueByType(exeCtx, u.uploader.stgMgr)
+	exec.SetValueByType(exeCtx, u.uploader.stgAgts)
 	exec := plans.Execute(exeCtx)
 	exec.BeginWrite(io.NopCloser(stream), hd)
 	ret, err := exec.Wait(context.TODO())
@@ -70,7 +70,7 @@ func (u *CreateLoadUploader) Upload(path string, size int64, stream io.Reader) e
 	// 记录上传结果
 	fileHash := ret["fileHash"].(*ops2.FileHashValue).Hash
 	u.successes = append(u.successes, coormq.AddObjectEntry{
-		Path:       path,
+		Path:       pa,
 		Size:       size,
 		FileHash:   fileHash,
 		UploadTime: uploadTime,
@@ -110,14 +110,9 @@ func (u *CreateLoadUploader) Commit() (CreateLoadResult, error) {
 		ret.Objects[entry.Path] = entry
 	}
 
-	for _, stg := range u.targetStgs {
-		_, err := coorCli.StoragePackageLoaded(coormq.NewStoragePackageLoaded(u.userID, stg.Storage.StorageID, u.pkg.PackageID, nil))
-		if err != nil {
-			return CreateLoadResult{}, fmt.Errorf("notifying storage package loaded: %w", err)
-		}
-
-		// TODO 考虑让SharedStore来生成Load目录路径
-		ret.LoadedDirs = append(ret.LoadedDirs, utils.MakeLoadedPackagePath(u.userID, u.pkg.PackageID))
+	for i, stg := range u.targetStgs {
+		// 不关注是否成功
+		coorCli.StoragePackageLoaded(coormq.ReqStoragePackageLoaded(u.userID, stg.Storage.StorageID, u.pkg.PackageID, u.loadRoots[i], nil))
 	}
 
 	return ret, nil

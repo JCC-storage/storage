@@ -18,6 +18,41 @@ import (
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
+func (svc *Service) GetObjects(msg *coormq.GetObjects) (*coormq.GetObjectsResp, *mq.CodeMessage) {
+	var ret []*cdssdk.Object
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
+		// TODO 应该检查用户是否有每一个Object所在Package的权限
+		objs, err := svc.db2.Object().BatchGet(tx, msg.ObjectIDs)
+		if err != nil {
+			return err
+		}
+
+		objMp := make(map[cdssdk.ObjectID]cdssdk.Object)
+		for _, obj := range objs {
+			objMp[obj.ObjectID] = obj
+		}
+
+		for _, objID := range msg.ObjectIDs {
+			o, ok := objMp[objID]
+			if ok {
+				ret = append(ret, &o)
+			} else {
+				ret = append(ret, nil)
+			}
+		}
+
+		return err
+	})
+	if err != nil {
+		logger.WithField("UserID", msg.UserID).
+			Warn(err.Error())
+
+		return nil, mq.Failed(errorcode.OperationFailed, "get objects failed")
+	}
+
+	return mq.ReplyOK(coormq.RespGetObjects(ret))
+}
+
 func (svc *Service) GetObjectsByPath(msg *coormq.GetObjectsByPath) (*coormq.GetObjectsByPathResp, *mq.CodeMessage) {
 	var objs []cdssdk.Object
 	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
@@ -447,4 +482,131 @@ func (svc *Service) DeleteObjects(msg *coormq.DeleteObjects) (*coormq.DeleteObje
 	}
 
 	return mq.ReplyOK(coormq.RespDeleteObjects())
+}
+
+func (svc *Service) CloneObjects(msg *coormq.CloneObjects) (*coormq.CloneObjectsResp, *mq.CodeMessage) {
+	type CloningObject struct {
+		Cloning  cdsapi.CloningObject
+		OrgIndex int
+	}
+	type PackageClonings struct {
+		PackageID cdssdk.PackageID
+		Clonings  map[string]CloningObject
+	}
+
+	// TODO 要检查用户是否有Object、Package的权限
+	clonings := make(map[cdssdk.PackageID]*PackageClonings)
+	for i, cloning := range msg.Clonings {
+		pkg, ok := clonings[cloning.NewPackageID]
+		if !ok {
+			pkg = &PackageClonings{
+				PackageID: cloning.NewPackageID,
+				Clonings:  make(map[string]CloningObject),
+			}
+			clonings[cloning.NewPackageID] = pkg
+		}
+		pkg.Clonings[cloning.NewPath] = CloningObject{
+			Cloning:  cloning,
+			OrgIndex: i,
+		}
+	}
+
+	ret := make([]*cdssdk.Object, len(msg.Clonings))
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
+		// 剔除掉新路径已经存在的对象
+		for _, pkg := range clonings {
+			exists, err := svc.db2.Object().BatchGetByPackagePath(tx, pkg.PackageID, lo.Keys(pkg.Clonings))
+			if err != nil {
+				return fmt.Errorf("batch getting objects by package path: %w", err)
+			}
+
+			for _, obj := range exists {
+				delete(pkg.Clonings, obj.Path)
+			}
+		}
+
+		// 删除目的Package不存在的对象
+		newPkg, err := svc.db2.Package().BatchTestPackageID(tx, lo.Keys(clonings))
+		if err != nil {
+			return fmt.Errorf("batch testing package id: %w", err)
+		}
+		for _, pkg := range clonings {
+			if !newPkg[pkg.PackageID] {
+				delete(clonings, pkg.PackageID)
+			}
+		}
+
+		var avaiClonings []CloningObject
+		var avaiObjIDs []cdssdk.ObjectID
+		for _, pkg := range clonings {
+			for _, cloning := range pkg.Clonings {
+				avaiClonings = append(avaiClonings, cloning)
+				avaiObjIDs = append(avaiObjIDs, cloning.Cloning.ObjectID)
+			}
+		}
+
+		avaiDetails, err := svc.db2.Object().BatchGetDetails(tx, avaiObjIDs)
+		if err != nil {
+			return fmt.Errorf("batch getting object details: %w", err)
+		}
+
+		avaiDetailsMap := make(map[cdssdk.ObjectID]stgmod.ObjectDetail)
+		for _, detail := range avaiDetails {
+			avaiDetailsMap[detail.Object.ObjectID] = detail
+		}
+
+		oldAvaiClonings := avaiClonings
+		avaiClonings = nil
+
+		var newObjs []cdssdk.Object
+		for _, cloning := range oldAvaiClonings {
+			// 进一步剔除原始对象不存在的情况
+			detail, ok := avaiDetailsMap[cloning.Cloning.ObjectID]
+			if !ok {
+				continue
+			}
+
+			avaiClonings = append(avaiClonings, cloning)
+
+			newObj := detail.Object
+			newObj.ObjectID = 0
+			newObj.Path = cloning.Cloning.NewPath
+			newObj.PackageID = cloning.Cloning.NewPackageID
+			newObjs = append(newObjs, newObj)
+		}
+
+		// 先创建出新对象
+		err = svc.db2.Object().BatchCreate(tx, &newObjs)
+		if err != nil {
+			return fmt.Errorf("batch creating objects: %w", err)
+		}
+
+		// 创建了新对象就能拿到新对象ID，再创建新对象块
+		var newBlks []stgmod.ObjectBlock
+		for i, cloning := range avaiClonings {
+			oldBlks := avaiDetailsMap[cloning.Cloning.ObjectID].Blocks
+			for _, blk := range oldBlks {
+				newBlk := blk
+				newBlk.ObjectID = newObjs[i].ObjectID
+				newBlks = append(newBlks, newBlk)
+			}
+		}
+
+		err = svc.db2.ObjectBlock().BatchCreate(tx, newBlks)
+		if err != nil {
+			return fmt.Errorf("batch creating object blocks: %w", err)
+		}
+
+		for i, cloning := range avaiClonings {
+			ret[cloning.OrgIndex] = &newObjs[i]
+		}
+		return nil
+	})
+
+	if err != nil {
+		logger.Warnf("cloning objects: %s", err.Error())
+		return nil, mq.Failed(errorcode.OperationFailed, err.Error())
+	}
+
+	return mq.ReplyOK(coormq.RespCloneObjects(ret))
 }

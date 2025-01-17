@@ -3,6 +3,7 @@ package mq
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"gitlink.org.cn/cloudream/common/consts/errorcode"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
@@ -104,35 +105,26 @@ func (svc *Service) GetStorageByName(msg *coormq.GetStorageByName) (*coormq.GetS
 
 func (svc *Service) StoragePackageLoaded(msg *coormq.StoragePackageLoaded) (*coormq.StoragePackageLoadedResp, *mq.CodeMessage) {
 	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
-		// 可以不用检查用户是否存在
-		if ok, _ := svc.db2.Package().IsAvailable(tx, msg.UserID, msg.PackageID); !ok {
-			return fmt.Errorf("package is not available to user")
-		}
-
-		if ok, _ := svc.db2.Storage().IsAvailable(tx, msg.UserID, msg.StorageID); !ok {
-			return fmt.Errorf("storage is not available to user")
-		}
-
-		err := svc.db2.StoragePackage().CreateOrUpdate(tx, msg.StorageID, msg.PackageID, msg.UserID)
+		// TODO 权限检查
+		exists, err := svc.db2.Object().BatchTestObjectID(tx, msg.PinnedObjects)
 		if err != nil {
-			return fmt.Errorf("creating storage package: %w", err)
+			return fmt.Errorf("testing object id: %w", err)
 		}
 
-		stg, err := svc.db2.Storage().GetByID(tx, msg.StorageID)
-		if err != nil {
-			return fmt.Errorf("getting storage: %w", err)
-		}
-
-		err = svc.db2.PinnedObject().CreateFromPackage(tx, msg.PackageID, stg.StorageID)
-		if err != nil {
-			return fmt.Errorf("creating pinned object from package: %w", err)
-		}
-
-		if len(msg.PinnedBlocks) > 0 {
-			err = svc.db2.ObjectBlock().BatchCreate(tx, msg.PinnedBlocks)
-			if err != nil {
-				return fmt.Errorf("batch creating object block: %w", err)
+		pinned := make([]cdssdk.PinnedObject, 0, len(msg.PinnedObjects))
+		for _, obj := range msg.PinnedObjects {
+			if exists[obj] {
+				pinned = append(pinned, cdssdk.PinnedObject{
+					StorageID:  msg.StorageID,
+					ObjectID:   obj,
+					CreateTime: time.Now(),
+				})
 			}
+		}
+
+		err = svc.db2.PinnedObject().BatchTryCreate(tx, pinned)
+		if err != nil {
+			return fmt.Errorf("batch creating pinned object: %w", err)
 		}
 
 		return nil
@@ -145,5 +137,5 @@ func (svc *Service) StoragePackageLoaded(msg *coormq.StoragePackageLoaded) (*coo
 		return nil, mq.Failed(errorcode.OperationFailed, "user load package to storage failed")
 	}
 
-	return mq.ReplyOK(coormq.NewStoragePackageLoadedResp())
+	return mq.ReplyOK(coormq.RespStoragePackageLoaded())
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"path"
 	"sync"
 	"time"
 
@@ -19,13 +20,15 @@ import (
 )
 
 type UpdateUploader struct {
-	uploader  *Uploader
-	pkgID     cdssdk.PackageID
-	targetStg stgmod.StorageDetail
-	distMutex *distlock.Mutex
-	successes []coormq.AddObjectEntry
-	lock      sync.Mutex
-	commited  bool
+	uploader   *Uploader
+	pkgID      cdssdk.PackageID
+	targetStg  stgmod.StorageDetail
+	distMutex  *distlock.Mutex
+	loadToStgs []stgmod.StorageDetail
+	loadToPath []string
+	successes  []coormq.AddObjectEntry
+	lock       sync.Mutex
+	commited   bool
 }
 
 type UploadStorageInfo struct {
@@ -39,12 +42,17 @@ type UpdateResult struct {
 	Objects map[string]cdssdk.Object
 }
 
-func (w *UpdateUploader) Upload(path string, size int64, stream io.Reader) error {
+func (w *UpdateUploader) Upload(pat string, size int64, stream io.Reader) error {
 	uploadTime := time.Now()
 
 	ft := ioswitch2.NewFromTo()
 	fromExec, hd := ioswitch2.NewFromDriver(ioswitch2.RawStream())
-	ft.AddFrom(fromExec).AddTo(ioswitch2.NewToShardStore(*w.targetStg.MasterHub, w.targetStg, ioswitch2.RawStream(), "fileHash"))
+	ft.AddFrom(fromExec).
+		AddTo(ioswitch2.NewToShardStore(*w.targetStg.MasterHub, w.targetStg, ioswitch2.RawStream(), "fileHash"))
+
+	for i, stg := range w.loadToStgs {
+		ft.AddTo(ioswitch2.NewLoadToShared(*stg.MasterHub, stg, path.Join(w.loadToPath[i], pat)))
+	}
 
 	plans := exec.NewPlanBuilder()
 	err := parser.Parse(ft, plans)
@@ -53,7 +61,7 @@ func (w *UpdateUploader) Upload(path string, size int64, stream io.Reader) error
 	}
 
 	exeCtx := exec.NewExecContext()
-	exec.SetValueByType(exeCtx, w.uploader.stgMgr)
+	exec.SetValueByType(exeCtx, w.uploader.stgAgts)
 	exec := plans.Execute(exeCtx)
 	exec.BeginWrite(io.NopCloser(stream), hd)
 	ret, err := exec.Wait(context.TODO())
@@ -66,7 +74,7 @@ func (w *UpdateUploader) Upload(path string, size int64, stream io.Reader) error
 
 	// 记录上传结果
 	w.successes = append(w.successes, coormq.AddObjectEntry{
-		Path:       path,
+		Path:       pat,
 		Size:       size,
 		FileHash:   ret["fileHash"].(*ops2.FileHashValue).Hash,
 		UploadTime: uploadTime,

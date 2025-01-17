@@ -11,8 +11,8 @@ type Client struct {
 	rabbitCli *mq.RabbitMQTransport
 }
 
-func NewClient(cfg *stgmq.Config) (*Client, error) {
-	rabbitCli, err := mq.NewRabbitMQTransport(cfg.MakeConnectingURL(), stgmq.COORDINATOR_QUEUE_NAME, "")
+func NewClient(cfg mq.Config) (*Client, error) {
+	rabbitCli, err := mq.NewRabbitMQTransport(cfg, stgmq.COORDINATOR_QUEUE_NAME, "")
 	if err != nil {
 		return nil, err
 	}
@@ -32,12 +32,12 @@ type Pool interface {
 }
 
 type pool struct {
-	mqcfg  *stgmq.Config
+	mqcfg  mq.Config
 	shared *Client
 	lock   sync.Mutex
 }
 
-func NewPool(mqcfg *stgmq.Config) Pool {
+func NewPool(mqcfg mq.Config) Pool {
 	return &pool{
 		mqcfg: mqcfg,
 	}

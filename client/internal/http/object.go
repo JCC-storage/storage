@@ -28,10 +28,10 @@ func (s *Server) Object() *ObjectService {
 	}
 }
 
-func (s *ObjectService) List(ctx *gin.Context) {
-	log := logger.WithField("HTTP", "Object.List")
+func (s *ObjectService) ListByPath(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Object.ListByPath")
 
-	var req cdsapi.ObjectList
+	var req cdsapi.ObjectListByPath
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.Warnf("binding body: %s", err.Error())
 		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
@@ -45,7 +45,27 @@ func (s *ObjectService) List(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectListResp{Objects: objs}))
+	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectListByPathResp{Objects: objs}))
+}
+
+func (s *ObjectService) ListByIDs(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Object.ListByIDs")
+
+	var req cdsapi.ObjectListByIDs
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Warnf("binding body: %s", err.Error())
+		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
+		return
+	}
+
+	objs, err := s.svc.ObjectSvc().GetByIDs(req.UserID, req.ObjectIDs)
+	if err != nil {
+		log.Warnf("listing objects: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("listing objects: %v", err)))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectListByIDsResp{Objects: objs}))
 }
 
 type ObjectUploadReq struct {
@@ -63,7 +83,7 @@ func (s *ObjectService) Upload(ctx *gin.Context) {
 		return
 	}
 
-	up, err := s.svc.Uploader.BeginUpdate(req.Info.UserID, req.Info.PackageID, req.Info.Affinity)
+	up, err := s.svc.Uploader.BeginUpdate(req.Info.UserID, req.Info.PackageID, req.Info.Affinity, req.Info.LoadTo, req.Info.LoadToPath)
 	if err != nil {
 		log.Warnf("begin update: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("begin update: %v", err)))
@@ -136,6 +156,11 @@ func (s *ObjectService) Download(ctx *gin.Context) {
 	if err != nil {
 		log.Warnf("downloading object: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "download object failed"))
+		return
+	}
+	if file.File == nil {
+		log.Warnf("object not found: %d", req.ObjectID)
+		ctx.JSON(http.StatusOK, Failed(errorcode.DataNotFound, "object not found"))
 		return
 	}
 	defer file.File.Close()
@@ -336,6 +361,26 @@ func (s *ObjectService) DeleteByPath(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, OK(nil))
+}
+
+func (s *ObjectService) Clone(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Object.Clone")
+
+	var req cdsapi.ObjectClone
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Warnf("binding body: %s", err.Error())
+		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
+		return
+	}
+
+	objs, err := s.svc.ObjectSvc().Clone(req.UserID, req.Clonings)
+	if err != nil {
+		log.Warnf("cloning object: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "clone object failed"))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectCloneResp{Objects: objs}))
 }
 
 func (s *ObjectService) GetPackageObjects(ctx *gin.Context) {

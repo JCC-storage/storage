@@ -48,7 +48,7 @@ func init() {
 				return
 			}
 
-			pkg, err := cmdCtx.Cmdline.Svc.PackageSvc().GetByName(userID, comps[0], comps[1])
+			pkg, err := cmdCtx.Cmdline.Svc.PackageSvc().GetByFullName(userID, comps[0], comps[1])
 			if err != nil {
 				if codeMsg, ok := err.(*mq.CodeMessageError); ok && codeMsg.Code == errorcode.DataNotFound {
 					pkg2, err := cmdCtx.Cmdline.Svc.PackageSvc().Create(userID, bkt.BucketID, comps[1])
@@ -68,7 +68,7 @@ func init() {
 				storageAff = cdssdk.StorageID(stgID)
 			}
 
-			up, err := cmdCtx.Cmdline.Svc.Uploader.BeginUpdate(userID, pkg.PackageID, storageAff)
+			up, err := cmdCtx.Cmdline.Svc.Uploader.BeginUpdate(userID, pkg.PackageID, storageAff, nil, nil)
 			if err != nil {
 				fmt.Printf("begin updating package: %v\n", err)
 				return
