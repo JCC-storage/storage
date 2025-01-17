@@ -66,7 +66,7 @@ type ObjectDistribution struct {
 
 type DistNode struct {
 	ID       string `json:"id"`
-	ComboID  string `json:"comboID"`
+	ComboID  string `json:"comboId"`
 	Label    string `json:"label"`
 	NodeType string `json:"nodeType"`
 }

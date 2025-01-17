@@ -194,7 +194,7 @@ type ObjectChangeBody struct {
 	Path              string              `json:"path"`
 	Size              int                 `json:"size"`
 	BlockDistribution []BlockDistribution `json:"blockDistribution"`
-	Timestamp         string              `json:"timestamp"`
+	Timestamp         time.Time           `json:"timestamp"`
 }
 type ObjectChange struct {
 	Timestamp time.Time        `json:"timestamp"`
@@ -222,10 +222,10 @@ type PackageChange struct {
 // BucketChange bucket变化信息
 
 type BucketChangeBody struct {
-	Type       string `json:"type"`
-	BucketID   string `json:"bucketID"`
-	BucketName string `json:"bucketName"`
-	Timestamp  string `json:"timestamp"`
+	Type       string    `json:"type"`
+	BucketID   string    `json:"bucketID"`
+	BucketName string    `json:"bucketName"`
+	Timestamp  time.Time `json:"timestamp"`
 }
 
 type BucketChange struct {

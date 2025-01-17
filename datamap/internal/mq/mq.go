@@ -78,7 +78,7 @@ func processMessage(queue string, body []byte) {
 			log.Printf("Failed to unmarshal StorageStats: %v, body: %s", err, body)
 			return
 		}
-		//models.ProcessStorageInfo(data)
+		models.ProcessStorageStats(data)
 	case "datamap_hubtransferstats":
 		var data stgmod.HubTransferStats
 		err := jsoniter.Unmarshal(body, &data)
@@ -94,7 +94,7 @@ func processMessage(queue string, body []byte) {
 			log.Printf("Failed to unmarshal HubStorageTransferStats: %v, body: %s", err, body)
 			return
 		}
-		//models.ProcessHubTransfer(data)
+		models.ProcessHubStorageTransfer(data)
 	case "datamap_blocktransfer":
 		var data stgmod.BlockTransfer
 		err := jsoniter.Unmarshal(body, &data)

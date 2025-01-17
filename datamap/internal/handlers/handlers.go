@@ -114,7 +114,7 @@ func GetDataTransfer(c *gin.Context) {
 			//block id
 			ID: strconv.FormatInt(block.BlockID, 10),
 			//storage id
-			ComboID: strconv.FormatInt(block.StorageID, 10),
+			ComboID: "storage" + strconv.FormatInt(block.StorageID, 10),
 			//block index
 			Label: block.Type + strconv.FormatInt(block.Index, 10),
 			//block type
@@ -124,11 +124,11 @@ func GetDataTransfer(c *gin.Context) {
 
 		//combos -------    state or storage
 		//添加storage combo信息
-		if !containsCombo(combos, strconv.FormatInt(block.StorageID, 10), "storage") {
+		if !containsCombo(combos, "storage"+strconv.FormatInt(block.StorageID, 10), "storage") {
 			combo := models.Combo{
 				ID:        "storage" + strconv.FormatInt(block.StorageID, 10),
 				Label:     "存储中心" + strconv.FormatInt(block.StorageID, 10),
-				ParentId:  strconv.Itoa(block.Status),
+				ParentId:  "state" + strconv.Itoa(block.Status),
 				ComboType: "storage",
 			}
 			combos = append(combos, combo)
