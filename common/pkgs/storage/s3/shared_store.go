@@ -1,12 +1,7 @@
 package s3
 
+import "gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
+
 type SharedStoreDesc struct {
-}
-
-func (d *SharedStoreDesc) Enabled() bool {
-	return false
-}
-
-func (d *SharedStoreDesc) HasBypassWrite() bool {
-	return false
+	types.EmptySharedStoreDesc
 }

@@ -27,3 +27,15 @@ type BypassFilePath struct {
 type BypassRead interface {
 	BypassRead(fileHash cdssdk.FileHash) (BypassFilePath, error)
 }
+
+// 能通过一个Http请求直接访问文件
+// 仅用于分片存储。
+type HTTPBypassRead interface {
+	HTTPBypassRead(fileHash cdssdk.FileHash) (HTTPReqeust, error)
+}
+
+type HTTPReqeust struct {
+	SignedUrl string            `json:"signedUrl"`
+	Header    map[string]string `json:"header"`
+	Body      string            `json:"body"`
+}

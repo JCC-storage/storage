@@ -11,6 +11,7 @@ import (
 )
 
 type SharedStoreDesc struct {
+	types.EmptySharedStoreDesc
 	builder *builder
 }
 

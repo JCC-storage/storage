@@ -170,5 +170,7 @@ func (s *S2STransfer) Abort() {
 		s.omsCli.DeleteTask(&model.DeleteTaskRequest{
 			TaskId: fmt.Sprintf("%v", *s.taskID),
 		})
+
+		// TODO 清理临时文件
 	}
 }

@@ -27,6 +27,7 @@ const (
 )
 
 type ShardStoreDesc struct {
+	types.EmptyShardStoreDesc
 	builder *builder
 }
 

@@ -19,6 +19,7 @@ func init() {
 }
 
 type builder struct {
+	types.EmptyBuilder
 	detail stgmod.StorageDetail
 }
 

@@ -50,6 +50,7 @@ type StorageBuilder interface {
 	CreateMultiparter() (Multiparter, error)
 	// 创建一个存储服务直传组件
 	CreateS2STransfer() (S2STransfer, error)
+	CreateECMultiplier() (ECMultiplier, error)
 }
 
 type ShardStoreDesc interface {
@@ -59,6 +60,8 @@ type ShardStoreDesc interface {
 	HasBypassWrite() bool
 	// 是否能旁路读取
 	HasBypassRead() bool
+	// 是否能通过HTTP读取
+	HasBypassHTTPRead() bool
 }
 
 type SharedStoreDesc interface {

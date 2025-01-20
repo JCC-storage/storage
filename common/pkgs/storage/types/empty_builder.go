@@ -32,6 +32,10 @@ func (b *EmptyBuilder) CreateS2STransfer() (S2STransfer, error) {
 	return nil, fmt.Errorf("create s2s transfer for %T: %w", b.Detail.Storage.Type, ErrUnsupported)
 }
 
+func (b *EmptyBuilder) CreateECMultiplier() (ECMultiplier, error) {
+	return nil, fmt.Errorf("create ec multiplier for %T: %w", b.Detail.Storage.Type, ErrUnsupported)
+}
+
 type EmptyShardStoreDesc struct {
 }
 
@@ -44,6 +48,10 @@ func (d *EmptyShardStoreDesc) HasBypassWrite() bool {
 }
 
 func (d *EmptyShardStoreDesc) HasBypassRead() bool {
+	return false
+}
+
+func (d *EmptyShardStoreDesc) HasBypassHTTPRead() bool {
 	return false
 }
 
