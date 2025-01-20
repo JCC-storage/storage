@@ -119,7 +119,7 @@ func (svc *StorageService) LoadPackage(userID cdssdk.UserID, packageID cdssdk.Pa
 			return fmt.Errorf("unsupported download strategy: %T", strg)
 		}
 
-		ft.AddTo(ioswitch2.NewLoadToShared(*destStg.MasterHub, *destStg, path.Join(rootPath, obj.Object.Path)))
+		ft.AddTo(ioswitch2.NewLoadToPublic(*destStg.MasterHub, *destStg, path.Join(rootPath, obj.Object.Path)))
 		// 顺便保存到同存储服务的分片存储中
 		if factory.GetBuilder(*destStg).ShardStoreDesc().Enabled() {
 			ft.AddTo(ioswitch2.NewToShardStore(*destStg.MasterHub, *destStg, ioswitch2.RawStream(), ""))

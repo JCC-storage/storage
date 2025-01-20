@@ -31,7 +31,7 @@ type StorageAgent interface {
 	// 获取分片存储服务
 	GetShardStore() (ShardStore, error)
 	// 获取共享存储服务
-	GetSharedStore() (SharedStore, error)
+	GetPublicStore() (PublicStore, error)
 }
 
 // 创建存储服务的指定组件。
@@ -45,7 +45,7 @@ type StorageBuilder interface {
 	// 是否支持分片存储服务
 	ShardStoreDesc() ShardStoreDesc
 	// 是否支持共享存储服务
-	SharedStoreDesc() SharedStoreDesc
+	PublicStoreDesc() PublicStoreDesc
 	// 创建一个分片上传组件
 	CreateMultiparter() (Multiparter, error)
 	// 创建一个存储服务直传组件
@@ -64,7 +64,7 @@ type ShardStoreDesc interface {
 	HasBypassHTTPRead() bool
 }
 
-type SharedStoreDesc interface {
+type PublicStoreDesc interface {
 	// 是否已启动
 	Enabled() bool
 	// 是否能旁路上传

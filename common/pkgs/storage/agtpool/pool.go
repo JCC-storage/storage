@@ -87,8 +87,8 @@ func (m *AgentPool) GetShardStore(stgID cdssdk.StorageID) (types.ShardStore, err
 	return stg.Agent.GetShardStore()
 }
 
-// 查找指定Storage的SharedStore组件
-func (m *AgentPool) GetSharedStore(stgID cdssdk.StorageID) (types.SharedStore, error) {
+// 查找指定Storage的PublicStore组件
+func (m *AgentPool) GetPublicStore(stgID cdssdk.StorageID) (types.PublicStore, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -97,5 +97,5 @@ func (m *AgentPool) GetSharedStore(stgID cdssdk.StorageID) (types.SharedStore, e
 		return nil, types.ErrStorageNotFound
 	}
 
-	return stg.Agent.GetSharedStore()
+	return stg.Agent.GetPublicStore()
 }

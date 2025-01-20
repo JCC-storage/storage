@@ -45,7 +45,7 @@ func (u *CreateLoadUploader) Upload(pa string, size int64, stream io.Reader) err
 	ft.AddFrom(fromExec)
 	for i, stg := range u.targetStgs {
 		ft.AddTo(ioswitch2.NewToShardStore(*stg.MasterHub, stg, ioswitch2.RawStream(), "fileHash"))
-		ft.AddTo(ioswitch2.NewLoadToShared(*stg.MasterHub, stg, path.Join(u.loadRoots[i], pa)))
+		ft.AddTo(ioswitch2.NewLoadToPublic(*stg.MasterHub, stg, path.Join(u.loadRoots[i], pa)))
 		stgIDs = append(stgIDs, stg.Storage.StorageID)
 	}
 

@@ -42,18 +42,18 @@ func (b *builder) CreateAgent() (types.StorageAgent, error) {
 		agt.ShardStore = store
 	}
 
-	if b.detail.Storage.SharedStore != nil {
-		local, ok := b.detail.Storage.SharedStore.(*cdssdk.LocalSharedStorage)
+	if b.detail.Storage.PublicStore != nil {
+		local, ok := b.detail.Storage.PublicStore.(*cdssdk.LocalPublicStorage)
 		if !ok {
-			return nil, fmt.Errorf("invalid shared store type %T for local storage", b.detail.Storage.SharedStore)
+			return nil, fmt.Errorf("invalid public store type %T for local storage", b.detail.Storage.PublicStore)
 		}
 
-		store, err := NewSharedStore(agt, *local)
+		store, err := NewPublicStore(agt, *local)
 		if err != nil {
 			return nil, err
 		}
 
-		agt.SharedStore = store
+		agt.PublicStore = store
 	}
 
 	return agt, nil
@@ -63,8 +63,8 @@ func (b *builder) ShardStoreDesc() types.ShardStoreDesc {
 	return &ShardStoreDesc{builder: b}
 }
 
-func (b *builder) SharedStoreDesc() types.SharedStoreDesc {
-	return &SharedStoreDesc{builder: b}
+func (b *builder) PublicStoreDesc() types.PublicStoreDesc {
+	return &PublicStoreDesc{builder: b}
 }
 
 func (b *builder) CreateMultiparter() (types.Multiparter, error) {

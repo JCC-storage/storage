@@ -38,13 +38,13 @@ func (b *builder) ShardStoreDesc() types.ShardStoreDesc {
 	return blder.ShardStoreDesc()
 }
 
-func (b *builder) SharedStoreDesc() types.SharedStoreDesc {
+func (b *builder) PublicStoreDesc() types.PublicStoreDesc {
 	stgType := b.detail.Storage.Type.(*cdssdk.MashupStorageType)
 	detail := b.detail
 	detail.Storage.Type = stgType.Agent
 
 	blder := factory.GetBuilder(detail)
-	return blder.SharedStoreDesc()
+	return blder.PublicStoreDesc()
 }
 
 func (b *builder) CreateMultiparter() (types.Multiparter, error) {

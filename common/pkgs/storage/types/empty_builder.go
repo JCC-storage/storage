@@ -19,8 +19,8 @@ func (b *EmptyBuilder) ShardStoreDesc() ShardStoreDesc {
 	return &EmptyShardStoreDesc{}
 }
 
-func (b *EmptyBuilder) SharedStoreDesc() SharedStoreDesc {
-	return &EmptySharedStoreDesc{}
+func (b *EmptyBuilder) PublicStoreDesc() PublicStoreDesc {
+	return &EmptyPublicStoreDesc{}
 }
 
 // 创建一个分片上传组件
@@ -55,13 +55,13 @@ func (d *EmptyShardStoreDesc) HasBypassHTTPRead() bool {
 	return false
 }
 
-type EmptySharedStoreDesc struct {
+type EmptyPublicStoreDesc struct {
 }
 
-func (d *EmptySharedStoreDesc) Enabled() bool {
+func (d *EmptyPublicStoreDesc) Enabled() bool {
 	return false
 }
 
-func (d *EmptySharedStoreDesc) HasBypassWrite() bool {
+func (d *EmptyPublicStoreDesc) HasBypassWrite() bool {
 	return false
 }
