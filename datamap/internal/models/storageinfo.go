@@ -1,8 +1,10 @@
 package models
 
 import (
+	"fmt"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/sysevent"
 	"gorm.io/gorm"
 	"time"
 )
@@ -65,32 +67,45 @@ func (r *StorageRepository) GetAllStorages() ([]Storage, error) {
 	return storages, nil
 }
 
-func ProcessStorageInfo(data stgmod.StorageInfo) {
-	repo := NewStorageRepository(DB)
-	storage := &Storage{
-		StorageID:   cdssdk.StorageID(data.Body.StorageID),
-		StorageName: data.Body.StorageInfo.Name,
-		HubID:       data.Body.StorageInfo.MasterHub,
-		Timestamp:   data.Timestamp,
-	}
+type StorageInfoWatcher struct {
+	Name string
+}
 
-	switch data.Body.Type {
-	case "add":
-		err := repo.CreateStorage(storage)
-		if err != nil {
-			return
+func (w *StorageInfoWatcher) OnEvent(event sysevent.SysEvent) {
+	repo := NewStorageRepository(DB)
+
+	if event.Category == "storageInfo" {
+		if storageInfo, ok := event.Body.(*stgmod.BodyStorageInfo); ok {
+			storage := &Storage{
+				StorageID:   storageInfo.StorageID,
+				StorageName: storageInfo.StorageInfo.Name,
+				HubID:       storageInfo.StorageInfo.MasterHub,
+				Timestamp:   time.Now(),
+			}
+
+			switch storageInfo.Type {
+			case "add":
+				err := repo.CreateStorage(storage)
+				if err != nil {
+					return
+				}
+			case "update":
+				err := repo.UpdateStorage(storage)
+				if err != nil {
+					return
+				}
+			case "delete":
+				err := repo.DeleteStorage(storage)
+				if err != nil {
+					return
+				}
+			default:
+				return
+			}
+		} else {
+			fmt.Printf("Watcher %s: Unexpected Body type, expected *BodyStorageInfo, got %T\n", w.Name, event.Body)
 		}
-	case "update":
-		err := repo.UpdateStorage(storage)
-		if err != nil {
-			return
-		}
-	case "delete":
-		err := repo.DeleteStorage(storage)
-		if err != nil {
-			return
-		}
-	default:
-		return
+	} else {
+		fmt.Printf("Watcher %s received an event with category %s\n", w.Name, event.Category)
 	}
 }

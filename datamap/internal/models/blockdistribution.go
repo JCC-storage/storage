@@ -2,8 +2,9 @@ package models
 
 import (
 	"errors"
-	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"fmt"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/sysevent"
 	"gorm.io/gorm"
 	"log"
 	"strconv"
@@ -89,90 +90,103 @@ func (r *BlockDistributionRepository) DeleteBlockDistribution(objectID int64, in
 	return r.repo.db.Exec(query, objectID, index, storageID).Error
 }
 
-// ProcessBlockDistribution mq推送各节点统计自身当前的总数据量时的处理逻辑
+type BlockDistributionWatcher struct {
+	Name string
+}
 
-func ProcessBlockDistribution(data stgmod.BlockDistribution) {
+func (w *BlockDistributionWatcher) OnEvent(event sysevent.SysEvent) {
 	repoObject := NewObjectRepository(DB)
 	repoBlock := NewBlockDistributionRepository(DB)
 	repoStorage := NewStorageTransferCountRepository(DB)
-	//更新object表中的状态
-	object, err := repoObject.GetObjectByID(data.Body.Object.ObjectID)
-	faultTolerance, _ := strconv.ParseFloat(data.Body.Object.FaultTolerance, 64)
-	redundancy, _ := strconv.ParseFloat(data.Body.Object.Redundancy, 64)
-	avgAccessCost, _ := strconv.ParseFloat(data.Body.Object.AvgAccessCost, 64)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		err := repoObject.CreateObject(&Object{
-			ObjectID:       cdssdk.ObjectID(data.Body.Object.ObjectID),
-			PackageID:      cdssdk.PackageID(data.Body.Object.PackageID),
-			Path:           data.Body.Object.Path,
-			Size:           data.Body.Object.Size,
-			FileHash:       data.Body.Object.FileHash,
-			Status:         StatusYesterdayAfter,
-			FaultTolerance: faultTolerance,
-			Redundancy:     redundancy,
-			AvgAccessCost:  avgAccessCost,
-			Timestamp:      time.Now(),
-		})
-		if err != nil {
-			log.Printf("Error create object: %v", err)
-		}
-	} else {
-		object.Status = StatusYesterdayAfter
-		err = repoObject.UpdateObject(object)
-		if err != nil {
-			log.Printf("Error update object: %v", err)
-		}
-	}
 
-	//更新block表中的状态
-	for _, blockDistribution := range data.Body.Object.BlockDistribution {
-		blockIndex, _ := strconv.ParseInt(blockDistribution.Index, 10, 64)
-		blockStorageID, _ := strconv.ParseInt(blockDistribution.StorageID, 10, 64)
-		blockDist, err := repoBlock.GetBlockDistributionByIndex(data.Body.Object.ObjectID, blockIndex, blockStorageID)
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err := repoBlock.CreateBlockDistribution(&BlockDistribution{
-				BlockID:   blockDist.BlockID,
-				ObjectID:  blockDist.ObjectID,
-				Type:      blockDistribution.Type,
-				Index:     blockIndex,
-				StorageID: blockStorageID,
-				Status:    StatusYesterdayAfter,
-				Timestamp: time.Now(),
-			})
-			if err != nil {
-				log.Printf("Error create BlockDistribution: %v", err)
+	if event.Category == "blockDistribution" {
+		if blockDistribution, ok := event.Body.(*stgmod.BodyBlockDistribution); ok {
+
+			//更新object表中的状态
+
+			object, err := repoObject.GetObjectByID(int64(blockDistribution.Object.ObjectID))
+			faultTolerance, _ := strconv.ParseFloat(blockDistribution.Object.FaultTolerance, 64)
+			redundancy, _ := strconv.ParseFloat(blockDistribution.Object.Redundancy, 64)
+			avgAccessCost, _ := strconv.ParseFloat(blockDistribution.Object.AvgAccessCost, 64)
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				err := repoObject.CreateObject(&Object{
+					ObjectID:       blockDistribution.Object.ObjectID,
+					PackageID:      blockDistribution.Object.PackageID,
+					Path:           blockDistribution.Object.Path,
+					Size:           blockDistribution.Object.Size,
+					FileHash:       blockDistribution.Object.FileHash,
+					Status:         StatusYesterdayAfter,
+					FaultTolerance: faultTolerance,
+					Redundancy:     redundancy,
+					AvgAccessCost:  avgAccessCost,
+					Timestamp:      time.Now(),
+				})
+				if err != nil {
+					log.Printf("Error create object: %v", err)
+				}
+			} else {
+				object.Status = StatusYesterdayAfter
+				err = repoObject.UpdateObject(object)
+				if err != nil {
+					log.Printf("Error update object: %v", err)
+				}
+			}
+
+			//更新block表中的状态
+			for _, blockDist := range blockDistribution.Object.BlockDistribution {
+				blockIndex, _ := strconv.ParseInt(blockDist.Index, 10, 64)
+				blockStorageID, _ := strconv.ParseInt(blockDist.StorageID, 10, 64)
+				blockDist, err := repoBlock.GetBlockDistributionByIndex(int64(blockDistribution.Object.ObjectID), blockIndex, blockStorageID)
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					err := repoBlock.CreateBlockDistribution(&BlockDistribution{
+						BlockID:   blockDist.BlockID,
+						ObjectID:  blockDist.ObjectID,
+						Type:      blockDist.Type,
+						Index:     blockIndex,
+						StorageID: blockStorageID,
+						Status:    StatusYesterdayAfter,
+						Timestamp: time.Now(),
+					})
+					if err != nil {
+						log.Printf("Error create BlockDistribution: %v", err)
+					}
+				} else {
+					err := repoBlock.UpdateBlockDistribution(&BlockDistribution{
+						BlockID:   blockDist.BlockID,
+						ObjectID:  blockDist.ObjectID,
+						Type:      blockDist.Type,
+						Index:     blockIndex,
+						StorageID: blockStorageID,
+						Status:    StatusYesterdayAfter,
+						Timestamp: time.Now(),
+					})
+					if err != nil {
+						log.Printf("Error update BlockDistribution: %v", err)
+					}
+				}
+			}
+			//在storageTransferCount表中添加记录
+			for _, dataTransfer := range blockDistribution.Object.DataTransfers {
+				sourceStorageID, _ := strconv.ParseInt(string(dataTransfer.SourceStorageID), 10, 64)
+				targetStorageID, _ := strconv.ParseInt(string(dataTransfer.TargetStorageID), 10, 64)
+				dataTransferCount, _ := strconv.ParseInt(dataTransfer.DataTransferCount, 10, 64)
+
+				err := repoStorage.CreateStorageTransferCount(&StorageTransferCount{
+					ObjectID:          int64(blockDistribution.Object.ObjectID),
+					Status:            StatusTodayBeforeYesterday,
+					SourceStorageID:   sourceStorageID,
+					TargetStorageID:   targetStorageID,
+					DataTransferCount: dataTransferCount,
+					Timestamp:         time.Now(),
+				})
+				if err != nil {
+					log.Printf("Error create StorageTransferCount : %v", err)
+				}
 			}
 		} else {
-			err := repoBlock.UpdateBlockDistribution(&BlockDistribution{
-				BlockID:   blockDist.BlockID,
-				ObjectID:  blockDist.ObjectID,
-				Type:      blockDistribution.Type,
-				Index:     blockIndex,
-				StorageID: blockStorageID,
-				Status:    StatusYesterdayAfter,
-				Timestamp: time.Now(),
-			})
-			if err != nil {
-				log.Printf("Error update BlockDistribution: %v", err)
-			}
+			fmt.Printf("Watcher %s: Unexpected Body type, expected *BodyStorageInfo, got %T\n", w.Name, event.Body)
 		}
-	}
-	//在storageTransferCount表中添加记录
-	for _, dataTransfer := range data.Body.Object.DataTransfers {
-		sourceStorageID, _ := strconv.ParseInt(dataTransfer.SourceStorageID, 10, 64)
-		targetStorageID, _ := strconv.ParseInt(dataTransfer.TargetStorageID, 10, 64)
-		dataTransferCount, _ := strconv.ParseInt(dataTransfer.DataTransferCount, 10, 64)
-
-		err := repoStorage.CreateStorageTransferCount(&StorageTransferCount{
-			ObjectID:          data.Body.Object.ObjectID,
-			Status:            StatusTodayBeforeYesterday,
-			SourceStorageID:   sourceStorageID,
-			TargetStorageID:   targetStorageID,
-			DataTransferCount: dataTransferCount,
-			Timestamp:         time.Now(),
-		})
-		if err != nil {
-			log.Printf("Error create StorageTransferCount : %v", err)
-		}
+	} else {
+		fmt.Printf("Watcher %s received an event with category %s\n", w.Name, event.Category)
 	}
 }

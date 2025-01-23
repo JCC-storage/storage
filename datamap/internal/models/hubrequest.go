@@ -1,14 +1,17 @@
 package models
 
 import (
+	"fmt"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/sysevent"
 	"gorm.io/gorm"
 	"log"
 	"time"
 )
 
 type HubRequest struct {
+	//todo source和target类型的区分
 	RequestID          int64        `gorm:"column:RequestID; primaryKey; type:bigint; autoIncrement" json:"RequestID"`
 	SourceType         string       `gorm:"column:SourceType; type:varchar(255); not null" json:"sourceType"`
 	SourceID           cdssdk.HubID `gorm:"column:SourceID; type:bigint; not null" json:"sourceID"`
@@ -57,75 +60,98 @@ func (r *HubRequestRepository) GetAllHubRequests() ([]HubRequest, error) {
 	return hubRequests, nil
 }
 
-// ProcessHubTransfer mq推送各节点统计自身当天向外部各个节点传输的总数据量时的处理逻辑
-func ProcessHubTransfer(data stgmod.HubTransferStats) {
+type HubTransferStatsWatcher struct {
+	Name string
+}
+
+func (w *HubTransferStatsWatcher) OnEvent(event sysevent.SysEvent) {
 	repo := NewHubRequestRepository(DB)
 
-	hubRequest := &HubRequest{
-		SourceType:         "hub",
-		SourceID:           cdssdk.HubID(data.Body.SourceHubID),
-		TargetType:         "hub",
-		TargetID:           cdssdk.HubID(data.Body.TargetHubID),
-		DataTransferCount:  data.Body.Send.TotalTransfer,
-		RequestCount:       data.Body.Send.RequestCount,
-		FailedRequestCount: data.Body.Send.FailedRequestCount,
-		AvgTransferCount:   data.Body.Send.AvgTransfer,
-		MaxTransferCount:   data.Body.Send.MaxTransfer,
-		MinTransferCount:   data.Body.Send.MinTransfer,
-		StartTimestamp:     data.Body.StartTimestamp,
-		EndTimestamp:       data.Body.EndTimestamp,
-	}
+	if event.Category == "hubTransferStats" {
+		if hubTransferStats, ok := event.Body.(*stgmod.BodyHubTransferStats); ok {
+			hubRequest := &HubRequest{
+				SourceType:         "hub",
+				SourceID:           hubTransferStats.SourceHubID,
+				TargetType:         "hub",
+				TargetID:           hubTransferStats.TargetHubID,
+				DataTransferCount:  hubTransferStats.Send.TotalTransfer,
+				RequestCount:       hubTransferStats.Send.RequestCount,
+				FailedRequestCount: hubTransferStats.Send.FailedRequestCount,
+				AvgTransferCount:   hubTransferStats.Send.AvgTransfer,
+				MaxTransferCount:   hubTransferStats.Send.MaxTransfer,
+				MinTransferCount:   hubTransferStats.Send.MinTransfer,
+				StartTimestamp:     hubTransferStats.StartTimestamp,
+				EndTimestamp:       hubTransferStats.EndTimestamp,
+			}
 
-	err := repo.CreateHubRequest(hubRequest)
-	if err != nil {
-		log.Printf("Error update hubrequest: %v", err)
+			err := repo.CreateHubRequest(hubRequest)
+			if err != nil {
+				log.Printf("Error update hubrequest: %v", err)
 
+			}
+		} else {
+			fmt.Printf("Watcher %s: Unexpected Body type, expected *BodyStorageInfo, got %T\n", w.Name, event.Body)
+		}
+	} else {
+		fmt.Printf("Watcher %s received an event with category %s\n", w.Name, event.Category)
 	}
 }
 
-// ProcessHubStorageTransfer  节点中心之间数据传输处理
-func ProcessHubStorageTransfer(data stgmod.HubStorageTransferStats) {
+type HubStorageTransferStatsWatcher struct {
+	Name string
+}
+
+func (w *HubStorageTransferStatsWatcher) OnEvent(event sysevent.SysEvent) {
 	repo := NewHubRequestRepository(DB)
 
-	hubRequestSend := &HubRequest{
-		SourceType:         "hub",
-		SourceID:           cdssdk.HubID(data.Body.HubID),
-		TargetType:         "storage",
-		TargetID:           cdssdk.HubID(data.Body.StorageID),
-		DataTransferCount:  data.Body.Send.TotalTransfer,
-		RequestCount:       data.Body.Send.RequestCount,
-		FailedRequestCount: data.Body.Send.FailedRequestCount,
-		AvgTransferCount:   data.Body.Send.AvgTransfer,
-		MaxTransferCount:   data.Body.Send.MaxTransfer,
-		MinTransferCount:   data.Body.Send.MinTransfer,
-		StartTimestamp:     data.Body.StartTimestamp,
-		EndTimestamp:       data.Body.EndTimestamp,
-	}
+	if event.Category == "hubStorageTransferStats" {
+		if hubStorageTransferStats, ok := event.Body.(*stgmod.BodyHubStorageTransferStats); ok {
 
-	err := repo.CreateHubRequest(hubRequestSend)
-	if err != nil {
-		log.Printf("Error update hubrequest: %v", err)
+			hubRequestSend := &HubRequest{
+				SourceType:         "hub",
+				SourceID:           hubStorageTransferStats.HubID,
+				TargetType:         "storage",
+				TargetID:           cdssdk.HubID(hubStorageTransferStats.StorageID),
+				DataTransferCount:  hubStorageTransferStats.Send.TotalTransfer,
+				RequestCount:       hubStorageTransferStats.Send.RequestCount,
+				FailedRequestCount: hubStorageTransferStats.Send.FailedRequestCount,
+				AvgTransferCount:   hubStorageTransferStats.Send.AvgTransfer,
+				MaxTransferCount:   hubStorageTransferStats.Send.MaxTransfer,
+				MinTransferCount:   hubStorageTransferStats.Send.MinTransfer,
+				StartTimestamp:     hubStorageTransferStats.StartTimestamp,
+				EndTimestamp:       hubStorageTransferStats.EndTimestamp,
+			}
 
-	}
+			err := repo.CreateHubRequest(hubRequestSend)
+			if err != nil {
+				log.Printf("Error update hubrequest: %v", err)
 
-	hubRequestReceive := &HubRequest{
-		SourceType:         "storage",
-		SourceID:           cdssdk.HubID(data.Body.StorageID),
-		TargetType:         "hub",
-		TargetID:           cdssdk.HubID(data.Body.HubID),
-		DataTransferCount:  data.Body.Receive.TotalTransfer,
-		RequestCount:       data.Body.Receive.RequestCount,
-		FailedRequestCount: data.Body.Receive.FailedRequestCount,
-		AvgTransferCount:   data.Body.Receive.AvgTransfer,
-		MaxTransferCount:   data.Body.Receive.MaxTransfer,
-		MinTransferCount:   data.Body.Receive.MinTransfer,
-		StartTimestamp:     data.Body.StartTimestamp,
-		EndTimestamp:       data.Body.EndTimestamp,
-	}
+			}
 
-	err = repo.CreateHubRequest(hubRequestReceive)
-	if err != nil {
-		log.Printf("Error update hubrequest: %v", err)
+			hubRequestReceive := &HubRequest{
+				SourceType:         "storage",
+				SourceID:           cdssdk.HubID(hubStorageTransferStats.StorageID),
+				TargetType:         "hub",
+				TargetID:           hubStorageTransferStats.HubID,
+				DataTransferCount:  hubStorageTransferStats.Receive.TotalTransfer,
+				RequestCount:       hubStorageTransferStats.Receive.RequestCount,
+				FailedRequestCount: hubStorageTransferStats.Receive.FailedRequestCount,
+				AvgTransferCount:   hubStorageTransferStats.Receive.AvgTransfer,
+				MaxTransferCount:   hubStorageTransferStats.Receive.MaxTransfer,
+				MinTransferCount:   hubStorageTransferStats.Receive.MinTransfer,
+				StartTimestamp:     hubStorageTransferStats.StartTimestamp,
+				EndTimestamp:       hubStorageTransferStats.EndTimestamp,
+			}
 
+			err = repo.CreateHubRequest(hubRequestReceive)
+			if err != nil {
+				log.Printf("Error update hubrequest: %v", err)
+
+			}
+		} else {
+			fmt.Printf("Watcher %s: Unexpected Body type, expected *BodyStorageInfo, got %T\n", w.Name, event.Body)
+		}
+	} else {
+		fmt.Printf("Watcher %s received an event with category %s\n", w.Name, event.Category)
 	}
 }

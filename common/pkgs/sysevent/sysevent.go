@@ -1,9 +1,17 @@
 package sysevent
 
+import (
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
+	"time"
+)
+
 const (
 	SysEventQueueName = "SysEventQueue"
 )
 
-type SysEvent = any // TODO 换成具体的类型
-
-type Source = any // TODO 换成具体的类型
+type SysEvent struct {
+	Timestamp time.Time     `json:"timestamp"`
+	Source    stgmod.Source `json:"source"`
+	Category  string        `json:"category"`
+	Body      stgmod.Body   `json:"body"`
+}

@@ -2,9 +2,10 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
-	"gorm.io/datatypes"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/sysevent"
 )
 
 // LocalHub 本地结构体，嵌入cdssdk.Hub
@@ -42,33 +43,49 @@ func (s *LocalHub) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func ProcessHubInfo(data stgmod.HubInfo) {
-	repo := NewHubRepository(DB)
-	jsonData, _ := json.Marshal(data.Body.HubInfo.Address)
-	HubInfo := &Hub{
-		HubID:   cdssdk.HubID(data.Body.HubID),
-		Name:    data.Body.HubInfo.Name,
-		Address: datatypes.JSON(jsonData),
-	}
+// 实现 Watcher 接口的结构体
+type HubInfoWatcher struct {
+	Name string
+}
 
-	//先判断传输数据的类型
-	switch data.Body.Type {
-	case "add":
-		err := repo.CreateHub(HubInfo)
-		if err != nil {
-			return
+// 实现 OnEvent 方法
+func (w *HubInfoWatcher) OnEvent(event sysevent.SysEvent) {
+	repo := NewHubRepository(DB)
+
+	if event.Category == "hubInfo" {
+		if hubInfo, ok := event.Body.(*stgmod.BodyHubInfo); ok {
+
+			hub := &Hub{
+				HubID:   hubInfo.HubID,
+				Name:    hubInfo.HubInfo.Name,
+				Address: hubInfo.HubInfo.Address,
+			}
+			//先判断传输数据的类型
+			switch hubInfo.Type {
+			case "add":
+				err := repo.CreateHub(hub)
+				if err != nil {
+					return
+				}
+			case "update":
+				err := repo.UpdateHub(hub)
+				if err != nil {
+					return
+				}
+			case "delete":
+				err := repo.DeleteHub(hub)
+				if err != nil {
+					return
+				}
+			default:
+				return
+			}
+		} else {
+			// 如果 Body 不是我们期望的类型，打印错误信息
+			fmt.Printf("Watcher %s: Unexpected Body type, expected *BodyHubInfo, got %T\n", w.Name, event.Body)
 		}
-	case "update":
-		err := repo.UpdateHub(HubInfo)
-		if err != nil {
-			return
-		}
-	case "delete":
-		err := repo.DeleteHub(HubInfo)
-		if err != nil {
-			return
-		}
-	default:
-		return
+	} else {
+		// 如果事件的 Category 不是 hubInfo，打印默认信息
+		fmt.Printf("Watcher %s received an event with category %s\n", w.Name, event.Category)
 	}
 }

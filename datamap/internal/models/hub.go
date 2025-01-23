@@ -2,14 +2,13 @@ package models
 
 import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
-	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
 type Hub struct {
-	HubID   cdssdk.HubID   `gorm:"column:HubID; primaryKey; type:bigint; autoIncrement" json:"hubID"`
-	Name    string         `gorm:"column:Name; type:varchar(255); not null" json:"name"`
-	Address datatypes.JSON `gorm:"column:Address; type:json; " json:"address"`
+	HubID   cdssdk.HubID          `gorm:"column:HubID; primaryKey; type:bigint; autoIncrement" json:"hubID"`
+	Name    string                `gorm:"column:Name; type:varchar(255); not null" json:"name"`
+	Address cdssdk.HubAddressInfo `gorm:"column:Address; type:json; " json:"address"`
 }
 
 func (Hub) TableName() string { return "hub" }

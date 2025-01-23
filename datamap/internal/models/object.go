@@ -1,8 +1,10 @@
 package models
 
 import (
+	"fmt"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/sysevent"
 	"gorm.io/gorm"
 	"time"
 )
@@ -65,7 +67,19 @@ func (r *ObjectRepository) GetAllObjects() ([]Object, error) {
 	return objects, nil
 }
 
-// ProcessObject 处理 Object 数据
-func ProcessObject(data stgmod.ObjectChange) {
+type ObjectWatcher struct {
+	Name string
+}
 
+func (w *ObjectWatcher) OnEvent(event sysevent.SysEvent) {
+
+	if event.Category == "objectChange" {
+		if _, ok := event.Body.(*stgmod.BodyObjectChange); ok {
+
+		} else {
+			fmt.Printf("Watcher %s: Unexpected Body type, expected *ObjectInfo, got %T\n", w.Name, event.Body)
+		}
+	} else {
+		fmt.Printf("Watcher %s received an event with category %s\n", w.Name, event.Category)
+	}
 }
