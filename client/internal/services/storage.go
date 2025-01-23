@@ -10,6 +10,7 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/model"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock/reqbuilder"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader/strategy"
@@ -58,6 +59,21 @@ func (svc *StorageService) GetByName(userID cdssdk.UserID, name string) (*model.
 	return &getResp.Storage, nil
 }
 
+func (svc *StorageService) GetDetails(stgIDs []cdssdk.StorageID) ([]*stgmod.StorageDetail, error) {
+	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
+	if err != nil {
+		return nil, fmt.Errorf("new coordinator client: %w", err)
+	}
+	defer stgglb.CoordinatorMQPool.Release(coorCli)
+
+	getResp, err := coorCli.GetStorageDetails(coormq.ReqGetStorageDetails(stgIDs))
+	if err != nil {
+		return nil, fmt.Errorf("request to coordinator: %w", err)
+	}
+
+	return getResp.Storages, nil
+}
+
 func (svc *StorageService) LoadPackage(userID cdssdk.UserID, packageID cdssdk.PackageID, storageID cdssdk.StorageID, rootPath string) error {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
@@ -103,7 +119,7 @@ func (svc *StorageService) LoadPackage(userID cdssdk.UserID, packageID cdssdk.Pa
 			return fmt.Errorf("unsupported download strategy: %T", strg)
 		}
 
-		ft.AddTo(ioswitch2.NewLoadToShared(*destStg.MasterHub, *destStg, path.Join(rootPath, obj.Object.Path)))
+		ft.AddTo(ioswitch2.NewLoadToPublic(*destStg.MasterHub, *destStg, path.Join(rootPath, obj.Object.Path)))
 		// 顺便保存到同存储服务的分片存储中
 		if factory.GetBuilder(*destStg).ShardStoreDesc().Enabled() {
 			ft.AddTo(ioswitch2.NewToShardStore(*destStg.MasterHub, *destStg, ioswitch2.RawStream(), ""))

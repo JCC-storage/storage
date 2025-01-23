@@ -361,8 +361,8 @@ func buildToNode(ctx *state.GenerateState, t ioswitch2.To) (ops2.ToNode, error) 
 
 		return n, nil
 
-	case *ioswitch2.LoadToShared:
-		n := ctx.DAG.NewSharedLoad(t, t.Storage, t.ObjectPath)
+	case *ioswitch2.LoadToPublic:
+		n := ctx.DAG.NewPublicLoad(t, t.Storage, t.ObjectPath)
 
 		if err := setEnvByAddress(n, t.Hub, t.Hub.Address); err != nil {
 			return nil, err

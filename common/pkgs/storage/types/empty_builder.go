@@ -19,8 +19,8 @@ func (b *EmptyBuilder) ShardStoreDesc() ShardStoreDesc {
 	return &EmptyShardStoreDesc{}
 }
 
-func (b *EmptyBuilder) SharedStoreDesc() SharedStoreDesc {
-	return &EmptySharedStoreDesc{}
+func (b *EmptyBuilder) PublicStoreDesc() PublicStoreDesc {
+	return &EmptyPublicStoreDesc{}
 }
 
 // 创建一个分片上传组件
@@ -30,6 +30,10 @@ func (b *EmptyBuilder) CreateMultiparter() (Multiparter, error) {
 
 func (b *EmptyBuilder) CreateS2STransfer() (S2STransfer, error) {
 	return nil, fmt.Errorf("create s2s transfer for %T: %w", b.Detail.Storage.Type, ErrUnsupported)
+}
+
+func (b *EmptyBuilder) CreateECMultiplier() (ECMultiplier, error) {
+	return nil, fmt.Errorf("create ec multiplier for %T: %w", b.Detail.Storage.Type, ErrUnsupported)
 }
 
 type EmptyShardStoreDesc struct {
@@ -47,13 +51,17 @@ func (d *EmptyShardStoreDesc) HasBypassRead() bool {
 	return false
 }
 
-type EmptySharedStoreDesc struct {
-}
-
-func (d *EmptySharedStoreDesc) Enabled() bool {
+func (d *EmptyShardStoreDesc) HasBypassHTTPRead() bool {
 	return false
 }
 
-func (d *EmptySharedStoreDesc) HasBypassWrite() bool {
+type EmptyPublicStoreDesc struct {
+}
+
+func (d *EmptyPublicStoreDesc) Enabled() bool {
+	return false
+}
+
+func (d *EmptyPublicStoreDesc) HasBypassWrite() bool {
 	return false
 }

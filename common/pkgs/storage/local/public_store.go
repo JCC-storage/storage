@@ -10,39 +10,40 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
-type SharedStoreDesc struct {
+type PublicStoreDesc struct {
+	types.EmptyPublicStoreDesc
 	builder *builder
 }
 
-func (d *SharedStoreDesc) Enabled() bool {
-	return d.builder.detail.Storage.SharedStore != nil
+func (d *PublicStoreDesc) Enabled() bool {
+	return d.builder.detail.Storage.PublicStore != nil
 }
 
-func (d *SharedStoreDesc) HasBypassWrite() bool {
+func (d *PublicStoreDesc) HasBypassWrite() bool {
 	return false
 }
 
-type SharedStore struct {
+type PublicStore struct {
 	agt *agent
-	cfg cdssdk.LocalSharedStorage
+	cfg cdssdk.LocalPublicStorage
 }
 
-func NewSharedStore(agt *agent, cfg cdssdk.LocalSharedStorage) (*SharedStore, error) {
-	return &SharedStore{
+func NewPublicStore(agt *agent, cfg cdssdk.LocalPublicStorage) (*PublicStore, error) {
+	return &PublicStore{
 		agt: agt,
 		cfg: cfg,
 	}, nil
 }
 
-func (s *SharedStore) Start(ch *types.StorageEventChan) {
+func (s *PublicStore) Start(ch *types.StorageEventChan) {
 	s.getLogger().Infof("component start, LoadBase: %v", s.cfg.LoadBase)
 }
 
-func (s *SharedStore) Stop() {
+func (s *PublicStore) Stop() {
 	s.getLogger().Infof("component stop")
 }
 
-func (s *SharedStore) Write(objPath string, stream io.Reader) error {
+func (s *PublicStore) Write(objPath string, stream io.Reader) error {
 	fullPath := filepath.Join(s.cfg.LoadBase, objPath)
 	err := os.MkdirAll(filepath.Dir(fullPath), 0755)
 	if err != nil {
@@ -63,6 +64,6 @@ func (s *SharedStore) Write(objPath string, stream io.Reader) error {
 	return nil
 }
 
-func (s *SharedStore) getLogger() logger.Logger {
-	return logger.WithField("SharedStore", "Local").WithField("Storage", s.agt.Detail.Storage.String())
+func (s *PublicStore) getLogger() logger.Logger {
+	return logger.WithField("PublicStore", "Local").WithField("Storage", s.agt.Detail.Storage.String())
 }

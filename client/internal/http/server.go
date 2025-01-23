@@ -43,7 +43,7 @@ func (s *Server) Serve() error {
 func (s *Server) initRouters() {
 	rt := s.engine.Use()
 
-	// initTemp(rt, s)
+	initTemp(rt, s)
 
 	s.routeV1(s.engine)
 

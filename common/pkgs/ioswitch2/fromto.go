@@ -195,26 +195,26 @@ func (t *ToShardStore) GetRange() math2.Range {
 	return t.Range
 }
 
-type LoadToShared struct {
+type LoadToPublic struct {
 	Hub        cdssdk.Hub
 	Storage    stgmod.StorageDetail
 	ObjectPath string
 }
 
-func NewLoadToShared(hub cdssdk.Hub, storage stgmod.StorageDetail, objectPath string) *LoadToShared {
-	return &LoadToShared{
+func NewLoadToPublic(hub cdssdk.Hub, storage stgmod.StorageDetail, objectPath string) *LoadToPublic {
+	return &LoadToPublic{
 		Hub:        hub,
 		Storage:    storage,
 		ObjectPath: objectPath,
 	}
 }
 
-func (t *LoadToShared) GetStreamIndex() StreamIndex {
+func (t *LoadToPublic) GetStreamIndex() StreamIndex {
 	return StreamIndex{
 		Type: StreamIndexRaw,
 	}
 }
 
-func (t *LoadToShared) GetRange() math2.Range {
+func (t *LoadToPublic) GetRange() math2.Range {
 	return math2.Range{}
 }

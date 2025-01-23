@@ -34,6 +34,6 @@ func (a *Agent) GetShardStore() (types.ShardStore, error) {
 	return a.ShardStore, nil
 }
 
-func (a *Agent) GetSharedStore() (types.SharedStore, error) {
+func (a *Agent) GetPublicStore() (types.PublicStore, error) {
 	return nil, types.ErrUnsupported
 }

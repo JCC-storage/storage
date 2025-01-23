@@ -8,7 +8,7 @@ import (
 type agent struct {
 	Detail      stgmod.StorageDetail
 	ShardStore  *ShardStore
-	SharedStore *SharedStore
+	PublicStore *PublicStore
 }
 
 func (s *agent) Start(ch *types.StorageEventChan) {
@@ -16,8 +16,8 @@ func (s *agent) Start(ch *types.StorageEventChan) {
 		s.ShardStore.Start(ch)
 	}
 
-	if s.SharedStore != nil {
-		s.SharedStore.Start(ch)
+	if s.PublicStore != nil {
+		s.PublicStore.Start(ch)
 	}
 }
 
@@ -26,8 +26,8 @@ func (s *agent) Stop() {
 		s.ShardStore.Stop()
 	}
 
-	if s.SharedStore != nil {
-		s.SharedStore.Stop()
+	if s.PublicStore != nil {
+		s.PublicStore.Stop()
 	}
 }
 
@@ -43,10 +43,10 @@ func (a *agent) GetShardStore() (types.ShardStore, error) {
 	return a.ShardStore, nil
 }
 
-func (a *agent) GetSharedStore() (types.SharedStore, error) {
-	if a.SharedStore == nil {
+func (a *agent) GetPublicStore() (types.PublicStore, error) {
+	if a.PublicStore == nil {
 		return nil, types.ErrUnsupported
 	}
 
-	return a.SharedStore, nil
+	return a.PublicStore, nil
 }

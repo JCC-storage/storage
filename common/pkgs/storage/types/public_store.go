@@ -4,7 +4,7 @@ import (
 	"io"
 )
 
-type SharedStore interface {
+type PublicStore interface {
 	Start(ch *StorageEventChan)
 	Stop()
 

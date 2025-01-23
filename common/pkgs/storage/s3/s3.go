@@ -63,8 +63,8 @@ func (b *builder) ShardStoreDesc() types.ShardStoreDesc {
 	return &ShardStoreDesc{builder: b}
 }
 
-func (b *builder) SharedStoreDesc() types.SharedStoreDesc {
-	return &SharedStoreDesc{}
+func (b *builder) PublicStoreDesc() types.PublicStoreDesc {
+	return &PublicStoreDesc{}
 }
 
 func (b *builder) CreateMultiparter() (types.Multiparter, error) {
