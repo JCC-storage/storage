@@ -117,12 +117,12 @@ func (o *ShardWrite) String() string {
 
 type ShardReadNode struct {
 	dag.NodeBase
-	From      ioswitch2.From
+	From      *ioswitch2.FromShardstore
 	StorageID cdssdk.StorageID
 	Open      types.OpenOption
 }
 
-func (b *GraphNodeBuilder) NewShardRead(fr ioswitch2.From, stgID cdssdk.StorageID, open types.OpenOption) *ShardReadNode {
+func (b *GraphNodeBuilder) NewShardRead(fr *ioswitch2.FromShardstore, stgID cdssdk.StorageID, open types.OpenOption) *ShardReadNode {
 	node := &ShardReadNode{
 		From:      fr,
 		StorageID: stgID,
@@ -159,12 +159,12 @@ func (t *ShardReadNode) GenerateOp() (exec.Op, error) {
 
 type ShardWriteNode struct {
 	dag.NodeBase
-	To               ioswitch2.To
+	To               *ioswitch2.ToShardStore
 	Storage          stgmod.StorageDetail
 	FileHashStoreKey string
 }
 
-func (b *GraphNodeBuilder) NewShardWrite(to ioswitch2.To, stg stgmod.StorageDetail, fileHashStoreKey string) *ShardWriteNode {
+func (b *GraphNodeBuilder) NewShardWrite(to *ioswitch2.ToShardStore, stg stgmod.StorageDetail, fileHashStoreKey string) *ShardWriteNode {
 	node := &ShardWriteNode{
 		To:               to,
 		Storage:          stg,

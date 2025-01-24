@@ -20,6 +20,17 @@ import (
 type Multiparter struct {
 	detail stgmod.StorageDetail
 	feat   *cdssdk.MultipartUploadFeature
+	bucket string
+	cli    *s3.Client
+}
+
+func NewMultiparter(detail stgmod.StorageDetail, feat *cdssdk.MultipartUploadFeature, bkt string, cli *s3.Client) *Multiparter {
+	return &Multiparter{
+		detail: detail,
+		feat:   feat,
+		bucket: bkt,
+		cli:    cli,
+	}
 }
 
 func (m *Multiparter) MinPartSize() int64 {
@@ -34,13 +45,8 @@ func (m *Multiparter) Initiate(ctx context.Context) (types.MultipartTask, error)
 	tempFileName := os2.GenerateRandomFileName(10)
 	tempFilePath := filepath.Join(m.feat.TempDir, tempFileName)
 
-	cli, bkt, err := createS3Client(m.detail.Storage.Type)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := cli.CreateMultipartUpload(ctx, &s3.CreateMultipartUploadInput{
-		Bucket:            aws.String(bkt),
+	resp, err := m.cli.CreateMultipartUpload(ctx, &s3.CreateMultipartUploadInput{
+		Bucket:            aws.String(m.bucket),
 		Key:               aws.String(tempFilePath),
 		ChecksumAlgorithm: s3types.ChecksumAlgorithmSha256,
 	})
@@ -49,8 +55,8 @@ func (m *Multiparter) Initiate(ctx context.Context) (types.MultipartTask, error)
 	}
 
 	return &MultipartTask{
-		cli:          cli,
-		bucket:       bkt,
+		cli:          m.cli,
+		bucket:       m.bucket,
 		tempDir:      m.feat.TempDir,
 		tempFileName: tempFileName,
 		tempFilePath: tempFilePath,
@@ -59,13 +65,8 @@ func (m *Multiparter) Initiate(ctx context.Context) (types.MultipartTask, error)
 }
 
 func (m *Multiparter) UploadPart(ctx context.Context, init types.MultipartInitState, partSize int64, partNumber int, stream io.Reader) (types.UploadedPartInfo, error) {
-	cli, _, err := createS3Client(m.detail.Storage.Type)
-	if err != nil {
-		return types.UploadedPartInfo{}, err
-	}
-
 	hashStr := io2.NewReadHasher(sha256.New(), stream)
-	resp, err := cli.UploadPart(ctx, &s3.UploadPartInput{
+	resp, err := m.cli.UploadPart(ctx, &s3.UploadPartInput{
 		Bucket:     aws.String(init.Bucket),
 		Key:        aws.String(init.Key),
 		UploadId:   aws.String(init.UploadID),
@@ -100,7 +101,7 @@ func (i *MultipartTask) InitState() types.MultipartInitState {
 	}
 }
 
-func (i *MultipartTask) JoinParts(ctx context.Context, parts []types.UploadedPartInfo) (types.BypassFileInfo, error) {
+func (i *MultipartTask) JoinParts(ctx context.Context, parts []types.UploadedPartInfo) (types.BypassUploadedFile, error) {
 	parts = sort2.Sort(parts, func(l, r types.UploadedPartInfo) int {
 		return l.PartNumber - r.PartNumber
 	})
@@ -126,7 +127,7 @@ func (i *MultipartTask) JoinParts(ctx context.Context, parts []types.UploadedPar
 		},
 	})
 	if err != nil {
-		return types.BypassFileInfo{}, err
+		return types.BypassUploadedFile{}, err
 	}
 
 	headResp, err := i.cli.HeadObject(ctx, &s3.HeadObjectInput{
@@ -134,15 +135,15 @@ func (i *MultipartTask) JoinParts(ctx context.Context, parts []types.UploadedPar
 		Key:    aws.String(i.tempFilePath),
 	})
 	if err != nil {
-		return types.BypassFileInfo{}, err
+		return types.BypassUploadedFile{}, err
 	}
 
 	hash := cdssdk.CalculateCompositeHash(partHashes)
 
-	return types.BypassFileInfo{
-		TempFilePath: i.tempFilePath,
-		Size:         *headResp.ContentLength,
-		FileHash:     hash,
+	return types.BypassUploadedFile{
+		Path: i.tempFilePath,
+		Size: *headResp.ContentLength,
+		Hash: hash,
 	}, nil
 
 }

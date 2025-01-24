@@ -84,8 +84,8 @@ func (o *MultipartInitiator) Execute(ctx *exec.ExecContext, e *exec.Executor) er
 	}
 
 	// 告知后续Op临时文件的路径
-	e.PutVar(o.BypassFileOutput, &BypassFileInfoValue{
-		BypassFileInfo: fileInfo,
+	e.PutVar(o.BypassFileOutput, &BypassUploadedFileValue{
+		BypassUploadedFile: fileInfo,
 	})
 
 	// 等待后续Op处理临时文件

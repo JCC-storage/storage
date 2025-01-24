@@ -13,6 +13,7 @@ require (
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/hashicorp/golang-lru/v2 v2.0.5
+	github.com/huaweicloud/huaweicloud-sdk-go-obs v3.24.9+incompatible
 	github.com/huaweicloud/huaweicloud-sdk-go-v3 v0.1.131
 	github.com/inhies/go-bytesize v0.0.0-20220417184213-4913239db9cf
 	github.com/jedib0t/go-pretty/v6 v6.4.7
@@ -76,7 +77,7 @@ require (
 	github.com/sirupsen/logrus v1.9.2
 	github.com/smarty/assertions v1.15.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/streadway/amqp v1.1.0 // indirect
+	github.com/streadway/amqp v1.1.0
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	github.com/zyedidia/generic v1.2.1 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.9 // indirect

@@ -1,4 +1,4 @@
-package utils
+package s3
 
 import (
 	"encoding/base64"

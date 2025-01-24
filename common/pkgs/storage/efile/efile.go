@@ -87,7 +87,7 @@ func (b *builder) getToken() (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("clusterID:%s not found", stgType.ClusterID)
+	return "", fmt.Errorf("clusterID %s not found", stgType.ClusterID)
 }
 
 func (b *builder) CreateECMultiplier() (types.ECMultiplier, error) {
@@ -96,13 +96,8 @@ func (b *builder) CreateECMultiplier() (types.ECMultiplier, error) {
 		return nil, fmt.Errorf("feature ECMultiplier not found")
 	}
 
-	token, err := b.getToken()
-	if err != nil {
-		return nil, fmt.Errorf("get token: %v", err)
-	}
-
 	return &ECMultiplier{
-		token: token,
+		blder: b,
 		url:   b.detail.Storage.Type.(*cdssdk.EFileType).APIURL,
 		feat:  feat,
 	}, nil

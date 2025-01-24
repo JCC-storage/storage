@@ -85,14 +85,14 @@ func (i *MultipartTask) InitState() types.MultipartInitState {
 	}
 }
 
-func (i *MultipartTask) JoinParts(ctx context.Context, parts []types.UploadedPartInfo) (types.BypassFileInfo, error) {
+func (i *MultipartTask) JoinParts(ctx context.Context, parts []types.UploadedPartInfo) (types.BypassUploadedFile, error) {
 	parts = sort2.Sort(parts, func(l, r types.UploadedPartInfo) int {
 		return l.PartNumber - r.PartNumber
 	})
 
 	joined, err := os.Create(i.joinedFilePath)
 	if err != nil {
-		return types.BypassFileInfo{}, err
+		return types.BypassUploadedFile{}, err
 	}
 	defer joined.Close()
 
@@ -102,17 +102,17 @@ func (i *MultipartTask) JoinParts(ctx context.Context, parts []types.UploadedPar
 	for _, part := range parts {
 		partSize, err := i.writePart(part, joined, hasher)
 		if err != nil {
-			return types.BypassFileInfo{}, err
+			return types.BypassUploadedFile{}, err
 		}
 
 		size += partSize
 	}
 
 	h := hasher.Sum(nil)
-	return types.BypassFileInfo{
-		TempFilePath: joined.Name(),
-		Size:         size,
-		FileHash:     cdssdk.NewFullHash(h),
+	return types.BypassUploadedFile{
+		Path: joined.Name(),
+		Size: size,
+		Hash: cdssdk.NewFullHash(h),
 	}, nil
 }
 

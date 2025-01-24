@@ -32,11 +32,11 @@ func (s *ShardStoreDesc) Enabled() bool {
 }
 
 func (s *ShardStoreDesc) HasBypassWrite() bool {
-	return true
+	return s.Enabled()
 }
 
 func (s *ShardStoreDesc) HasBypassRead() bool {
-	return true
+	return s.Enabled()
 }
 
 type ShardStore struct {
@@ -409,27 +409,27 @@ func (s *ShardStore) getFilePathFromHash(hash cdssdk.FileHash) string {
 
 var _ types.BypassWrite = (*ShardStore)(nil)
 
-func (s *ShardStore) BypassUploaded(info types.BypassFileInfo) error {
+func (s *ShardStore) BypassUploaded(info types.BypassUploadedFile) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	log := s.getLogger()
 
-	log.Debugf("%v bypass uploaded, size: %v, hash: %v", info.TempFilePath, info.Size, info.FileHash)
+	log.Debugf("%v bypass uploaded, size: %v, hash: %v", info.Path, info.Size, info.Hash)
 
-	blockDir := s.getFileDirFromHash(info.FileHash)
+	blockDir := s.getFileDirFromHash(info.Hash)
 	err := os.MkdirAll(blockDir, 0755)
 	if err != nil {
 		log.Warnf("make block dir %v: %v", blockDir, err)
 		return fmt.Errorf("making block dir: %w", err)
 	}
 
-	newPath := filepath.Join(blockDir, string(info.FileHash))
+	newPath := filepath.Join(blockDir, string(info.Hash))
 	_, err = os.Stat(newPath)
 	if os.IsNotExist(err) {
-		err = os.Rename(info.TempFilePath, newPath)
+		err = os.Rename(info.Path, newPath)
 		if err != nil {
-			log.Warnf("rename %v to %v: %v", info.TempFilePath, newPath, err)
+			log.Warnf("rename %v to %v: %v", info.Path, newPath, err)
 			return fmt.Errorf("rename file: %w", err)
 		}
 

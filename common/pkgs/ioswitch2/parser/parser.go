@@ -77,6 +77,7 @@ func Parse(ft ioswitch2.FromTo, blder *exec.PlanBuilder) error {
 
 	// 下面这些只需要执行一次，但需要按顺序
 	opt.RemoveUnusedFromNode(state)
+	opt.UseECMultiplier(state)
 	opt.UseS2STransfer(state)
 	opt.UseMultipartUploadToShardStore(state)
 	opt.DropUnused(state)

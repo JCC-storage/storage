@@ -12,20 +12,23 @@ import (
 
 func init() {
 	exec.UseOp[*BypassToShardStore]()
-	exec.UseVarValue[*BypassFileInfoValue]()
+	exec.UseVarValue[*BypassUploadedFileValue]()
 	exec.UseVarValue[*BypassHandleResultValue]()
 
 	exec.UseOp[*BypassFromShardStore]()
 	exec.UseVarValue[*BypassFilePathValue]()
+
+	exec.UseOp[*BypassFromShardStoreHTTP]()
+	exec.UseVarValue[*HTTPRequestValue]()
 }
 
-type BypassFileInfoValue struct {
-	types.BypassFileInfo
+type BypassUploadedFileValue struct {
+	types.BypassUploadedFile
 }
 
-func (v *BypassFileInfoValue) Clone() exec.VarValue {
-	return &BypassFileInfoValue{
-		BypassFileInfo: v.BypassFileInfo,
+func (v *BypassUploadedFileValue) Clone() exec.VarValue {
+	return &BypassUploadedFileValue{
+		BypassUploadedFile: v.BypassUploadedFile,
 	}
 }
 
@@ -62,18 +65,18 @@ func (o *BypassToShardStore) Execute(ctx *exec.ExecContext, e *exec.Executor) er
 		return fmt.Errorf("shard store %v not support bypass write", o.StorageID)
 	}
 
-	fileInfo, err := exec.BindVar[*BypassFileInfoValue](e, ctx.Context, o.BypassFileInfo)
+	fileInfo, err := exec.BindVar[*BypassUploadedFileValue](e, ctx.Context, o.BypassFileInfo)
 	if err != nil {
 		return err
 	}
 
-	err = br.BypassUploaded(fileInfo.BypassFileInfo)
+	err = br.BypassUploaded(fileInfo.BypassUploadedFile)
 	if err != nil {
 		return err
 	}
 
 	e.PutVar(o.BypassCallback, &BypassHandleResultValue{Commited: true})
-	e.PutVar(o.FileHash, &FileHashValue{Hash: fileInfo.FileHash})
+	e.PutVar(o.FileHash, &FileHashValue{Hash: fileInfo.Hash})
 	return nil
 }
 
@@ -124,6 +127,52 @@ func (o *BypassFromShardStore) Execute(ctx *exec.ExecContext, e *exec.Executor) 
 
 func (o *BypassFromShardStore) String() string {
 	return fmt.Sprintf("BypassFromShardStore[StorageID:%v] FileHash: %v, Output: %v", o.StorageID, o.FileHash, o.Output)
+}
+
+// 旁路Http读取
+type BypassFromShardStoreHTTP struct {
+	StorageID cdssdk.StorageID
+	FileHash  cdssdk.FileHash
+	Output    exec.VarID
+}
+
+type HTTPRequestValue struct {
+	types.HTTPRequest
+}
+
+func (v *HTTPRequestValue) Clone() exec.VarValue {
+	return &HTTPRequestValue{
+		HTTPRequest: v.HTTPRequest,
+	}
+}
+
+func (o *BypassFromShardStoreHTTP) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
+	stgAgts, err := exec.GetValueByType[*agtpool.AgentPool](ctx)
+	if err != nil {
+		return err
+	}
+
+	shardStore, err := stgAgts.GetShardStore(o.StorageID)
+	if err != nil {
+		return err
+	}
+
+	br, ok := shardStore.(types.HTTPBypassRead)
+	if !ok {
+		return fmt.Errorf("shard store %v not support bypass read", o.StorageID)
+	}
+
+	req, err := br.HTTPBypassRead(o.FileHash)
+	if err != nil {
+		return err
+	}
+
+	e.PutVar(o.Output, &HTTPRequestValue{HTTPRequest: req})
+	return nil
+}
+
+func (o *BypassFromShardStoreHTTP) String() string {
+	return fmt.Sprintf("BypassFromShardStoreHTTP[StorageID:%v] FileHash: %v, Output: %v", o.StorageID, o.FileHash, o.Output)
 }
 
 // 旁路写入
@@ -205,5 +254,38 @@ func (n *BypassFromShardStoreNode) GenerateOp() (exec.Op, error) {
 		StorageID: n.StorageID,
 		FileHash:  n.FileHash,
 		Output:    n.FilePathVar().Var().VarID,
+	}, nil
+}
+
+// 旁路Http读取
+type BypassFromShardStoreHTTPNode struct {
+	dag.NodeBase
+	StorageID cdssdk.StorageID
+	FileHash  cdssdk.FileHash
+}
+
+func (b *GraphNodeBuilder) NewBypassFromShardStoreHTTP(storageID cdssdk.StorageID, fileHash cdssdk.FileHash) *BypassFromShardStoreHTTPNode {
+	node := &BypassFromShardStoreHTTPNode{
+		StorageID: storageID,
+		FileHash:  fileHash,
+	}
+	b.AddNode(node)
+
+	node.OutputValues().Init(node, 1)
+	return node
+}
+
+func (n *BypassFromShardStoreHTTPNode) HTTPRequestVar() dag.ValueOutputSlot {
+	return dag.ValueOutputSlot{
+		Node:  n,
+		Index: 0,
+	}
+}
+
+func (n *BypassFromShardStoreHTTPNode) GenerateOp() (exec.Op, error) {
+	return &BypassFromShardStoreHTTP{
+		StorageID: n.StorageID,
+		FileHash:  n.FileHash,
+		Output:    n.HTTPRequestVar().Var().VarID,
 	}, nil
 }
