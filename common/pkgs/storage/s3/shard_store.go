@@ -17,7 +17,7 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/io2"
 	"gitlink.org.cn/cloudream/common/utils/os2"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/s3/utils"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
@@ -28,19 +28,25 @@ const (
 
 type ShardStoreDesc struct {
 	types.EmptyShardStoreDesc
-	builder *builder
+	Detail *stgmod.StorageDetail
+}
+
+func NewShardStoreDesc(detail *stgmod.StorageDetail) ShardStoreDesc {
+	return ShardStoreDesc{
+		Detail: detail,
+	}
 }
 
 func (s *ShardStoreDesc) Enabled() bool {
-	return s.builder.detail.Storage.ShardStore != nil
+	return s.Detail.Storage.ShardStore != nil
 }
 
 func (s *ShardStoreDesc) HasBypassWrite() bool {
-	return true
+	return s.Enabled()
 }
 
 func (s *ShardStoreDesc) HasBypassRead() bool {
-	return true
+	return s.Enabled()
 }
 
 type ShardStoreOption struct {
@@ -48,9 +54,9 @@ type ShardStoreOption struct {
 }
 
 type ShardStore struct {
-	svc              *Agent
+	Detail           stgmod.StorageDetail
+	Bucket           string
 	cli              *s3.Client
-	bucket           string
 	cfg              cdssdk.S3ShardStorage
 	opt              ShardStoreOption
 	lock             sync.Mutex
@@ -58,11 +64,11 @@ type ShardStore struct {
 	done             chan any
 }
 
-func NewShardStore(svc *Agent, cli *s3.Client, bkt string, cfg cdssdk.S3ShardStorage, opt ShardStoreOption) (*ShardStore, error) {
+func NewShardStore(detail stgmod.StorageDetail, cli *s3.Client, bkt string, cfg cdssdk.S3ShardStorage, opt ShardStoreOption) (*ShardStore, error) {
 	return &ShardStore{
-		svc:              svc,
+		Detail:           detail,
 		cli:              cli,
-		bucket:           bkt,
+		Bucket:           bkt,
 		cfg:              cfg,
 		opt:              opt,
 		workingTempFiles: make(map[string]bool),
@@ -99,8 +105,8 @@ func (s *ShardStore) removeUnusedTempFiles() {
 	var marker *string
 	for {
 		resp, err := s.cli.ListObjects(context.Background(), &s3.ListObjectsInput{
-			Bucket: aws.String(s.bucket),
-			Prefix: aws.String(utils.JoinKey(s.cfg.Root, TempDir, "/")),
+			Bucket: aws.String(s.Bucket),
+			Prefix: aws.String(JoinKey(s.cfg.Root, TempDir, "/")),
 			Marker: marker,
 		})
 
@@ -110,7 +116,7 @@ func (s *ShardStore) removeUnusedTempFiles() {
 		}
 
 		for _, obj := range resp.Contents {
-			objName := utils.BaseKey(*obj.Key)
+			objName := BaseKey(*obj.Key)
 
 			if s.workingTempFiles[objName] {
 				continue
@@ -134,7 +140,7 @@ func (s *ShardStore) removeUnusedTempFiles() {
 	}
 
 	resp, err := s.cli.DeleteObjects(context.Background(), &s3.DeleteObjectsInput{
-		Bucket: aws.String(s.bucket),
+		Bucket: aws.String(s.Bucket),
 		Delete: &s3types.Delete{
 			Objects: deletes,
 		},
@@ -175,7 +181,7 @@ func (s *ShardStore) createWithAwsSha256(stream io.Reader) (types.FileInfo, erro
 	counter := io2.NewCounter(stream)
 
 	resp, err := s.cli.PutObject(context.TODO(), &s3.PutObjectInput{
-		Bucket:            aws.String(s.bucket),
+		Bucket:            aws.String(s.Bucket),
 		Key:               aws.String(key),
 		Body:              counter,
 		ChecksumAlgorithm: s3types.ChecksumAlgorithmSha256,
@@ -196,7 +202,7 @@ func (s *ShardStore) createWithAwsSha256(stream io.Reader) (types.FileInfo, erro
 		return types.FileInfo{}, errors.New("SHA256 checksum not found in response")
 	}
 
-	hash, err := utils.DecodeBase64Hash(*resp.ChecksumSHA256)
+	hash, err := DecodeBase64Hash(*resp.ChecksumSHA256)
 	if err != nil {
 		log.Warnf("decode SHA256 checksum %v: %v", *resp.ChecksumSHA256, err)
 		s.onCreateFailed(key, fileName)
@@ -215,7 +221,7 @@ func (s *ShardStore) createWithCalcSha256(stream io.Reader) (types.FileInfo, err
 	counter := io2.NewCounter(hashStr)
 
 	_, err := s.cli.PutObject(context.TODO(), &s3.PutObjectInput{
-		Bucket: aws.String(s.bucket),
+		Bucket: aws.String(s.Bucket),
 		Key:    aws.String(key),
 		Body:   counter,
 	})
@@ -236,11 +242,11 @@ func (s *ShardStore) createTempFile() (string, string) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	tmpDir := utils.JoinKey(s.cfg.Root, TempDir)
+	tmpDir := JoinKey(s.cfg.Root, TempDir)
 	tmpName := os2.GenerateRandomFileName(20)
 
 	s.workingTempFiles[tmpName] = true
-	return utils.JoinKey(tmpDir, tmpName), tmpName
+	return JoinKey(tmpDir, tmpName), tmpName
 }
 
 func (s *ShardStore) onCreateFinished(tempFilePath string, size int64, hash cdssdk.FileHash) (types.FileInfo, error) {
@@ -250,7 +256,7 @@ func (s *ShardStore) onCreateFinished(tempFilePath string, size int64, hash cdss
 	defer func() {
 		// 不管是否成功。即使失败了也有定时清理机制去兜底
 		s.cli.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
-			Bucket: aws.String(s.bucket),
+			Bucket: aws.String(s.Bucket),
 			Key:    aws.String(tempFilePath),
 		})
 	}()
@@ -259,12 +265,12 @@ func (s *ShardStore) onCreateFinished(tempFilePath string, size int64, hash cdss
 
 	log.Debugf("write file %v finished, size: %v, hash: %v", tempFilePath, size, hash)
 
-	blockDir := s.getFileDirFromHash(hash)
-	newPath := utils.JoinKey(blockDir, string(hash))
+	blockDir := s.GetFileDirFromHash(hash)
+	newPath := JoinKey(blockDir, string(hash))
 
 	_, err := s.cli.CopyObject(context.Background(), &s3.CopyObjectInput{
-		Bucket:     aws.String(s.bucket),
-		CopySource: aws.String(utils.JoinKey(s.bucket, tempFilePath)),
+		Bucket:     aws.String(s.Bucket),
+		CopySource: aws.String(JoinKey(s.Bucket, tempFilePath)),
 		Key:        aws.String(newPath),
 	})
 	if err != nil {
@@ -282,7 +288,7 @@ func (s *ShardStore) onCreateFinished(tempFilePath string, size int64, hash cdss
 func (s *ShardStore) onCreateFailed(key string, fileName string) {
 	// 不管是否成功。即使失败了也有定时清理机制去兜底
 	s.cli.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
-		Bucket: aws.String(s.bucket),
+		Bucket: aws.String(s.Bucket),
 		Key:    aws.String(key),
 	})
 
@@ -297,7 +303,7 @@ func (s *ShardStore) Open(opt types.OpenOption) (io.ReadCloser, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	filePath := s.getFilePathFromHash(opt.FileHash)
+	filePath := s.GetFilePathFromHash(opt.FileHash)
 
 	rngStr := fmt.Sprintf("bytes=%d-", opt.Offset)
 	if opt.Length >= 0 {
@@ -305,7 +311,7 @@ func (s *ShardStore) Open(opt types.OpenOption) (io.ReadCloser, error) {
 	}
 
 	resp, err := s.cli.GetObject(context.TODO(), &s3.GetObjectInput{
-		Bucket: aws.String(s.bucket),
+		Bucket: aws.String(s.Bucket),
 		Key:    aws.String(filePath),
 		Range:  aws.String(rngStr),
 	})
@@ -321,9 +327,9 @@ func (s *ShardStore) Info(hash cdssdk.FileHash) (types.FileInfo, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	filePath := s.getFilePathFromHash(hash)
+	filePath := s.GetFilePathFromHash(hash)
 	info, err := s.cli.HeadObject(context.TODO(), &s3.HeadObjectInput{
-		Bucket: aws.String(s.bucket),
+		Bucket: aws.String(s.Bucket),
 		Key:    aws.String(filePath),
 	})
 	if err != nil {
@@ -344,12 +350,12 @@ func (s *ShardStore) ListAll() ([]types.FileInfo, error) {
 
 	var infos []types.FileInfo
 
-	blockDir := utils.JoinKey(s.cfg.Root, BlocksDir)
+	blockDir := JoinKey(s.cfg.Root, BlocksDir)
 
 	var marker *string
 	for {
 		resp, err := s.cli.ListObjects(context.Background(), &s3.ListObjectsInput{
-			Bucket: aws.String(s.bucket),
+			Bucket: aws.String(s.Bucket),
 			Prefix: aws.String(blockDir),
 			Marker: marker,
 		})
@@ -360,7 +366,7 @@ func (s *ShardStore) ListAll() ([]types.FileInfo, error) {
 		}
 
 		for _, obj := range resp.Contents {
-			key := utils.BaseKey(*obj.Key)
+			key := BaseKey(*obj.Key)
 
 			fileHash, err := cdssdk.ParseHash(key)
 			if err != nil {
@@ -393,13 +399,13 @@ func (s *ShardStore) GC(avaiables []cdssdk.FileHash) error {
 		avais[hash] = true
 	}
 
-	blockDir := utils.JoinKey(s.cfg.Root, BlocksDir)
+	blockDir := JoinKey(s.cfg.Root, BlocksDir)
 
 	var deletes []s3types.ObjectIdentifier
 	var marker *string
 	for {
 		resp, err := s.cli.ListObjects(context.Background(), &s3.ListObjectsInput{
-			Bucket: aws.String(s.bucket),
+			Bucket: aws.String(s.Bucket),
 			Prefix: aws.String(blockDir),
 			Marker: marker,
 		})
@@ -410,7 +416,7 @@ func (s *ShardStore) GC(avaiables []cdssdk.FileHash) error {
 		}
 
 		for _, obj := range resp.Contents {
-			key := utils.BaseKey(*obj.Key)
+			key := BaseKey(*obj.Key)
 			fileHash, err := cdssdk.ParseHash(key)
 			if err != nil {
 				continue
@@ -433,7 +439,7 @@ func (s *ShardStore) GC(avaiables []cdssdk.FileHash) error {
 	cnt := 0
 	if len(deletes) > 0 {
 		resp, err := s.cli.DeleteObjects(context.Background(), &s3.DeleteObjectsInput{
-			Bucket: aws.String(s.bucket),
+			Bucket: aws.String(s.Bucket),
 			Delete: &s3types.Delete{
 				Objects: deletes,
 			},
@@ -459,21 +465,21 @@ func (s *ShardStore) Stats() types.Stats {
 }
 
 func (s *ShardStore) getLogger() logger.Logger {
-	return logger.WithField("ShardStore", "S3").WithField("Storage", s.svc.Detail.Storage.String())
+	return logger.WithField("ShardStore", "S3").WithField("Storage", s.Detail.Storage.String())
 }
 
-func (s *ShardStore) getFileDirFromHash(hash cdssdk.FileHash) string {
-	return utils.JoinKey(s.cfg.Root, BlocksDir, hash.GetHashPrefix(2))
+func (s *ShardStore) GetFileDirFromHash(hash cdssdk.FileHash) string {
+	return JoinKey(s.cfg.Root, BlocksDir, hash.GetHashPrefix(2))
 }
 
-func (s *ShardStore) getFilePathFromHash(hash cdssdk.FileHash) string {
-	return utils.JoinKey(s.cfg.Root, BlocksDir, hash.GetHashPrefix(2), string(hash))
+func (s *ShardStore) GetFilePathFromHash(hash cdssdk.FileHash) string {
+	return JoinKey(s.cfg.Root, BlocksDir, hash.GetHashPrefix(2), string(hash))
 }
 
 var _ types.BypassWrite = (*ShardStore)(nil)
 
-func (s *ShardStore) BypassUploaded(info types.BypassFileInfo) error {
-	if info.FileHash == "" {
+func (s *ShardStore) BypassUploaded(info types.BypassUploadedFile) error {
+	if info.Hash == "" {
 		return fmt.Errorf("empty file hash is not allowed by this shard store")
 	}
 
@@ -482,25 +488,25 @@ func (s *ShardStore) BypassUploaded(info types.BypassFileInfo) error {
 	defer func() {
 		// 不管是否成功。即使失败了也有定时清理机制去兜底
 		s.cli.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
-			Bucket: aws.String(s.bucket),
-			Key:    aws.String(info.TempFilePath),
+			Bucket: aws.String(s.Bucket),
+			Key:    aws.String(info.Path),
 		})
 	}()
 
 	log := s.getLogger()
 
-	log.Debugf("%v bypass uploaded, size: %v, hash: %v", info.TempFilePath, info.Size, info.FileHash)
+	log.Debugf("%v bypass uploaded, size: %v, hash: %v", info.Path, info.Size, info.Hash)
 
-	blockDir := s.getFileDirFromHash(info.FileHash)
-	newPath := utils.JoinKey(blockDir, string(info.FileHash))
+	blockDir := s.GetFileDirFromHash(info.Hash)
+	newPath := JoinKey(blockDir, string(info.Hash))
 
 	_, err := s.cli.CopyObject(context.Background(), &s3.CopyObjectInput{
-		CopySource: aws.String(utils.JoinKey(s.bucket, info.TempFilePath)),
-		Bucket:     aws.String(s.bucket),
+		CopySource: aws.String(JoinKey(s.Bucket, info.Path)),
+		Bucket:     aws.String(s.Bucket),
 		Key:        aws.String(newPath),
 	})
 	if err != nil {
-		log.Warnf("copy file %v to %v: %v", info.TempFilePath, newPath, err)
+		log.Warnf("copy file %v to %v: %v", info.Path, newPath, err)
 		return fmt.Errorf("copy file: %w", err)
 	}
 
@@ -513,9 +519,9 @@ func (s *ShardStore) BypassRead(fileHash cdssdk.FileHash) (types.BypassFilePath,
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	filePath := s.getFilePathFromHash(fileHash)
+	filePath := s.GetFilePathFromHash(fileHash)
 	info, err := s.cli.HeadObject(context.TODO(), &s3.HeadObjectInput{
-		Bucket: aws.String(s.bucket),
+		Bucket: aws.String(s.Bucket),
 		Key:    aws.String(filePath),
 	})
 	if err != nil {

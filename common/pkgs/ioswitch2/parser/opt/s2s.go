@@ -87,8 +87,7 @@ func UseS2STransfer(ctx *state.GenerateState) {
 			brNode.FilePathVar().ToSlot(s2sNode.SrcPathSlot())
 
 			// 传输结果通知目的节点
-			to := toShard.To.(*ioswitch2.ToShardStore)
-			bwNode := ctx.DAG.NewBypassToShardStore(toShard.Storage.Storage.StorageID, to.FileHashStoreKey)
+			bwNode := ctx.DAG.NewBypassToShardStore(toShard.Storage.Storage.StorageID, toShard.To.FileHashStoreKey)
 			bwNode.Env().CopyFrom(toShard.Env())
 
 			s2sNode.BypassFileInfoVar().ToSlot(bwNode.BypassFileInfoSlot())

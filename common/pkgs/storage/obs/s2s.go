@@ -13,7 +13,7 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/os2"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/s3/utils"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/s3"
 )
 
 type S2STransfer struct {
@@ -65,7 +65,7 @@ func (s *S2STransfer) Transfer(ctx context.Context, src stgmod.StorageDetail, sr
 		return "", err
 	}
 
-	tempPrefix := utils.JoinKey(s.feat.TempDir, os2.GenerateRandomFileName(10)) + "/"
+	tempPrefix := s3.JoinKey(s.feat.TempDir, os2.GenerateRandomFileName(10)) + "/"
 
 	taskType := model.GetCreateTaskReqTaskTypeEnum().OBJECT
 	s.omsCli = oms.NewOmsClient(cli)
@@ -93,7 +93,7 @@ func (s *S2STransfer) Transfer(ctx context.Context, src stgmod.StorageDetail, sr
 		return "", fmt.Errorf("wait task: %w", err)
 	}
 
-	return utils.JoinKey(tempPrefix, srcPath), nil
+	return s3.JoinKey(tempPrefix, srcPath), nil
 }
 
 func (s *S2STransfer) makeRequest(srcStg cdssdk.StorageType, srcPath string) *model.SrcNodeReq {

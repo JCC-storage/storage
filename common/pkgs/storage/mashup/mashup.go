@@ -3,7 +3,6 @@ package mashup
 import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
-	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/factory"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/factory/reg"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
@@ -25,7 +24,7 @@ func (b *builder) CreateAgent() (types.StorageAgent, error) {
 	detail := b.detail
 	detail.Storage.Type = stgType.Agent
 
-	blder := factory.GetBuilder(detail)
+	blder := reg.GetBuilderInternal(detail)
 	return blder.CreateAgent()
 }
 
@@ -34,7 +33,7 @@ func (b *builder) ShardStoreDesc() types.ShardStoreDesc {
 	detail := b.detail
 	detail.Storage.Type = stgType.Agent
 
-	blder := factory.GetBuilder(detail)
+	blder := reg.GetBuilderInternal(detail)
 	return blder.ShardStoreDesc()
 }
 
@@ -43,7 +42,7 @@ func (b *builder) PublicStoreDesc() types.PublicStoreDesc {
 	detail := b.detail
 	detail.Storage.Type = stgType.Agent
 
-	blder := factory.GetBuilder(detail)
+	blder := reg.GetBuilderInternal(detail)
 	return blder.PublicStoreDesc()
 }
 
@@ -52,7 +51,7 @@ func (b *builder) CreateMultiparter() (types.Multiparter, error) {
 	detail := b.detail
 	detail.Storage.Type = stgType.Feature
 
-	blder := factory.GetBuilder(detail)
+	blder := reg.GetBuilderInternal(detail)
 	return blder.CreateMultiparter()
 }
 
@@ -61,7 +60,7 @@ func (b *builder) CreateS2STransfer() (types.S2STransfer, error) {
 	detail := b.detail
 	detail.Storage.Type = stgType.Feature
 
-	blder := factory.GetBuilder(detail)
+	blder := reg.GetBuilderInternal(detail)
 	return blder.CreateS2STransfer()
 }
 
@@ -70,6 +69,6 @@ func (b *builder) CreateECMultiplier() (types.ECMultiplier, error) {
 	detail := b.detail
 	detail.Storage.Type = stgType.Feature
 
-	blder := factory.GetBuilder(detail)
+	blder := reg.GetBuilderInternal(detail)
 	return blder.CreateECMultiplier()
 }

@@ -19,10 +19,6 @@ func (d *PublicStoreDesc) Enabled() bool {
 	return d.builder.detail.Storage.PublicStore != nil
 }
 
-func (d *PublicStoreDesc) HasBypassWrite() bool {
-	return false
-}
-
 type PublicStore struct {
 	agt *agent
 	cfg cdssdk.LocalPublicStorage

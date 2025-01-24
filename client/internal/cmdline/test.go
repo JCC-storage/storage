@@ -27,23 +27,25 @@ func init() {
 			}
 			defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-			stgs, err := coorCli.GetStorageDetails(coormq.ReqGetStorageDetails([]cdssdk.StorageID{1, 2, 3, 4}))
+			stgs, err := coorCli.GetStorageDetails(coormq.ReqGetStorageDetails([]cdssdk.StorageID{1, 2, 3, 4, 5}))
 			if err != nil {
 				panic(err)
 			}
 
 			ft := ioswitch2.NewFromTo()
-			ft.SegmentParam = cdssdk.NewSegmentRedundancy(1024*100*3, 3)
-			// ft.AddFrom(ioswitch2.NewFromShardstore("FullE58B075E9F7C5744CB1C2CBBECC30F163DE699DCDA94641DDA34A0C2EB01E240", *stgs.Storages[1].MasterHub, *stgs.Storages[1], ioswitch2.SegmentStream(0)))
-			// ft.AddFrom(ioswitch2.NewFromShardstore("FullEA14D17544786427C3A766F0C5E6DEB221D00D3DE1875BBE3BD0AD5C8118C1A0", *stgs.Storages[1].MasterHub, *stgs.Storages[1], ioswitch2.SegmentStream(1)))
+			ft.ECParam = cdssdk.NewECRedundancy(3, 6, 1024*1024*5)
+			// ft.SegmentParam = cdssdk.NewSegmentRedundancy(1024*100*3, 3)
+			ft.AddFrom(ioswitch2.NewFromShardstore("FullC036CBB7553A909F8B8877D4461924307F27ECB66CFF928EEEAFD569C3887E29", *stgs.Storages[3].MasterHub, *stgs.Storages[3], ioswitch2.ECStream(2)))
+			ft.AddFrom(ioswitch2.NewFromShardstore("Full543F38D9F524238AC0239263AA0DD4B4328763818EA98A7A5F72E59748FDA27A", *stgs.Storages[3].MasterHub, *stgs.Storages[3], ioswitch2.ECStream(3)))
+			ft.AddFrom(ioswitch2.NewFromShardstore("Full50B464DB2FDDC29D0380D9FFAB6D944FAF5C7624955D757939280590F01F3ECD", *stgs.Storages[3].MasterHub, *stgs.Storages[3], ioswitch2.ECStream(4)))
 			// ft.AddFrom(ioswitch2.NewFromShardstore("Full4D142C458F2399175232D5636235B09A84664D60869E925EB20FFBE931045BDD", *stgs.Storages[1].MasterHub, *stgs.Storages[1], ioswitch2.SegmentStream(2)))
-			ft.AddFrom(ioswitch2.NewFromShardstore("Full03B5CF4B57251D7BB4308FE5C81AF5A21E2B28994CC7CB1FB37698DAE271DC22", *stgs.Storages[2].MasterHub, *stgs.Storages[2], ioswitch2.RawStream()))
-			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[3].MasterHub, *stgs.Storages[3], ioswitch2.RawStream(), "0"))
+			// ft.AddFrom(ioswitch2.NewFromShardstore("Full03B5CF4B57251D7BB4308FE5C81AF5A21E2B28994CC7CB1FB37698DAE271DC22", *stgs.Storages[2].MasterHub, *stgs.Storages[2], ioswitch2.RawStream()))
+			// ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[3].MasterHub, *stgs.Storages[3], ioswitch2.RawStream(), "0"))
 			// ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[1].MasterHub, stgs.Storages[1].Storage, ioswitch2.SegmentStream(0), "0"))
 			// ft.AddTo(ioswitch2.NewToShardStoreWithRange(*stgs.Storages[1].MasterHub, *stgs.Storages[1], ioswitch2.SegmentStream(1), "1", math2.Range{Offset: 1}))
-			// ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[1].MasterHub, *stgs.Storages[1], ioswitch2.SegmentStream(0), "0"))
-			// ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[1].MasterHub, *stgs.Storages[1], ioswitch2.SegmentStream(1), "1"))
-			// ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[1].MasterHub, *stgs.Storages[1], ioswitch2.SegmentStream(2), "2"))
+			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[4].MasterHub, *stgs.Storages[4], ioswitch2.ECStream(0), "0"))
+			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[4].MasterHub, *stgs.Storages[4], ioswitch2.ECStream(1), "1"))
+			ft.AddTo(ioswitch2.NewToShardStore(*stgs.Storages[4].MasterHub, *stgs.Storages[4], ioswitch2.ECStream(5), "2"))
 
 			plans := exec.NewPlanBuilder()
 			err = parser.Parse(ft, plans)

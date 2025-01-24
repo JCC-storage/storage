@@ -17,7 +17,7 @@ type Multiparter interface {
 type MultipartTask interface {
 	InitState() MultipartInitState
 	// 所有分片上传完成后，合并分片
-	JoinParts(ctx context.Context, parts []UploadedPartInfo) (BypassFileInfo, error)
+	JoinParts(ctx context.Context, parts []UploadedPartInfo) (BypassUploadedFile, error)
 	// 合成之后的文件已被使用
 	Complete()
 	// 取消上传。如果在调用Complete之前调用，则应该删除合并后的文件。如果已经调用Complete，则应该不做任何事情。

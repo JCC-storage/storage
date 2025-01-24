@@ -41,10 +41,10 @@ func (o *S2STransfer) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 	defer s2s.Abort()
 
 	// 告知后续Op处理临时文件
-	e.PutVar(o.Output, &BypassFileInfoValue{BypassFileInfo: types.BypassFileInfo{
-		TempFilePath: dstPath,
-		FileHash:     srcPath.Info.Hash,
-		Size:         srcPath.Info.Size,
+	e.PutVar(o.Output, &BypassUploadedFileValue{BypassUploadedFile: types.BypassUploadedFile{
+		Path: dstPath,
+		Hash: srcPath.Info.Hash,
+		Size: srcPath.Info.Size,
 	}})
 
 	// 等待后续Op处理临时文件

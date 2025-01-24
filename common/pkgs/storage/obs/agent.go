@@ -1,4 +1,4 @@
-package s3
+package obs
 
 import (
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"

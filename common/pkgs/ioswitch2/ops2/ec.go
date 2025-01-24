@@ -12,11 +12,16 @@ import (
 	"gitlink.org.cn/cloudream/common/utils/io2"
 	"gitlink.org.cn/cloudream/common/utils/math2"
 	"gitlink.org.cn/cloudream/common/utils/sync2"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/ec"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/factory"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
 func init() {
 	exec.UseOp[*ECMultiply]()
+
+	exec.UseOp[*CallECMultiplier]()
 }
 
 type ECMultiply struct {
@@ -153,6 +158,74 @@ func (o *ECMultiply) String() string {
 	)
 }
 
+type CallECMultiplier struct {
+	Storage         stgmod.StorageDetail
+	Coef            [][]byte
+	Inputs          []exec.VarID
+	Outputs         []exec.VarID
+	BypassCallbacks []exec.VarID
+	ChunkSize       int
+}
+
+func (o *CallECMultiplier) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
+	ecMul, err := factory.GetBuilder(o.Storage).CreateECMultiplier()
+	if err != nil {
+		return err
+	}
+
+	inputs, err := exec.BindArray[*HTTPRequestValue](e, ctx.Context, o.Inputs)
+	if err != nil {
+		return err
+	}
+
+	reqs := make([]types.HTTPRequest, 0, len(inputs))
+	for _, input := range inputs {
+		reqs = append(reqs, input.HTTPRequest)
+	}
+
+	outputs, err := ecMul.Multiply(o.Coef, reqs, o.ChunkSize)
+	if err != nil {
+		return err
+	}
+	defer ecMul.Abort()
+
+	outputVals := make([]*BypassUploadedFileValue, 0, len(outputs))
+	for _, output := range outputs {
+		outputVals = append(outputVals, &BypassUploadedFileValue{
+			BypassUploadedFile: output,
+		})
+	}
+	exec.PutArray(e, o.Outputs, outputVals)
+
+	callbacks, err := exec.BindArray[*BypassHandleResultValue](e, ctx.Context, o.BypassCallbacks)
+	if err != nil {
+		return err
+	}
+
+	allSuc := true
+	for _, callback := range callbacks {
+		if !callback.Commited {
+			allSuc = false
+		}
+	}
+
+	if allSuc {
+		ecMul.Complete()
+	}
+
+	return nil
+}
+
+func (o *CallECMultiplier) String() string {
+	return fmt.Sprintf(
+		"CallECMultiplier(storage=%v, coef=%v) (%v) -> (%v)",
+		o.Coef,
+		o.Storage.Storage.String(),
+		utils.FormatVarIDs(o.Inputs),
+		utils.FormatVarIDs(o.Outputs),
+	)
+}
+
 type ECMultiplyNode struct {
 	dag.NodeBase
 	EC            cdssdk.ECRedundancy
@@ -206,3 +279,69 @@ func (t *ECMultiplyNode) GenerateOp() (exec.Op, error) {
 // func (t *MultiplyType) String() string {
 // 	return fmt.Sprintf("Multiply[]%v%v", formatStreamIO(node), formatValueIO(node))
 // }
+
+type CallECMultiplierNode struct {
+	dag.NodeBase
+	Storage       stgmod.StorageDetail
+	EC            cdssdk.ECRedundancy
+	InputIndexes  []int
+	OutputIndexes []int
+}
+
+func (b *GraphNodeBuilder) NewCallECMultiplier(storage stgmod.StorageDetail) *CallECMultiplierNode {
+	node := &CallECMultiplierNode{
+		Storage: storage,
+	}
+	b.AddNode(node)
+	return node
+}
+
+func (t *CallECMultiplierNode) InitFrom(node *ECMultiplyNode) {
+	t.EC = node.EC
+	t.InputIndexes = node.InputIndexes
+	t.OutputIndexes = node.OutputIndexes
+
+	t.InputValues().Init(len(t.InputIndexes) + len(t.OutputIndexes)) // 流的输出+回调的输入
+	t.OutputValues().Init(t, len(t.OutputIndexes))
+}
+
+func (t *CallECMultiplierNode) InputSlot(idx int) dag.ValueInputSlot {
+	return dag.ValueInputSlot{
+		Node:  t,
+		Index: idx,
+	}
+}
+
+func (t *CallECMultiplierNode) OutputVar(idx int) dag.ValueOutputSlot {
+	return dag.ValueOutputSlot{
+		Node:  t,
+		Index: idx,
+	}
+}
+
+func (t *CallECMultiplierNode) BypassCallbackSlot(idx int) dag.ValueInputSlot {
+	return dag.ValueInputSlot{
+		Node:  t,
+		Index: idx + len(t.InputIndexes),
+	}
+}
+
+func (t *CallECMultiplierNode) GenerateOp() (exec.Op, error) {
+	rs, err := ec.NewRs(t.EC.K, t.EC.N)
+	if err != nil {
+		return nil, err
+	}
+	coef, err := rs.GenerateMatrix(t.InputIndexes, t.OutputIndexes)
+	if err != nil {
+		return nil, err
+	}
+
+	return &CallECMultiplier{
+		Storage:         t.Storage,
+		Coef:            coef,
+		Inputs:          t.InputValues().GetVarIDsRanged(0, len(t.InputIndexes)),
+		Outputs:         t.OutputValues().GetVarIDs(),
+		BypassCallbacks: t.InputValues().GetVarIDsStart(len(t.InputIndexes)),
+		ChunkSize:       t.EC.ChunkSize,
+	}, nil
+}
