@@ -2,7 +2,7 @@ package models
 
 import (
 	"encoding/json"
-	"fmt"
+
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/sysevent"
@@ -50,42 +50,36 @@ type HubInfoWatcher struct {
 
 // 实现 OnEvent 方法
 func (w *HubInfoWatcher) OnEvent(event sysevent.SysEvent) {
+
 	repo := NewHubRepository(DB)
 
-	if event.Category == "hubInfo" {
-		if hubInfo, ok := event.Body.(*stgmod.BodyHubInfo); ok {
-
-			hub := &Hub{
-				HubID:   hubInfo.HubID,
-				Name:    hubInfo.HubInfo.Name,
-				Address: hubInfo.HubInfo.Address,
-			}
-			//先判断传输数据的类型
-			switch hubInfo.Type {
-			case "add":
-				err := repo.CreateHub(hub)
-				if err != nil {
-					return
-				}
-			case "update":
-				err := repo.UpdateHub(hub)
-				if err != nil {
-					return
-				}
-			case "delete":
-				err := repo.DeleteHub(hub)
-				if err != nil {
-					return
-				}
-			default:
-				return
-			}
-		} else {
-			// 如果 Body 不是我们期望的类型，打印错误信息
-			fmt.Printf("Watcher %s: Unexpected Body type, expected *BodyHubInfo, got %T\n", w.Name, event.Body)
+	switch body := event.Body.(type) {
+	case *stgmod.BodyNewHub:
+		err := repo.CreateHub(&Hub{
+			HubID:   body.Info.HubID,
+			Name:    body.Info.Name,
+			Address: body.Info.Address,
+		})
+		if err != nil {
+			return
 		}
-	} else {
-		// 如果事件的 Category 不是 hubInfo，打印默认信息
-		fmt.Printf("Watcher %s received an event with category %s\n", w.Name, event.Category)
+
+	case *stgmod.BodyHubUpdated:
+		err := repo.UpdateHub(&Hub{
+			HubID:   body.Info.HubID,
+			Name:    body.Info.Name,
+			Address: body.Info.Address,
+		})
+		if err != nil {
+			return
+		}
+
+	case *stgmod.BodyHubDeleted:
+		err := repo.DeleteHub(&Hub{
+			HubID: body.HubID,
+		})
+		if err != nil {
+			return
+		}
 	}
 }

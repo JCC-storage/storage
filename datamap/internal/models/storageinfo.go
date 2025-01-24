@@ -1,12 +1,12 @@
 package models
 
 import (
-	"fmt"
+	"time"
+
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/sysevent"
 	"gorm.io/gorm"
-	"time"
 )
 
 type Storage struct {
@@ -74,38 +74,37 @@ type StorageInfoWatcher struct {
 func (w *StorageInfoWatcher) OnEvent(event sysevent.SysEvent) {
 	repo := NewStorageRepository(DB)
 
-	if event.Category == "storageInfo" {
-		if storageInfo, ok := event.Body.(*stgmod.BodyStorageInfo); ok {
-			storage := &Storage{
-				StorageID:   storageInfo.StorageID,
-				StorageName: storageInfo.StorageInfo.Name,
-				HubID:       storageInfo.StorageInfo.MasterHub,
-				Timestamp:   time.Now(),
-			}
-
-			switch storageInfo.Type {
-			case "add":
-				err := repo.CreateStorage(storage)
-				if err != nil {
-					return
-				}
-			case "update":
-				err := repo.UpdateStorage(storage)
-				if err != nil {
-					return
-				}
-			case "delete":
-				err := repo.DeleteStorage(storage)
-				if err != nil {
-					return
-				}
-			default:
-				return
-			}
-		} else {
-			fmt.Printf("Watcher %s: Unexpected Body type, expected *BodyStorageInfo, got %T\n", w.Name, event.Body)
+	switch body := event.Body.(type) {
+	case *stgmod.BodyNewStorage:
+		storage := &Storage{
+			StorageID:   body.Info.StorageID,
+			StorageName: body.Info.Name,
+			HubID:       body.Info.MasterHub,
+			Timestamp:   time.Now(),
 		}
-	} else {
-		fmt.Printf("Watcher %s received an event with category %s\n", w.Name, event.Category)
+		err := repo.CreateStorage(storage)
+		if err != nil {
+			return
+		}
+
+	case *stgmod.BodyStorageUpdated:
+		storage := &Storage{
+			StorageID:   body.Info.StorageID,
+			StorageName: body.Info.Name,
+			HubID:       body.Info.MasterHub,
+			Timestamp:   time.Now(),
+		}
+		err := repo.UpdateStorage(storage)
+		if err != nil {
+			return
+		}
+	case *stgmod.BodyStorageDeleted:
+		storage := &Storage{
+			StorageID: body.StorageID,
+		}
+		err := repo.DeleteStorage(storage)
+		if err != nil {
+			return
+		}
 	}
 }

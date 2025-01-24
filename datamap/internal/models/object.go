@@ -2,11 +2,12 @@ package models
 
 import (
 	"fmt"
+	"time"
+
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/sysevent"
 	"gorm.io/gorm"
-	"time"
 )
 
 type Object struct {
@@ -74,7 +75,7 @@ type ObjectWatcher struct {
 func (w *ObjectWatcher) OnEvent(event sysevent.SysEvent) {
 
 	if event.Category == "objectChange" {
-		if _, ok := event.Body.(*stgmod.BodyObjectChange); ok {
+		if _, ok := event.Body.(*stgmod.BodyNewObject); ok {
 
 		} else {
 			fmt.Printf("Watcher %s: Unexpected Body type, expected *ObjectInfo, got %T\n", w.Name, event.Body)
