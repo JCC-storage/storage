@@ -2,10 +2,12 @@ package sysevent
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/streadway/amqp"
 	"gitlink.org.cn/cloudream/common/pkgs/async"
 	"gitlink.org.cn/cloudream/common/utils/serder"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 )
 
 type PublisherEvent interface{}
@@ -107,10 +109,13 @@ func (p *Publisher) Start() *async.UnboundChannel[PublisherEvent] {
 	return ch
 }
 
-// Publish 发布事件，自动补齐时间戳和源信息
-func (p *Publisher) Publish(evt SysEvent) {
-	// TODO 补齐时间戳和源信息
-	p.eventChan.Send(evt)
+// Publish 发布事件，会自动补齐必要信息
+func (p *Publisher) Publish(eventBody stgmod.SysEventBody) {
+	p.eventChan.Send(stgmod.SysEvent{
+		Timestamp: time.Now(),
+		Source:    p.thisSource,
+		Body:      eventBody,
+	})
 }
 
 // PublishRaw 完全原样发布事件，不补齐任何信息

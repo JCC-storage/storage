@@ -12,7 +12,6 @@ import (
 type SysEvent struct {
 	Timestamp time.Time      `json:"timestamp"`
 	Source    SysEventSource `json:"source"`
-	Category  string         `json:"category"`
 	Body      SysEventBody   `json:"body"`
 }
 

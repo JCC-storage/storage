@@ -14,6 +14,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/io2"
+	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
 
@@ -133,7 +134,11 @@ func (s *ShardStore) Create(stream io.Reader) (types.FileInfo, error) {
 		return types.FileInfo{}, err
 	}
 
-	size, hash, err := s.writeTempFile(file, stream)
+	counter := io2.Counter(stream)
+	size, hash, err := s.writeTempFile(file, counter)
+	if stgglb.Stats.HubStorageTransfer != nil {
+		stgglb.Stats.HubStorageTransfer.RecordUpload(s.agt.Detail.Storage.StorageID, counter.Count(), err == nil)
+	}
 	if err != nil {
 		// Name是文件完整路径
 		s.onCreateFailed(file.Name())
@@ -272,11 +277,17 @@ func (s *ShardStore) Open(opt types.OpenOption) (io.ReadCloser, error) {
 		}
 	}
 
+	var ret io.ReadCloser = file
+
 	if opt.Length >= 0 {
-		return io2.Length(file, opt.Length), nil
+		ret = io2.Length(ret, opt.Length)
 	}
 
-	return file, nil
+	return io2.CounterCloser(ret, func(cnt int64, err error) {
+		if stgglb.Stats.HubStorageTransfer != nil {
+			stgglb.Stats.HubStorageTransfer.RecordDownload(s.agt.Detail.Storage.StorageID, cnt, err == nil || err == io.EOF)
+		}
+	}), nil
 }
 
 func (s *ShardStore) Info(hash cdssdk.FileHash) (types.FileInfo, error) {

@@ -7,6 +7,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/pkgs/types"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
+	"gitlink.org.cn/cloudream/common/utils/io2"
 	"gitlink.org.cn/cloudream/common/utils/serder"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	agtrpc "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
@@ -45,20 +46,34 @@ func (w *AgentWorker) Equals(worker exec.WorkerInfo) bool {
 }
 
 type AgentWorkerClient struct {
-	cli *agtrpc.PoolClient
+	hubID cdssdk.HubID
+	cli   *agtrpc.PoolClient
 }
 
 func (c *AgentWorkerClient) ExecutePlan(ctx context.Context, plan exec.Plan) error {
 	return c.cli.ExecuteIOPlan(ctx, plan)
 }
 func (c *AgentWorkerClient) SendStream(ctx context.Context, planID exec.PlanID, id exec.VarID, stream io.ReadCloser) error {
-	return c.cli.SendStream(ctx, planID, id, stream)
+	return c.cli.SendStream(ctx, planID, id, io2.CounterCloser(stream, func(cnt int64, err error) {
+		if stgglb.Stats.HubTransfer != nil {
+			stgglb.Stats.HubTransfer.RecordOutput(c.hubID, cnt, err == nil || err == io.EOF)
+		}
+	}))
 }
 func (c *AgentWorkerClient) SendVar(ctx context.Context, planID exec.PlanID, id exec.VarID, value exec.VarValue) error {
 	return c.cli.SendVar(ctx, planID, id, value)
 }
 func (c *AgentWorkerClient) GetStream(ctx context.Context, planID exec.PlanID, streamID exec.VarID, signalID exec.VarID, signal exec.VarValue) (io.ReadCloser, error) {
-	return c.cli.GetStream(ctx, planID, streamID, signalID, signal)
+	str, err := c.cli.GetStream(ctx, planID, streamID, signalID, signal)
+	if err != nil {
+		return nil, err
+	}
+
+	return io2.CounterCloser(str, func(cnt int64, err error) {
+		if stgglb.Stats.HubTransfer != nil {
+			stgglb.Stats.HubTransfer.RecordInput(c.hubID, cnt, err == nil || err == io.EOF)
+		}
+	}), nil
 }
 func (c *AgentWorkerClient) GetVar(ctx context.Context, planID exec.PlanID, varID exec.VarID, signalID exec.VarID, signal exec.VarValue) (exec.VarValue, error) {
 	return c.cli.GetVar(ctx, planID, varID, signalID, signal)

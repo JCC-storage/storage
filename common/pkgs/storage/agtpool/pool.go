@@ -74,6 +74,18 @@ func (m *AgentPool) GetAgent(stgID cdssdk.StorageID) (types.StorageAgent, error)
 	return stg.Agent, nil
 }
 
+func (m *AgentPool) GetAllAgents() []types.StorageAgent {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	agents := make([]types.StorageAgent, 0, len(m.storages))
+	for _, stg := range m.storages {
+		agents = append(agents, stg.Agent)
+	}
+
+	return agents
+}
+
 // 查找指定Storage的ShardStore组件
 func (m *AgentPool) GetShardStore(stgID cdssdk.StorageID) (types.ShardStore, error) {
 	m.lock.Lock()

@@ -17,6 +17,7 @@ import (
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/io2"
 	"gitlink.org.cn/cloudream/common/utils/os2"
+	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/types"
 )
@@ -178,7 +179,7 @@ func (s *ShardStore) createWithAwsSha256(stream io.Reader) (types.FileInfo, erro
 
 	key, fileName := s.createTempFile()
 
-	counter := io2.NewCounter(stream)
+	counter := io2.Counter(stream)
 
 	resp, err := s.cli.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket:            aws.String(s.Bucket),
@@ -186,6 +187,9 @@ func (s *ShardStore) createWithAwsSha256(stream io.Reader) (types.FileInfo, erro
 		Body:              counter,
 		ChecksumAlgorithm: s3types.ChecksumAlgorithmSha256,
 	})
+	if stgglb.Stats.HubStorageTransfer != nil {
+		stgglb.Stats.HubStorageTransfer.RecordUpload(s.Detail.Storage.StorageID, counter.Count(), err == nil)
+	}
 	if err != nil {
 		log.Warnf("uploading file %v: %v", key, err)
 
@@ -218,13 +222,16 @@ func (s *ShardStore) createWithCalcSha256(stream io.Reader) (types.FileInfo, err
 	key, fileName := s.createTempFile()
 
 	hashStr := io2.NewReadHasher(sha256.New(), stream)
-	counter := io2.NewCounter(hashStr)
+	counter := io2.Counter(hashStr)
 
 	_, err := s.cli.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket: aws.String(s.Bucket),
 		Key:    aws.String(key),
 		Body:   counter,
 	})
+	if stgglb.Stats.HubStorageTransfer != nil {
+		stgglb.Stats.HubStorageTransfer.RecordUpload(s.Detail.Storage.StorageID, counter.Count(), err == nil)
+	}
 	if err != nil {
 		log.Warnf("uploading file %v: %v", key, err)
 
@@ -320,7 +327,11 @@ func (s *ShardStore) Open(opt types.OpenOption) (io.ReadCloser, error) {
 		return nil, err
 	}
 
-	return resp.Body, nil
+	return io2.CounterCloser(resp.Body, func(cnt int64, err error) {
+		if stgglb.Stats.HubStorageTransfer != nil {
+			stgglb.Stats.HubStorageTransfer.RecordDownload(s.Detail.Storage.StorageID, cnt, err == nil || err == io.EOF)
+		}
+	}), nil
 }
 
 func (s *ShardStore) Info(hash cdssdk.FileHash) (types.FileInfo, error) {
