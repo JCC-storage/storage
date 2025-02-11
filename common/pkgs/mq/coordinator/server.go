@@ -21,6 +21,8 @@ type Service interface {
 	PackageService
 
 	StorageService
+
+	UserService
 }
 
 type Server struct {

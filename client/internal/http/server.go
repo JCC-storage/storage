@@ -79,7 +79,6 @@ func (s *Server) initRouters() {
 	rt.POST(cdsapi.BucketCreatePath, s.Bucket().Create)
 	rt.POST(cdsapi.BucketDeletePath, s.Bucket().Delete)
 	rt.GET(cdsapi.BucketListUserBucketsPath, s.Bucket().ListUserBuckets)
-
 }
 
 func (s *Server) routeV1(eg *gin.Engine) {
@@ -117,4 +116,7 @@ func (s *Server) routeV1(eg *gin.Engine) {
 	v1.POST(cdsapi.BucketCreatePath, s.awsAuth.Auth, s.Bucket().Create)
 	v1.POST(cdsapi.BucketDeletePath, s.awsAuth.Auth, s.Bucket().Delete)
 	v1.GET(cdsapi.BucketListUserBucketsPath, s.awsAuth.Auth, s.Bucket().ListUserBuckets)
+
+	v1.POST(cdsapi.UserCreatePath, s.User().Create)
+	v1.POST(cdsapi.UserDeletePath, s.User().Delete)
 }

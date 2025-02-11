@@ -13,6 +13,12 @@ func (db *DB) UserBucket() *UserBucketDB {
 	return &UserBucketDB{DB: db}
 }
 
+func (*UserBucketDB) GetByUserID(ctx SQLContext, userID cdssdk.UserID) ([]model.UserBucket, error) {
+	var userBuckets []model.UserBucket
+	err := ctx.Table("UserBucket").Where("UserID = ?", userID).Find(&userBuckets).Error
+	return userBuckets, err
+}
+
 func (*UserBucketDB) Create(ctx SQLContext, userID cdssdk.UserID, bucketID cdssdk.BucketID) error {
 	userBucket := model.UserBucket{
 		UserID:   userID,
@@ -23,4 +29,8 @@ func (*UserBucketDB) Create(ctx SQLContext, userID cdssdk.UserID, bucketID cdssd
 
 func (*UserBucketDB) DeleteByBucketID(ctx SQLContext, bucketID cdssdk.BucketID) error {
 	return ctx.Table("UserBucket").Where("BucketID = ?", bucketID).Delete(&model.UserBucket{}).Error
+}
+
+func (*UserBucketDB) DeleteByUserID(ctx SQLContext, userID cdssdk.UserID) error {
+	return ctx.Table("UserBucket").Where("UserID = ?", userID).Delete(&model.UserBucket{}).Error
 }

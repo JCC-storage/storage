@@ -178,7 +178,7 @@ func (s *ShardStore) createWithAwsSha256(stream io.Reader) (types.FileInfo, erro
 
 	key, fileName := s.createTempFile()
 
-	counter := io2.NewCounter(stream)
+	counter := io2.Counter(stream)
 
 	resp, err := s.cli.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket:            aws.String(s.Bucket),
@@ -218,7 +218,7 @@ func (s *ShardStore) createWithCalcSha256(stream io.Reader) (types.FileInfo, err
 	key, fileName := s.createTempFile()
 
 	hashStr := io2.NewReadHasher(sha256.New(), stream)
-	counter := io2.NewCounter(hashStr)
+	counter := io2.Counter(hashStr)
 
 	_, err := s.cli.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket: aws.String(s.Bucket),

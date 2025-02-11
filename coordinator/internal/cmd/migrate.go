@@ -55,7 +55,7 @@ func migrate(configPath string) {
 	migrateOne(db, cdssdk.Storage{})
 	migrateOne(db, model.UserStorage{})
 	migrateOne(db, model.UserBucket{})
-	migrateOne(db, model.User{})
+	migrateOne(db, cdssdk.User{})
 	migrateOne(db, model.UserHub{})
 
 	fmt.Println("migrate success")
