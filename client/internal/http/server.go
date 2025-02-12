@@ -45,7 +45,7 @@ func (s *Server) initRouters() {
 
 	initTemp(rt, s)
 
-	s.routeV1(s.engine)
+	s.routeV1(s.engine, rt)
 
 	rt.GET(cdsapi.ObjectListPathByPath, s.Object().ListByPath)
 	rt.POST(cdsapi.ObjectListByIDsPath, s.Object().ListByIDs)
@@ -81,7 +81,7 @@ func (s *Server) initRouters() {
 	rt.GET(cdsapi.BucketListUserBucketsPath, s.Bucket().ListUserBuckets)
 }
 
-func (s *Server) routeV1(eg *gin.Engine) {
+func (s *Server) routeV1(eg *gin.Engine, rt gin.IRoutes) {
 	v1 := eg.Group("/v1")
 
 	v1.GET(cdsapi.ObjectListPathByPath, s.awsAuth.Auth, s.Object().ListByPath)
@@ -117,6 +117,6 @@ func (s *Server) routeV1(eg *gin.Engine) {
 	v1.POST(cdsapi.BucketDeletePath, s.awsAuth.Auth, s.Bucket().Delete)
 	v1.GET(cdsapi.BucketListUserBucketsPath, s.awsAuth.Auth, s.Bucket().ListUserBuckets)
 
-	v1.POST(cdsapi.UserCreatePath, s.User().Create)
-	v1.POST(cdsapi.UserDeletePath, s.User().Delete)
+	rt.POST(cdsapi.UserCreatePath, s.User().Create)
+	rt.POST(cdsapi.UserDeletePath, s.User().Delete)
 }
