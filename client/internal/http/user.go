@@ -35,7 +35,7 @@ func (s *UserService) Create(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(user))
+	ctx.JSON(http.StatusOK, OK(cdsapi.UserCreateResp{User: user}))
 }
 
 func (s *UserService) Delete(ctx *gin.Context) {
