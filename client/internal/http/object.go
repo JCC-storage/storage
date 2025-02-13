@@ -14,6 +14,7 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
+	"gitlink.org.cn/cloudream/common/utils/math2"
 	"gitlink.org.cn/cloudream/storage/client/internal/config"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
 )
@@ -176,7 +177,7 @@ func (s *ObjectService) Download(ctx *gin.Context) {
 
 	// TODO 当client不在某个代理节点上时如何处理？
 	if config.Cfg().StorageID > 0 {
-		s.svc.AccessStat.AddAccessCounter(file.Object.ObjectID, file.Object.PackageID, config.Cfg().StorageID, float64(n)/float64(file.Object.Size))
+		s.svc.AccessStat.AddAccessCounter(file.Object.ObjectID, file.Object.PackageID, config.Cfg().StorageID, math2.DivOrDefault(float64(n), float64(file.Object.Size), 1))
 	}
 }
 
@@ -231,7 +232,7 @@ func (s *ObjectService) DownloadByPath(ctx *gin.Context) {
 	}
 
 	if config.Cfg().StorageID > 0 {
-		s.svc.AccessStat.AddAccessCounter(file.Object.ObjectID, file.Object.PackageID, config.Cfg().StorageID, float64(n)/float64(file.Object.Size))
+		s.svc.AccessStat.AddAccessCounter(file.Object.ObjectID, file.Object.PackageID, config.Cfg().StorageID, math2.DivOrDefault(float64(n), float64(file.Object.Size), 1))
 	}
 }
 
