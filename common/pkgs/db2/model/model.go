@@ -10,15 +10,6 @@ import (
 // TODO 可以考虑逐步迁移到cdssdk中。迁移思路：数据对象应该包含的字段都迁移到cdssdk中，内部使用的一些特殊字段则留在这里
 type Storage = cdssdk.Storage
 
-type User struct {
-	UserID   cdssdk.UserID `gorm:"column:UserID; primaryKey; type:bigint" json:"userID"`
-	Password string        `gorm:"column:Password; type:varchar(255); not null" json:"password"`
-}
-
-func (User) TableName() string {
-	return "User"
-}
-
 type UserBucket struct {
 	UserID   cdssdk.UserID   `gorm:"column:UserID; primaryKey; type:bigint" json:"userID"`
 	BucketID cdssdk.BucketID `gorm:"column:BucketID; primaryKey; type:bigint" json:"bucketID"`
