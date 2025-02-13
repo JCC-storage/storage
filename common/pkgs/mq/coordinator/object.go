@@ -272,6 +272,7 @@ type DeleteObjects struct {
 
 type DeleteObjectsResp struct {
 	mq.MessageBodyBase
+	Successes []cdssdk.ObjectID `json:"successes"`
 }
 
 func ReqDeleteObjects(userID cdssdk.UserID, objectIDs []cdssdk.ObjectID) *DeleteObjects {
@@ -280,8 +281,10 @@ func ReqDeleteObjects(userID cdssdk.UserID, objectIDs []cdssdk.ObjectID) *Delete
 		ObjectIDs: objectIDs,
 	}
 }
-func RespDeleteObjects() *DeleteObjectsResp {
-	return &DeleteObjectsResp{}
+func RespDeleteObjects(sucs []cdssdk.ObjectID) *DeleteObjectsResp {
+	return &DeleteObjectsResp{
+		Successes: sucs,
+	}
 }
 func (client *Client) DeleteObjects(msg *DeleteObjects) (*DeleteObjectsResp, error) {
 	return mq.Request(Service.DeleteObjects, client.rabbitCli, msg)

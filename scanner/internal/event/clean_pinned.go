@@ -117,6 +117,8 @@ func (t *CleanPinned) Execute(execCtx ExecuteContext) {
 	planBld := exec.NewPlanBuilder()
 	planningStgIDs := make(map[cdssdk.StorageID]bool)
 
+	var sysEvents []stgmod.SysEventBody
+
 	// 对于rep对象，统计出所有对象块分布最多的两个节点，用这两个节点代表所有rep对象块的分布，去进行退火算法
 	var repObjectsUpdating []coormq.UpdatingObjectRedundancy
 	repMostHubIDs := t.summaryRepObjectBlockNodes(repObjects)
@@ -128,6 +130,7 @@ func (t *CleanPinned) Execute(execCtx ExecuteContext) {
 	})
 	for _, obj := range repObjects {
 		repObjectsUpdating = append(repObjectsUpdating, t.makePlansForRepObject(allStgInfos, solu, obj, planBld, planningStgIDs))
+		sysEvents = append(sysEvents, t.generateSysEventForRepObject(solu, obj)...)
 	}
 
 	// 对于ec对象，则每个对象单独进行退火算法
@@ -141,6 +144,7 @@ func (t *CleanPinned) Execute(execCtx ExecuteContext) {
 			blocks:          obj.Blocks,
 		})
 		ecObjectsUpdating = append(ecObjectsUpdating, t.makePlansForECObject(allStgInfos, solu, obj, planBld, planningStgIDs))
+		sysEvents = append(sysEvents, t.generateSysEventForECObject(solu, obj)...)
 	}
 
 	ioSwRets, err := t.executePlans(execCtx, planBld, planningStgIDs)
@@ -160,6 +164,10 @@ func (t *CleanPinned) Execute(execCtx ExecuteContext) {
 		if err != nil {
 			log.Warnf("changing object redundancy: %s", err.Error())
 			return
+		}
+
+		for _, e := range sysEvents {
+			execCtx.Args.EvtPub.Publish(e)
 		}
 	}
 }
@@ -227,9 +235,12 @@ type annealingState struct {
 	maxScore         float64 // 搜索过程中得到过的最大分数
 	maxScoreRmBlocks []bool  // 最大分数对应的删除方案
 
-	rmBlocks      []bool  // 当前删除方案
-	inversedIndex int     // 当前删除方案是从上一次的方案改动哪个flag而来的
-	lastScore     float64 // 上一次方案的分数
+	rmBlocks              []bool  // 当前删除方案
+	inversedIndex         int     // 当前删除方案是从上一次的方案改动哪个flag而来的
+	lastDisasterTolerance float64 // 上一次方案的容灾度
+	lastSpaceCost         float64 // 上一次方案的冗余度
+	lastMinAccessCost     float64 // 上一次方案的最小访问费用
+	lastScore             float64 // 上一次方案的分数
 }
 
 type objectBlock struct {
@@ -464,8 +475,11 @@ type combinatorialTreeNode struct {
 }
 
 type annealingSolution struct {
-	blockList []objectBlock // 所有节点的块分布情况
-	rmBlocks  []bool        // 要删除哪些块
+	blockList         []objectBlock // 所有节点的块分布情况
+	rmBlocks          []bool        // 要删除哪些块
+	disasterTolerance float64       // 本方案的容灾度
+	spaceCost         float64       // 本方案的冗余度
+	minAccessCost     float64       // 本方案的最小访问费用
 }
 
 func (t *CleanPinned) startAnnealing(allStgInfos map[cdssdk.StorageID]*stgmod.StorageDetail, readerStgIDs []cdssdk.StorageID, object annealingObject) annealingSolution {
@@ -529,8 +543,11 @@ func (t *CleanPinned) startAnnealing(allStgInfos map[cdssdk.StorageID]*stgmod.St
 	}
 	// fmt.Printf("final: %v\n", state.maxScoreRmBlocks)
 	return annealingSolution{
-		blockList: state.blockList,
-		rmBlocks:  state.maxScoreRmBlocks,
+		blockList:         state.blockList,
+		rmBlocks:          state.maxScoreRmBlocks,
+		disasterTolerance: state.lastDisasterTolerance,
+		spaceCost:         state.lastSpaceCost,
+		minAccessCost:     state.lastMinAccessCost,
 	}
 }
 
@@ -640,6 +657,10 @@ func (t *CleanPinned) calcScore(state *annealingState) float64 {
 	ac := t.calcMinAccessCost(state)
 	sc := t.calcSpaceCost(state)
 
+	state.lastDisasterTolerance = dt
+	state.lastMinAccessCost = ac
+	state.lastSpaceCost = sc
+
 	dtSc := 1.0
 	if dt < 1 {
 		dtSc = 0
@@ -730,6 +751,11 @@ func (t *CleanPinned) makePlansForRepObject(allStgInfos map[cdssdk.StorageID]*st
 		Redundancy: obj.Object.Redundancy,
 	}
 
+	ft := ioswitch2.NewFromTo()
+
+	fromStg := allStgInfos[obj.Blocks[0].StorageID]
+	ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *fromStg.MasterHub, *fromStg, ioswitch2.RawStream()))
+
 	for i, f := range solu.rmBlocks {
 		hasCache := lo.ContainsBy(obj.Blocks, func(b stgmod.ObjectBlock) bool { return b.StorageID == solu.blockList[i].StorageID }) ||
 			lo.ContainsBy(obj.PinnedAt, func(n cdssdk.StorageID) bool { return n == solu.blockList[i].StorageID })
@@ -738,18 +764,9 @@ func (t *CleanPinned) makePlansForRepObject(allStgInfos map[cdssdk.StorageID]*st
 		if !willRm {
 			// 如果对象在退火后要保留副本的节点没有副本，则需要在这个节点创建副本
 			if !hasCache {
-				ft := ioswitch2.NewFromTo()
-
-				fromStg := allStgInfos[obj.Blocks[0].StorageID]
-				ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *fromStg.MasterHub, *fromStg, ioswitch2.RawStream()))
 				toStg := allStgInfos[solu.blockList[i].StorageID]
 				ft.AddTo(ioswitch2.NewToShardStore(*toStg.MasterHub, *toStg, ioswitch2.RawStream(), fmt.Sprintf("%d.0", obj.Object.ObjectID)))
 
-				err := parser.Parse(ft, planBld)
-				if err != nil {
-					// TODO 错误处理
-					continue
-				}
 				planningHubIDs[solu.blockList[i].StorageID] = true
 			}
 			entry.Blocks = append(entry.Blocks, stgmod.ObjectBlock{
@@ -761,7 +778,70 @@ func (t *CleanPinned) makePlansForRepObject(allStgInfos map[cdssdk.StorageID]*st
 		}
 	}
 
+	err := parser.Parse(ft, planBld)
+	if err != nil {
+		// TODO 错误处理
+	}
+
 	return entry
+}
+
+func (t *CleanPinned) generateSysEventForRepObject(solu annealingSolution, obj stgmod.ObjectDetail) []stgmod.SysEventBody {
+	var blockChgs []stgmod.BlockChange
+
+	for i, f := range solu.rmBlocks {
+		hasCache := lo.ContainsBy(obj.Blocks, func(b stgmod.ObjectBlock) bool { return b.StorageID == solu.blockList[i].StorageID }) ||
+			lo.ContainsBy(obj.PinnedAt, func(n cdssdk.StorageID) bool { return n == solu.blockList[i].StorageID })
+		willRm := f
+
+		if !willRm {
+			// 如果对象在退火后要保留副本的节点没有副本，则需要在这个节点创建副本
+			if !hasCache {
+				blockChgs = append(blockChgs, &stgmod.BlockChangeClone{
+					BlockType:       stgmod.BlockTypeRaw,
+					SourceStorageID: obj.Blocks[0].StorageID,
+					TargetStorageID: solu.blockList[i].StorageID,
+				})
+			}
+		} else {
+			blockChgs = append(blockChgs, &stgmod.BlockChangeDeleted{
+				Index:     0,
+				StorageID: solu.blockList[i].StorageID,
+			})
+		}
+	}
+
+	transEvt := &stgmod.BodyBlockTransfer{
+		ObjectID:     obj.Object.ObjectID,
+		PackageID:    obj.Object.PackageID,
+		BlockChanges: blockChgs,
+	}
+
+	var blockDist []stgmod.BlockDistributionObjectInfo
+	for i, f := range solu.rmBlocks {
+		if !f {
+			blockDist = append(blockDist, stgmod.BlockDistributionObjectInfo{
+				BlockType: stgmod.BlockTypeRaw,
+				Index:     0,
+				StorageID: solu.blockList[i].StorageID,
+			})
+		}
+	}
+
+	distEvt := &stgmod.BodyBlockDistribution{
+		ObjectID:          obj.Object.ObjectID,
+		PackageID:         obj.Object.PackageID,
+		Path:              obj.Object.Path,
+		Size:              obj.Object.Size,
+		FileHash:          obj.Object.FileHash,
+		FaultTolerance:    solu.disasterTolerance,
+		Redundancy:        solu.spaceCost,
+		AvgAccessCost:     0, // TODO 计算平均访问代价，从日常访问数据中统计
+		BlockDistribution: blockDist,
+		// TODO 不好计算传输量
+	}
+
+	return []stgmod.SysEventBody{transEvt, distEvt}
 }
 
 func (t *CleanPinned) makePlansForECObject(allStgInfos map[cdssdk.StorageID]*stgmod.StorageDetail, solu annealingSolution, obj stgmod.ObjectDetail, planBld *exec.PlanBuilder, planningHubIDs map[cdssdk.StorageID]bool) coormq.UpdatingObjectRedundancy {
@@ -797,6 +877,7 @@ func (t *CleanPinned) makePlansForECObject(allStgInfos map[cdssdk.StorageID]*stg
 	ecRed := obj.Object.Redundancy.(*cdssdk.ECRedundancy)
 
 	for id, idxs := range reconstrct {
+		// 依次生成每个节点上的执行计划，因为如果放到一个计划里一起生成，不能保证每个节点上的块用的都是本节点上的副本
 		ft := ioswitch2.NewFromTo()
 		ft.ECParam = ecRed
 		ft.AddFrom(ioswitch2.NewFromShardstore(obj.Object.FileHash, *allStgInfos[id].MasterHub, *allStgInfos[id], ioswitch2.RawStream()))
@@ -814,6 +895,85 @@ func (t *CleanPinned) makePlansForECObject(allStgInfos map[cdssdk.StorageID]*stg
 		planningHubIDs[id] = true
 	}
 	return entry
+}
+
+func (t *CleanPinned) generateSysEventForECObject(solu annealingSolution, obj stgmod.ObjectDetail) []stgmod.SysEventBody {
+	var blockChgs []stgmod.BlockChange
+
+	reconstrct := make(map[cdssdk.StorageID]*[]int)
+	for i, f := range solu.rmBlocks {
+		block := solu.blockList[i]
+		if !f {
+			// 如果这个块是影子块，那么就要从完整对象里重建这个块
+			if !block.HasEntity {
+				re, ok := reconstrct[block.StorageID]
+				if !ok {
+					re = &[]int{}
+					reconstrct[block.StorageID] = re
+				}
+
+				*re = append(*re, block.Index)
+			}
+		} else {
+			blockChgs = append(blockChgs, &stgmod.BlockChangeDeleted{
+				Index:     block.Index,
+				StorageID: block.StorageID,
+			})
+		}
+	}
+
+	// 由于每一个需要被重建的块都是从同中心的副本里构建出来的，所以对于每一个中心都要产生一个BlockChangeEnDecode
+	for id, idxs := range reconstrct {
+		var tarBlocks []stgmod.Block
+		for _, idx := range *idxs {
+			tarBlocks = append(tarBlocks, stgmod.Block{
+				BlockType: stgmod.BlockTypeEC,
+				Index:     idx,
+				StorageID: id,
+			})
+		}
+		blockChgs = append(blockChgs, &stgmod.BlockChangeEnDecode{
+			SourceBlocks: []stgmod.Block{{
+				BlockType: stgmod.BlockTypeRaw,
+				Index:     0,
+				StorageID: id, // 影子块的原始对象就在同一个节点上
+			}},
+			TargetBlocks: tarBlocks,
+			// 传输量为0
+		})
+	}
+
+	transEvt := &stgmod.BodyBlockTransfer{
+		ObjectID:     obj.Object.ObjectID,
+		PackageID:    obj.Object.PackageID,
+		BlockChanges: blockChgs,
+	}
+
+	var blockDist []stgmod.BlockDistributionObjectInfo
+	for i, f := range solu.rmBlocks {
+		if !f {
+			blockDist = append(blockDist, stgmod.BlockDistributionObjectInfo{
+				BlockType: stgmod.BlockTypeEC,
+				Index:     solu.blockList[i].Index,
+				StorageID: solu.blockList[i].StorageID,
+			})
+		}
+	}
+
+	distEvt := &stgmod.BodyBlockDistribution{
+		ObjectID:          obj.Object.ObjectID,
+		PackageID:         obj.Object.PackageID,
+		Path:              obj.Object.Path,
+		Size:              obj.Object.Size,
+		FileHash:          obj.Object.FileHash,
+		FaultTolerance:    solu.disasterTolerance,
+		Redundancy:        solu.spaceCost,
+		AvgAccessCost:     0, // TODO 计算平均访问代价，从日常访问数据中统计
+		BlockDistribution: blockDist,
+		// TODO 不好计算传输量
+	}
+
+	return []stgmod.SysEventBody{transEvt, distEvt}
 }
 
 func (t *CleanPinned) executePlans(ctx ExecuteContext, planBld *exec.PlanBuilder, planningStgIDs map[cdssdk.StorageID]bool) (map[string]exec.VarValue, error) {

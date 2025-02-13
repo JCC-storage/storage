@@ -79,6 +79,10 @@ func (svc *Service) CreatePackage(msg *coormq.CreatePackage) (*coormq.CreatePack
 		return nil, mq.Failed(errorcode.OperationFailed, err.Error())
 	}
 
+	svc.evtPub.Publish(&stgmod.BodyNewPackage{
+		Info: pkg,
+	})
+
 	return mq.ReplyOK(coormq.NewCreatePackageResp(pkg))
 }
 
@@ -90,27 +94,37 @@ func (svc *Service) UpdatePackage(msg *coormq.UpdatePackage) (*coormq.UpdatePack
 			return fmt.Errorf("getting package by id: %w", err)
 		}
 
-		// 先执行删除操作
-		if len(msg.Deletes) > 0 {
-			if err := svc.db2.Object().BatchDelete(tx, msg.Deletes); err != nil {
-				return fmt.Errorf("deleting objects: %w", err)
-			}
+		ad, err := svc.db2.Object().BatchAdd(tx, msg.PackageID, msg.Adds)
+		if err != nil {
+			return fmt.Errorf("adding objects: %w", err)
 		}
-
-		// 再执行添加操作
-		if len(msg.Adds) > 0 {
-			ad, err := svc.db2.Object().BatchAdd(tx, msg.PackageID, msg.Adds)
-			if err != nil {
-				return fmt.Errorf("adding objects: %w", err)
-			}
-			added = ad
-		}
+		added = ad
 
 		return nil
 	})
 	if err != nil {
 		logger.WithField("PackageID", msg.PackageID).Warn(err.Error())
 		return nil, mq.Failed(errorcode.OperationFailed, "update package failed")
+	}
+
+	addedMp := make(map[string]cdssdk.Object)
+	for _, obj := range added {
+		addedMp[obj.Path] = obj
+	}
+
+	for _, add := range msg.Adds {
+		var blks []stgmod.BlockDistributionObjectInfo
+		for _, stgID := range add.StorageIDs {
+			blks = append(blks, stgmod.BlockDistributionObjectInfo{
+				BlockType: stgmod.BlockTypeRaw,
+				StorageID: stgID,
+			})
+		}
+
+		svc.evtPub.Publish(&stgmod.BodyNewOrUpdateObject{
+			Info:              addedMp[add.Path],
+			BlockDistribution: blks,
+		})
 	}
 
 	return mq.ReplyOK(coormq.NewUpdatePackageResp(added))
@@ -136,6 +150,10 @@ func (svc *Service) DeletePackage(msg *coormq.DeletePackage) (*coormq.DeletePack
 			Warnf(err.Error())
 		return nil, mq.Failed(errorcode.OperationFailed, "delete package failed")
 	}
+
+	svc.evtPub.Publish(&stgmod.BodyPackageDeleted{
+		PackageID: msg.PackageID,
+	})
 
 	return mq.ReplyOK(coormq.NewDeletePackageResp())
 }
@@ -202,6 +220,11 @@ func (svc *Service) ClonePackage(msg *coormq.ClonePackage) (*coormq.ClonePackage
 
 		return nil, mq.Failed(errorcode.OperationFailed, err.Error())
 	}
+
+	svc.evtPub.Publish(&stgmod.BodyPackageCloned{
+		SourcePackageID: msg.PackageID,
+		NewPackage:      pkg,
+	})
 
 	return mq.ReplyOK(coormq.RespClonePackage(pkg))
 }

@@ -298,12 +298,12 @@ func (db *ObjectDB) BatchAdd(ctx SQLContext, packageID cdssdk.PackageID, adds []
 
 	if len(affectedObjIDs) > 0 {
 		// 批量删除 ObjectBlock
-		if err := ctx.Table("ObjectBlock").Where("ObjectID IN ?", affectedObjIDs).Delete(&stgmod.ObjectBlock{}).Error; err != nil {
+		if err := db.ObjectBlock().BatchDeleteByObjectID(ctx, affectedObjIDs); err != nil {
 			return nil, fmt.Errorf("batch delete object blocks: %w", err)
 		}
 
 		// 批量删除 PinnedObject
-		if err := ctx.Table("PinnedObject").Where("ObjectID IN ?", affectedObjIDs).Delete(&cdssdk.PinnedObject{}).Error; err != nil {
+		if err := db.PinnedObject().BatchDeleteByObjectID(ctx, affectedObjIDs); err != nil {
 			return nil, fmt.Errorf("batch delete pinned objects: %w", err)
 		}
 	}
@@ -341,84 +341,6 @@ func (db *ObjectDB) BatchAdd(ctx SQLContext, packageID cdssdk.PackageID, adds []
 	}
 
 	return affectedObjs, nil
-}
-
-func (db *ObjectDB) BatchUpdateRedundancy(ctx SQLContext, objs []coormq.UpdatingObjectRedundancy) error {
-	if len(objs) == 0 {
-		return nil
-	}
-
-	nowTime := time.Now()
-	objIDs := make([]cdssdk.ObjectID, 0, len(objs))
-	dummyObjs := make([]cdssdk.Object, 0, len(objs))
-	for _, obj := range objs {
-		objIDs = append(objIDs, obj.ObjectID)
-		dummyObjs = append(dummyObjs, cdssdk.Object{
-			ObjectID:   obj.ObjectID,
-			Redundancy: obj.Redundancy,
-			CreateTime: nowTime, // 实际不会更新，只因为不能是0值
-			UpdateTime: nowTime,
-		})
-	}
-
-	err := db.Object().BatchUpdateColumns(ctx, dummyObjs, []string{"Redundancy", "UpdateTime"})
-	if err != nil {
-		return fmt.Errorf("batch update object redundancy: %w", err)
-	}
-
-	// 删除原本所有的编码块记录，重新添加
-	err = db.ObjectBlock().BatchDeleteByObjectID(ctx, objIDs)
-	if err != nil {
-		return fmt.Errorf("batch delete object blocks: %w", err)
-	}
-
-	// 删除原本Pin住的Object。暂不考虑FileHash没有变化的情况
-	err = db.PinnedObject().BatchDeleteByObjectID(ctx, objIDs)
-	if err != nil {
-		return fmt.Errorf("batch delete pinned object: %w", err)
-	}
-
-	blocks := make([]stgmod.ObjectBlock, 0, len(objs))
-	for _, obj := range objs {
-		blocks = append(blocks, obj.Blocks...)
-	}
-	err = db.ObjectBlock().BatchCreate(ctx, blocks)
-	if err != nil {
-		return fmt.Errorf("batch create object blocks: %w", err)
-	}
-
-	caches := make([]model.Cache, 0, len(objs))
-	for _, obj := range objs {
-		for _, blk := range obj.Blocks {
-			caches = append(caches, model.Cache{
-				FileHash:   blk.FileHash,
-				StorageID:  blk.StorageID,
-				CreateTime: nowTime,
-				Priority:   0,
-			})
-		}
-	}
-	err = db.Cache().BatchCreate(ctx, caches)
-	if err != nil {
-		return fmt.Errorf("batch create object caches: %w", err)
-	}
-
-	pinneds := make([]cdssdk.PinnedObject, 0, len(objs))
-	for _, obj := range objs {
-		for _, p := range obj.PinnedAt {
-			pinneds = append(pinneds, cdssdk.PinnedObject{
-				ObjectID:   obj.ObjectID,
-				StorageID:  p,
-				CreateTime: nowTime,
-			})
-		}
-	}
-	err = db.PinnedObject().BatchTryCreate(ctx, pinneds)
-	if err != nil {
-		return fmt.Errorf("batch create pinned objects: %w", err)
-	}
-
-	return nil
 }
 
 func (db *ObjectDB) BatchDelete(ctx SQLContext, ids []cdssdk.ObjectID) error {

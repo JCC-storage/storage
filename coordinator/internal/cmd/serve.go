@@ -1,13 +1,16 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	"gitlink.org.cn/cloudream/common/pkgs/mq"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/sysevent"
 	"gitlink.org.cn/cloudream/storage/coordinator/internal/config"
 	mymq "gitlink.org.cn/cloudream/storage/coordinator/internal/mq"
 )
@@ -30,7 +33,15 @@ func serve(configPath string) {
 		logger.Fatalf("new db2 failed, err: %s", err.Error())
 	}
 
-	coorSvr, err := coormq.NewServer(mymq.NewService(db2), config.Cfg().RabbitMQ)
+	// 初始化系统事件发布器
+	evtPub, err := sysevent.NewPublisher(sysevent.ConfigFromMQConfig(config.Cfg().RabbitMQ), &stgmod.SourceCoordinator{})
+	if err != nil {
+		logger.Errorf("new sysevent publisher: %v", err)
+		os.Exit(1)
+	}
+	go servePublisher(evtPub)
+
+	coorSvr, err := coormq.NewServer(mymq.NewService(db2, evtPub), config.Cfg().RabbitMQ)
 	if err != nil {
 		logger.Fatalf("new coordinator server failed, err: %s", err.Error())
 	}
@@ -44,6 +55,41 @@ func serve(configPath string) {
 
 	forever := make(chan bool)
 	<-forever
+}
+
+func servePublisher(evtPub *sysevent.Publisher) {
+	logger.Info("start serving sysevent publisher")
+
+	ch := evtPub.Start()
+
+loop:
+	for {
+		val, err := ch.Receive().Wait(context.Background())
+		if err != nil {
+			logger.Errorf("sysevent publisher stopped with error: %s", err.Error())
+			break
+		}
+
+		switch val := val.(type) {
+		case sysevent.PublishError:
+			logger.Errorf("publishing event: %v", val)
+
+		case sysevent.PublisherExited:
+			if val.Err != nil {
+				logger.Errorf("publisher exited with error: %v", val.Err)
+			} else {
+				logger.Info("publisher exited")
+			}
+			break loop
+
+		case sysevent.OtherError:
+			logger.Errorf("sysevent: %v", val)
+		}
+	}
+	logger.Info("sysevent publisher stopped")
+
+	// TODO 仅简单结束了程序
+	os.Exit(1)
 }
 
 func serveCoorServer(server *coormq.Server, cfg mq.Config) {

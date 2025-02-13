@@ -29,7 +29,7 @@ func (w *AgentWorker) NewClient() (exec.WorkerClient, error) {
 		return nil, err
 	}
 
-	return &AgentWorkerClient{cli: cli}, nil
+	return &AgentWorkerClient{hubID: w.Hub.HubID, cli: cli}, nil
 }
 
 func (w *AgentWorker) String() string {

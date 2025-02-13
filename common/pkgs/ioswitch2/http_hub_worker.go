@@ -29,7 +29,7 @@ func (w *HttpHubWorker) NewClient() (exec.WorkerClient, error) {
 		return nil, err
 	}
 
-	return &HttpHubWorkerClient{cli: cli}, nil
+	return &HttpHubWorkerClient{hubID: w.Hub.HubID, cli: cli}, nil
 }
 
 func (w *HttpHubWorker) String() string {

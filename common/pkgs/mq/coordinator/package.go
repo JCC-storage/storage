@@ -120,9 +120,8 @@ var _ = Register(Service.UpdatePackage)
 
 type UpdatePackage struct {
 	mq.MessageBodyBase
-	PackageID cdssdk.PackageID  `json:"packageID"`
-	Adds      []AddObjectEntry  `json:"adds"`
-	Deletes   []cdssdk.ObjectID `json:"deletes"`
+	PackageID cdssdk.PackageID `json:"packageID"`
+	Adds      []AddObjectEntry `json:"adds"`
 }
 type UpdatePackageResp struct {
 	mq.MessageBodyBase
@@ -136,11 +135,10 @@ type AddObjectEntry struct {
 	StorageIDs []cdssdk.StorageID `json:"storageIDs"`
 }
 
-func NewUpdatePackage(packageID cdssdk.PackageID, adds []AddObjectEntry, deletes []cdssdk.ObjectID) *UpdatePackage {
+func NewUpdatePackage(packageID cdssdk.PackageID, adds []AddObjectEntry) *UpdatePackage {
 	return &UpdatePackage{
 		PackageID: packageID,
 		Adds:      adds,
-		Deletes:   deletes,
 	}
 }
 func NewUpdatePackageResp(added []cdssdk.Object) *UpdatePackageResp {

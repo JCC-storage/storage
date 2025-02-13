@@ -1,6 +1,7 @@
 package tickevent
 
 import (
+	"gitlink.org.cn/cloudream/common/utils/math2"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/agtpool"
@@ -23,7 +24,7 @@ func ReportHubTransferStats(evtPub *sysevent.Publisher) {
 				TotalTransfer:      entry.OutputBytes,
 				RequestCount:       entry.TotalOutput,
 				FailedRequestCount: entry.TotalInput - entry.SuccessInput,
-				AvgTransfer:        entry.OutputBytes / entry.TotalOutput,
+				AvgTransfer:        math2.DivOrDefault(entry.OutputBytes, entry.TotalOutput, 0),
 				MinTransfer:        entry.MinOutputBytes,
 				MaxTransfer:        entry.MaxOutputBytes,
 			},
@@ -49,7 +50,9 @@ func ReportHubStorageTransferStats(stgAgts *agtpool.AgentPool, evtPub *sysevent.
 				TotalTransfer:      stg.OutputBytes,
 				RequestCount:       stg.TotalOutput,
 				FailedRequestCount: stg.TotalInput - stg.SuccessInput,
-				AvgTransfer:        stg.OutputBytes / stg.TotalOutput,
+				AvgTransfer:        math2.DivOrDefault(stg.OutputBytes, stg.TotalOutput, 0),
+				MinTransfer:        stg.MinOutputBytes,
+				MaxTransfer:        stg.MaxOutputBytes,
 			},
 			StartTimestamp: data.StartTime,
 			EndTimestamp:   endTime,

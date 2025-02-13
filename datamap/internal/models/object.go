@@ -75,7 +75,7 @@ type ObjectWatcher struct {
 func (w *ObjectWatcher) OnEvent(event sysevent.SysEvent) {
 
 	if event.Category == "objectChange" {
-		if _, ok := event.Body.(*stgmod.BodyNewObject); ok {
+		if _, ok := event.Body.(*stgmod.BodyNewOrUpdateObject); ok {
 
 		} else {
 			fmt.Printf("Watcher %s: Unexpected Body type, expected *ObjectInfo, got %T\n", w.Name, event.Body)

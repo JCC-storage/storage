@@ -55,6 +55,8 @@ func serve(configPath string) {
 	stgglb.InitLocal(&config.Cfg().Local)
 	stgglb.InitMQPool(config.Cfg().RabbitMQ)
 	stgglb.InitAgentRPCPool(&agtrpc.PoolConfig{})
+	stgglb.Stats.SetupHubStorageTransfer(*config.Cfg().Local.HubID)
+	stgglb.Stats.SetupHubTransfer(*config.Cfg().Local.HubID)
 
 	// 获取Hub配置
 	hubCfg := downloadHubConfig()
@@ -159,6 +161,7 @@ func serve(configPath string) {
 
 	// 初始化定时任务执行器
 	sch := setupTickTask(stgAgts, evtPub)
+	sch.Start()
 	defer sch.Shutdown()
 
 	// 启动命令服务器
@@ -258,6 +261,12 @@ func setupTickTask(agtPool *agtpool.AgentPool, evtPub *sysevent.Publisher) gocro
 	sch.NewJob(gocron.DailyJob(1, gocron.NewAtTimes(
 		gocron.NewAtTime(0, 0, 2),
 	)), gocron.NewTask(tickevent.ReportHubStorageTransferStats, evtPub))
+
+	// sch.NewJob(gocron.DurationJob(time.Minute), gocron.NewTask(tickevent.ReportStorageStats, agtPool, evtPub))
+
+	// sch.NewJob(gocron.DurationJob(time.Minute), gocron.NewTask(tickevent.ReportHubTransferStats, evtPub))
+
+	// sch.NewJob(gocron.DurationJob(time.Minute), gocron.NewTask(tickevent.ReportHubStorageTransferStats, agtPool, evtPub))
 
 	return sch
 }

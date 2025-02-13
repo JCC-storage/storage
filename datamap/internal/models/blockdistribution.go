@@ -170,7 +170,7 @@ func (w *BlockDistributionWatcher) OnEvent(event sysevent.SysEvent) {
 	for _, dataTransfer := range body.DataTransfers {
 		sourceStorageID, _ := strconv.ParseInt(string(dataTransfer.SourceStorageID), 10, 64)
 		targetStorageID, _ := strconv.ParseInt(string(dataTransfer.TargetStorageID), 10, 64)
-		dataTransferCount, _ := strconv.ParseInt(dataTransfer.DataTransferCount, 10, 64)
+		dataTransferCount, _ := strconv.ParseInt(dataTransfer.TransferBytes, 10, 64)
 
 		err := repoStorage.CreateStorageTransferCount(&StorageTransferCount{
 			ObjectID:          int64(body.ObjectID),

@@ -100,7 +100,7 @@ func (w *UpdateUploader) Commit() (UpdateResult, error) {
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-	updateResp, err := coorCli.UpdatePackage(coormq.NewUpdatePackage(w.pkgID, w.successes, nil))
+	updateResp, err := coorCli.UpdatePackage(coormq.NewUpdatePackage(w.pkgID, w.successes))
 	if err != nil {
 		return UpdateResult{}, fmt.Errorf("updating package: %w", err)
 	}

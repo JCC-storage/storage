@@ -483,6 +483,7 @@ func (t *CheckPackageRedundancy) noneToRep(ctx ExecuteContext, obj stgmod.Object
 	}
 
 	var blocks []stgmod.ObjectBlock
+	var blockChgs []stgmod.BlockChange
 	for i, stg := range uploadStgs {
 		blocks = append(blocks, stgmod.ObjectBlock{
 			ObjectID:  obj.Object.ObjectID,
@@ -490,7 +491,25 @@ func (t *CheckPackageRedundancy) noneToRep(ctx ExecuteContext, obj stgmod.Object
 			StorageID: stg.Storage.Storage.StorageID,
 			FileHash:  ret[fmt.Sprintf("%d", i)].(*ops2.FileHashValue).Hash,
 		})
+		blockChgs = append(blockChgs, &stgmod.BlockChangeClone{
+			BlockType:       stgmod.BlockTypeRaw,
+			SourceStorageID: obj.Blocks[0].StorageID,
+			TargetStorageID: stg.Storage.Storage.StorageID,
+			TransferBytes:   1,
+		})
 	}
+
+	// 删除原本的文件块
+	blockChgs = append(blockChgs, &stgmod.BlockChangeDeleted{
+		Index:     0,
+		StorageID: obj.Blocks[0].StorageID,
+	})
+
+	ctx.Args.EvtPub.Publish(&stgmod.BodyBlockTransfer{
+		ObjectID:     obj.Object.ObjectID,
+		PackageID:    obj.Object.PackageID,
+		BlockChanges: blockChgs,
+	})
 
 	return &coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
@@ -532,6 +551,8 @@ func (t *CheckPackageRedundancy) noneToEC(ctx ExecuteContext, obj stgmod.ObjectD
 	}
 
 	var blocks []stgmod.ObjectBlock
+	var evtTargetBlocks []stgmod.Block
+	var evtBlockTrans []stgmod.DataTransfer
 	for i := 0; i < red.N; i++ {
 		blocks = append(blocks, stgmod.ObjectBlock{
 			ObjectID:  obj.Object.ObjectID,
@@ -539,7 +560,38 @@ func (t *CheckPackageRedundancy) noneToEC(ctx ExecuteContext, obj stgmod.ObjectD
 			StorageID: uploadStgs[i].Storage.Storage.StorageID,
 			FileHash:  ioRet[fmt.Sprintf("%d", i)].(*ops2.FileHashValue).Hash,
 		})
+		evtTargetBlocks = append(evtTargetBlocks, stgmod.Block{
+			BlockType: stgmod.BlockTypeEC,
+			Index:     i,
+			StorageID: uploadStgs[i].Storage.Storage.StorageID,
+		})
+		evtBlockTrans = append(evtBlockTrans, stgmod.DataTransfer{
+			SourceStorageID: obj.Blocks[0].StorageID,
+			TargetStorageID: uploadStgs[i].Storage.Storage.StorageID,
+			TransferBytes:   1,
+		})
 	}
+
+	ctx.Args.EvtPub.Publish(&stgmod.BodyBlockTransfer{
+		ObjectID:  obj.Object.ObjectID,
+		PackageID: obj.Object.PackageID,
+		BlockChanges: []stgmod.BlockChange{
+			&stgmod.BlockChangeEnDecode{
+				SourceBlocks: []stgmod.Block{{
+					BlockType: stgmod.BlockTypeRaw,
+					StorageID: obj.Blocks[0].StorageID,
+				}},
+				TargetBlocks:  evtTargetBlocks,
+				DataTransfers: evtBlockTrans,
+			},
+
+			// 删除原本的文件块
+			&stgmod.BlockChangeDeleted{
+				Index:     0,
+				StorageID: obj.Blocks[0].StorageID,
+			},
+		},
+	})
 
 	return &coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
@@ -548,7 +600,7 @@ func (t *CheckPackageRedundancy) noneToEC(ctx ExecuteContext, obj stgmod.ObjectD
 	}, nil
 }
 
-func (t *CheckPackageRedundancy) noneToLRC(ctx ExecuteContext, obj stgmod.ObjectDetail, red *cdssdk.LRCRedundancy, uploadStorages []*StorageLoadInfo, allStgs map[cdssdk.StorageID]*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
+func (t *CheckPackageRedundancy) noneToLRC(ctx ExecuteContext, obj stgmod.ObjectDetail, red *cdssdk.LRCRedundancy, uploadStgs []*StorageLoadInfo, allStgs map[cdssdk.StorageID]*StorageLoadInfo) (*coormq.UpdatingObjectRedundancy, error) {
 	if len(obj.Blocks) == 0 {
 		return nil, fmt.Errorf("object is not cached on any storages, cannot change its redundancy to ec")
 	}
@@ -563,7 +615,7 @@ func (t *CheckPackageRedundancy) noneToLRC(ctx ExecuteContext, obj stgmod.Object
 
 	var toes []ioswitchlrc.To
 	for i := 0; i < red.N; i++ {
-		toes = append(toes, ioswitchlrc.NewToStorage(*uploadStorages[i].Storage.MasterHub, uploadStorages[i].Storage.Storage, i, fmt.Sprintf("%d", i)))
+		toes = append(toes, ioswitchlrc.NewToStorage(*uploadStgs[i].Storage.MasterHub, uploadStgs[i].Storage.Storage, i, fmt.Sprintf("%d", i)))
 	}
 
 	plans := exec.NewPlanBuilder()
@@ -580,14 +632,47 @@ func (t *CheckPackageRedundancy) noneToLRC(ctx ExecuteContext, obj stgmod.Object
 	}
 
 	var blocks []stgmod.ObjectBlock
+	var evtTargetBlocks []stgmod.Block
+	var evtBlockTrans []stgmod.DataTransfer
 	for i := 0; i < red.N; i++ {
 		blocks = append(blocks, stgmod.ObjectBlock{
 			ObjectID:  obj.Object.ObjectID,
 			Index:     i,
-			StorageID: uploadStorages[i].Storage.Storage.StorageID,
+			StorageID: uploadStgs[i].Storage.Storage.StorageID,
 			FileHash:  ioRet[fmt.Sprintf("%d", i)].(*ops2.FileHashValue).Hash,
 		})
+		evtTargetBlocks = append(evtTargetBlocks, stgmod.Block{
+			BlockType: stgmod.BlockTypeEC,
+			Index:     i,
+			StorageID: uploadStgs[i].Storage.Storage.StorageID,
+		})
+		evtBlockTrans = append(evtBlockTrans, stgmod.DataTransfer{
+			SourceStorageID: obj.Blocks[0].StorageID,
+			TargetStorageID: uploadStgs[i].Storage.Storage.StorageID,
+			TransferBytes:   1,
+		})
 	}
+
+	ctx.Args.EvtPub.Publish(&stgmod.BodyBlockTransfer{
+		ObjectID:  obj.Object.ObjectID,
+		PackageID: obj.Object.PackageID,
+		BlockChanges: []stgmod.BlockChange{
+			&stgmod.BlockChangeEnDecode{
+				SourceBlocks: []stgmod.Block{{
+					BlockType: stgmod.BlockTypeRaw,
+					StorageID: obj.Blocks[0].StorageID,
+				}},
+				TargetBlocks:  evtTargetBlocks,
+				DataTransfers: evtBlockTrans,
+			},
+
+			// 删除原本的文件块
+			&stgmod.BlockChangeDeleted{
+				Index:     0,
+				StorageID: obj.Blocks[0].StorageID,
+			},
+		},
+	})
 
 	return &coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
@@ -634,6 +719,8 @@ func (t *CheckPackageRedundancy) noneToSeg(ctx ExecuteContext, obj stgmod.Object
 	}
 
 	var blocks []stgmod.ObjectBlock
+	var evtTargetBlocks []stgmod.Block
+	var evtBlockTrans []stgmod.DataTransfer
 	for i, stg := range uploadStgs {
 		blocks = append(blocks, stgmod.ObjectBlock{
 			ObjectID:  obj.Object.ObjectID,
@@ -641,7 +728,38 @@ func (t *CheckPackageRedundancy) noneToSeg(ctx ExecuteContext, obj stgmod.Object
 			StorageID: stg.Storage.Storage.StorageID,
 			FileHash:  ret[fmt.Sprintf("%d", i)].(*ops2.FileHashValue).Hash,
 		})
+		evtTargetBlocks = append(evtTargetBlocks, stgmod.Block{
+			BlockType: stgmod.BlockTypeSegment,
+			Index:     i,
+			StorageID: uploadStgs[i].Storage.Storage.StorageID,
+		})
+		evtBlockTrans = append(evtBlockTrans, stgmod.DataTransfer{
+			SourceStorageID: obj.Blocks[0].StorageID,
+			TargetStorageID: uploadStgs[i].Storage.Storage.StorageID,
+			TransferBytes:   1,
+		})
 	}
+
+	ctx.Args.EvtPub.Publish(&stgmod.BodyBlockTransfer{
+		ObjectID:  obj.Object.ObjectID,
+		PackageID: obj.Object.PackageID,
+		BlockChanges: []stgmod.BlockChange{
+			&stgmod.BlockChangeEnDecode{
+				SourceBlocks: []stgmod.Block{{
+					BlockType: stgmod.BlockTypeRaw,
+					StorageID: obj.Blocks[0].StorageID,
+				}},
+				TargetBlocks:  evtTargetBlocks,
+				DataTransfers: evtBlockTrans,
+			},
+
+			// 删除原本的文件块
+			&stgmod.BlockChangeDeleted{
+				Index:     0,
+				StorageID: obj.Blocks[0].StorageID,
+			},
+		},
+	})
 
 	return &coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
@@ -687,6 +805,7 @@ func (t *CheckPackageRedundancy) repToRep(ctx ExecuteContext, obj stgmod.ObjectD
 	}
 
 	var blocks []stgmod.ObjectBlock
+	var blockChgs []stgmod.BlockChange
 	for i, stg := range uploadStgs {
 		blocks = append(blocks, stgmod.ObjectBlock{
 			ObjectID:  obj.Object.ObjectID,
@@ -694,7 +813,25 @@ func (t *CheckPackageRedundancy) repToRep(ctx ExecuteContext, obj stgmod.ObjectD
 			StorageID: stg.Storage.Storage.StorageID,
 			FileHash:  ret[fmt.Sprintf("%d", i)].(*ops2.FileHashValue).Hash,
 		})
+		blockChgs = append(blockChgs, &stgmod.BlockChangeClone{
+			BlockType:       stgmod.BlockTypeRaw,
+			SourceStorageID: obj.Blocks[0].StorageID,
+			TargetStorageID: stg.Storage.Storage.StorageID,
+			TransferBytes:   1,
+		})
 	}
+
+	// 删除原本的文件块
+	blockChgs = append(blockChgs, &stgmod.BlockChangeDeleted{
+		Index:     0,
+		StorageID: obj.Blocks[0].StorageID,
+	})
+
+	ctx.Args.EvtPub.Publish(&stgmod.BodyBlockTransfer{
+		ObjectID:     obj.Object.ObjectID,
+		PackageID:    obj.Object.PackageID,
+		BlockChanges: blockChgs,
+	})
 
 	return &coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
@@ -739,26 +876,21 @@ func (t *CheckPackageRedundancy) ecToRep(ctx ExecuteContext, obj stgmod.ObjectDe
 	// 如果选择的备份节点都是同一个，那么就只要上传一次
 	uploadStgs = lo.UniqBy(uploadStgs, func(item *StorageLoadInfo) cdssdk.StorageID { return item.Storage.Storage.StorageID })
 
-	// 每个被选节点都在自己节点上重建原始数据
 	planBlder := exec.NewPlanBuilder()
+	ft := ioswitch2.NewFromTo()
+	ft.ECParam = srcRed
+
+	for i, block := range chosenBlocks {
+		ft.AddFrom(ioswitch2.NewFromShardstore(block.FileHash, *chosenBlockStg[i].MasterHub, chosenBlockStg[i], ioswitch2.ECStream(block.Index)))
+	}
+
 	for i := range uploadStgs {
-		ft := ioswitch2.NewFromTo()
-		ft.ECParam = srcRed
+		ft.AddTo(ioswitch2.NewToShardStoreWithRange(*uploadStgs[i].Storage.MasterHub, uploadStgs[i].Storage, ioswitch2.RawStream(), fmt.Sprintf("%d", i), math2.NewRange(0, obj.Object.Size)))
+	}
 
-		for i2, block := range chosenBlocks {
-			ft.AddFrom(ioswitch2.NewFromShardstore(block.FileHash, *chosenBlockStg[i2].MasterHub, chosenBlockStg[i2], ioswitch2.ECStream(block.Index)))
-		}
-
-		len := obj.Object.Size
-		ft.AddTo(ioswitch2.NewToShardStoreWithRange(*uploadStgs[i].Storage.MasterHub, uploadStgs[i].Storage, ioswitch2.RawStream(), fmt.Sprintf("%d", i), math2.Range{
-			Offset: 0,
-			Length: &len,
-		}))
-
-		err := parser.Parse(ft, planBlder)
-		if err != nil {
-			return nil, fmt.Errorf("parsing plan: %w", err)
-		}
+	err := parser.Parse(ft, planBlder)
+	if err != nil {
+		return nil, fmt.Errorf("parsing plan: %w", err)
 	}
 
 	// TODO 添加依赖
@@ -770,6 +902,7 @@ func (t *CheckPackageRedundancy) ecToRep(ctx ExecuteContext, obj stgmod.ObjectDe
 	}
 
 	var blocks []stgmod.ObjectBlock
+
 	for i := range uploadStgs {
 		blocks = append(blocks, stgmod.ObjectBlock{
 			ObjectID:  obj.Object.ObjectID,
@@ -778,6 +911,55 @@ func (t *CheckPackageRedundancy) ecToRep(ctx ExecuteContext, obj stgmod.ObjectDe
 			FileHash:  ioRet[fmt.Sprintf("%d", i)].(*ops2.FileHashValue).Hash,
 		})
 	}
+
+	var evtSrcBlocks []stgmod.Block
+	var evtTargetBlocks []stgmod.Block
+	for i2, block := range chosenBlocks {
+		evtSrcBlocks = append(evtSrcBlocks, stgmod.Block{
+			BlockType: stgmod.BlockTypeEC,
+			Index:     block.Index,
+			StorageID: chosenBlockStg[i2].Storage.StorageID,
+		})
+	}
+
+	for _, stg := range uploadStgs {
+		evtTargetBlocks = append(evtTargetBlocks, stgmod.Block{
+			BlockType: stgmod.BlockTypeRaw,
+			Index:     0,
+			StorageID: stg.Storage.Storage.StorageID,
+		})
+	}
+
+	var evtBlockTrans []stgmod.DataTransfer
+	for _, stg := range uploadStgs {
+		for i2 := range chosenBlocks {
+			evtBlockTrans = append(evtBlockTrans, stgmod.DataTransfer{
+				SourceStorageID: chosenBlockStg[i2].Storage.StorageID,
+				TargetStorageID: stg.Storage.Storage.StorageID,
+				TransferBytes:   1,
+			})
+		}
+	}
+
+	var blockChgs []stgmod.BlockChange
+	blockChgs = append(blockChgs, &stgmod.BlockChangeEnDecode{
+		SourceBlocks:  evtSrcBlocks,
+		TargetBlocks:  evtTargetBlocks,
+		DataTransfers: evtBlockTrans,
+	})
+
+	for _, block := range obj.Blocks {
+		blockChgs = append(blockChgs, &stgmod.BlockChangeDeleted{
+			Index:     block.Index,
+			StorageID: block.StorageID,
+		})
+	}
+
+	ctx.Args.EvtPub.Publish(&stgmod.BodyBlockTransfer{
+		ObjectID:     obj.Object.ObjectID,
+		PackageID:    obj.Object.PackageID,
+		BlockChanges: blockChgs,
+	})
 
 	return &coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
@@ -817,6 +999,22 @@ func (t *CheckPackageRedundancy) ecToEC(ctx ExecuteContext, obj stgmod.ObjectDet
 	// 目前EC的参数都相同，所以可以不用重建出完整数据然后再分块，可以直接构建出目的节点需要的块
 	planBlder := exec.NewPlanBuilder()
 
+	var evtSrcBlocks []stgmod.Block
+	var evtTargetBlocks []stgmod.Block
+
+	ft := ioswitch2.NewFromTo()
+	ft.ECParam = srcRed
+
+	for i, block := range chosenBlocks {
+		ft.AddFrom(ioswitch2.NewFromShardstore(block.FileHash, *chosenBlockStg[i].MasterHub, chosenBlockStg[i], ioswitch2.ECStream(block.Index)))
+
+		evtSrcBlocks = append(evtSrcBlocks, stgmod.Block{
+			BlockType: stgmod.BlockTypeEC,
+			Index:     block.Index,
+			StorageID: chosenBlockStg[i].Storage.StorageID,
+		})
+	}
+
 	var newBlocks []stgmod.ObjectBlock
 	shouldUpdateBlocks := false
 	for i, stg := range uploadStorages {
@@ -838,22 +1036,21 @@ func (t *CheckPackageRedundancy) ecToEC(ctx ExecuteContext, obj stgmod.ObjectDet
 		shouldUpdateBlocks = true
 
 		// 否则就要重建出这个节点需要的块
-
-		ft := ioswitch2.NewFromTo()
-		ft.ECParam = srcRed
-		for i2, block := range chosenBlocks {
-			ft.AddFrom(ioswitch2.NewFromShardstore(block.FileHash, *chosenBlockStg[i2].MasterHub, chosenBlockStg[i2], ioswitch2.ECStream(block.Index)))
-		}
-
 		// 输出只需要自己要保存的那一块
 		ft.AddTo(ioswitch2.NewToShardStore(*stg.Storage.MasterHub, stg.Storage, ioswitch2.ECStream(i), fmt.Sprintf("%d", i)))
 
-		err := parser.Parse(ft, planBlder)
-		if err != nil {
-			return nil, fmt.Errorf("parsing plan: %w", err)
-		}
+		evtTargetBlocks = append(evtTargetBlocks, stgmod.Block{
+			BlockType: stgmod.BlockTypeEC,
+			Index:     i,
+			StorageID: stg.Storage.Storage.StorageID,
+		})
 
 		newBlocks = append(newBlocks, newBlock)
+	}
+
+	err := parser.Parse(ft, planBlder)
+	if err != nil {
+		return nil, fmt.Errorf("parsing plan: %w", err)
 	}
 
 	// 如果没有任何Plan，Wait会直接返回成功
@@ -876,6 +1073,41 @@ func (t *CheckPackageRedundancy) ecToEC(ctx ExecuteContext, obj stgmod.ObjectDet
 
 		newBlocks[idx].FileHash = v.(*ops2.FileHashValue).Hash
 	}
+
+	var evtBlockTrans []stgmod.DataTransfer
+	for _, src := range evtSrcBlocks {
+		for _, tar := range evtTargetBlocks {
+			evtBlockTrans = append(evtBlockTrans, stgmod.DataTransfer{
+				SourceStorageID: src.StorageID,
+				TargetStorageID: tar.StorageID,
+				TransferBytes:   1,
+			})
+		}
+	}
+
+	var blockChgs []stgmod.BlockChange
+	for _, block := range obj.Blocks {
+		keep := lo.ContainsBy(newBlocks, func(newBlock stgmod.ObjectBlock) bool {
+			return newBlock.Index == block.Index && newBlock.StorageID == block.StorageID
+		})
+		if !keep {
+			blockChgs = append(blockChgs, &stgmod.BlockChangeDeleted{
+				Index:     block.Index,
+				StorageID: block.StorageID,
+			})
+		}
+	}
+	blockChgs = append(blockChgs, &stgmod.BlockChangeEnDecode{
+		SourceBlocks:  evtSrcBlocks,
+		TargetBlocks:  evtTargetBlocks,
+		DataTransfers: evtBlockTrans,
+	})
+
+	ctx.Args.EvtPub.Publish(&stgmod.BodyBlockTransfer{
+		ObjectID:     obj.Object.ObjectID,
+		PackageID:    obj.Object.PackageID,
+		BlockChanges: blockChgs,
+	})
 
 	return &coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
@@ -914,6 +1146,8 @@ func (t *CheckPackageRedundancy) lrcToLRC(ctx ExecuteContext, obj stgmod.ObjectD
 			lostBlockGrps = append(lostBlockGrps, grpID)
 		}
 	}
+
+	// TODO 产生BlockTransfer事件
 
 	if canGroupReconstruct {
 		// 	return t.groupReconstructLRC(obj, lostBlocks, lostBlockGrps, blocksGrpByIndex, srcRed, uploadStorages)
