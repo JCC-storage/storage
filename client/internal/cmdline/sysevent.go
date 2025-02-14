@@ -18,14 +18,16 @@ func init() {
 
 	rootCmd.AddCommand(cmd)
 
-	outputJSON := rootCmd.Flags().BoolP("json", "j", false, "output in JSON format")
-	cmd.AddCommand(&cobra.Command{
+	outputJSON := false
+	watchCmd := &cobra.Command{
 		Use:   "watch",
 		Short: "Watch system events",
 		Run: func(cmd *cobra.Command, args []string) {
-			watchSysEvent(*outputJSON)
+			watchSysEvent(outputJSON)
 		},
-	})
+	}
+	watchCmd.Flags().BoolVarP(&outputJSON, "json", "j", false, "output in JSON format")
+	cmd.AddCommand(watchCmd)
 }
 
 func watchSysEvent(outputJSON bool) {
