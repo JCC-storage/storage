@@ -64,6 +64,8 @@ func (svc *ObjectService) UpdateInfo(userID cdssdk.UserID, updatings []cdsapi.Up
 		return nil, fmt.Errorf("requsting to coodinator: %w", err)
 	}
 
+	// TODO 考虑产生Update事件
+
 	return resp.Successes, nil
 }
 

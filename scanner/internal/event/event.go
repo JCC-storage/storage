@@ -10,12 +10,14 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 	scevt "gitlink.org.cn/cloudream/storage/common/pkgs/mq/scanner/event"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/agtpool"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/sysevent"
 )
 
 type ExecuteArgs struct {
 	DB       *db2.DB
 	DistLock *distlock.Service
 	StgMgr   *agtpool.AgentPool
+	EvtPub   *sysevent.Publisher
 }
 
 type Executor = event.Executor[ExecuteArgs]
@@ -26,11 +28,12 @@ type Event = event.Event[ExecuteArgs]
 
 type ExecuteOption = event.ExecuteOption
 
-func NewExecutor(db *db2.DB, distLock *distlock.Service, stgAgts *agtpool.AgentPool) Executor {
+func NewExecutor(db *db2.DB, distLock *distlock.Service, stgAgts *agtpool.AgentPool, evtPub *sysevent.Publisher) Executor {
 	return event.NewExecutor(ExecuteArgs{
 		DB:       db,
 		DistLock: distLock,
 		StgMgr:   stgAgts,
+		EvtPub:   evtPub,
 	})
 }
 

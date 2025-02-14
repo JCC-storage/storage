@@ -24,6 +24,7 @@ func InitMQPool(cfg mq.Config) {
 	CoordinatorMQPool = coormq.NewPool(cfg)
 
 	ScannerMQPool = scmq.NewPool(cfg)
+
 }
 
 var AgentRPCPool *agtrpc.Pool

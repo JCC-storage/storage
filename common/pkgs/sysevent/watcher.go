@@ -113,9 +113,23 @@ func (w *WatcherHost) AddWatcher(watcher Watcher) {
 	w.watchers = append(w.watchers, watcher)
 }
 
+func (w *WatcherHost) AddWatcherFn(fn func(event SysEvent)) Watcher {
+	watcher := &fnWatcher{fn: fn}
+	w.AddWatcher(watcher)
+	return watcher
+}
+
 func (w *WatcherHost) RemoveWatcher(watcher Watcher) {
 	w.lock.Lock()
 	defer w.lock.Unlock()
 
 	w.watchers = lo2.Remove(w.watchers, watcher)
+}
+
+type fnWatcher struct {
+	fn func(event SysEvent)
+}
+
+func (w *fnWatcher) OnEvent(event SysEvent) {
+	w.fn(event)
 }

@@ -55,7 +55,7 @@ type Stats struct {
 	// 存储服务状态，如果状态正常，此值应该是StatusOK
 	Status Status
 	// 文件总数
-	FileCount int
+	FileCount int64
 	// 存储空间总大小
 	TotalSize int64
 	// 已使用的存储空间大小，可以超过存储空间总大小

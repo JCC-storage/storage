@@ -1,0 +1,24 @@
+{
+    "logger": {
+        "output": "file",
+        "outputFileName": "datamap",
+        "outputDirectory": "log",
+        "level": "debug"
+    },
+    "db": {
+        "address": "106.75.6.194:3306",
+        "account": "root",
+        "password": "cloudream123456",
+        "databaseName": "cloudream"
+    },
+    "rabbitMQ": {
+        "address": "106.75.6.194:5672",
+        "account": "cloudream",
+        "password": "123456",
+        "vhost": "/",
+        "param": {
+            "retryNum": 5,
+            "retryInterval": 5000
+        }
+    }
+}

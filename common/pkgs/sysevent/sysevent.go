@@ -1,9 +1,13 @@
 package sysevent
 
+import (
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
+)
+
 const (
 	SysEventQueueName = "SysEventQueue"
 )
 
-type SysEvent = any // TODO 换成具体的类型
+type SysEvent = stgmod.SysEvent
 
-type Source = any // TODO 换成具体的类型
+type Source = stgmod.SysEventSource

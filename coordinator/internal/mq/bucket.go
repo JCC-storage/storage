@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 	"gorm.io/gorm"
 
@@ -93,6 +94,10 @@ func (svc *Service) CreateBucket(msg *coormq.CreateBucket) (*coormq.CreateBucket
 		return nil, mq.Failed(errorcode.OperationFailed, err.Error())
 	}
 
+	svc.evtPub.Publish(&stgmod.BodyNewBucket{
+		Info: bucket,
+	})
+
 	return mq.ReplyOK(coormq.NewCreateBucketResp(bucket))
 }
 
@@ -132,6 +137,10 @@ func (svc *Service) DeleteBucket(msg *coormq.DeleteBucket) (*coormq.DeleteBucket
 			Warn(err.Error())
 		return nil, mq.Failed(errorcode.OperationFailed, "delete bucket failed")
 	}
+
+	svc.evtPub.Publish(&stgmod.BodyBucketDeleted{
+		BucketID: msg.BucketID,
+	})
 
 	return mq.ReplyOK(coormq.NewDeleteBucketResp())
 }

@@ -3,8 +3,10 @@ package mq
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/model"
 	"gorm.io/gorm"
 
 	"github.com/samber/lo"
@@ -192,8 +194,95 @@ func (svc *Service) GetObjectDetails(msg *coormq.GetObjectDetails) (*coormq.GetO
 }
 
 func (svc *Service) UpdateObjectRedundancy(msg *coormq.UpdateObjectRedundancy) (*coormq.UpdateObjectRedundancyResp, *mq.CodeMessage) {
-	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
-		return svc.db2.Object().BatchUpdateRedundancy(tx, msg.Updatings)
+	err := svc.db2.DoTx(func(ctx db2.SQLContext) error {
+		db := svc.db2
+		objs := msg.Updatings
+
+		nowTime := time.Now()
+		objIDs := make([]cdssdk.ObjectID, 0, len(objs))
+		for _, obj := range objs {
+			objIDs = append(objIDs, obj.ObjectID)
+		}
+
+		avaiIDs, err := db.Object().BatchTestObjectID(ctx, objIDs)
+		if err != nil {
+			return fmt.Errorf("batch test object id: %w", err)
+		}
+
+		// 过滤掉已经不存在的对象。
+		// 注意，objIDs没有被过滤，因为后续逻辑不过滤也不会出错
+		objs = lo.Filter(objs, func(obj coormq.UpdatingObjectRedundancy, _ int) bool {
+			return avaiIDs[obj.ObjectID]
+		})
+
+		dummyObjs := make([]cdssdk.Object, 0, len(objs))
+		for _, obj := range objs {
+			dummyObjs = append(dummyObjs, cdssdk.Object{
+				ObjectID:   obj.ObjectID,
+				Redundancy: obj.Redundancy,
+				CreateTime: nowTime, // 实际不会更新，只因为不能是0值
+				UpdateTime: nowTime,
+			})
+		}
+
+		err = db.Object().BatchUpdateColumns(ctx, dummyObjs, []string{"Redundancy", "UpdateTime"})
+		if err != nil {
+			return fmt.Errorf("batch update object redundancy: %w", err)
+		}
+
+		// 删除原本所有的编码块记录，重新添加
+		err = db.ObjectBlock().BatchDeleteByObjectID(ctx, objIDs)
+		if err != nil {
+			return fmt.Errorf("batch delete object blocks: %w", err)
+		}
+
+		// 删除原本Pin住的Object。暂不考虑FileHash没有变化的情况
+		err = db.PinnedObject().BatchDeleteByObjectID(ctx, objIDs)
+		if err != nil {
+			return fmt.Errorf("batch delete pinned object: %w", err)
+		}
+
+		blocks := make([]stgmod.ObjectBlock, 0, len(objs))
+		for _, obj := range objs {
+			blocks = append(blocks, obj.Blocks...)
+		}
+		err = db.ObjectBlock().BatchCreate(ctx, blocks)
+		if err != nil {
+			return fmt.Errorf("batch create object blocks: %w", err)
+		}
+
+		caches := make([]model.Cache, 0, len(objs))
+		for _, obj := range objs {
+			for _, blk := range obj.Blocks {
+				caches = append(caches, model.Cache{
+					FileHash:   blk.FileHash,
+					StorageID:  blk.StorageID,
+					CreateTime: nowTime,
+					Priority:   0,
+				})
+			}
+		}
+		err = db.Cache().BatchCreate(ctx, caches)
+		if err != nil {
+			return fmt.Errorf("batch create object caches: %w", err)
+		}
+
+		pinneds := make([]cdssdk.PinnedObject, 0, len(objs))
+		for _, obj := range objs {
+			for _, p := range obj.PinnedAt {
+				pinneds = append(pinneds, cdssdk.PinnedObject{
+					ObjectID:   obj.ObjectID,
+					StorageID:  p,
+					CreateTime: nowTime,
+				})
+			}
+		}
+		err = db.PinnedObject().BatchTryCreate(ctx, pinneds)
+		if err != nil {
+			return fmt.Errorf("batch create pinned objects: %w", err)
+		}
+
+		return nil
 	})
 	if err != nil {
 		logger.Warnf("batch updating redundancy: %s", err.Error())
@@ -275,6 +364,8 @@ func pickByObjectIDs[T any](objs []T, objIDs []cdssdk.ObjectID, getID func(T) cd
 
 func (svc *Service) MoveObjects(msg *coormq.MoveObjects) (*coormq.MoveObjectsResp, *mq.CodeMessage) {
 	var sucs []cdssdk.ObjectID
+	var evt []*stgmod.BodyObjectInfoUpdated
+
 	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
 		msg.Movings = sort2.Sort(msg.Movings, func(o1, o2 cdsapi.MovingObject) int {
 			return sort2.Cmp(o1.ObjectID, o2.ObjectID)
@@ -336,11 +427,20 @@ func (svc *Service) MoveObjects(msg *coormq.MoveObjects) (*coormq.MoveObjectsRes
 		}
 
 		sucs = lo.Map(newObjs, func(obj cdssdk.Object, _ int) cdssdk.ObjectID { return obj.ObjectID })
+		evt = lo.Map(newObjs, func(obj cdssdk.Object, _ int) *stgmod.BodyObjectInfoUpdated {
+			return &stgmod.BodyObjectInfoUpdated{
+				Object: obj,
+			}
+		})
 		return nil
 	})
 	if err != nil {
 		logger.Warn(err.Error())
 		return nil, mq.Failed(errorcode.OperationFailed, "move objects failed")
+	}
+
+	for _, e := range evt {
+		svc.evtPub.Publish(e)
 	}
 
 	return mq.ReplyOK(coormq.RespMoveObjects(sucs))
@@ -453,8 +553,15 @@ func (svc *Service) checkPathChangedObjects(tx db2.SQLContext, userID cdssdk.Use
 }
 
 func (svc *Service) DeleteObjects(msg *coormq.DeleteObjects) (*coormq.DeleteObjectsResp, *mq.CodeMessage) {
+	var sucs []cdssdk.ObjectID
 	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
-		err := svc.db2.Object().BatchDelete(tx, msg.ObjectIDs)
+		avaiIDs, err := svc.db2.Object().BatchTestObjectID(tx, msg.ObjectIDs)
+		if err != nil {
+			return fmt.Errorf("batch testing object id: %w", err)
+		}
+		sucs = lo.Keys(avaiIDs)
+
+		err = svc.db2.Object().BatchDelete(tx, msg.ObjectIDs)
 		if err != nil {
 			return fmt.Errorf("batch deleting objects: %w", err)
 		}
@@ -481,7 +588,13 @@ func (svc *Service) DeleteObjects(msg *coormq.DeleteObjects) (*coormq.DeleteObje
 		return nil, mq.Failed(errorcode.OperationFailed, "batch delete objects failed")
 	}
 
-	return mq.ReplyOK(coormq.RespDeleteObjects())
+	for _, objID := range sucs {
+		svc.evtPub.Publish(&stgmod.BodyObjectDeleted{
+			ObjectID: objID,
+		})
+	}
+
+	return mq.ReplyOK(coormq.RespDeleteObjects(sucs))
 }
 
 func (svc *Service) CloneObjects(msg *coormq.CloneObjects) (*coormq.CloneObjectsResp, *mq.CodeMessage) {
@@ -493,6 +606,8 @@ func (svc *Service) CloneObjects(msg *coormq.CloneObjects) (*coormq.CloneObjects
 		PackageID cdssdk.PackageID
 		Clonings  map[string]CloningObject
 	}
+
+	var evt []*stgmod.BodyNewOrUpdateObject
 
 	// TODO 要检查用户是否有Object、Package的权限
 	clonings := make(map[cdssdk.PackageID]*PackageClonings)
@@ -600,12 +715,35 @@ func (svc *Service) CloneObjects(msg *coormq.CloneObjects) (*coormq.CloneObjects
 		for i, cloning := range avaiClonings {
 			ret[cloning.OrgIndex] = &newObjs[i]
 		}
+
+		for i, cloning := range avaiClonings {
+			var evtBlks []stgmod.BlockDistributionObjectInfo
+			blkType := getBlockTypeFromRed(newObjs[i].Redundancy)
+
+			oldBlks := avaiDetailsMap[cloning.Cloning.ObjectID].Blocks
+			for _, blk := range oldBlks {
+				evtBlks = append(evtBlks, stgmod.BlockDistributionObjectInfo{
+					BlockType: blkType,
+					Index:     blk.Index,
+					StorageID: blk.StorageID,
+				})
+			}
+
+			evt = append(evt, &stgmod.BodyNewOrUpdateObject{
+				Info:              newObjs[i],
+				BlockDistribution: evtBlks,
+			})
+		}
 		return nil
 	})
 
 	if err != nil {
 		logger.Warnf("cloning objects: %s", err.Error())
 		return nil, mq.Failed(errorcode.OperationFailed, err.Error())
+	}
+
+	for _, e := range evt {
+		svc.evtPub.Publish(e)
 	}
 
 	return mq.ReplyOK(coormq.RespCloneObjects(ret))

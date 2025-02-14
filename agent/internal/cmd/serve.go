@@ -1,12 +1,15 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
 	"time"
 
+	"github.com/go-co-op/gocron/v2"
 	"gitlink.org.cn/cloudream/storage/agent/internal/http"
+	"gitlink.org.cn/cloudream/storage/agent/internal/tickevent"
 
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
@@ -15,6 +18,7 @@ import (
 	"gitlink.org.cn/cloudream/storage/agent/internal/config"
 	"gitlink.org.cn/cloudream/storage/agent/internal/task"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/accessstat"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
@@ -23,6 +27,7 @@ import (
 	agtrpc "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/metacache"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/agtpool"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/sysevent"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/uploader"
 
 	"google.golang.org/grpc"
@@ -50,6 +55,8 @@ func serve(configPath string) {
 	stgglb.InitLocal(&config.Cfg().Local)
 	stgglb.InitMQPool(config.Cfg().RabbitMQ)
 	stgglb.InitAgentRPCPool(&agtrpc.PoolConfig{})
+	stgglb.Stats.SetupHubStorageTransfer(*config.Cfg().Local.HubID)
+	stgglb.Stats.SetupHubTransfer(*config.Cfg().Local.HubID)
 
 	// 获取Hub配置
 	hubCfg := downloadHubConfig()
@@ -141,6 +148,22 @@ func serve(configPath string) {
 	// 初始化任务管理器
 	taskMgr := task.NewManager(distlock, &conCol, &dlder, acStat, stgAgts, uploader)
 
+	// 初始化系统事件发布器
+	evtPub, err := sysevent.NewPublisher(sysevent.ConfigFromMQConfig(config.Cfg().RabbitMQ), &stgmod.SourceHub{
+		HubID:   hubCfg.Hub.HubID,
+		HubName: hubCfg.Hub.Name,
+	})
+	if err != nil {
+		logger.Errorf("new sysevent publisher: %v", err)
+		os.Exit(1)
+	}
+	go servePublisher(evtPub)
+
+	// 初始化定时任务执行器
+	sch := setupTickTask(stgAgts, evtPub)
+	sch.Start()
+	defer sch.Shutdown()
+
 	// 启动命令服务器
 	// TODO 需要设计AgentID持久化机制
 	agtSvr, err := agtmq.NewServer(cmdsvc.NewService(&taskMgr, stgAgts), config.Cfg().ID, config.Cfg().RabbitMQ)
@@ -183,6 +206,69 @@ func downloadHubConfig() coormq.GetHubConfigResp {
 	}
 
 	return *cfgResp
+}
+
+func servePublisher(evtPub *sysevent.Publisher) {
+	logger.Info("start serving sysevent publisher")
+
+	ch := evtPub.Start()
+
+loop:
+	for {
+		val, err := ch.Receive().Wait(context.Background())
+		if err != nil {
+			logger.Errorf("sysevent publisher stopped with error: %s", err.Error())
+			break
+		}
+
+		switch val := val.(type) {
+		case sysevent.PublishError:
+			logger.Errorf("publishing event: %v", val)
+
+		case sysevent.PublisherExited:
+			if val.Err != nil {
+				logger.Errorf("publisher exited with error: %v", val.Err)
+			} else {
+				logger.Info("publisher exited")
+			}
+			break loop
+
+		case sysevent.OtherError:
+			logger.Errorf("sysevent: %v", val)
+		}
+	}
+	logger.Info("sysevent publisher stopped")
+
+	// TODO 仅简单结束了程序
+	os.Exit(1)
+}
+
+func setupTickTask(agtPool *agtpool.AgentPool, evtPub *sysevent.Publisher) gocron.Scheduler {
+	sch, err := gocron.NewScheduler()
+	if err != nil {
+		logger.Errorf("new cron scheduler: %s", err.Error())
+		os.Exit(1)
+	}
+
+	sch.NewJob(gocron.DailyJob(1, gocron.NewAtTimes(
+		gocron.NewAtTime(0, 0, 0),
+	)), gocron.NewTask(tickevent.ReportStorageStats, agtPool, evtPub))
+
+	sch.NewJob(gocron.DailyJob(1, gocron.NewAtTimes(
+		gocron.NewAtTime(0, 0, 1),
+	)), gocron.NewTask(tickevent.ReportHubTransferStats, evtPub))
+
+	sch.NewJob(gocron.DailyJob(1, gocron.NewAtTimes(
+		gocron.NewAtTime(0, 0, 2),
+	)), gocron.NewTask(tickevent.ReportHubStorageTransferStats, evtPub))
+
+	// sch.NewJob(gocron.DurationJob(time.Minute), gocron.NewTask(tickevent.ReportStorageStats, agtPool, evtPub))
+
+	// sch.NewJob(gocron.DurationJob(time.Minute), gocron.NewTask(tickevent.ReportHubTransferStats, evtPub))
+
+	// sch.NewJob(gocron.DurationJob(time.Minute), gocron.NewTask(tickevent.ReportHubStorageTransferStats, agtPool, evtPub))
+
+	return sch
 }
 
 func serveAgentServer(server *agtmq.Server) {

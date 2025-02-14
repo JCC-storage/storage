@@ -8,6 +8,8 @@ import (
 	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
+	"gitlink.org.cn/cloudream/common/utils/io2"
+	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 )
 
 type HttpHubWorker struct {
@@ -27,7 +29,7 @@ func (w *HttpHubWorker) NewClient() (exec.WorkerClient, error) {
 		return nil, err
 	}
 
-	return &HttpHubWorkerClient{cli: cli}, nil
+	return &HttpHubWorkerClient{hubID: w.Hub.HubID, cli: cli}, nil
 }
 
 func (w *HttpHubWorker) String() string {
@@ -44,7 +46,8 @@ func (w *HttpHubWorker) Equals(worker exec.WorkerInfo) bool {
 }
 
 type HttpHubWorkerClient struct {
-	cli *cdsapi.Client
+	hubID cdssdk.HubID
+	cli   *cdsapi.Client
 }
 
 func (c *HttpHubWorkerClient) ExecutePlan(ctx context.Context, plan exec.Plan) error {
@@ -58,7 +61,11 @@ func (c *HttpHubWorkerClient) SendStream(ctx context.Context, planID exec.PlanID
 			PlanID: planID,
 			VarID:  id,
 		},
-		Stream: stream,
+		Stream: io2.CounterCloser(stream, func(cnt int64, err error) {
+			if stgglb.Stats.HubTransfer != nil {
+				stgglb.Stats.HubTransfer.RecordOutput(c.hubID, cnt, err == nil || err == io.EOF)
+			}
+		}),
 	})
 }
 func (c *HttpHubWorkerClient) SendVar(ctx context.Context, planID exec.PlanID, id exec.VarID, value exec.VarValue) error {
@@ -69,12 +76,21 @@ func (c *HttpHubWorkerClient) SendVar(ctx context.Context, planID exec.PlanID, i
 	})
 }
 func (c *HttpHubWorkerClient) GetStream(ctx context.Context, planID exec.PlanID, streamID exec.VarID, signalID exec.VarID, signal exec.VarValue) (io.ReadCloser, error) {
-	return c.cli.GetStream(cdsapi.GetStreamReq{
+	str, err := c.cli.GetStream(cdsapi.GetStreamReq{
 		PlanID:   planID,
 		VarID:    streamID,
 		SignalID: signalID,
 		Signal:   signal,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	return io2.CounterCloser(str, func(cnt int64, err error) {
+		if stgglb.Stats.HubTransfer != nil {
+			stgglb.Stats.HubTransfer.RecordInput(c.hubID, cnt, err == nil || err == io.EOF)
+		}
+	}), nil
 }
 func (c *HttpHubWorkerClient) GetVar(ctx context.Context, planID exec.PlanID, varID exec.VarID, signalID exec.VarID, signal exec.VarValue) (exec.VarValue, error) {
 	resp, err := c.cli.GetVar(cdsapi.GetVarReq{

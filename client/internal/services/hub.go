@@ -2,7 +2,6 @@ package services
 
 import (
 	"fmt"
-
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"

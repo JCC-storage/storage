@@ -1,16 +1,19 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
 	"gitlink.org.cn/cloudream/common/pkgs/logger"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
+	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
 	agtrpc "gitlink.org.cn/cloudream/storage/common/pkgs/grpc/agent"
 	scmq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/scanner"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/agtpool"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/sysevent"
 	"gitlink.org.cn/cloudream/storage/scanner/internal/config"
 	"gitlink.org.cn/cloudream/storage/scanner/internal/event"
 	"gitlink.org.cn/cloudream/storage/scanner/internal/mq"
@@ -50,8 +53,16 @@ func main() {
 	// 启动存储服务管理器
 	stgAgts := agtpool.NewPool()
 
+	// 初始化系统事件发布器
+	evtPub, err := sysevent.NewPublisher(sysevent.ConfigFromMQConfig(config.Cfg().RabbitMQ), &stgmod.SourceScanner{})
+	if err != nil {
+		logger.Errorf("new sysevent publisher: %v", err)
+		os.Exit(1)
+	}
+	go servePublisher(evtPub)
+
 	// 启动事件执行器
-	eventExecutor := event.NewExecutor(db, distlockSvc, stgAgts)
+	eventExecutor := event.NewExecutor(db, distlockSvc, stgAgts, evtPub)
 	go serveEventExecutor(&eventExecutor)
 
 	agtSvr, err := scmq.NewServer(mq.NewService(&eventExecutor), config.Cfg().RabbitMQ)
@@ -83,6 +94,41 @@ func serveEventExecutor(executor *event.Executor) {
 	}
 
 	logger.Info("event executor stopped")
+
+	// TODO 仅简单结束了程序
+	os.Exit(1)
+}
+
+func servePublisher(evtPub *sysevent.Publisher) {
+	logger.Info("start serving sysevent publisher")
+
+	ch := evtPub.Start()
+
+loop:
+	for {
+		val, err := ch.Receive().Wait(context.Background())
+		if err != nil {
+			logger.Errorf("sysevent publisher stopped with error: %s", err.Error())
+			break
+		}
+
+		switch val := val.(type) {
+		case sysevent.PublishError:
+			logger.Errorf("publishing event: %v", val)
+
+		case sysevent.PublisherExited:
+			if val.Err != nil {
+				logger.Errorf("publisher exited with error: %v", val.Err)
+			} else {
+				logger.Info("publisher exited")
+			}
+			break loop
+
+		case sysevent.OtherError:
+			logger.Errorf("sysevent: %v", val)
+		}
+	}
+	logger.Info("sysevent publisher stopped")
 
 	// TODO 仅简单结束了程序
 	os.Exit(1)
