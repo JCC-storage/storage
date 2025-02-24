@@ -1,0 +1,32 @@
+version: 2
+name: pcm1环境cicd
+description: ""
+global:
+  concurrent: 1
+workflow:
+  - ref: start
+    name: 开始
+    task: start
+  - ref: ssh_cmd_0
+    name: ssh执行命令
+    task: ssh_cmd@1.1.0
+    input:
+      ssh_private_key: ((SSH.pcm1))
+      ssh_ip: '"123.60.146.162"'
+      ssh_port: '"22"'
+      ssh_user: '"pcm"'
+      ssh_cmd: '"
+        ls -l /home/pcm/deploy/cloudream/storage
+        &&
+        cd /home/pcm/deploy/cloudream/storage
+        &&
+        chmod +x build.sh
+        &&
+        sh build.sh "'
+    needs:
+      - start
+  - ref: end
+    name: 结束
+    task: end
+    needs:
+      - ssh_cmd_0
