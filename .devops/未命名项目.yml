@@ -15,9 +15,7 @@ workflow:
       ssh_ip: '"123.60.146.162"'
       ssh_port: '"22"'
       ssh_user: '"pcm"'
-      ssh_cmd: '"cd /home/pcm/deploy/cloudream/workspace/storage_yml&&chmod +x
-        1_pull.sh 2_build_all.sh 3_deploy.sh&&sh 1_pull.sh&&sh
-        2_build_all.sh&&sh 3_deploy.sh"'
+      ssh_cmd: '"ls /home/pcm/deploy/cloudream/workspace/storage_yml"'
     needs:
       - start
   - ref: end
