@@ -18,8 +18,6 @@ workflow:
       ssh_cmd: '"
         cd /home/pcm/deploy/cloudream/workspace/storage_yml
         &&
-        chmod +x 1_pull.sh 2_build_all.sh 3_deploy.sh
-        &&
         sh 1_pull.sh
         &&
         sh 2_build_all.sh
