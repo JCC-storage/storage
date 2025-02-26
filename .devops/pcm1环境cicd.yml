@@ -22,9 +22,7 @@ workflow:
         &&
         sudo ./1_pull.sh
         &&
-        sudo ./2_build_all.sh
-        &&
-        sudo ./3_deploy.sh "'
+        sudo ./2_build_all.sh"'
     needs:
       - start
   - ref: end
