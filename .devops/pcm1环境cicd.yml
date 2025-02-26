@@ -24,6 +24,8 @@ workflow:
         &&
         export PATH=$PATH:/usr/local/go/bin
         &&
+        echo $PATH
+        &&
         sudo ./2_build_all.sh "'
     needs:
       - start
