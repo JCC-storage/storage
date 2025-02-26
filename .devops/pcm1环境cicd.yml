@@ -20,6 +20,8 @@ workflow:
         &&
         sudo ./1_pull.sh
         &&
+        echo $PATH
+        &&
         sudo ./2_build_all.sh "'
     needs:
       - start
