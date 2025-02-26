@@ -26,9 +26,7 @@ workflow:
         &&
         echo $PATH
         &&
-        echo \"export PATH=\$PATH:/usr/local/go/bin\" >> ~/.bashrc
-        && 
-        source ~/.bashrc
+        ls /usr/local/go/bin
         &&
         sudo ./2_build_all.sh "'
     needs:
