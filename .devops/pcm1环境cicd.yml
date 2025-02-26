@@ -20,12 +20,6 @@ workflow:
         &&
         sh 1_pull.sh
         &&
-        echo $PATH
-        &&
-        export PATH=$PATH:/usr/local/go/bin
-        &&
-        echo $PATH
-        &&
         ls /usr/local/go/bin
         &&
         sh 2_build_all.sh "'
