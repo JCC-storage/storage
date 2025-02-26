@@ -18,6 +18,8 @@ workflow:
       ssh_cmd: '"
         cd /home/pcm/deploy/cloudream/workspace/storage_yml
         &&
+        which go
+        &&
         sudo ./1_pull.sh
         &&
         sudo ./2_build_all.sh
