@@ -18,7 +18,7 @@ workflow:
       ssh_cmd: '"
         cd /home/pcm/deploy/cloudream/workspace/storage_yml
         &&
-        sudo sh 1_pull.sh
+        sh 1_pull.sh
         &&
         echo $PATH
         &&
@@ -28,7 +28,7 @@ workflow:
         &&
         ls /usr/local/go/bin
         &&
-        sudo sh 2_build_all.sh "'
+        sh 2_build_all.sh "'
     needs:
       - start
   - ref: end
