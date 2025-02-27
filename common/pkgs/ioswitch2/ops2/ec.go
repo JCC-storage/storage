@@ -69,7 +69,7 @@ func (o *ECMultiply) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 	fut := future.NewSetVoid()
 	go func() {
 		mul := ec.GaloisMultiplier().BuildGalois()
-		defer outputBufPool.WakeUpAll()
+		defer outputBufPool.Close()
 
 		readLens := math2.SplitLessThan(o.ChunkSize, 64*1024)
 		readLenIdx := 0
@@ -113,7 +113,7 @@ func (o *ECMultiply) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 	}()
 
 	go func() {
-		defer outputBufPool.WakeUpAll()
+		defer outputBufPool.Close()
 
 		for {
 			outputChunks, ok := outputBufPool.GetFilled()
