@@ -3,6 +3,15 @@ name: pcm1环境cicd
 description: ""
 global:
   concurrent: 1
+trigger:
+  webhook: gitlink@1.0.0
+  event:
+    - ref: create_tag
+      ruleset:
+        - param-ref: tag
+          operator: EQ
+          value: '"部署"'
+      ruleset-operator: AND
 workflow:
   - ref: start
     name: 开始
