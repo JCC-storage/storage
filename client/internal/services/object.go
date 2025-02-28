@@ -22,19 +22,19 @@ func (svc *Service) ObjectSvc() *ObjectService {
 	return &ObjectService{Service: svc}
 }
 
-func (svc *ObjectService) GetByPath(userID cdssdk.UserID, pkgID cdssdk.PackageID, path string, isPrefix bool) ([]cdssdk.Object, error) {
+func (svc *ObjectService) GetByPath(userID cdssdk.UserID, pkgID cdssdk.PackageID, path string, isPrefix bool, noRecursive bool) ([]string, []cdssdk.Object, error) {
 	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
 	if err != nil {
-		return nil, fmt.Errorf("new coordinator client: %w", err)
+		return nil, nil, fmt.Errorf("new coordinator client: %w", err)
 	}
 	defer stgglb.CoordinatorMQPool.Release(coorCli)
 
-	listResp, err := coorCli.GetObjectsByPath(coormq.ReqGetObjectsByPath(userID, pkgID, path, isPrefix))
+	listResp, err := coorCli.GetObjectsByPath(coormq.ReqGetObjectsByPath(userID, pkgID, path, isPrefix, noRecursive))
 	if err != nil {
-		return nil, fmt.Errorf("requsting to coodinator: %w", err)
+		return nil, nil, fmt.Errorf("requsting to coodinator: %w", err)
 	}
 
-	return listResp.Objects, nil
+	return listResp.CommonPrefixes, listResp.Objects, nil
 }
 
 func (svc *ObjectService) GetByIDs(userID cdssdk.UserID, objectIDs []cdssdk.ObjectID) ([]*cdssdk.Object, error) {

@@ -2,6 +2,7 @@ package db2
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm/clause"
@@ -35,6 +36,44 @@ func (db *ObjectDB) GetByPath(ctx SQLContext, packageID cdssdk.PackageID, path s
 func (db *ObjectDB) GetWithPathPrefix(ctx SQLContext, packageID cdssdk.PackageID, pathPrefix string) ([]cdssdk.Object, error) {
 	var ret []cdssdk.Object
 	err := ctx.Table("Object").Where("PackageID = ? AND Path LIKE ?", packageID, pathPrefix+"%").Order("ObjectID ASC").Find(&ret).Error
+	return ret, err
+}
+
+func (db *ObjectDB) GetCommonPrefixes(ctx SQLContext, packageID cdssdk.PackageID, pathPrefix string) ([]string, error) {
+	var ret []string
+
+	sepCnt := strings.Count(pathPrefix, cdssdk.ObjectPathSeparator) + 1
+
+	prefixStatm := fmt.Sprintf("Substring_Index(Path, '%s', %d)", cdssdk.ObjectPathSeparator, sepCnt)
+
+	err := ctx.Table("Object").Select(prefixStatm+" as Prefix").
+		Where("PackageID = ?", packageID).
+		Where("Path like ?", pathPrefix+"%").
+		Where(prefixStatm + " <> Path").
+		Group("Prefix").Find(&ret).Error
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range ret {
+		ret[i] = ret[i] + cdssdk.ObjectPathSeparator
+	}
+
+	return ret, nil
+}
+
+func (db *ObjectDB) GetDirectChildren(ctx SQLContext, packageID cdssdk.PackageID, pathPrefix string) ([]cdssdk.Object, error) {
+	var ret []cdssdk.Object
+
+	sepCnt := strings.Count(pathPrefix, cdssdk.ObjectPathSeparator) + 1
+
+	prefixStatm := fmt.Sprintf("Substring_Index(Path, '%s', %d)", cdssdk.ObjectPathSeparator, sepCnt)
+
+	err := ctx.Table("Object").
+		Where("PackageID = ?", packageID).
+		Where("Path like ?", pathPrefix+"%").
+		Where(prefixStatm + " = Path").
+		Find(&ret).Error
 	return ret, err
 }
 

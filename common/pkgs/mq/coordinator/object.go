@@ -67,27 +67,31 @@ var _ = Register(Service.GetObjectsByPath)
 
 type GetObjectsByPath struct {
 	mq.MessageBodyBase
-	UserID    cdssdk.UserID    `json:"userID"`
-	PackageID cdssdk.PackageID `json:"packageID"`
-	Path      string           `json:"path"`
-	IsPrefix  bool             `json:"isPrefix"`
+	UserID      cdssdk.UserID    `json:"userID"`
+	PackageID   cdssdk.PackageID `json:"packageID"`
+	Path        string           `json:"path"`
+	IsPrefix    bool             `json:"isPrefix"`
+	NoRecursive bool             `json:"noRecursive"`
 }
 type GetObjectsByPathResp struct {
 	mq.MessageBodyBase
-	Objects []model.Object `json:"objects"`
+	CommonPrefixes []string       `json:"commonPrefixes"`
+	Objects        []model.Object `json:"objects"`
 }
 
-func ReqGetObjectsByPath(userID cdssdk.UserID, packageID cdssdk.PackageID, path string, isPrefix bool) *GetObjectsByPath {
+func ReqGetObjectsByPath(userID cdssdk.UserID, packageID cdssdk.PackageID, path string, isPrefix bool, noRecursive bool) *GetObjectsByPath {
 	return &GetObjectsByPath{
-		UserID:    userID,
-		PackageID: packageID,
-		Path:      path,
-		IsPrefix:  isPrefix,
+		UserID:      userID,
+		PackageID:   packageID,
+		Path:        path,
+		IsPrefix:    isPrefix,
+		NoRecursive: noRecursive,
 	}
 }
-func RespGetObjectsByPath(objects []model.Object) *GetObjectsByPathResp {
+func RespGetObjectsByPath(commonPrefixes []string, objects []model.Object) *GetObjectsByPathResp {
 	return &GetObjectsByPathResp{
-		Objects: objects,
+		CommonPrefixes: commonPrefixes,
+		Objects:        objects,
 	}
 }
 func (client *Client) GetObjectsByPath(msg *GetObjectsByPath) (*GetObjectsByPathResp, error) {

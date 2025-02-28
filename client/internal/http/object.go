@@ -39,14 +39,14 @@ func (s *ObjectService) ListByPath(ctx *gin.Context) {
 		return
 	}
 
-	objs, err := s.svc.ObjectSvc().GetByPath(req.UserID, req.PackageID, req.Path, req.IsPrefix)
+	coms, objs, err := s.svc.ObjectSvc().GetByPath(req.UserID, req.PackageID, req.Path, req.IsPrefix, req.NoRecursive)
 	if err != nil {
 		log.Warnf("listing objects: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("listing objects: %v", err)))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectListByPathResp{Objects: objs}))
+	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectListByPathResp{CommonPrefixes: coms, Objects: objs}))
 }
 
 func (s *ObjectService) ListByIDs(ctx *gin.Context) {
@@ -191,7 +191,7 @@ func (s *ObjectService) DownloadByPath(ctx *gin.Context) {
 		return
 	}
 
-	obj, err := s.svc.ObjectSvc().GetByPath(req.UserID, req.PackageID, req.Path, false)
+	_, obj, err := s.svc.ObjectSvc().GetByPath(req.UserID, req.PackageID, req.Path, false, false)
 	if err != nil {
 		log.Warnf("getting object by path: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get object by path failed"))
@@ -266,7 +266,7 @@ func (s *ObjectService) UpdateInfoByPath(ctx *gin.Context) {
 		return
 	}
 
-	obj, err := s.svc.ObjectSvc().GetByPath(req.UserID, req.PackageID, req.Path, true)
+	_, obj, err := s.svc.ObjectSvc().GetByPath(req.UserID, req.PackageID, req.Path, true, false)
 	if err != nil {
 		log.Warnf("getting object by path: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get object by path failed"))
@@ -343,7 +343,7 @@ func (s *ObjectService) DeleteByPath(ctx *gin.Context) {
 		return
 	}
 
-	obj, err := s.svc.ObjectSvc().GetByPath(req.UserID, req.PackageID, req.Path, false)
+	_, obj, err := s.svc.ObjectSvc().GetByPath(req.UserID, req.PackageID, req.Path, false, false)
 	if err != nil {
 		log.Warnf("getting object by path: %s", err.Error())
 		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "get object by path failed"))

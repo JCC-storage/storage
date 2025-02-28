@@ -56,6 +56,7 @@ func (svc *Service) GetObjects(msg *coormq.GetObjects) (*coormq.GetObjectsResp, 
 }
 
 func (svc *Service) GetObjectsByPath(msg *coormq.GetObjectsByPath) (*coormq.GetObjectsByPathResp, *mq.CodeMessage) {
+	var coms []string
 	var objs []cdssdk.Object
 	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
 		var err error
@@ -65,16 +66,31 @@ func (svc *Service) GetObjectsByPath(msg *coormq.GetObjectsByPath) (*coormq.GetO
 			return fmt.Errorf("getting package by id: %w", err)
 		}
 
-		if msg.IsPrefix {
-			objs, err = svc.db2.Object().GetWithPathPrefix(tx, msg.PackageID, msg.Path)
-			if err != nil {
-				return fmt.Errorf("getting objects with prefix: %w", err)
-			}
-		} else {
+		if !msg.IsPrefix {
 			objs, err = svc.db2.Object().GetByPath(tx, msg.PackageID, msg.Path)
 			if err != nil {
 				return fmt.Errorf("getting object by path: %w", err)
 			}
+
+			return nil
+		}
+
+		if !msg.NoRecursive {
+			objs, err = svc.db2.Object().GetWithPathPrefix(tx, msg.PackageID, msg.Path)
+			if err != nil {
+				return fmt.Errorf("getting objects with prefix: %w", err)
+			}
+			return nil
+		}
+
+		coms, err = svc.db2.Object().GetCommonPrefixes(tx, msg.PackageID, msg.Path)
+		if err != nil {
+			return fmt.Errorf("getting common prefixes: %w", err)
+		}
+
+		objs, err = svc.db2.Object().GetDirectChildren(tx, msg.PackageID, msg.Path)
+		if err != nil {
+			return fmt.Errorf("getting direct children: %w", err)
 		}
 
 		return nil
@@ -84,7 +100,7 @@ func (svc *Service) GetObjectsByPath(msg *coormq.GetObjectsByPath) (*coormq.GetO
 		return nil, mq.Failed(errorcode.OperationFailed, "get objects with prefix failed")
 	}
 
-	return mq.ReplyOK(coormq.RespGetObjectsByPath(objs))
+	return mq.ReplyOK(coormq.RespGetObjectsByPath(coms, objs))
 }
 
 func (svc *Service) GetPackageObjects(msg *coormq.GetPackageObjects) (*coormq.GetPackageObjectsResp, *mq.CodeMessage) {
