@@ -249,6 +249,7 @@ type objectBlock struct {
 	HasEntity bool            // 节点拥有实际的文件数据块
 	HasShadow bool            // 如果节点拥有完整文件数据，那么认为这个节点拥有所有块，这些块被称为影子块
 	FileHash  cdssdk.FileHash // 只有在拥有实际文件数据块时，这个字段才有值
+	Size      int64           // 块大小
 }
 
 type stgDist struct {
@@ -590,6 +591,7 @@ func (t *CleanPinned) initBlockList(ctx *annealingState) {
 			StorageID: b.StorageID,
 			HasEntity: true,
 			FileHash:  b.FileHash,
+			Size:      b.Size,
 		})
 		blocksMap[b.StorageID] = blocks
 	}
@@ -774,6 +776,7 @@ func (t *CleanPinned) makePlansForRepObject(allStgInfos map[cdssdk.StorageID]*st
 				Index:     solu.blockList[i].Index,
 				StorageID: solu.blockList[i].StorageID,
 				FileHash:  obj.Object.FileHash,
+				Size:      solu.blockList[i].Size,
 			})
 		}
 	}
@@ -859,6 +862,7 @@ func (t *CleanPinned) makePlansForECObject(allStgInfos map[cdssdk.StorageID]*stg
 				Index:     block.Index,
 				StorageID: block.StorageID,
 				FileHash:  block.FileHash,
+				Size:      block.Size,
 			})
 
 			// 如果这个块是影子块，那么就要从完整对象里重建这个块
@@ -1024,7 +1028,9 @@ func (t *CleanPinned) populateECObjectEntry(entry *coormq.UpdatingObjectRedundan
 
 		key := fmt.Sprintf("%d.%d", obj.Object.ObjectID, entry.Blocks[i].Index)
 		// 不应该出现key不存在的情况
-		entry.Blocks[i].FileHash = ioRets[key].(*ops2.FileHashValue).Hash
+		r := ioRets[key].(*ops2.ShardInfoValue)
+		entry.Blocks[i].FileHash = r.Hash
+		entry.Blocks[i].Size = r.Size
 	}
 }
 

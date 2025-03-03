@@ -11,6 +11,7 @@ type ObjectBlock struct {
 	Index     int              `gorm:"column:Index; primaryKey; type:int" json:"index"`
 	StorageID cdssdk.StorageID `gorm:"column:StorageID; primaryKey; type:bigint" json:"storageID"` // 这个块应该在哪个节点上
 	FileHash  cdssdk.FileHash  `gorm:"column:FileHash; type:char(68); not null" json:"fileHash"`
+	Size      int64            `gorm:"column:Size; type:bigint" json:"size"`
 }
 
 func (ObjectBlock) TableName() string {
@@ -77,6 +78,7 @@ type GrouppedObjectBlock struct {
 	ObjectID   cdssdk.ObjectID
 	Index      int
 	FileHash   cdssdk.FileHash
+	Size       int64
 	StorageIDs []cdssdk.StorageID
 }
 
@@ -89,6 +91,7 @@ func (o *ObjectDetail) GroupBlocks() []GrouppedObjectBlock {
 				ObjectID: block.ObjectID,
 				Index:    block.Index,
 				FileHash: block.FileHash,
+				Size:     block.Size,
 			}
 		}
 		grp.StorageIDs = append(grp.StorageIDs, block.StorageID)

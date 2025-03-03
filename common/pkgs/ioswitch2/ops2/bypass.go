@@ -76,7 +76,7 @@ func (o *BypassToShardStore) Execute(ctx *exec.ExecContext, e *exec.Executor) er
 	}
 
 	e.PutVar(o.BypassCallback, &BypassHandleResultValue{Commited: true})
-	e.PutVar(o.FileHash, &FileHashValue{Hash: fileInfo.Hash})
+	e.PutVar(o.FileHash, &ShardInfoValue{Hash: fileInfo.Hash, Size: fileInfo.Size})
 	return nil
 }
 

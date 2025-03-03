@@ -76,7 +76,7 @@ func (w *UpdateUploader) Upload(pat string, size int64, stream io.Reader) error 
 	w.successes = append(w.successes, coormq.AddObjectEntry{
 		Path:       pat,
 		Size:       size,
-		FileHash:   ret["fileHash"].(*ops2.FileHashValue).Hash,
+		FileHash:   ret["fileHash"].(*ops2.ShardInfoValue).Hash,
 		UploadTime: uploadTime,
 		StorageIDs: []cdssdk.StorageID{w.targetStg.Storage.StorageID},
 	})

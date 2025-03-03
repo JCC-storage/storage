@@ -485,11 +485,13 @@ func (t *CheckPackageRedundancy) noneToRep(ctx ExecuteContext, obj stgmod.Object
 	var blocks []stgmod.ObjectBlock
 	var blockChgs []stgmod.BlockChange
 	for i, stg := range uploadStgs {
+		r := ret[fmt.Sprintf("%d", i)].(*ops2.ShardInfoValue)
 		blocks = append(blocks, stgmod.ObjectBlock{
 			ObjectID:  obj.Object.ObjectID,
 			Index:     0,
 			StorageID: stg.Storage.Storage.StorageID,
-			FileHash:  ret[fmt.Sprintf("%d", i)].(*ops2.FileHashValue).Hash,
+			FileHash:  r.Hash,
+			Size:      r.Size,
 		})
 		blockChgs = append(blockChgs, &stgmod.BlockChangeClone{
 			BlockType:       stgmod.BlockTypeRaw,
@@ -554,11 +556,13 @@ func (t *CheckPackageRedundancy) noneToEC(ctx ExecuteContext, obj stgmod.ObjectD
 	var evtTargetBlocks []stgmod.Block
 	var evtBlockTrans []stgmod.DataTransfer
 	for i := 0; i < red.N; i++ {
+		r := ioRet[fmt.Sprintf("%d", i)].(*ops2.ShardInfoValue)
 		blocks = append(blocks, stgmod.ObjectBlock{
 			ObjectID:  obj.Object.ObjectID,
 			Index:     i,
 			StorageID: uploadStgs[i].Storage.Storage.StorageID,
-			FileHash:  ioRet[fmt.Sprintf("%d", i)].(*ops2.FileHashValue).Hash,
+			FileHash:  r.Hash,
+			Size:      r.Size,
 		})
 		evtTargetBlocks = append(evtTargetBlocks, stgmod.Block{
 			BlockType: stgmod.BlockTypeEC,
@@ -635,11 +639,13 @@ func (t *CheckPackageRedundancy) noneToLRC(ctx ExecuteContext, obj stgmod.Object
 	var evtTargetBlocks []stgmod.Block
 	var evtBlockTrans []stgmod.DataTransfer
 	for i := 0; i < red.N; i++ {
+		r := ioRet[fmt.Sprintf("%d", i)].(*ops2.ShardInfoValue)
 		blocks = append(blocks, stgmod.ObjectBlock{
 			ObjectID:  obj.Object.ObjectID,
 			Index:     i,
 			StorageID: uploadStgs[i].Storage.Storage.StorageID,
-			FileHash:  ioRet[fmt.Sprintf("%d", i)].(*ops2.FileHashValue).Hash,
+			FileHash:  r.Hash,
+			Size:      r.Size,
 		})
 		evtTargetBlocks = append(evtTargetBlocks, stgmod.Block{
 			BlockType: stgmod.BlockTypeEC,
@@ -722,11 +728,13 @@ func (t *CheckPackageRedundancy) noneToSeg(ctx ExecuteContext, obj stgmod.Object
 	var evtTargetBlocks []stgmod.Block
 	var evtBlockTrans []stgmod.DataTransfer
 	for i, stg := range uploadStgs {
+		r := ret[fmt.Sprintf("%d", i)].(*ops2.ShardInfoValue)
 		blocks = append(blocks, stgmod.ObjectBlock{
 			ObjectID:  obj.Object.ObjectID,
 			Index:     i,
 			StorageID: stg.Storage.Storage.StorageID,
-			FileHash:  ret[fmt.Sprintf("%d", i)].(*ops2.FileHashValue).Hash,
+			FileHash:  r.Hash,
+			Size:      r.Size,
 		})
 		evtTargetBlocks = append(evtTargetBlocks, stgmod.Block{
 			BlockType: stgmod.BlockTypeSegment,
@@ -807,11 +815,13 @@ func (t *CheckPackageRedundancy) repToRep(ctx ExecuteContext, obj stgmod.ObjectD
 	var blocks []stgmod.ObjectBlock
 	var blockChgs []stgmod.BlockChange
 	for i, stg := range uploadStgs {
+		r := ret[fmt.Sprintf("%d", i)].(*ops2.ShardInfoValue)
 		blocks = append(blocks, stgmod.ObjectBlock{
 			ObjectID:  obj.Object.ObjectID,
 			Index:     0,
 			StorageID: stg.Storage.Storage.StorageID,
-			FileHash:  ret[fmt.Sprintf("%d", i)].(*ops2.FileHashValue).Hash,
+			FileHash:  r.Hash,
+			Size:      r.Size,
 		})
 		blockChgs = append(blockChgs, &stgmod.BlockChangeClone{
 			BlockType:       stgmod.BlockTypeRaw,
@@ -904,11 +914,13 @@ func (t *CheckPackageRedundancy) ecToRep(ctx ExecuteContext, obj stgmod.ObjectDe
 	var blocks []stgmod.ObjectBlock
 
 	for i := range uploadStgs {
+		r := ioRet[fmt.Sprintf("%d", i)].(*ops2.ShardInfoValue)
 		blocks = append(blocks, stgmod.ObjectBlock{
 			ObjectID:  obj.Object.ObjectID,
 			Index:     0,
 			StorageID: uploadStgs[i].Storage.Storage.StorageID,
-			FileHash:  ioRet[fmt.Sprintf("%d", i)].(*ops2.FileHashValue).Hash,
+			FileHash:  r.Hash,
+			Size:      r.Size,
 		})
 	}
 
@@ -1029,6 +1041,7 @@ func (t *CheckPackageRedundancy) ecToEC(ctx ExecuteContext, obj stgmod.ObjectDet
 		// 如果新选中的节点已经记录在Block表中，那么就不需要任何变更
 		if ok && lo.Contains(grp.StorageIDs, stg.Storage.Storage.StorageID) {
 			newBlock.FileHash = grp.FileHash
+			newBlock.Size = grp.Size
 			newBlocks = append(newBlocks, newBlock)
 			continue
 		}
@@ -1071,7 +1084,9 @@ func (t *CheckPackageRedundancy) ecToEC(ctx ExecuteContext, obj stgmod.ObjectDet
 			return nil, fmt.Errorf("parsing result key %s as index: %w", k, err)
 		}
 
-		newBlocks[idx].FileHash = v.(*ops2.FileHashValue).Hash
+		r := v.(*ops2.ShardInfoValue)
+		newBlocks[idx].FileHash = r.Hash
+		newBlocks[idx].Size = r.Size
 	}
 
 	var evtBlockTrans []stgmod.DataTransfer
@@ -1268,6 +1283,7 @@ func (t *CheckPackageRedundancy) reconstructLRC(ctx ExecuteContext, obj stgmod.O
 		// 如果新选中的节点已经记录在Block表中，那么就不需要任何变更
 		if ok && lo.Contains(grp.StorageIDs, storage.Storage.Storage.StorageID) {
 			newBlock.FileHash = grp.FileHash
+			newBlock.Size = grp.Size
 			newBlocks = append(newBlocks, newBlock)
 			continue
 		}
@@ -1311,7 +1327,9 @@ func (t *CheckPackageRedundancy) reconstructLRC(ctx ExecuteContext, obj stgmod.O
 			return nil, fmt.Errorf("parsing result key %s as index: %w", k, err)
 		}
 
-		newBlocks[idx].FileHash = v.(*ops2.FileHashValue).Hash
+		r := v.(*ops2.ShardInfoValue)
+		newBlocks[idx].FileHash = r.Hash
+		newBlocks[idx].Size = r.Size
 	}
 
 	return &coormq.UpdatingObjectRedundancy{

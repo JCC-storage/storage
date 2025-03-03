@@ -68,7 +68,7 @@ func (u *CreateLoadUploader) Upload(pa string, size int64, stream io.Reader) err
 	defer u.lock.Unlock()
 
 	// 记录上传结果
-	fileHash := ret["fileHash"].(*ops2.FileHashValue).Hash
+	fileHash := ret["fileHash"].(*ops2.ShardInfoValue).Hash
 	u.successes = append(u.successes, coormq.AddObjectEntry{
 		Path:       pa,
 		Size:       size,

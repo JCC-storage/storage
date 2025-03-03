@@ -356,6 +356,7 @@ func (db *ObjectDB) BatchAdd(ctx SQLContext, packageID cdssdk.PackageID, adds []
 				Index:     0,
 				StorageID: stgID,
 				FileHash:  add.FileHash,
+				Size:      add.Size,
 			})
 		}
 	}

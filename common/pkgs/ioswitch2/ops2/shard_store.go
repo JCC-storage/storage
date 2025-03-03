@@ -19,15 +19,16 @@ import (
 func init() {
 	exec.UseOp[*ShardRead]()
 	exec.UseOp[*ShardWrite]()
-	exec.UseVarValue[*FileHashValue]()
+	exec.UseVarValue[*ShardInfoValue]()
 }
 
-type FileHashValue struct {
+type ShardInfoValue struct {
 	Hash cdssdk.FileHash `json:"hash"`
+	Size int64           `json:"size"`
 }
 
-func (v *FileHashValue) Clone() exec.VarValue {
-	return &FileHashValue{Hash: v.Hash}
+func (v *ShardInfoValue) Clone() exec.VarValue {
+	return &ShardInfoValue{Hash: v.Hash, Size: v.Size}
 }
 
 type ShardRead struct {
@@ -105,8 +106,9 @@ func (o *ShardWrite) Execute(ctx *exec.ExecContext, e *exec.Executor) error {
 		return fmt.Errorf("writing file to shard store: %w", err)
 	}
 
-	e.PutVar(o.FileHash, &FileHashValue{
+	e.PutVar(o.FileHash, &ShardInfoValue{
 		Hash: fileInfo.Hash,
+		Size: fileInfo.Size,
 	})
 	return nil
 }
