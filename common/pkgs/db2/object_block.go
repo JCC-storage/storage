@@ -43,8 +43,8 @@ func (*ObjectBlockDB) GetInPackageID(ctx SQLContext, packageID cdssdk.PackageID)
 	return rets, err
 }
 
-func (db *ObjectBlockDB) Create(ctx SQLContext, objectID cdssdk.ObjectID, index int, stgID cdssdk.StorageID, fileHash cdssdk.FileHash) error {
-	block := stgmod.ObjectBlock{ObjectID: objectID, Index: index, StorageID: stgID, FileHash: fileHash}
+func (db *ObjectBlockDB) Create(ctx SQLContext, objectID cdssdk.ObjectID, index int, stgID cdssdk.StorageID, fileHash cdssdk.FileHash, size int64) error {
+	block := stgmod.ObjectBlock{ObjectID: objectID, Index: index, StorageID: stgID, FileHash: fileHash, Size: size}
 	return ctx.Table("ObjectBlock").Create(&block).Error
 }
 
@@ -58,6 +58,10 @@ func (db *ObjectBlockDB) BatchCreate(ctx SQLContext, blocks []stgmod.ObjectBlock
 
 func (db *ObjectBlockDB) DeleteByObjectID(ctx SQLContext, objectID cdssdk.ObjectID) error {
 	return ctx.Table("ObjectBlock").Where("ObjectID = ?", objectID).Delete(&stgmod.ObjectBlock{}).Error
+}
+
+func (db *ObjectBlockDB) DeleteByObjectIDIndex(ctx SQLContext, objectID cdssdk.ObjectID, index int) error {
+	return ctx.Table("ObjectBlock").Where("ObjectID = ? AND `Index` = ?", objectID, index).Delete(&stgmod.ObjectBlock{}).Error
 }
 
 func (db *ObjectBlockDB) BatchDeleteByObjectID(ctx SQLContext, objectIDs []cdssdk.ObjectID) error {

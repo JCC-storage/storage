@@ -1,12 +1,15 @@
 package uploader
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"math"
 	"math/rand"
 	"time"
 
 	"github.com/samber/lo"
+	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/utils/sort2"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
@@ -14,6 +17,9 @@ import (
 	"gitlink.org.cn/cloudream/storage/common/pkgs/connectivity"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/distlock/reqbuilder"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/ops2"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/parser"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/metacache"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/storage/agtpool"
@@ -25,8 +31,6 @@ type Uploader struct {
 	connectivity *connectivity.Collector
 	stgAgts      *agtpool.AgentPool
 	stgMeta      *metacache.StorageMeta
-	loadTo       []cdssdk.StorageID
-	loadToPath   []string
 }
 
 func NewUploader(distlock *distlock.Service, connectivity *connectivity.Collector, stgAgts *agtpool.AgentPool, stgMeta *metacache.StorageMeta) *Uploader {
@@ -176,4 +180,106 @@ func (u *Uploader) BeginCreateLoad(userID cdssdk.UserID, bktID cdssdk.BucketID, 
 		uploader:   u,
 		distlock:   lock,
 	}, nil
+}
+
+func (u *Uploader) UploadPart(userID cdssdk.UserID, objID cdssdk.ObjectID, index int, stream io.Reader) error {
+	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
+	if err != nil {
+		return fmt.Errorf("new coordinator client: %w", err)
+	}
+	defer stgglb.CoordinatorMQPool.Release(coorCli)
+
+	details, err := coorCli.GetObjectDetails(coormq.ReqGetObjectDetails([]cdssdk.ObjectID{objID}))
+	if err != nil {
+		return err
+	}
+
+	if details.Objects[0] == nil {
+		return fmt.Errorf("object %v not found", objID)
+	}
+
+	objDe := details.Objects[0]
+	_, ok := objDe.Object.Redundancy.(*cdssdk.MultipartUploadRedundancy)
+	if !ok {
+		return fmt.Errorf("object %v is not a multipart upload", objID)
+	}
+
+	var stg stgmod.StorageDetail
+	if len(objDe.Blocks) > 0 {
+		cstg := u.stgMeta.Get(objDe.Blocks[0].StorageID)
+		if cstg == nil {
+			return fmt.Errorf("storage %v not found", objDe.Blocks[0].StorageID)
+		}
+
+		stg = *cstg
+
+	} else {
+		getUserStgsResp, err := coorCli.GetUserStorageDetails(coormq.ReqGetUserStorageDetails(userID))
+		if err != nil {
+			return fmt.Errorf("getting user storages: %w", err)
+		}
+
+		cons := u.connectivity.GetAll()
+		var userStgs []UploadStorageInfo
+		for _, stg := range getUserStgsResp.Storages {
+			if stg.MasterHub == nil {
+				continue
+			}
+
+			delay := time.Duration(math.MaxInt64)
+
+			con, ok := cons[stg.MasterHub.HubID]
+			if ok && con.Latency != nil {
+				delay = *con.Latency
+			}
+
+			userStgs = append(userStgs, UploadStorageInfo{
+				Storage:        stg,
+				Delay:          delay,
+				IsSameLocation: stg.MasterHub.LocationID == stgglb.Local.LocationID,
+			})
+		}
+
+		if len(userStgs) == 0 {
+			return fmt.Errorf("user no available storages")
+		}
+
+		stg = u.chooseUploadStorage(userStgs, 0).Storage
+	}
+
+	lock, err := reqbuilder.NewBuilder().Shard().Buzy(stg.Storage.StorageID).MutexLock(u.distlock)
+	if err != nil {
+		return fmt.Errorf("acquire distlock: %w", err)
+	}
+	defer lock.Unlock()
+
+	ft := ioswitch2.NewFromTo()
+	fromDrv, hd := ioswitch2.NewFromDriver(ioswitch2.RawStream())
+	ft.AddFrom(fromDrv).
+		AddTo(ioswitch2.NewToShardStore(*stg.MasterHub, stg, ioswitch2.RawStream(), "shard"))
+
+	plans := exec.NewPlanBuilder()
+	err = parser.Parse(ft, plans)
+	if err != nil {
+		return fmt.Errorf("parse fromto: %w", err)
+	}
+
+	exeCtx := exec.NewExecContext()
+	exec.SetValueByType(exeCtx, u.stgAgts)
+	exec := plans.Execute(exeCtx)
+	exec.BeginWrite(io.NopCloser(stream), hd)
+	ret, err := exec.Wait(context.TODO())
+	if err != nil {
+		return fmt.Errorf("executing plan: %w", err)
+	}
+
+	shardInfo := ret["shard"].(*ops2.ShardInfoValue)
+	_, err = coorCli.AddMultipartUploadPart(coormq.ReqAddMultipartUploadPart(userID, objID, stgmod.ObjectBlock{
+		ObjectID:  objID,
+		Index:     index,
+		StorageID: stg.Storage.StorageID,
+		FileHash:  shardInfo.Hash,
+		Size:      shardInfo.Size,
+	}))
+	return err
 }

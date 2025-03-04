@@ -1,14 +1,18 @@
 package services
 
 import (
+	"context"
 	"fmt"
 
+	"gitlink.org.cn/cloudream/common/pkgs/ioswitch/exec"
 	cdssdk "gitlink.org.cn/cloudream/common/sdks/storage"
 	"gitlink.org.cn/cloudream/common/sdks/storage/cdsapi"
 	stgglb "gitlink.org.cn/cloudream/storage/common/globals"
 	stgmod "gitlink.org.cn/cloudream/storage/common/models"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/db2/model"
 	"gitlink.org.cn/cloudream/storage/common/pkgs/downloader"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/ops2"
+	"gitlink.org.cn/cloudream/storage/common/pkgs/ioswitch2/plans"
 	coormq "gitlink.org.cn/cloudream/storage/common/pkgs/mq/coordinator"
 )
 
@@ -162,4 +166,121 @@ func (svc *ObjectService) GetObjectDetail(objectID cdssdk.ObjectID) (*stgmod.Obj
 	}
 
 	return getResp.Objects[0], nil
+}
+
+func (svc *ObjectService) NewMultipartUploadObject(userID cdssdk.UserID, pkgID cdssdk.PackageID, path string) (cdssdk.Object, error) {
+	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
+	if err != nil {
+		return cdssdk.Object{}, fmt.Errorf("new coordinator client: %w", err)
+	}
+	defer stgglb.CoordinatorMQPool.Release(coorCli)
+
+	resp, err := coorCli.NewMultipartUploadObject(coormq.ReqNewMultipartUploadObject(userID, pkgID, path))
+	if err != nil {
+		return cdssdk.Object{}, err
+	}
+
+	return resp.Object, nil
+}
+
+func (svc *ObjectService) CompleteMultipartUpload(userID cdssdk.UserID, objectID cdssdk.ObjectID, indexes []int) (cdssdk.Object, error) {
+	if len(indexes) == 0 {
+		return cdssdk.Object{}, fmt.Errorf("no block indexes specified")
+	}
+
+	coorCli, err := stgglb.CoordinatorMQPool.Acquire()
+	if err != nil {
+		return cdssdk.Object{}, fmt.Errorf("new coordinator client: %w", err)
+	}
+	defer stgglb.CoordinatorMQPool.Release(coorCli)
+
+	details, err := coorCli.GetObjectDetails(coormq.ReqGetObjectDetails([]cdssdk.ObjectID{objectID}))
+	if err != nil {
+		return cdssdk.Object{}, err
+	}
+
+	if details.Objects[0] == nil {
+		return cdssdk.Object{}, fmt.Errorf("object %v not found", objectID)
+	}
+
+	objDe := details.Objects[0]
+
+	_, ok := objDe.Object.Redundancy.(*cdssdk.MultipartUploadRedundancy)
+	if !ok {
+		return cdssdk.Object{}, fmt.Errorf("object %v is not a multipart upload", objectID)
+	}
+
+	if len(objDe.Blocks) == 0 {
+		return cdssdk.Object{}, fmt.Errorf("object %v has no blocks", objectID)
+	}
+
+	objBlkMap := make(map[int]stgmod.ObjectBlock)
+	for _, blk := range objDe.Blocks {
+		objBlkMap[blk.Index] = blk
+	}
+
+	var compBlks []stgmod.ObjectBlock
+	var compBlkStgs []stgmod.StorageDetail
+	var targetStg stgmod.StorageDetail
+	for i, idx := range indexes {
+		blk, ok := objBlkMap[idx]
+		if !ok {
+			return cdssdk.Object{}, fmt.Errorf("block %d not found in object %v", idx, objectID)
+		}
+
+		stg := svc.StorageMeta.Get(blk.StorageID)
+		if stg == nil {
+			return cdssdk.Object{}, fmt.Errorf("storage %d not found", blk.StorageID)
+		}
+
+		compBlks = append(compBlks, blk)
+		compBlkStgs = append(compBlkStgs, *stg)
+		if i == 0 {
+			targetStg = *stg
+		}
+	}
+
+	bld := exec.NewPlanBuilder()
+	err = plans.CompleteMultipart(compBlks, compBlkStgs, targetStg, "shard", bld)
+	if err != nil {
+		return cdssdk.Object{}, err
+	}
+
+	exeCtx := exec.NewExecContext()
+	ret, err := bld.Execute(exeCtx).Wait(context.Background())
+	if err != nil {
+		return cdssdk.Object{}, err
+	}
+
+	shardInfo := ret["shard"].(*ops2.ShardInfoValue)
+	_, err = coorCli.UpdateObjectRedundancy(coormq.ReqUpdateObjectRedundancy([]coormq.UpdatingObjectRedundancy{
+		{
+			ObjectID:   objectID,
+			FileHash:   shardInfo.Hash,
+			Size:       shardInfo.Size,
+			Redundancy: cdssdk.NewNoneRedundancy(),
+			Blocks: []stgmod.ObjectBlock{{
+				ObjectID:  objectID,
+				Index:     0,
+				StorageID: targetStg.Storage.StorageID,
+				FileHash:  shardInfo.Hash,
+				Size:      shardInfo.Size,
+			}},
+		},
+	}))
+
+	if err != nil {
+		return cdssdk.Object{}, err
+	}
+
+	getObj, err := coorCli.GetObjects(coormq.ReqGetObjects(userID, []cdssdk.ObjectID{objectID}))
+	if err != nil {
+		return cdssdk.Object{}, err
+	}
+
+	if getObj.Objects[0] == nil {
+		return cdssdk.Object{}, fmt.Errorf("object %v not found", objectID)
+	}
+
+	return *getObj.Objects[0], nil
 }

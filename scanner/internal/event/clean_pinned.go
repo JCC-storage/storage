@@ -750,6 +750,8 @@ func (t *CleanPinned) alwaysAccept(curTemp float64, dScore float64, coolingRate 
 func (t *CleanPinned) makePlansForRepObject(allStgInfos map[cdssdk.StorageID]*stgmod.StorageDetail, solu annealingSolution, obj stgmod.ObjectDetail, planBld *exec.PlanBuilder, planningHubIDs map[cdssdk.StorageID]bool) coormq.UpdatingObjectRedundancy {
 	entry := coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
+		FileHash:   obj.Object.FileHash,
+		Size:       obj.Object.Size,
 		Redundancy: obj.Object.Redundancy,
 	}
 
@@ -850,6 +852,8 @@ func (t *CleanPinned) generateSysEventForRepObject(solu annealingSolution, obj s
 func (t *CleanPinned) makePlansForECObject(allStgInfos map[cdssdk.StorageID]*stgmod.StorageDetail, solu annealingSolution, obj stgmod.ObjectDetail, planBld *exec.PlanBuilder, planningHubIDs map[cdssdk.StorageID]bool) coormq.UpdatingObjectRedundancy {
 	entry := coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
+		FileHash:   obj.Object.FileHash,
+		Size:       obj.Object.Size,
 		Redundancy: obj.Object.Redundancy,
 	}
 

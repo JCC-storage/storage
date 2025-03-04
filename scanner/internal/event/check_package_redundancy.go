@@ -515,6 +515,8 @@ func (t *CheckPackageRedundancy) noneToRep(ctx ExecuteContext, obj stgmod.Object
 
 	return &coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
+		FileHash:   obj.Object.FileHash,
+		Size:       obj.Object.Size,
 		Redundancy: red,
 		Blocks:     blocks,
 	}, nil
@@ -599,6 +601,8 @@ func (t *CheckPackageRedundancy) noneToEC(ctx ExecuteContext, obj stgmod.ObjectD
 
 	return &coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
+		FileHash:   obj.Object.FileHash,
+		Size:       obj.Object.Size,
 		Redundancy: red,
 		Blocks:     blocks,
 	}, nil
@@ -682,6 +686,8 @@ func (t *CheckPackageRedundancy) noneToLRC(ctx ExecuteContext, obj stgmod.Object
 
 	return &coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
+		FileHash:   obj.Object.FileHash,
+		Size:       obj.Object.Size,
 		Redundancy: red,
 		Blocks:     blocks,
 	}, nil
@@ -771,6 +777,8 @@ func (t *CheckPackageRedundancy) noneToSeg(ctx ExecuteContext, obj stgmod.Object
 
 	return &coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
+		FileHash:   obj.Object.FileHash,
+		Size:       obj.Object.Size,
 		Redundancy: red,
 		Blocks:     blocks,
 	}, nil
@@ -845,6 +853,8 @@ func (t *CheckPackageRedundancy) repToRep(ctx ExecuteContext, obj stgmod.ObjectD
 
 	return &coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
+		FileHash:   obj.Object.FileHash,
+		Size:       obj.Object.Size,
 		Redundancy: red,
 		Blocks:     blocks,
 	}, nil
@@ -975,6 +985,8 @@ func (t *CheckPackageRedundancy) ecToRep(ctx ExecuteContext, obj stgmod.ObjectDe
 
 	return &coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
+		FileHash:   obj.Object.FileHash,
+		Size:       obj.Object.Size,
 		Redundancy: tarRed,
 		Blocks:     blocks,
 	}, nil
@@ -1126,6 +1138,8 @@ func (t *CheckPackageRedundancy) ecToEC(ctx ExecuteContext, obj stgmod.ObjectDet
 
 	return &coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
+		FileHash:   obj.Object.FileHash,
+		Size:       obj.Object.Size,
 		Redundancy: tarRed,
 		Blocks:     newBlocks,
 	}, nil
@@ -1334,6 +1348,8 @@ func (t *CheckPackageRedundancy) reconstructLRC(ctx ExecuteContext, obj stgmod.O
 
 	return &coormq.UpdatingObjectRedundancy{
 		ObjectID:   obj.Object.ObjectID,
+		FileHash:   obj.Object.FileHash,
+		Size:       obj.Object.Size,
 		Redundancy: red,
 		Blocks:     newBlocks,
 	}, nil

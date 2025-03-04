@@ -33,6 +33,10 @@ type ObjectService interface {
 	GetDatabaseAll(msg *GetDatabaseAll) (*GetDatabaseAllResp, *mq.CodeMessage)
 
 	AddAccessStat(msg *AddAccessStat)
+
+	NewMultipartUploadObject(msg *NewMultipartUploadObject) (*NewMultipartUploadObjectResp, *mq.CodeMessage)
+
+	AddMultipartUploadPart(msg *AddMultipartUploadPart) (*AddMultipartUploadPartResp, *mq.CodeMessage)
 }
 
 var _ = Register(Service.GetObjects)
@@ -190,6 +194,8 @@ type UpdateObjectRedundancyResp struct {
 }
 type UpdatingObjectRedundancy struct {
 	ObjectID   cdssdk.ObjectID      `json:"objectID"`
+	FileHash   cdssdk.FileHash      `json:"fileHash"`
+	Size       int64                `json:"size"`
 	Redundancy cdssdk.Redundancy    `json:"redundancy"`
 	PinnedAt   []cdssdk.StorageID   `json:"pinnedAt"`
 	Blocks     []stgmod.ObjectBlock `json:"blocks"`
@@ -345,4 +351,60 @@ func ReqAddAccessStat(entries []AddAccessStatEntry) *AddAccessStat {
 
 func (client *Client) AddAccessStat(msg *AddAccessStat) error {
 	return mq.Send(Service.AddAccessStat, client.rabbitCli, msg)
+}
+
+var _ = Register(Service.NewMultipartUploadObject)
+
+type NewMultipartUploadObject struct {
+	mq.MessageBodyBase
+	UserID    cdssdk.UserID    `json:"userID"`
+	PackageID cdssdk.PackageID `json:"packageID"`
+	Path      string           `json:"path"`
+}
+type NewMultipartUploadObjectResp struct {
+	mq.MessageBodyBase
+	Object cdssdk.Object `json:"object"`
+}
+
+func ReqNewMultipartUploadObject(userID cdssdk.UserID, packageID cdssdk.PackageID, path string) *NewMultipartUploadObject {
+	return &NewMultipartUploadObject{
+		UserID:    userID,
+		PackageID: packageID,
+		Path:      path,
+	}
+}
+func RespNewMultipartUploadObject(object cdssdk.Object) *NewMultipartUploadObjectResp {
+	return &NewMultipartUploadObjectResp{
+		Object: object,
+	}
+}
+func (client *Client) NewMultipartUploadObject(msg *NewMultipartUploadObject) (*NewMultipartUploadObjectResp, error) {
+	return mq.Request(Service.NewMultipartUploadObject, client.rabbitCli, msg)
+}
+
+var _ = Register(Service.AddMultipartUploadPart)
+
+type AddMultipartUploadPart struct {
+	mq.MessageBodyBase
+	UserID   cdssdk.UserID      `json:"userID"`
+	ObjectID cdssdk.ObjectID    `json:"objectID"`
+	Block    stgmod.ObjectBlock `json:"block"`
+}
+
+type AddMultipartUploadPartResp struct {
+	mq.MessageBodyBase
+}
+
+func ReqAddMultipartUploadPart(userID cdssdk.UserID, objectID cdssdk.ObjectID, blk stgmod.ObjectBlock) *AddMultipartUploadPart {
+	return &AddMultipartUploadPart{
+		UserID:   userID,
+		ObjectID: objectID,
+		Block:    blk,
+	}
+}
+func RespAddMultipartUploadPart() *AddMultipartUploadPartResp {
+	return &AddMultipartUploadPartResp{}
+}
+func (client *Client) AddMultipartUploadPart(msg *AddMultipartUploadPart) (*AddMultipartUploadPartResp, error) {
+	return mq.Request(Service.AddMultipartUploadPart, client.rabbitCli, msg)
 }

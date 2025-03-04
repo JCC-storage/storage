@@ -403,3 +403,76 @@ func (s *ObjectService) GetPackageObjects(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectGetPackageObjectsResp{Objects: objs}))
 }
+
+func (s *ObjectService) NewMultipartUpload(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Object.NewMultipartUpload")
+
+	var req cdsapi.ObjectNewMultipartUpload
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Warnf("binding body: %s", err.Error())
+		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
+		return
+	}
+
+	obj, err := s.svc.ObjectSvc().NewMultipartUploadObject(req.UserID, req.PackageID, req.Path)
+	if err != nil {
+		log.Warnf("new multipart upload object: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "new multipart upload object failed"))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectNewMultipartUploadResp{Object: obj}))
+}
+
+type ObjectUploadPartReq struct {
+	Info cdsapi.ObjectUploadPartInfo `form:"info" binding:"required"`
+	File *multipart.FileHeader       `form:"file"`
+}
+
+func (s *ObjectService) UploadPart(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Object.UploadPart")
+
+	var req ObjectUploadPartReq
+	if err := ctx.ShouldBind(&req); err != nil {
+		log.Warnf("binding body: %s", err.Error())
+		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
+		return
+	}
+
+	file, err := req.File.Open()
+	if err != nil {
+		log.Warnf("open file: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, "open file failed"))
+		return
+	}
+	defer file.Close()
+
+	err = s.svc.Uploader.UploadPart(req.Info.UserID, req.Info.ObjectID, req.Info.Index, file)
+	if err != nil {
+		log.Warnf("uploading part: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("upload part: %v", err)))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectUploadPartResp{}))
+}
+
+func (s *ObjectService) CompleteMultipartUpload(ctx *gin.Context) {
+	log := logger.WithField("HTTP", "Object.CompleteMultipartUpload")
+
+	var req cdsapi.ObjectCompleteMultipartUpload
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Warnf("binding body: %s", err.Error())
+		ctx.JSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing argument or invalid argument"))
+		return
+	}
+
+	obj, err := s.svc.ObjectSvc().CompleteMultipartUpload(req.UserID, req.ObjectID, req.Indexes)
+	if err != nil {
+		log.Warnf("completing multipart upload: %s", err.Error())
+		ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("complete multipart upload: %v", err)))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, OK(cdsapi.ObjectCompleteMultipartUploadResp{Object: obj}))
+}

@@ -119,4 +119,8 @@ func (s *Server) routeV1(eg *gin.Engine, rt gin.IRoutes) {
 
 	rt.POST(cdsapi.UserCreatePath, s.User().Create)
 	rt.POST(cdsapi.UserDeletePath, s.User().Delete)
+
+	rt.POST(cdsapi.ObjectNewMultipartUploadPath, s.Object().NewMultipartUpload)
+	rt.POST(cdsapi.ObjectUploadPartPath, s.Object().UploadPart)
+	rt.POST(cdsapi.ObjectCompleteMultipartUploadPath, s.Object().CompleteMultipartUpload)
 }

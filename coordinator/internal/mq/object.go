@@ -235,13 +235,15 @@ func (svc *Service) UpdateObjectRedundancy(msg *coormq.UpdateObjectRedundancy) (
 		for _, obj := range objs {
 			dummyObjs = append(dummyObjs, cdssdk.Object{
 				ObjectID:   obj.ObjectID,
+				FileHash:   obj.FileHash,
+				Size:       obj.Size,
 				Redundancy: obj.Redundancy,
 				CreateTime: nowTime, // 实际不会更新，只因为不能是0值
 				UpdateTime: nowTime,
 			})
 		}
 
-		err = db.Object().BatchUpdateColumns(ctx, dummyObjs, []string{"Redundancy", "UpdateTime"})
+		err = db.Object().BatchUpdateColumns(ctx, dummyObjs, []string{"FileHash", "Size", "Redundancy", "UpdateTime"})
 		if err != nil {
 			return fmt.Errorf("batch update object redundancy: %w", err)
 		}
@@ -763,4 +765,118 @@ func (svc *Service) CloneObjects(msg *coormq.CloneObjects) (*coormq.CloneObjects
 	}
 
 	return mq.ReplyOK(coormq.RespCloneObjects(ret))
+}
+
+func (svc *Service) NewMultipartUploadObject(msg *coormq.NewMultipartUploadObject) (*coormq.NewMultipartUploadObjectResp, *mq.CodeMessage) {
+	var obj cdssdk.Object
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
+		oldObjs, err := svc.db2.Object().GetByPath(tx, msg.PackageID, msg.Path)
+		if err == nil && len(oldObjs) > 0 {
+			obj = oldObjs[0]
+			err := svc.db2.ObjectBlock().DeleteByObjectID(tx, obj.ObjectID)
+			if err != nil {
+				return fmt.Errorf("delete object blocks: %w", err)
+			}
+
+			obj.FileHash = cdssdk.EmptyHash
+			obj.Size = 0
+			obj.Redundancy = cdssdk.NewMultipartUploadRedundancy()
+			obj.UpdateTime = time.Now()
+
+			err = svc.db2.Object().BatchUpdate(tx, []cdssdk.Object{obj})
+			if err != nil {
+				return fmt.Errorf("update object: %w", err)
+			}
+
+			return nil
+		}
+
+		obj = cdssdk.Object{
+			PackageID:  msg.PackageID,
+			Path:       msg.Path,
+			FileHash:   cdssdk.EmptyHash,
+			Size:       0,
+			Redundancy: cdssdk.NewMultipartUploadRedundancy(),
+			CreateTime: time.Now(),
+			UpdateTime: time.Now(),
+		}
+		objID, err := svc.db2.Object().Create(tx, obj)
+		if err != nil {
+			return fmt.Errorf("create object: %w", err)
+		}
+
+		obj.ObjectID = objID
+		return nil
+	})
+	if err != nil {
+		logger.Warnf("new multipart upload object: %s", err.Error())
+		return nil, mq.Failed(errorcode.OperationFailed, fmt.Sprintf("new multipart upload object: %v", err))
+	}
+
+	return mq.ReplyOK(coormq.RespNewMultipartUploadObject(obj))
+}
+
+func (svc *Service) AddMultipartUploadPart(msg *coormq.AddMultipartUploadPart) (*coormq.AddMultipartUploadPartResp, *mq.CodeMessage) {
+	err := svc.db2.DoTx(func(tx db2.SQLContext) error {
+		obj, err := svc.db2.Object().GetByID(tx, msg.ObjectID)
+		if err != nil {
+			return fmt.Errorf("getting object by id: %w", err)
+		}
+
+		_, ok := obj.Redundancy.(*cdssdk.MultipartUploadRedundancy)
+		if !ok {
+			return fmt.Errorf("object is not a multipart upload object")
+		}
+
+		blks, err := svc.db2.ObjectBlock().BatchGetByObjectID(tx, []cdssdk.ObjectID{obj.ObjectID})
+		if err != nil {
+			return fmt.Errorf("batch getting object blocks: %w", err)
+		}
+
+		blks = lo.Reject(blks, func(blk stgmod.ObjectBlock, idx int) bool { return blk.Index == msg.Block.Index })
+		blks = append(blks, msg.Block)
+
+		blks = sort2.Sort(blks, func(a, b stgmod.ObjectBlock) int { return a.Index - b.Index })
+
+		totalSize := int64(0)
+		var hashes [][]byte
+		for _, blk := range blks {
+			totalSize += blk.Size
+			hashes = append(hashes, blk.FileHash.GetHashBytes())
+		}
+
+		newObjHash := cdssdk.CalculateCompositeHash(hashes)
+		obj.Size = totalSize
+		obj.FileHash = newObjHash
+		obj.UpdateTime = time.Now()
+
+		err = svc.db2.ObjectBlock().DeleteByObjectIDIndex(tx, msg.ObjectID, msg.Block.Index)
+		if err != nil {
+			return fmt.Errorf("delete object block: %w", err)
+		}
+
+		err = svc.db2.ObjectBlock().Create(tx, msg.ObjectID, msg.Block.Index, msg.Block.StorageID, msg.Block.FileHash, msg.Block.Size)
+		if err != nil {
+			return fmt.Errorf("create object block: %w", err)
+		}
+
+		err = svc.db2.Object().BatchUpdate(tx, []cdssdk.Object{obj})
+		if err != nil {
+			return fmt.Errorf("update object: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		logger.Warnf("add multipart upload part: %s", err.Error())
+
+		code := errorcode.OperationFailed
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			code = errorcode.DataNotFound
+		}
+
+		return nil, mq.Failed(code, fmt.Sprintf("add multipart upload part: %v", err))
+	}
+
+	return mq.ReplyOK(coormq.RespAddMultipartUploadPart())
 }
