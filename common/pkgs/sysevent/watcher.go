@@ -45,6 +45,12 @@ func NewWatcherHost(cfg Config) (*WatcherHost, error) {
 		return nil, fmt.Errorf("openning channel on connection: %w", err)
 	}
 
+	err = channel.ExchangeDeclare(ExchangeName, "fanout", false, true, false, false, nil)
+	if err != nil {
+		connection.Close()
+		return nil, fmt.Errorf("declare exchange: %w", err)
+	}
+
 	_, err = channel.QueueDeclare(
 		SysEventQueueName,
 		false,
@@ -57,6 +63,13 @@ func NewWatcherHost(cfg Config) (*WatcherHost, error) {
 		channel.Close()
 		connection.Close()
 		return nil, fmt.Errorf("declare queue: %w", err)
+	}
+
+	err = channel.QueueBind(SysEventQueueName, "", ExchangeName, false, nil)
+	if err != nil {
+		channel.Close()
+		connection.Close()
+		return nil, fmt.Errorf("bind queue: %w", err)
 	}
 
 	recvChan, err := channel.Consume(SysEventQueueName, "", true, false, true, false, nil)

@@ -48,16 +48,10 @@ func NewPublisher(cfg Config, thisSource Source) (*Publisher, error) {
 		return nil, fmt.Errorf("openning channel on connection: %w", err)
 	}
 
-	_, err = channel.QueueDeclare(
-		SysEventQueueName,
-		false,
-		true,
-		false,
-		false,
-		nil,
-	)
+	err = channel.ExchangeDeclare(ExchangeName, "fanout", false, true, false, false, nil)
 	if err != nil {
-		return nil, fmt.Errorf("declare queue: %w", err)
+		connection.Close()
+		return nil, fmt.Errorf("declare exchange: %w", err)
 	}
 
 	pub := &Publisher{
@@ -94,7 +88,7 @@ func (p *Publisher) Start() *async.UnboundChannel[PublisherEvent] {
 				continue
 			}
 
-			err = p.channel.Publish("", SysEventQueueName, false, false, amqp.Publishing{
+			err = p.channel.Publish(ExchangeName, "", false, false, amqp.Publishing{
 				ContentType: "text/plain",
 				Body:        eventData,
 				Expiration:  "60000", // 消息超时时间默认1分钟

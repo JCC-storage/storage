@@ -6,6 +6,7 @@ import (
 
 const (
 	SysEventQueueName = "SysEventQueue"
+	ExchangeName      = "SysEventExchange"
 )
 
 type SysEvent = stgmod.SysEvent
