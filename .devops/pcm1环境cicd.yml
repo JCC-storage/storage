@@ -31,9 +31,9 @@ workflow:
         &&
         ls /usr/local/go/bin
         &&
-        sh 2_build_all.sh
+        echo "PATH:"$PATH
         &&
-        sudo sh 3_deploy.sh "'
+        sh 2_build_all.sh "'
     needs:
       - start
   - ref: end
