@@ -31,7 +31,11 @@ workflow:
         &&
         ls /usr/local/go/bin
         &&
-        echo PATH:$PATH
+        echo PATH1:$PATH
+        &&
+        export PATH=$PATH:/usr/local/go/bin
+        &&
+        echo PATH2:$PATH
         &&
         sh 2_build_all.sh "'
     needs:
