@@ -37,7 +37,9 @@ workflow:
         &&
         echo PATH2:$PATH
         &&
-        sh 2_build_all.sh "'
+        sh 2_build_all.sh
+        &&
+        sudo sh 3_deploy.sh "'
     needs:
       - start
   - ref: end
