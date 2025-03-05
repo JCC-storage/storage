@@ -31,7 +31,7 @@ workflow:
         &&
         ls /usr/local/go/bin
         &&
-        echo "PATH:"$PATH
+        echo PATH:$PATH
         &&
         sh 2_build_all.sh "'
     needs:
