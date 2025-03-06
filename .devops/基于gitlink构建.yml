@@ -36,7 +36,7 @@ workflow:
       registry_address: '"123.60.146.162:5010"'
       docker_file: '"Dockerfile"'
       docker_build_path: '"."'
-      workspace: '"."'
+      workspace: git_clone_0.git_path
       image_push: true
       build_args: '""'
     needs:
@@ -55,7 +55,7 @@ workflow:
       registry_address: '"123.60.146.162:5010"'
       docker_file: '"Dockerfile"'
       docker_build_path: '"."'
-      workspace: '"."'
+      workspace: git_clone_0.git_path
       image_push: true
       build_args: '""'
     needs:
@@ -74,7 +74,7 @@ workflow:
       registry_address: '"123.60.146.162:5010"'
       docker_file: '"Dockerfile"'
       docker_build_path: '"."'
-      workspace: '"."'
+      workspace: git_clone_0.git_path
       image_push: true
       build_args: '""'
     needs:
@@ -83,9 +83,10 @@ workflow:
     name: ssh执行命令
     task: ssh_cmd@1.1.1
     input:
-      ssh_ip: '""'
+      ssh_private_key: ((SSH.pcm1))
+      ssh_ip: '"123.60.146.162"'
       ssh_port: '"22"'
-      ssh_user: '"root"'
+      ssh_user: '"pcm"'
       ssh_cmd: '""'
     needs:
       - docker_image_build_2
@@ -111,7 +112,7 @@ workflow:
       registry_address: '"123.60.146.162:5010"'
       docker_file: '"Dockerfile"'
       docker_build_path: '"."'
-      workspace: '"."'
+      workspace: git_clone_0.git_path
       image_push: true
       build_args: '""'
     needs:
