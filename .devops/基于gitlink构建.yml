@@ -3,6 +3,9 @@ name: 基于gitlink构建
 description: ""
 global:
   concurrent: 1
+  cache:
+    - GOCACHE
+    - GOMODCACHE
 workflow:
   - ref: start
     name: 开始
@@ -11,6 +14,8 @@ workflow:
     name: git clone
     task: git_clone@1.2.9
     input:
+      username: ((gitlink.songjc))
+      password: ((gitlink.songjc))
       remote_url: '"https://gitlink.org.cn/JointCloud/storage.git"'
       ref: '"refs/heads/master"'
       commit_id: '""'
@@ -98,7 +103,7 @@ workflow:
     input:
       image_name: '""'
       image_tag: '"latest"'
-      registry_address: '""'
+      registry_address: '"123.60.146.162:5010"'
       docker_file: '"Dockerfile"'
       docker_build_path: '"."'
       workspace: '"."'
