@@ -121,7 +121,7 @@ workflow:
     name: common_clone
     task: git_clone@1.2.9
     input:
-      remote_url: '""'
+      remote_url: '"https://gitlink.org.cn/JointCloud/common.git"'
       ref: '"refs/heads/master"'
       commit_id: '""'
       depth: 1
