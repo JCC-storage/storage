@@ -23,12 +23,14 @@ workflow:
     needs:
       - start
   - ref: docker_image_build_2
-    name: docker镜像构建
+    name: scanner镜像构建
     task: docker_image_build@1.6.0
     input:
-      image_name: '""'
+      docker_username: ((docker_registry.registry_user))
+      docker_password: ((docker_registry.registry_password))
+      image_name: '"112.95.163.90:5010/scannerservice-x86"'
       image_tag: '"latest"'
-      registry_address: '""'
+      registry_address: '"123.60.146.162:5010"'
       docker_file: '"Dockerfile"'
       docker_build_path: '"."'
       workspace: '"."'
@@ -37,12 +39,14 @@ workflow:
     needs:
       - git_clone_0
   - ref: docker_image_build_1
-    name: docker镜像构建
+    name: coor镜像构建
     task: docker_image_build@1.6.0
     input:
-      image_name: '""'
+      docker_username: ((docker_registry.registry_user))
+      docker_password: ((docker_registry.registry_password))
+      image_name: '"112.95.163.90:5010/coordinatorservice-x86"'
       image_tag: '"latest"'
-      registry_address: '""'
+      registry_address: '"123.60.146.162:5010"'
       docker_file: '"Dockerfile"'
       docker_build_path: '"."'
       workspace: '"."'
@@ -51,12 +55,14 @@ workflow:
     needs:
       - git_clone_0
   - ref: docker_image_build_3
-    name: docker镜像构建
+    name: client镜像构建
     task: docker_image_build@1.6.0
     input:
-      image_name: '""'
+      docker_username: ((docker_registry.registry_user))
+      docker_password: ((docker_registry.registry_password))
+      image_name: '"112.95.163.90:5010/clientservice-x86"'
       image_tag: '"latest"'
-      registry_address: '""'
+      registry_address: '"123.60.146.162:5010"'
       docker_file: '"Dockerfile"'
       docker_build_path: '"."'
       workspace: '"."'
@@ -77,31 +83,18 @@ workflow:
       - docker_image_build_0
       - docker_image_build_1
       - docker_image_build_3
-      - docker_image_build_4
   - ref: end
     name: 结束
     task: end
     needs:
       - ssh_cmd_0
-  - ref: docker_image_build_4
-    name: docker镜像构建
-    task: docker_image_build@1.6.0
-    input:
-      image_name: '""'
-      image_tag: '"latest"'
-      registry_address: '""'
-      docker_file: '"Dockerfile"'
-      docker_build_path: '"."'
-      workspace: '"."'
-      image_push: true
-      build_args: '""'
-    needs:
-      - git_clone_0
   - ref: docker_image_build_0
-    name: docker镜像构建
+    name: agent镜像构建
     task: docker_image_build@1.6.0
     input:
-      image_name: '""'
+      docker_username: ((docker_registry.registry_user))
+      docker_password: ((docker_registry.registry_password))
+      image_name: '"112.95.163.90:5010/agentservice-x86"'
       image_tag: '"latest"'
       registry_address: '"123.60.146.162:5010"'
       docker_file: '"Dockerfile"'
