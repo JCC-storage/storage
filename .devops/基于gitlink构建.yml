@@ -87,7 +87,7 @@ workflow:
       ssh_ip: '"123.60.146.162"'
       ssh_port: '"22"'
       ssh_user: '"pcm"'
-      ssh_cmd: '""'
+      ssh_cmd: '"cd /home/pcm/deploy/cloudream/workspace/storage_yml&&ls"'
     needs:
       - docker_image_build_2
       - docker_image_build_0
