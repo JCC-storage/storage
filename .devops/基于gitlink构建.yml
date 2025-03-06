@@ -24,6 +24,9 @@ workflow:
       - start
   - ref: docker_image_build_2
     name: scanner镜像构建
+    cache:
+      GOCACHE: /root/.cache/go-build
+      GOMODCACHE: /go/pkg/mod
     task: docker_image_build@1.6.0
     input:
       docker_username: ((docker_registry.registry_user))
@@ -40,6 +43,9 @@ workflow:
       - git_clone_0
   - ref: docker_image_build_1
     name: coor镜像构建
+    cache:
+      GOCACHE: /root/.cache/go-build
+      GOMODCACHE: /go/pkg/mod
     task: docker_image_build@1.6.0
     input:
       docker_username: ((docker_registry.registry_user))
@@ -56,6 +62,9 @@ workflow:
       - git_clone_0
   - ref: docker_image_build_3
     name: client镜像构建
+    cache:
+      GOCACHE: /root/.cache/go-build
+      GOMODCACHE: /go/pkg/mod
     task: docker_image_build@1.6.0
     input:
       docker_username: ((docker_registry.registry_user))
@@ -90,6 +99,9 @@ workflow:
       - ssh_cmd_0
   - ref: docker_image_build_0
     name: agent镜像构建
+    cache:
+      GOCACHE: /root/.cache/go-build
+      GOMODCACHE: /go/pkg/mod
     task: docker_image_build@1.6.0
     input:
       docker_username: ((docker_registry.registry_user))
