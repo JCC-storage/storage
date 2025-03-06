@@ -14,8 +14,8 @@ workflow:
     name: storage_clone
     task: git_clone@1.2.9
     input:
-      username: ((gitlink.songjc))
-      password: ((gitlink.songjc))
+      username: ((gitlink.user))
+      password: ((gitlink.password))
       remote_url: '"https://gitlink.org.cn/JointCloud/storage.git"'
       ref: '"refs/heads/master"'
       commit_id: '""'
@@ -121,6 +121,8 @@ workflow:
     name: common_clone
     task: git_clone@1.2.9
     input:
+      username: ((gitlink.user))
+      password: ((gitlink.password))
       remote_url: '"https://gitlink.org.cn/JointCloud/common.git"'
       ref: '"refs/heads/master"'
       commit_id: '""'
