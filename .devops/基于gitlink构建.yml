@@ -11,7 +11,7 @@ workflow:
     name: 开始
     task: start
   - ref: git_clone_0
-    name: git clone
+    name: storage_clone
     task: git_clone@1.2.9
     input:
       username: ((gitlink.songjc))
@@ -40,7 +40,7 @@ workflow:
       image_push: true
       build_args: '""'
     needs:
-      - git_clone_0
+      - shell_0
   - ref: docker_image_build_1
     name: coor镜像构建
     cache:
@@ -59,7 +59,7 @@ workflow:
       image_push: true
       build_args: '""'
     needs:
-      - git_clone_0
+      - shell_0
   - ref: docker_image_build_3
     name: client镜像构建
     cache:
@@ -78,7 +78,7 @@ workflow:
       image_push: true
       build_args: '""'
     needs:
-      - git_clone_0
+      - shell_0
   - ref: ssh_cmd_0
     name: ssh执行命令
     task: ssh_cmd@1.1.1
@@ -116,5 +116,23 @@ workflow:
       image_push: true
       build_args: '""'
     needs:
+      - shell_0
+  - ref: git_clone_1
+    name: common_clone
+    task: git_clone@1.2.9
+    input:
+      remote_url: '""'
+      ref: '"refs/heads/master"'
+      commit_id: '""'
+      depth: 1
+    needs:
+      - start
+  - ref: shell_0
+    name: shell
+    image: docker.jianmuhub.com/library/alpine:3.17.0
+    script:
+      - ls
+    needs:
       - git_clone_0
+      - git_clone_1
 
