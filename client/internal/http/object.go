@@ -109,7 +109,7 @@ func (s *ObjectService) Upload(ctx *gin.Context) {
 		}
 		path = filepath.ToSlash(path)
 
-		err = up.Upload(path, file.Size, f)
+		err = up.Upload(path, f)
 		if err != nil {
 			log.Warnf("uploading file: %s", err.Error())
 			ctx.JSON(http.StatusOK, Failed(errorcode.OperationFailed, fmt.Sprintf("uploading file %v: %v", file.Filename, err)))

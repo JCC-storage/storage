@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -93,7 +94,7 @@ func (a *AWSAuth) Auth(c *gin.Context) {
 		return
 	}
 
-	verifySig := a.getSignature(verifyReq)
+	verifySig := getSignatureFromAWSHeader(verifyReq)
 	if !strings.EqualFold(verifySig, reqSig) {
 		c.AbortWithStatusJSON(http.StatusOK, Failed(errorcode.Unauthorized, "signature mismatch"))
 		return
@@ -135,14 +136,77 @@ func (a *AWSAuth) AuthWithoutBody(c *gin.Context) {
 	}
 
 	err = a.signer.SignHTTP(context.TODO(), a.cred, verifyReq, "", AuthService, AuthRegion, timestamp)
+
 	if err != nil {
 		logger.Warnf("sign request: %v", err)
 		c.AbortWithStatusJSON(http.StatusOK, Failed(errorcode.OperationFailed, "sign request failed"))
 		return
 	}
 
-	verifySig := a.getSignature(verifyReq)
+	verifySig := getSignatureFromAWSHeader(verifyReq)
 	if strings.EqualFold(verifySig, reqSig) {
+		c.AbortWithStatusJSON(http.StatusOK, Failed(errorcode.Unauthorized, "signature mismatch"))
+		return
+	}
+
+	c.Next()
+}
+
+func (a *AWSAuth) PresignedAuth(c *gin.Context) {
+	query := c.Request.URL.Query()
+
+	signature := query.Get("X-Amz-Signature")
+	query.Del("X-Amz-Signature")
+	if signature == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "missing X-Amz-Signature query parameter"))
+		return
+	}
+
+	// alg := c.Request.URL.Query().Get("X-Amz-Algorithm")
+	// cred := c.Request.URL.Query().Get("X-Amz-Credential")
+
+	date := query.Get("X-Amz-Date")
+	expiresStr := query.Get("X-Expires")
+	expires, err := strconv.ParseInt(expiresStr, 10, 64)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "invalid X-Expires format"))
+		return
+	}
+
+	signedHeaders := strings.Split(query.Get("X-Amz-SignedHeaders"), ";")
+
+	c.Request.URL.RawQuery = query.Encode()
+
+	verifyReq, err := http.NewRequest(c.Request.Method, c.Request.URL.String(), nil)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, Failed(errorcode.OperationFailed, err.Error()))
+		return
+	}
+	for _, h := range signedHeaders {
+		verifyReq.Header.Add(h, c.Request.Header.Get(h))
+	}
+	verifyReq.Host = c.Request.Host
+
+	timestamp, err := time.Parse("20060102T150405Z", date)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, Failed(errorcode.BadArgument, "invalid X-Amz-Date format"))
+		return
+	}
+
+	if time.Now().After(timestamp.Add(time.Duration(expires) * time.Second)) {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, Failed(errorcode.Unauthorized, "request expired"))
+		return
+	}
+
+	signer := v4.NewSigner()
+	uri, _, err := signer.PresignHTTP(context.TODO(), a.cred, verifyReq, "", AuthService, AuthRegion, timestamp)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, Failed(errorcode.OperationFailed, "sign request failed"))
+		return
+	}
+
+	verifySig := getSignatureFromAWSQuery(uri)
+	if !strings.EqualFold(verifySig, signature) {
 		c.AbortWithStatusJSON(http.StatusOK, Failed(errorcode.Unauthorized, "signature mismatch"))
 		return
 	}
@@ -186,7 +250,7 @@ func parseAuthorizationHeader(authorizationHeader string) (string, []string, str
 	return credential, headers, signature, nil
 }
 
-func (a *AWSAuth) getSignature(req *http.Request) string {
+func getSignatureFromAWSHeader(req *http.Request) string {
 	auth := req.Header.Get(AuthorizationHeader)
 	idx := strings.Index(auth, "Signature=")
 	if idx == -1 {
@@ -194,4 +258,18 @@ func (a *AWSAuth) getSignature(req *http.Request) string {
 	}
 
 	return auth[idx+len("Signature="):]
+}
+
+func getSignatureFromAWSQuery(uri string) string {
+	idx := strings.Index(uri, "X-Amz-Signature=")
+	if idx == -1 {
+		return ""
+	}
+
+	andIdx := strings.Index(uri[idx:], "&")
+	if andIdx == -1 {
+		return uri[idx+len("X-Amz-Signature="):]
+	}
+
+	return uri[idx+len("X-Amz-Signature=") : andIdx]
 }

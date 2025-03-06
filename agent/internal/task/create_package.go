@@ -113,7 +113,7 @@ func (t *CreatePackage) Execute(task *task.Task[TaskContext], ctx TaskContext, c
 		path := filepath.ToSlash(obj.Path)
 
 		// 上传对象
-		err = up.Upload(path, obj.Size, obj.File)
+		err = up.Upload(path, obj.File)
 		if err != nil {
 			err = fmt.Errorf("uploading object: %w", err)
 			log.Error(err.Error())

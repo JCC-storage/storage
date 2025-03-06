@@ -42,13 +42,13 @@ type UpdateResult struct {
 	Objects map[string]cdssdk.Object
 }
 
-func (w *UpdateUploader) Upload(pat string, size int64, stream io.Reader) error {
+func (w *UpdateUploader) Upload(pat string, stream io.Reader) error {
 	uploadTime := time.Now()
 
 	ft := ioswitch2.NewFromTo()
 	fromExec, hd := ioswitch2.NewFromDriver(ioswitch2.RawStream())
 	ft.AddFrom(fromExec).
-		AddTo(ioswitch2.NewToShardStore(*w.targetStg.MasterHub, w.targetStg, ioswitch2.RawStream(), "fileHash"))
+		AddTo(ioswitch2.NewToShardStore(*w.targetStg.MasterHub, w.targetStg, ioswitch2.RawStream(), "shardInfo"))
 
 	for i, stg := range w.loadToStgs {
 		ft.AddTo(ioswitch2.NewLoadToPublic(*stg.MasterHub, stg, path.Join(w.loadToPath[i], pat)))
@@ -73,10 +73,11 @@ func (w *UpdateUploader) Upload(pat string, size int64, stream io.Reader) error 
 	defer w.lock.Unlock()
 
 	// 记录上传结果
+	shardInfo := ret["shardInfo"].(*ops2.ShardInfoValue)
 	w.successes = append(w.successes, coormq.AddObjectEntry{
 		Path:       pat,
-		Size:       size,
-		FileHash:   ret["fileHash"].(*ops2.ShardInfoValue).Hash,
+		Size:       shardInfo.Size,
+		FileHash:   shardInfo.Hash,
 		UploadTime: uploadTime,
 		StorageIDs: []cdssdk.StorageID{w.targetStg.Storage.StorageID},
 	})

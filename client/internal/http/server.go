@@ -123,4 +123,11 @@ func (s *Server) routeV1(eg *gin.Engine, rt gin.IRoutes) {
 	rt.POST(cdsapi.ObjectNewMultipartUploadPath, s.Object().NewMultipartUpload)
 	rt.POST(cdsapi.ObjectUploadPartPath, s.Object().UploadPart)
 	rt.POST(cdsapi.ObjectCompleteMultipartUploadPath, s.Object().CompleteMultipartUpload)
+
+	rt.GET(cdsapi.PresignedObjectDownloadByPathPath, s.awsAuth.PresignedAuth, s.Presigned().ObjectDownloadByPath)
+	rt.POST(cdsapi.PresignedObjectUploadPath, s.awsAuth.PresignedAuth, s.Presigned().ObjectUpload)
+
+	rt.POST(cdsapi.PresignedObjectNewMultipartUploadPath, s.awsAuth.PresignedAuth, s.Presigned().ObjectNewMultipartUpload)
+	rt.POST(cdsapi.PresignedObjectUploadPartPath, s.awsAuth.PresignedAuth, s.Presigned().ObjectUploadPart)
+	rt.POST(cdsapi.PresignedObjectCompleteMultipartUploadPath, s.awsAuth.PresignedAuth, s.Presigned().ObjectCompleteMultipartUpload)
 }

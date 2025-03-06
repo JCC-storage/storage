@@ -48,17 +48,13 @@ var _ = MustAddCmd(func(ctx CommandContext, packageID cdssdk.PackageID, rootPath
 			return nil
 		}
 
-		info, err := fi.Info()
-		if err != nil {
-			return err
-		}
 		file, err := os.Open(fname)
 		if err != nil {
 			return err
 		}
 		defer file.Close()
 
-		return up.Upload(fname, info.Size(), file)
+		return up.Upload(fname, file)
 	})
 	if err != nil {
 		return err

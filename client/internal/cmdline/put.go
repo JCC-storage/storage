@@ -100,7 +100,7 @@ func init() {
 				}
 				defer file.Close()
 
-				return up.Upload(fname, info.Size(), file)
+				return up.Upload(fname, file)
 			})
 			if err != nil {
 				fmt.Println(err.Error())
